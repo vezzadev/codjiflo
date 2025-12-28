@@ -160,4 +160,222 @@ describe('DiffLine', () => {
 
     expect(screen.getByTestId('syntax-highlighter')).toBeInTheDocument();
   });
+
+  // Word-level diff tests (S-3.4)
+  describe('word-level diff', () => {
+    it('renders word diff segments instead of syntax highlighting when wordDiff is present', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      // Word diff content should be present
+      expect(screen.getByText('new')).toBeInTheDocument();
+      // SyntaxHighlighter should not be used for word diffs
+      expect(screen.queryByTestId('syntax-highlighter')).not.toBeInTheDocument();
+    });
+
+    it('applies correct styling to added segments', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      const addedSegment = screen.getByText('new');
+      expect(addedSegment).toHaveClass('bg-green-300');
+    });
+
+    it('applies correct styling to removed segments', () => {
+      const line: ParsedDiffLine = {
+        type: 'deletion',
+        content: 'old value',
+        oldLineNumber: 1,
+        newLineNumber: null,
+        wordDiff: [
+          { text: 'old', type: 'removed' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      const removedSegment = screen.getByText('old');
+      expect(removedSegment).toHaveClass('bg-red-300');
+    });
+
+    it('has screen reader accessible text for modified lines', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      // Check that the sr-only span contains "Modified:" text
+      const srOnlySpan = container.querySelector('.sr-only');
+      expect(srOnlySpan?.textContent).toContain('Modified:');
+    });
+  });
+
+  // Side-by-side mode tests (S-3.2)
+  describe('side-by-side mode', () => {
+    it('renders single line number column when singleLineNumber is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" side="left" singleLineNumber />
+          </tbody>
+        </table>
+      );
+
+      // Should only show old line number when side is left
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.queryByText('10')).not.toBeInTheDocument();
+    });
+
+    it('shows new line number when side is right', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" side="right" singleLineNumber />
+          </tbody>
+        </table>
+      );
+
+      // Should only show new line number when side is right
+      expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.queryByText('5')).not.toBeInTheDocument();
+    });
+
+    it('shows both line numbers in unified mode (no side prop)', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
+    });
+  });
+
+  // Comment button tests
+  describe('comment button', () => {
+    it('shows comment button when showCommentButton is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new line',
+        oldLineNumber: null,
+        newLineNumber: 1,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine
+              line={line}
+              language="typescript"
+              showCommentButton
+              onStartComment={vi.fn()}
+            />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByRole('button', { name: 'Add comment' })).toBeInTheDocument();
+    });
+
+    it('does not show comment button for header lines', () => {
+      const line: ParsedDiffLine = {
+        type: 'header',
+        content: '@@ -1,3 +1,4 @@',
+        oldLineNumber: null,
+        newLineNumber: null,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine
+              line={line}
+              language="typescript"
+              showCommentButton={false}
+              onStartComment={vi.fn()}
+            />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.queryByRole('button', { name: 'Add comment' })).not.toBeInTheDocument();
+    });
+  });
 });
