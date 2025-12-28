@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "[ -f .env.local ] || vercel env pull && next dev --turbopack",
+    "dev": "node -e \"require('fs').existsSync('.env.local')||require('child_process').execSync('vercel env pull',{stdio:'inherit'})\" && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --fix",
