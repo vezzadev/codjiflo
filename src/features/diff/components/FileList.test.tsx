@@ -99,4 +99,23 @@ describe('FileList', () => {
 
     expect(mockSelectFile).toHaveBeenCalledWith(1);
   });
+
+  it('calls selectFile with PR_DESCRIPTION_INDEX when PR description is clicked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useDiffStore).mockReturnValue({
+      files: [
+        { filename: 'file1.ts', status: FileChangeStatus.Added, additions: 10, deletions: 0, changes: 10, patch: '' },
+      ],
+      selectedFileIndex: 0,
+      selectFile: mockSelectFile,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<FileList />);
+
+    await user.click(screen.getByText('Pull Request Description'));
+
+    expect(mockSelectFile).toHaveBeenCalledWith(-1); // PR_DESCRIPTION_INDEX
+  });
 });
