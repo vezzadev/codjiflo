@@ -98,7 +98,7 @@ export function DiffViewModeToolbar() {
       </div>
 
       {/* Display Mode Toggle (Changes Only / Full File) */}
-      {/* AC-3.1.10, AC-3.1.11 */}
+      {/* AC-3.3.13, AC-3.3.14 */}
       <div className="flex items-center gap-2 ml-auto" role="group" aria-label="Display mode">
         <div className="inline-flex rounded-md shadow-sm" role="group">
           <button
