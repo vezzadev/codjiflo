@@ -76,8 +76,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       owner,
       repo,
       prNumber,
-      prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
-      pageUrl: `/pr/${owner}/${repo}/${prNumber}`,
+      prUrl: `https://github.com/${owner}/${repo}/pull/${String(prNumber)}`,
+      pageUrl: `/pr/${owner}/${repo}/${String(prNumber)}`,
     };
   };
 
@@ -191,7 +191,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     } else {
       // Prod mode: use PR #6 which has multiple files
       const { owner, repo, prNumber } = prodModeConfig.keyboardNavPR;
-      await page.goto(`/pr/${owner}/${repo}/${prNumber}`);
+      await page.goto(`/pr/${owner}/${repo}/${String(prNumber)}`);
     }
 
     // Wait for page to fully stabilize
@@ -295,7 +295,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     } else {
       // Prod mode: use non-existent PR #0
       const { owner, repo, prNumber } = prodModeConfig.notFoundPR;
-      await page.goto(`/pr/${owner}/${repo}/${prNumber}`);
+      await page.goto(`/pr/${owner}/${repo}/${String(prNumber)}`);
     }
 
     // Should show error message (use first() since error may appear in multiple places)

@@ -16,7 +16,7 @@ export type E2EMode = "mock" | "prod";
  * Get the current E2E dependencies mode from environment
  */
 export function getE2EMode(): E2EMode {
-  const mode = process.env['E2E_DEPENDENCIES_MODE'];
+  const mode = process.env.E2E_DEPENDENCIES_MODE;
   if (mode === "prod") {
     return "prod";
   }
@@ -43,7 +43,7 @@ export function isProdMode(): boolean {
  * @throws Error if in prod mode but token is not configured
  */
 export function getE2EGitHubToken(): string | undefined {
-  const token = process.env['CODJIFLO_E2E_GITHUB_TOKEN'];
+  const token = process.env.CODJIFLO_E2E_GITHUB_TOKEN;
   if (isProdMode() && !token) {
     throw new Error(
       "E2E_DEPENDENCIES_MODE=prod requires CODJIFLO_E2E_GITHUB_TOKEN to be set"

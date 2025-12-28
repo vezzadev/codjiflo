@@ -32,8 +32,8 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    const clientId = process.env['GITHUB_APP_CLIENT_ID'];
-    const clientSecret = process.env['GITHUB_APP_CLIENT_SECRET'];
+    const clientId = process.env.GITHUB_APP_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
       const missing = [];

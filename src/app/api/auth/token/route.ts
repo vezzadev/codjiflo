@@ -36,8 +36,8 @@ export async function POST(req: Request): Promise<Response> {
     if (
       !rawBody ||
       typeof rawBody !== 'object' ||
-      typeof (rawBody as Record<string, unknown>)['code'] !== 'string' ||
-      typeof (rawBody as Record<string, unknown>)['code_verifier'] !== 'string'
+      typeof (rawBody as Record<string, unknown>).code !== 'string' ||
+      typeof (rawBody as Record<string, unknown>).code_verifier !== 'string'
     ) {
       return NextResponse.json(
         { error: 'Invalid or missing parameters: code and code_verifier must be strings' },
@@ -47,8 +47,8 @@ export async function POST(req: Request): Promise<Response> {
 
     const { code, code_verifier } = rawBody as TokenRequest;
 
-    const clientId = process.env['GITHUB_APP_CLIENT_ID'];
-    const clientSecret = process.env['GITHUB_APP_CLIENT_SECRET'];
+    const clientId = process.env.GITHUB_APP_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
       const missing = [];

@@ -74,7 +74,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
       owner,
       repo,
       prNumber,
-      pageUrl: `/pr/${owner}/${repo}/${prNumber}`,
+      pageUrl: `/pr/${owner}/${repo}/${String(prNumber)}`,
     };
   };
 

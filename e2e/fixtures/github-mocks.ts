@@ -97,15 +97,15 @@ export async function setupAuthMock(
 ): Promise<void> {
   if (!isMockMode()) return;
 
-  await page.route("https://api.github.com/user", (route) => {
+  await page.route("https://api.github.com/user", async (route) => {
     if (options?.failWith) {
-      route.fulfill({
+      await route.fulfill({
         status: options.failWith,
         contentType: "application/json",
         body: JSON.stringify({ message: "Bad credentials" }),
       });
     } else {
-      route.fulfill({
+      await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(options?.user ?? defaultMockUser),
@@ -129,10 +129,10 @@ export async function setupPRMock(
   if (!isMockMode()) return;
 
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`,
-    (route) => {
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}`,
+    async (route) => {
       if (options?.failWith) {
-        route.fulfill({
+        await route.fulfill({
           status: options.failWith,
           contentType: "application/json",
           body: JSON.stringify({ message: "Not Found" }),
@@ -141,9 +141,9 @@ export async function setupPRMock(
         const pr = options?.pr ?? {
           ...defaultMockPR,
           number: prNumber,
-          html_url: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
+          html_url: `https://github.com/${owner}/${repo}/pull/${String(prNumber)}`,
         };
-        route.fulfill({
+        await route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(pr),
@@ -168,16 +168,16 @@ export async function setupFilesMock(
   if (!isMockMode()) return;
 
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/files`,
-    (route) => {
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+    async (route) => {
       if (options?.failWith) {
-        route.fulfill({
+        await route.fulfill({
           status: options.failWith,
           contentType: "application/json",
           body: JSON.stringify({ message: "Not Found" }),
         });
       } else {
-        route.fulfill({
+        await route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(options?.files ?? []),
@@ -202,16 +202,16 @@ export async function setupCommentsMock(
   if (!isMockMode()) return;
 
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/comments`,
-    (route) => {
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/comments`,
+    async (route) => {
       if (options?.failWith) {
-        route.fulfill({
+        await route.fulfill({
           status: options.failWith,
           contentType: "application/json",
           body: JSON.stringify({ message: "Not Found" }),
         });
       } else {
-        route.fulfill({
+        await route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(options?.comments ?? []),
@@ -265,7 +265,7 @@ export async function setupFullPRMocks(
 export async function setupAuthState(page: Page): Promise<void> {
   const token = isMockMode()
     ? "ghp_testtoken123"
-    : process.env['CODJIFLO_E2E_GITHUB_TOKEN'];
+    : process.env.CODJIFLO_E2E_GITHUB_TOKEN;
 
   if (!token && !isMockMode()) {
     throw new Error(

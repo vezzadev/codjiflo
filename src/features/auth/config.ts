@@ -6,7 +6,7 @@ export const oauthConfig = {
    * GitHub App Client ID (public, safe to expose in browser)
    * Set via NEXT_PUBLIC_GITHUB_CLIENT_ID environment variable
    */
-  clientId: process.env['NEXT_PUBLIC_GITHUB_CLIENT_ID'] ?? '',
+  clientId: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID ?? '',
 
   /**
    * OAuth callback URL
@@ -14,7 +14,7 @@ export const oauthConfig = {
    * Defaults to localhost:3000 in development
    */
   get redirectUri(): string {
-    const envAppUrl = process.env['NEXT_PUBLIC_APP_URL'];
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL;
     const appUrl =
       envAppUrl ??
       (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined);
