@@ -1,7 +1,10 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { parsePatch, detectLanguage, getDiffLinePosition } from '../utils';
+import { DiffViewMode } from '../types';
 import { DiffLine } from './DiffLine';
+import { DiffViewModeToolbar } from './DiffViewModeToolbar';
+import { SideBySideView } from './SideBySideView';
 import { Skeleton } from '@/components/ui';
 import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
@@ -12,11 +15,13 @@ import { PRDescription, PRMetadata } from '@/features/pr/components';
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
 /**
- * Unified diff view for the selected file
- * S-1.4: AC-1.4.1 through AC-1.4.10
+ * Diff view for the selected file
+ * S-1.4: AC-1.4.1 through AC-1.4.10 (Unified view)
+ * S-3.2: AC-3.2.1 through AC-3.2.9 (Side-by-side view)
+ * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, viewMode } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     threads,
@@ -139,6 +144,9 @@ export function DiffView() {
         </h2>
       </div>
 
+      {/* S-3.3: View mode toolbar */}
+      <DiffViewModeToolbar />
+
       {/* AC-1.4.7: Horizontal scroll for long lines */}
       {/* AC-1.4.8: Accessible code block */}
       <div
@@ -157,19 +165,27 @@ export function DiffView() {
             Loading comments...
           </div>
         )}
-        <DiffTable
-          key={filename ?? 'diff-table'}
-          diffLines={diffLines}
-          language={language}
-          filename={filename}
-          threadsByLineAndSide={threadsByLineAndSide}
-          currentUserLogin={currentUser.login}
-          addComment={addComment}
-          addReply={addReply}
-          editComment={editComment}
-          deleteComment={deleteComment}
-          toggleResolved={toggleResolved}
-        />
+        
+        {/* Conditional rendering based on view mode */}
+        {/* S-3.2: Side-by-side view */}
+        {viewMode === DiffViewMode.SideBySide ? (
+          <SideBySideView filename={selectedFile.filename} patch={selectedFile.patch || ''} />
+        ) : (
+          /* S-1.4: Unified/Inline view */
+          <DiffTable
+            key={filename ?? 'diff-table'}
+            diffLines={diffLines}
+            language={language}
+            filename={filename}
+            threadsByLineAndSide={threadsByLineAndSide}
+            currentUserLogin={currentUser.login}
+            addComment={addComment}
+            addReply={addReply}
+            editComment={editComment}
+            deleteComment={deleteComment}
+            toggleResolved={toggleResolved}
+          />
+        )}
       </div>
     </div>
   );
