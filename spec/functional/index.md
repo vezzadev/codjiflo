@@ -212,3 +212,20 @@ Push notifications for live sync.
 - [ ] Polling fallback
 - [ ] Optimistic updates
 - [ ] Conflict resolution
+
+## References
+
+### Primary Sources
+- **ACM Queue Article:** "CodeFlow: Improving the Code Review Process at Microsoft" (2018)
+  - Interview with Jacek Czerwonka, Michaela Greiler, Christian Bird, Lucas Panjer, Terry Coatta
+  - URL: https://queue.acm.org/detail.cfm?id=3292420
+- **Research Team:** Jacek Czerwonka, Michaela Greiler, Christian Bird (Microsoft TSE - Tools for Software Engineers)
+- **Research Data:** Analysis of 3+ million code reviews across Microsoft products
+
+### Additional Sources
+- **Hacker News Discussion** (February 2019): Feedback from former Microsoft employees and comparisons with Google Critique, Amazon CRUX
+  - URL: https://news.ycombinator.com/item?id=19096844
+  - 166 points, 81 comments
+- **Dr. Michaela Greiler's Blog:** "How Code Reviews Work at Microsoft" - Overview of CodeFlow usage and practices
+  - URL: https://www.michaelagreiler.com/code-reviews-at-microsoft-how-to-code-review-at-a-large-software-company/
+  - Published: March 27, 2019 (Updated January 22, 2022)
