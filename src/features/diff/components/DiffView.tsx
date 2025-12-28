@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui';
 import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
-import { PRDescription } from '@/features/pr/components';
+import { PRDescription, PRMetadata } from '@/features/pr/components';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -92,20 +92,20 @@ export function DiffView() {
     );
   }
 
-  // Show PR description when selected
+  // Show PR metadata and description when selected
   if (isShowingDescription) {
     return (
-      <div className="h-full flex flex-col">
-        <div className="sticky top-0 bg-gray-100 px-4 py-2 border-b z-10">
-          <h2 className="font-mono text-sm font-semibold">Pull Request Description</h2>
-        </div>
-        <div className="flex-1 overflow-auto pt-6">
-          {currentPR ? (
-            <PRDescription description={currentPR.description} />
-          ) : (
-            <div className="px-6 text-gray-500">No description available</div>
-          )}
-        </div>
+      <div className="h-full flex flex-col overflow-auto">
+        {currentPR ? (
+          <>
+            <PRMetadata pr={currentPR} />
+            <div className="border-t">
+              <PRDescription description={currentPR.description} />
+            </div>
+          </>
+        ) : (
+          <div className="px-6 py-6 text-gray-500">No PR data available</div>
+        )}
       </div>
     );
   }

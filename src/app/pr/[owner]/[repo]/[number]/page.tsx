@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePRStore } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
-import { PRHeader } from '@/features/pr/components';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
 import { useRequireAuth } from '@/features/auth/hooks';
@@ -122,8 +121,7 @@ export default function PullRequestPage({ params }: PRPageProps) {
 
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-80 shrink-0 flex flex-col bg-white border-r overflow-hidden">
-          <PRHeader />
-          <div className="flex-1 overflow-y-auto border-t">
+          <div className="flex-1 overflow-y-auto">
             <FileList />
           </div>
         </aside>

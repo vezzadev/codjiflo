@@ -161,12 +161,14 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // PR Description should be selected by default
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
 
-    // Main panel should show the description header
-    await expect(page.getByRole("heading", { name: "Pull Request Description" })).toBeVisible();
-
     if (isMockMode()) {
+      // Main panel should show the PR title and metadata
+      await expect(page.getByRole("heading", { level: 1, name: /Add new feature: Button component/i })).toBeVisible();
       // Description content should be visible (rendered as markdown)
       await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
+    } else {
+      // Real mode: verify PR title heading exists
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30000 });
     }
   });
 
