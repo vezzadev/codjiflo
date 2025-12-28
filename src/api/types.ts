@@ -65,6 +65,7 @@ export interface IReviewBackend {
 
 export interface IFileBackend {
   getFiles(owner: string, repo: string, number: number): Promise<FileChange[]>;
+  getFileContent(owner: string, repo: string, path: string, ref: string): Promise<string>;
 }
 
 export interface BackendFactory {

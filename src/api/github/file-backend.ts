@@ -29,6 +29,22 @@ export class GitHubFileBackend implements IFileBackend {
     });
   }
 
+  /**
+   * Fetch full file content at a specific ref
+   * S-3.1: AC-3.1.1
+   */
+  async getFileContent(owner: string, repo: string, path: string, ref: string): Promise<string> {
+    const data = await githubClient.fetch<{ content: string; encoding: string }>(
+      `/repos/${owner}/${repo}/contents/${path}?ref=${ref}`
+    );
+
+    if (data.encoding === 'base64' && data.content) {
+      return atob(data.content.replace(/\n/g, ''));
+    }
+
+    return data.content || '';
+  }
+
   private mapStatus(status: GitHubFile['status']): FileChangeStatus {
     switch (status) {
       case 'added':
