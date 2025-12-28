@@ -83,8 +83,21 @@ jobs:
         timeout-minutes: 1
         run: npx playwright install --with-deps chromium-headless-shell
 
-      - name: Wait for deployment to propagate
-        run: sleep 10
+      - name: Wait for deployment to serve new commit
+        run: |
+          EXPECTED_COMMIT="${{ github.sha }}"
+          URL="https://codjiflo.vza.net/api/health"
+          for i in {1..30}; do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
+              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
+              exit 0
+            fi
+            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for deployment"
+          exit 1
 
       - name: Run E2E tests against production
         timeout-minutes: 5
