@@ -125,3 +125,91 @@ Prod mode tests use `pedropaulovc/codjiflo`:
 - PR #1 for valid PR tests
 - PR #6 for keyboard navigation tests
 - PR #0 for 404 error handling tests
+
+## Iteration Storage
+
+### Overview
+CodjiFlo tracks PR iterations using a **GitHub Action + Artifact** approach with no backend server required.
+
+### Architecture
+
+```
+┌─────────────────┐   on: pull_request   ┌──────────────────┐
+│   GitHub Repo   │ ──────────────────►  │  GitHub Action   │
+│   (with workflow)                      │  (codjiflo.yml)  │
+└─────────────────┘                      └────────┬─────────┘
+                                                  │
+                     ┌────────────────────────────┼────────────────────────────┐
+                     │                            │                            │
+                     ▼                            ▼                            ▼
+              ┌─────────────┐           ┌─────────────────┐           ┌───────────────┐
+              │  Upload     │           │  Post/Update    │           │  Store file   │
+              │  SQLite     │           │  PR Comment     │           │  contents in  │
+              │  artifact   │           │  with artifact  │           │  artifact     │
+              └─────────────┘           │  reference      │           └───────────────┘
+                                        └─────────────────┘
+
+┌─────────────────┐                     ┌──────────────────┐
+│  CodjiFlo SPA   │ ─── reads ───────►  │  PR Comments     │
+│  (React)        │                     │  (find pointer)  │
+└────────┬────────┘                     └──────────────────┘
+         │
+         │ downloads
+         ▼
+┌─────────────────┐
+│  SQLite artifact│
+│  (iterations,   │
+│   file contents)│
+└─────────────────┘
+```
+
+### Data Flow
+
+**On PR Event (GitHub Action):**
+1. Workflow triggers on `pull_request` events (opened, synchronize, reopened)
+2. Action downloads previous artifact if exists
+3. Captures `head_sha`, `base_sha`, `before` (force-push tracking)
+4. Fetches changed file contents via GitHub API
+5. Appends new iteration to SQLite database
+6. Computes SpanTrackers (adjacent iteration + base→latest)
+7. Uploads SQLite as artifact (90-day retention)
+8. Posts/updates PR comment with artifact reference
+
+**On Frontend Load:**
+1. Fetch PR comments via GitHub API
+2. Find comment with `<!-- codjiflo-data -->` marker
+3. Download SQLite artifact
+4. Parse SQLite using SQL.js (WASM)
+5. Load precomputed SpanTrackers (adjacent pairs + base→latest)
+6. Cache artifact in IndexedDB
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/features/iterations/artifact-loader.ts` | Download & parse SQLite artifact |
+| `src/features/iterations/degraded-banner.tsx` | "Install workflow" prompt |
+| `src/lib/sqlite-wasm.ts` | SQL.js wrapper for browser |
+
+### External Repositories
+| Repository | Purpose |
+|------------|---------|
+| `codjiflo/action` | GitHub Action for iteration capture |
+| `codjiflo/comment-action` | GitHub Action for PR comment updates |
+
+### Graceful Degradation
+Repos without the CodjiFlo workflow installed:
+- Commit range comparison via GitHub API (parity with GitHub native)
+- User can select any two commits from PR commit list
+- Show banner: "Install workflow for force-push resilience and comment tracking"
+- No SpanTrackers (comments won't track across ranges)
+- Force-push causes old commits to become unreachable
+
+### Trade-offs
+| Trade-off | Mitigation |
+|-----------|------------|
+| 90-day artifact retention | Acceptable for active PRs |
+| Requires workflow install | Clear onboarding, one-click install |
+| Can't use on repos you don't control | Graceful degradation |
+| Artifact download latency | Cache in IndexedDB |
+
+See [spec/functional/iterations.md](../spec/functional/iterations.md) for complete specification.
