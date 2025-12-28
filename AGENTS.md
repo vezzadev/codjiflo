@@ -85,7 +85,7 @@ src/
     - **Coverage**: One E2E spec per User Story Acceptance Criteria set.
 
 ### 1.5 Authentication
-GitHub OAuth 2.0 with PKCE. Supports cross-subdomain auth for PR previews. See [docs/architecture.md](docs/architecture.md) for details.
+GitHub OAuth 2.0 with PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## 2. Milestone Architectural Plans
 

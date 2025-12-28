@@ -45,6 +45,9 @@ pr-123.codjiflo.vza.net/auth/landing
 All cookies use `domain=.vza.net` (hardcoded in `KNOWN_BASE_DOMAIN`).
 
 ### Environment Variables
+
+Env vars for dev, preview, and prod are stored in Vercel (`vercel env pull` to sync locally).
+
 | Variable | Location | Purpose |
 |----------|----------|---------|
 | `GITHUB_APP_CLIENT_ID` | Server | Token exchange |
@@ -52,7 +55,13 @@ All cookies use `domain=.vza.net` (hardcoded in `KNOWN_BASE_DOMAIN`).
 | `NEXT_PUBLIC_GITHUB_CLIENT_ID` | Client | Build OAuth URL |
 | `NEXT_PUBLIC_APP_URL` | Client | Callback base URL |
 
-**PR previews:** Set `NEXT_PUBLIC_APP_URL=https://codjiflo.vza.net`
+**Backup values:**
+```
+GITHUB_APP_CLIENT_ID = Iv23liUEkzCUSR78IkHn
+NEXT_PUBLIC_GITHUB_CLIENT_ID = Iv23liUEkzCUSR78IkHn
+NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
+NEXT_PUBLIC_APP_URL = https://codjiflo.vza.net     # preview & prod
+```
 
 ### Security Considerations
 - Return origin validated against `KNOWN_BASE_DOMAIN` to prevent open redirects
