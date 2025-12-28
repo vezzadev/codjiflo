@@ -27,12 +27,46 @@ enum DiffViewMode {
 
 ### Mode Behaviors
 
-| Mode | Description | Use Case |
-|------|-------------|----------|
-| **Inline** | Single editor, deletions and additions interleaved | Quick review, seeing flow |
-| **SideBySide** | Two synchronized editors | Detailed comparison |
-| **LeftOnly** | Original file with deletions highlighted | Focus on removed code |
-| **RightOnly** | Modified file with additions highlighted | Focus on new code |
+The view system has two orthogonal controls:
+
+1. **Layout Mode** (Unified vs Split): Controls how content is arranged spatially
+2. **Content Filter** (Left/Both/Right): Controls which line types are visible
+
+#### Layout Modes
+
+| Layout | Description | Use Case |
+|--------|-------------|----------|
+| **Unified** | Single editor, all changes in one stream | Quick review, seeing flow |
+| **Split** | Two synchronized side-by-side editors | Detailed comparison |
+
+#### Content Filter (Left/Both/Right)
+
+The content filter controls which line types are displayed. It applies to **both** Unified and Split layouts.
+
+| Filter | Unified Mode Behavior | Split Mode Behavior |
+|--------|----------------------|---------------------|
+| **Left** | Shows removed lines + unchanged lines only | Shows only the left (original) pane |
+| **Both** | Shows all lines: removed, added, unchanged (default) | Shows both panes side-by-side (default) |
+| **Right** | Shows added lines + unchanged lines only | Shows only the right (modified) pane |
+
+#### Unified Mode with Content Filter
+
+In Unified mode, the content filter modifies which diff lines appear in the single-column view:
+
+- **Left filter**: Displays the original file perspective
+  - Unchanged lines: shown normally
+  - Removed lines: shown with red/deletion highlighting
+  - Added lines: **hidden** (not displayed)
+
+- **Both filter** (default): Displays complete diff
+  - Unchanged lines: shown normally
+  - Removed lines: shown with red/deletion highlighting
+  - Added lines: shown with green/addition highlighting
+
+- **Right filter**: Displays the modified file perspective
+  - Unchanged lines: shown normally
+  - Added lines: shown with green/addition highlighting
+  - Removed lines: **hidden** (not displayed)
 
 ### Mode Switching
 
