@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from './useDiffStore';
 import { FileChangeStatus } from '@/api/types';
+import { DiffViewMode, DiffContentFilter, DiffDisplayMode } from '../types';
 import * as api from '@/api';
 
 // Store mock reference outside to avoid unbound-method warning
@@ -63,6 +64,9 @@ describe('useDiffStore', () => {
       selectedFileIndex: PR_DESCRIPTION_INDEX,
       isLoading: false,
       error: null,
+      viewMode: DiffViewMode.Inline,
+      contentFilter: DiffContentFilter.Both,
+      displayMode: DiffDisplayMode.ChangesOnly,
     });
     vi.clearAllMocks();
   });
@@ -217,6 +221,44 @@ describe('useDiffStore', () => {
     });
   });
 
+  describe('view mode management', () => {
+    it('sets view mode to SideBySide', () => {
+      useDiffStore.getState().setViewMode(DiffViewMode.SideBySide);
+
+      expect(useDiffStore.getState().viewMode).toBe(DiffViewMode.SideBySide);
+    });
+
+    it('sets view mode to LeftOnly', () => {
+      useDiffStore.getState().setViewMode(DiffViewMode.LeftOnly);
+
+      expect(useDiffStore.getState().viewMode).toBe(DiffViewMode.LeftOnly);
+    });
+
+    it('sets view mode to RightOnly', () => {
+      useDiffStore.getState().setViewMode(DiffViewMode.RightOnly);
+
+      expect(useDiffStore.getState().viewMode).toBe(DiffViewMode.RightOnly);
+    });
+
+    it('sets content filter to Left', () => {
+      useDiffStore.getState().setContentFilter(DiffContentFilter.Left);
+
+      expect(useDiffStore.getState().contentFilter).toBe(DiffContentFilter.Left);
+    });
+
+    it('sets content filter to Right', () => {
+      useDiffStore.getState().setContentFilter(DiffContentFilter.Right);
+
+      expect(useDiffStore.getState().contentFilter).toBe(DiffContentFilter.Right);
+    });
+
+    it('sets display mode to FullFile', () => {
+      useDiffStore.getState().setDisplayMode(DiffDisplayMode.FullFile);
+
+      expect(useDiffStore.getState().displayMode).toBe(DiffDisplayMode.FullFile);
+    });
+  });
+
   describe('reset', () => {
     it('resets store to initial state', () => {
       useDiffStore.setState({
@@ -232,6 +274,22 @@ describe('useDiffStore', () => {
       expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
       expect(useDiffStore.getState().isLoading).toBe(false);
       expect(useDiffStore.getState().error).toBeNull();
+    });
+
+    it('preserves view preferences on reset', () => {
+      useDiffStore.getState().setViewMode(DiffViewMode.SideBySide);
+      useDiffStore.getState().setContentFilter(DiffContentFilter.Right);
+      useDiffStore.getState().setDisplayMode(DiffDisplayMode.FullFile);
+
+      const viewMode = useDiffStore.getState().viewMode;
+      const contentFilter = useDiffStore.getState().contentFilter;
+      const displayMode = useDiffStore.getState().displayMode;
+
+      useDiffStore.getState().reset();
+
+      expect(useDiffStore.getState().viewMode).toBe(viewMode);
+      expect(useDiffStore.getState().contentFilter).toBe(contentFilter);
+      expect(useDiffStore.getState().displayMode).toBe(displayMode);
     });
   });
 });
