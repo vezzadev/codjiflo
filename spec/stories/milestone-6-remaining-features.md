@@ -1,4 +1,4 @@
-# Milestone 6: Real-time, Lifecycle & Settings (Gap Analysis)
+# Milestone 6: Real-time, Lifecycle & Settings
 
 **Goal**: Implement the remaining supporting features ensuring the application is a complete, production-ready review environment. This covers real-time updates, review status management, and personalization.
 

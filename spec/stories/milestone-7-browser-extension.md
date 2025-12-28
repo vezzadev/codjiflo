@@ -1,4 +1,4 @@
-# Milestone 3: Browser Extension Integration
+# Milestone 7: Browser Extension Integration
 
 **Goal**: Package the application as a cross-browser extension (Chrome/Edge/Firefox) that seamlessly integrates into the GitHub interface, allowing users to launch the review environment directly from a Pull Request page.
 
@@ -14,17 +14,17 @@
 
 ```mermaid
 graph TD
-    S3.0[S-3.0 Scaffolding] --> S3.1[S-3.1 Build System]
-    S3.0 --> S3.2[S-3.2 Entry Point]
-    S3.1 --> S3.3[S-3.3 Overlay]
-    S3.1 --> S3.4[S-3.4 Auth Bridge]
-    S3.1 --> S3.5[S-3.5 Cross-Browser]
-    S3.2 --> S3.3
+    S7.0[S-7.0 Scaffolding] --> S7.1[S-7.1 Build System]
+    S7.0 --> S7.2[S-7.2 Entry Point]
+    S7.1 --> S7.3[S-7.3 Overlay]
+    S7.1 --> S7.4[S-7.4 Auth Bridge]
+    S7.1 --> S7.5[S-7.5 Cross-Browser]
+    S7.2 --> S7.3
 ```
 
 ---
 
-## [S-3.0] Story 3.0: Extension Architecture Setup
+## [S-7.0] Story 7.0: Extension Architecture Setup
 
 As a developer, I want to configure the build pipeline to generate browser extension assets so I can run the app in a browser context.
 
@@ -33,14 +33,14 @@ Set up `manifest.json` generation scripts (or `vite-plugin-web-extension`). Crea
 
 ### Acceptance Criteria
 1.  **Build Config**:
-    - [ ] [AC-3.0.1] Vite config updated to output `dist/extension`.
-    - [ ] [AC-3.0.2] `content-script.ts` entry point configured.
+    - [ ] [AC-7.0.1] Vite config updated to output `dist/extension`.
+    - [ ] [AC-7.0.2] `content-script.ts` entry point configured.
 2.  **App Mount**:
-    - [ ] [AC-3.0.3] Logic to switching between 'Web Mode' (Root div) and 'Extension Mode' (Shadow DOM injection).
+    - [ ] [AC-7.0.3] Logic to switching between 'Web Mode' (Root div) and 'Extension Mode' (Shadow DOM injection).
 
 ---
 
-## [S-3.1] Story 3.1: Extension Manifest & Build System
+## [S-7.1] Story 7.1: Extension Manifest & Build System
 
 As a developer, I want a unified build system that produces valid extensions for Chrome, Edge, and Firefox so that we don't have to maintain separate codebases.
 
@@ -49,15 +49,15 @@ Set up the project to build `manifest.json` (Manifest V3 for Chrome/Edge, V2/V3 
 
 ### Acceptance Criteria
 1.  **Build Output**:
-    - [ ] [AC-3.1.1] `npm run build:extension` produces a `dist/extension` folder.
-    - [ ] [AC-3.1.2] Can load unpacked extension in Chrome and Firefox Developer Edition.
+    - [ ] [AC-7.1.1] `npm run build:extension` produces a `dist/extension` folder.
+    - [ ] [AC-7.1.2] Can load unpacked extension in Chrome and Firefox Developer Edition.
 2.  **Manifest Compliance**:
-    - [ ] [AC-3.1.3] Valid V3 manifest for Chrome.
-    - [ ] [AC-3.1.4] Appropriate permissions (`activeTab` or `host_permissions` for github.com).
+    - [ ] [AC-7.1.3] Valid V3 manifest for Chrome.
+    - [ ] [AC-7.1.4] Appropriate permissions (`activeTab` or `host_permissions` for github.com).
 
 ---
 
-## [S-3.2] Story 3.2: "Review with CodjiFlo" Entry Point
+## [S-7.2] Story 7.2: "Review with CodjiFlo" Entry Point
 
 As a user, I want to see a button on the GitHub PR page so that I can easily switch to the enhanced review mode.
 
@@ -66,18 +66,18 @@ Inject a content script on pages matching `https://github.com/*/*/pull/*`. Detec
 
 ### Acceptance Criteria
 1.  **Placement**:
-    - [ ] [AC-3.2.1] Button appears near the "Files changed" tab or the "Review changes" dropdown.
-    - [ ] [AC-3.2.2] Style matches GitHub's "Primary" or "Secondary" button styles (using Primer CSS classes or mimicking found styles).
+    - [ ] [AC-7.2.1] Button appears near the "Files changed" tab or the "Review changes" dropdown.
+    - [ ] [AC-7.2.2] Style matches GitHub's "Primary" or "Secondary" button styles (using Primer CSS classes or mimicking found styles).
 2.  **Robustness**:
-    - [ ] [AC-3.2.3] Button appears even if navigating via Turbo/PJAX (GitHub's SPA navigation) without full page reload.
-    - [ ] [AC-3.2.4] `MutationObserver` ensures button is re-injected if DOM changes.
+    - [ ] [AC-7.2.3] Button appears even if navigating via Turbo/PJAX (GitHub's SPA navigation) without full page reload.
+    - [ ] [AC-7.2.4] `MutationObserver` ensures button is re-injected if DOM changes.
 3.  **Accessibility**:
-    - [ ] [AC-3.2.5] Button has `aria-label="Open review in CodjiFlo"`.
-    - [ ] [AC-3.2.6] Focusable via standard Tab navigation on the GitHub page.
+    - [ ] [AC-7.2.5] Button has `aria-label="Open review in CodjiFlo"`.
+    - [ ] [AC-7.2.6] Focusable via standard Tab navigation on the GitHub page.
 
 ---
 
-## [S-3.3] Story 3.3: Overlay View Injection
+## [S-7.3] Story 7.3: Overlay View Injection
 
 As a user, I want the CodjiFlo interface to open as an immersive overlay on top of GitHub so that I don't lose my place in the browser.
 
@@ -86,19 +86,19 @@ When the entry button is clicked, mount the React application into a Shadow DOM 
 
 ### Acceptance Criteria
 1.  **Opening**:
-    - [ ] [AC-3.3.1] Click opens a full-screen modal/overlay.
-    - [ ] [AC-3.3.2] Background body scroll is disabled on the parent page.
-    - [ ] [AC-3.3.3] URL remains (or updates hash) so the user is still on the GitHub PR URL.
+    - [ ] [AC-7.3.1] Click opens a full-screen modal/overlay.
+    - [ ] [AC-7.3.2] Background body scroll is disabled on the parent page.
+    - [ ] [AC-7.3.3] URL remains (or updates hash) so the user is still on the GitHub PR URL.
 2.  **Closing**:
-    - [ ] [AC-3.3.4] "Exit" or "X" button returns to standard GitHub view.
-    - [ ] [AC-3.3.5] `Esc` key closes the overlay.
+    - [ ] [AC-7.3.4] "Exit" or "X" button returns to standard GitHub view.
+    - [ ] [AC-7.3.5] `Esc` key closes the overlay.
 3.  **Isolation**:
-    - [ ] [AC-3.3.6] CodjiFlo styles do not break GitHub page styles.
-    - [ ] [AC-3.3.7] GitHub styles do not bleed into CodjiFlo (Shadow DOM used).
+    - [ ] [AC-7.3.6] CodjiFlo styles do not break GitHub page styles.
+    - [ ] [AC-7.3.7] GitHub styles do not bleed into CodjiFlo (Shadow DOM used).
 
 ---
 
-## [S-3.4] Story 3.4: Authentication Bridge
+## [S-7.4] Story 7.4: Authentication Bridge
 
 As a user, I want to use my existing GitHub session so I don't have to login again.
 
@@ -108,14 +108,14 @@ The extension should attempt to reuse the user's implicit session if possible (v
 
 ### Acceptance Criteria
 1.  **Auto-Auth**:
-    - [ ] [AC-3.4.1] API requests referenced in Milestone 1 & 2 work without manually pasting a PAT.
-    - [ ] [AC-3.4.2] If 401/403 is received, fallback to PAT input prompt (from Story 1.1).
+    - [ ] [AC-7.4.1] API requests referenced in Milestone 1 & 2 work without manually pasting a PAT.
+    - [ ] [AC-7.4.2] If 401/403 is received, fallback to PAT input prompt (from Story 1.1).
 2.  **Security**:
-    - [ ] [AC-3.4.3] We do not exfiltrate the session cookie; we just rely on the browser attaching it to requests made from the content script context (or background script with host permissions).
+    - [ ] [AC-7.4.3] We do not exfiltrate the session cookie; we just rely on the browser attaching it to requests made from the content script context (or background script with host permissions).
 
 ---
 
-## [S-3.5] Story 3.5: Firefox & Edge Support
+## [S-7.5] Story 7.5: Firefox & Edge Support
 
 As a user of Firefox or Edge, I want the same experience as Chrome users.
 
@@ -124,5 +124,5 @@ Verify and adjust manifest/APIs for cross-browser support.
 
 ### Acceptance Criteria
 1.  **Verification**:
-    - [ ] [AC-3.5.1] Manual smoke test on Firefox.
-    - [ ] [AC-3.5.2] Manual smoke test on Microsoft Edge.
+    - [ ] [AC-7.5.1] Manual smoke test on Firefox.
+    - [ ] [AC-7.5.2] Manual smoke test on Microsoft Edge.
