@@ -56,38 +56,17 @@ function base64UrlEncode(buffer: Uint8Array): string {
 }
 
 /**
- * Storage keys for OAuth flow state
+ * Re-export cookie-based OAuth state storage for cross-subdomain support
+ * These use cookies with base domain to enable PR preview authentication
  */
-export const OAUTH_STORAGE_KEYS = {
-  CODE_VERIFIER: 'oauth_code_verifier',
-  STATE: 'oauth_state',
-} as const;
-
-/**
- * Stores the OAuth flow state in sessionStorage
- * @param codeVerifier - The PKCE code verifier
- * @param state - The CSRF state parameter
- */
-export function storeOAuthState(codeVerifier: string, state: string): void {
-  sessionStorage.setItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
-  sessionStorage.setItem(OAUTH_STORAGE_KEYS.STATE, state);
-}
-
-/**
- * Retrieves and clears the OAuth flow state from sessionStorage
- * @returns The stored code verifier and state, or null if not found
- */
-export function retrieveOAuthState(): { codeVerifier: string; state: string } | null {
-  const codeVerifier = sessionStorage.getItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER);
-  const state = sessionStorage.getItem(OAUTH_STORAGE_KEYS.STATE);
-
-  if (!codeVerifier || !state) {
-    return null;
-  }
-
-  // Clear the stored state
-  sessionStorage.removeItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER);
-  sessionStorage.removeItem(OAUTH_STORAGE_KEYS.STATE);
-
-  return { codeVerifier, state };
-}
+export {
+  OAUTH_COOKIE_KEYS as OAUTH_STORAGE_KEYS,
+  storeOAuthStateCookie as storeOAuthState,
+  retrieveOAuthStateCookie as retrieveOAuthState,
+  storeReturnOrigin,
+  retrieveReturnOrigin,
+  storeTokenTransfer,
+  retrieveTokenTransfer,
+  isValidReturnOrigin,
+  type TokenTransferData,
+} from './cookies';

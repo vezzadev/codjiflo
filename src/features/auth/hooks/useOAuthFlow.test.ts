@@ -8,6 +8,7 @@ vi.mock('../utils/pkce', () => ({
   generateCodeChallenge: vi.fn(() => Promise.resolve('test-code-challenge')),
   generateState: vi.fn(() => 'test-state'),
   storeOAuthState: vi.fn(),
+  storeReturnOrigin: vi.fn(),
 }));
 
 // Mock config
@@ -25,7 +26,7 @@ describe('useOAuthFlow', () => {
     vi.clearAllMocks();
     // Mock window.location
     Object.defineProperty(window, 'location', {
-      value: { href: '' },
+      value: { href: '', origin: 'http://localhost:3000' },
       writable: true,
     });
   });

@@ -30,7 +30,7 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 
 ## Tech Stack
 
-React 18, TypeScript (strict), Vite, Tailwind CSS, Zustand, Vitest, Playwright, Storybook
+Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS 4, Zustand, Vitest, Playwright, Storybook
 
 ---
 
@@ -84,16 +84,19 @@ src/
     - **Mocking**: Use MSW (Mock Service Worker) for network isolation during tests. Do NOT hit real GitHub API in CI.
     - **Coverage**: One E2E spec per User Story Acceptance Criteria set.
 
+### 1.5 Authentication
+GitHub OAuth 2.0 with PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+
 ## 2. Milestone Architectural Plans
 
 ### Milestone 1: SPA Foundation
 **Goal**: Establish the app shell and GitHub Data integration.
 - **Scaffolding Needs**:
   - `src/api/github-client.ts`: The central HTTP/Rest adapter.
-  - `src/features/auth`: State machine for PAT handling.
+  - `src/features/auth`: OAuth + PAT authentication.
   - `src/features/pr`: Dashboard and Navigation logic.
   - `src/features/diff`: Basic "Unified Hacker View" renderer.
-- **Critical Assumption**: We are building a **React SPA**. Routing is handled by `react-router-dom` (or simple conditional rendering if the scope remains small, but Router is better for deeplinking in the future). *Decision: Use React Router.*
+- **Framework**: Next.js 15 with App Router. Pages in `src/app/`, API routes in `src/app/api/`.
 
 ### Milestone 2: Comments Engine
 **Goal**: Inline commenting system.

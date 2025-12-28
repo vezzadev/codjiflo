@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   generateCodeVerifier,
   generateCodeChallenge,
@@ -6,7 +6,43 @@ import {
   storeOAuthState,
   retrieveOAuthState,
   OAUTH_STORAGE_KEYS,
+  storeReturnOrigin,
+  retrieveReturnOrigin,
+  storeTokenTransfer,
+  retrieveTokenTransfer,
 } from './pkce';
+
+// Mock document.cookie for testing
+let mockCookies: Record<string, string> = {};
+
+const mockCookieGetter = vi.fn(() => {
+  return Object.entries(mockCookies)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('; ');
+});
+
+const mockCookieSetter = vi.fn((value: string) => {
+  const [cookiePart] = value.split(';');
+  if (!cookiePart) return;
+
+  const [name, val] = cookiePart.split('=');
+  if (!name) return;
+
+  const decodedName = decodeURIComponent(name);
+
+  if (value.includes('max-age=0')) {
+    // Use Reflect.deleteProperty to avoid eslint no-dynamic-delete error
+    Reflect.deleteProperty(mockCookies, decodedName);
+  } else {
+    mockCookies[decodedName] = decodeURIComponent(val ?? '');
+  }
+});
+
+Object.defineProperty(document, 'cookie', {
+  get: mockCookieGetter,
+  set: mockCookieSetter,
+  configurable: true,
+});
 
 describe('PKCE utilities', () => {
   describe('generateCodeVerifier', () => {
@@ -63,22 +99,23 @@ describe('PKCE utilities', () => {
     });
   });
 
-  describe('OAuth state storage', () => {
+  describe('OAuth state storage (cookies)', () => {
     beforeEach(() => {
-      sessionStorage.clear();
+      mockCookies = {};
+      vi.clearAllMocks();
     });
 
-    it('stores OAuth state in sessionStorage', () => {
+    it('stores OAuth state in cookies', () => {
       const codeVerifier = 'test-verifier';
       const state = 'test-state';
 
       storeOAuthState(codeVerifier, state);
 
-      expect(sessionStorage.getItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER)).toBe(codeVerifier);
-      expect(sessionStorage.getItem(OAUTH_STORAGE_KEYS.STATE)).toBe(state);
+      expect(mockCookies[OAUTH_STORAGE_KEYS.CODE_VERIFIER]).toBe(codeVerifier);
+      expect(mockCookies[OAUTH_STORAGE_KEYS.STATE]).toBe(state);
     });
 
-    it('retrieves and clears OAuth state from sessionStorage', () => {
+    it('retrieves and clears OAuth state from cookies', () => {
       const codeVerifier = 'test-verifier';
       const state = 'test-state';
 
@@ -86,8 +123,8 @@ describe('PKCE utilities', () => {
       const retrieved = retrieveOAuthState();
 
       expect(retrieved).toEqual({ codeVerifier, state });
-      expect(sessionStorage.getItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER)).toBeNull();
-      expect(sessionStorage.getItem(OAUTH_STORAGE_KEYS.STATE)).toBeNull();
+      expect(mockCookies[OAUTH_STORAGE_KEYS.CODE_VERIFIER]).toBeUndefined();
+      expect(mockCookies[OAUTH_STORAGE_KEYS.STATE]).toBeUndefined();
     });
 
     it('returns null when OAuth state is not stored', () => {
@@ -96,15 +133,110 @@ describe('PKCE utilities', () => {
     });
 
     it('returns null when only code verifier is stored', () => {
-      sessionStorage.setItem(OAUTH_STORAGE_KEYS.CODE_VERIFIER, 'test');
+      mockCookies[OAUTH_STORAGE_KEYS.CODE_VERIFIER] = 'test';
       const retrieved = retrieveOAuthState();
       expect(retrieved).toBeNull();
     });
 
     it('returns null when only state is stored', () => {
-      sessionStorage.setItem(OAUTH_STORAGE_KEYS.STATE, 'test');
+      mockCookies[OAUTH_STORAGE_KEYS.STATE] = 'test';
       const retrieved = retrieveOAuthState();
       expect(retrieved).toBeNull();
+    });
+  });
+
+  describe('Return origin storage', () => {
+    beforeEach(() => {
+      mockCookies = {};
+      vi.clearAllMocks();
+    });
+
+    it('stores return origin in cookie', () => {
+      const origin = 'https://pr-123.codjiflo.vza.net';
+
+      storeReturnOrigin(origin);
+
+      expect(mockCookies[OAUTH_STORAGE_KEYS.RETURN_ORIGIN]).toBe(origin);
+    });
+
+    it('retrieves and clears return origin', () => {
+      const origin = 'https://pr-123.codjiflo.vza.net';
+
+      storeReturnOrigin(origin);
+      const retrieved = retrieveReturnOrigin();
+
+      expect(retrieved).toBe(origin);
+      expect(mockCookies[OAUTH_STORAGE_KEYS.RETURN_ORIGIN]).toBeUndefined();
+    });
+
+    it('returns null when no return origin is stored', () => {
+      const retrieved = retrieveReturnOrigin();
+      expect(retrieved).toBeNull();
+    });
+  });
+
+  describe('Token transfer storage', () => {
+    beforeEach(() => {
+      mockCookies = {};
+      vi.clearAllMocks();
+    });
+
+    it('stores token transfer data in cookie (base64 encoded)', () => {
+      const tokenData = {
+        accessToken: 'gho_test123',
+        refreshToken: 'ghr_refresh456',
+        expiresAt: 1234567890000,
+      };
+
+      storeTokenTransfer(tokenData);
+
+      const storedValue = mockCookies[OAUTH_STORAGE_KEYS.TOKEN_TRANSFER];
+      expect(storedValue).toBeDefined();
+      // Verify it's base64 encoded
+      const decoded = JSON.parse(atob(storedValue ?? '')) as typeof tokenData;
+      expect(decoded).toEqual(tokenData);
+    });
+
+    it('retrieves and clears token transfer data', () => {
+      const tokenData = {
+        accessToken: 'gho_test123',
+        refreshToken: 'ghr_refresh456',
+        expiresAt: 1234567890000,
+      };
+
+      storeTokenTransfer(tokenData);
+      const retrieved = retrieveTokenTransfer();
+
+      expect(retrieved).toEqual(tokenData);
+      expect(mockCookies[OAUTH_STORAGE_KEYS.TOKEN_TRANSFER]).toBeUndefined();
+    });
+
+    it('handles token data without optional fields', () => {
+      const tokenData = {
+        accessToken: 'gho_test123',
+      };
+
+      storeTokenTransfer(tokenData);
+      const retrieved = retrieveTokenTransfer();
+
+      expect(retrieved).toEqual(tokenData);
+    });
+
+    it('returns null when no token transfer data is stored', () => {
+      const retrieved = retrieveTokenTransfer();
+      expect(retrieved).toBeNull();
+    });
+
+    it('returns null and logs error for invalid base64 data', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+
+      mockCookies[OAUTH_STORAGE_KEYS.TOKEN_TRANSFER] = 'not-valid-base64!!!';
+      const retrieved = retrieveTokenTransfer();
+
+      expect(retrieved).toBeNull();
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to decode token transfer data');
+
+      consoleSpy.mockRestore();
     });
   });
 });

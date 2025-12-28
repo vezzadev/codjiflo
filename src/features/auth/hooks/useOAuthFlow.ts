@@ -4,6 +4,7 @@ import {
   generateCodeChallenge,
   generateState,
   storeOAuthState,
+  storeReturnOrigin,
 } from '../utils/pkce';
 import { buildAuthorizationUrl } from '../config';
 
@@ -27,6 +28,9 @@ export function useOAuthFlow() {
 
       // Store state for callback verification
       storeOAuthState(codeVerifier, state);
+
+      // Store return origin for post-auth redirect (enables PR preview auth)
+      storeReturnOrigin(window.location.origin);
 
       // Build authorization URL and redirect
       const authUrl = buildAuthorizationUrl(state, codeChallenge);

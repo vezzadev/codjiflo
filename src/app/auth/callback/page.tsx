@@ -3,7 +3,21 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
-import { retrieveOAuthState } from '@/features/auth/utils/pkce';
+import {
+  retrieveOAuthState,
+  retrieveReturnOrigin,
+  storeTokenTransfer,
+  isValidReturnOrigin,
+} from '@/features/auth/utils/pkce';
+import { oauthConfig } from '@/features/auth/config';
+
+interface TokenResponse {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  error?: string;
+  error_description?: string;
+}
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -44,13 +58,78 @@ function OAuthCallbackContent() {
         return;
       }
 
+      // Check if we need to redirect to a different origin (PR preview subdomain)
+      const returnOrigin = retrieveReturnOrigin();
+      const currentOrigin = window.location.origin;
+      const needsCrossOriginRedirect = returnOrigin && returnOrigin !== currentOrigin;
+
+      // Validate return origin to prevent open redirect attacks
+      if (needsCrossOriginRedirect && !isValidReturnOrigin(returnOrigin)) {
+        console.error('Invalid return origin:', returnOrigin);
+        setError('Invalid redirect destination. Please try logging in again.');
+        setIsProcessing(false);
+        return;
+      }
+
       try {
-        const success = await handleOAuthCallback(code, storedState.codeVerifier);
-        if (success) {
-          router.replace('/dashboard');
+        if (needsCrossOriginRedirect) {
+          // Cross-origin flow: exchange token here, then redirect with token in cookie
+          const response = await fetch('/api/auth/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              code,
+              code_verifier: storedState.codeVerifier,
+            }),
+          });
+
+          // Check HTTP status before parsing JSON
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => '');
+            console.error('Token endpoint error:', response.status, errorText);
+            setError(`Authentication failed (HTTP ${String(response.status)})`);
+            setIsProcessing(false);
+            return;
+          }
+
+          const data = (await response.json()) as TokenResponse;
+
+          if (data.error) {
+            setError(data.error_description ?? data.error);
+            setIsProcessing(false);
+            return;
+          }
+
+          if (!data.access_token) {
+            setError('No access token received');
+            setIsProcessing(false);
+            return;
+          }
+
+          // Calculate expiry
+          const expiresIn = data.expires_in ?? oauthConfig.defaultTokenExpirySeconds;
+          const expiresAt = Date.now() + expiresIn * 1000;
+
+          // Store tokens in transfer cookie for cross-origin pickup
+          storeTokenTransfer({
+            accessToken: data.access_token,
+            ...(data.refresh_token && { refreshToken: data.refresh_token }),
+            expiresAt,
+          });
+
+          // Redirect to return origin's landing page
+          window.location.href = `${returnOrigin}/auth/landing`;
         } else {
-          setError('Failed to complete authentication');
-          setIsProcessing(false);
+          // Same-origin flow: use existing store method
+          const success = await handleOAuthCallback(code, storedState.codeVerifier);
+          if (success) {
+            router.replace('/dashboard');
+          } else {
+            setError('Failed to complete authentication');
+            setIsProcessing(false);
+          }
         }
       } catch (err) {
         console.error('OAuth callback error:', err);
