@@ -64,7 +64,6 @@ export function SideBySideDiffView({
   onChangeDraftBody,
   onSubmitDraft,
 }: SideBySideDiffViewProps) {
-  void _filename; // explicitly mark as intentionally unused
   const leftPaneRef = useRef<HTMLDivElement>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
