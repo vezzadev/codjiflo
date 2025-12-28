@@ -3,7 +3,7 @@
  * Provides a Promise-based API for diff computations
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { ParsedDiffLine, WordDiffSegment } from '../types';
 import type {
   DiffWorkerRequest,
@@ -32,9 +32,6 @@ interface UseDiffWorkerReturn {
 
   /** Compute alignment for side-by-side view */
   computeAlignment: (diffLines: ParsedDiffLine[]) => Promise<AlignedDiffPair[]>;
-
-  /** Whether the worker is ready */
-  isReady: boolean;
 }
 
 /** Request timeout in milliseconds */
@@ -51,7 +48,6 @@ function generateRequestId(): string {
  */
 let sharedWorker: Worker | null = null;
 const sharedPendingRequests = new Map<string, PendingRequest>();
-let sharedIsReady = false;
 let sharedListenerCount = 0;
 
 function getOrCreateWorker(): Worker {
@@ -64,8 +60,8 @@ function getOrCreateWorker(): Worker {
     sharedWorker.onmessage = (event: MessageEvent<DiffWorkerResponse | { type: 'READY' }>) => {
       const data = event.data;
 
+      // Ignore READY message (used for initialization signaling)
       if ('type' in data && data.type === 'READY') {
-        sharedIsReady = true;
         return;
       }
 
@@ -103,7 +99,6 @@ function terminateWorkerIfUnused(): void {
   if (sharedListenerCount === 0 && sharedWorker) {
     sharedWorker.terminate();
     sharedWorker = null;
-    sharedIsReady = false;
     sharedPendingRequests.clear();
   }
 }
@@ -137,15 +132,10 @@ function sendRequest<T>(request: DiffWorkerRequest): Promise<T> {
  * The worker is shared across all hook consumers and terminated when unused
  */
 export function useDiffWorker(): UseDiffWorkerReturn {
-  const isReadyRef = useRef(sharedIsReady);
-
   useEffect(() => {
     // Ensure worker is created
     getOrCreateWorker();
     sharedListenerCount++;
-
-    // Update ready state
-    isReadyRef.current = sharedIsReady;
 
     return () => {
       sharedListenerCount--;
@@ -207,6 +197,5 @@ export function useDiffWorker(): UseDiffWorkerReturn {
     computeLineDiff,
     computeWordDiff,
     computeAlignment,
-    isReady: isReadyRef.current,
   };
 }
