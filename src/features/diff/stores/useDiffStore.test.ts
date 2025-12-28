@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from './useDiffStore';
 import { FileChangeStatus } from '@/api/types';
-import { DiffViewMode, DiffContentFilter, DiffDisplayMode } from '../types';
+import { DiffViewMode, DiffContentFilter, DiffDisplayMode, WhitespaceBehavior } from '../types';
 import * as api from '@/api';
 
 // Store mock reference outside to avoid unbound-method warning
 let mockGetFiles: Mock;
+let mockGetFileContent: Mock;
 
 // Mock the API
 vi.mock('@/api', () => {
   const getFilesFn = vi.fn();
+  const getFileContentFn = vi.fn();
   return {
     githubBackends: {
       review: {
@@ -17,6 +19,7 @@ vi.mock('@/api', () => {
       },
       file: {
         getFiles: getFilesFn,
+        getFileContent: getFileContentFn,
       },
     },
     GitHubAPIError: class GitHubAPIError extends Error {
@@ -59,6 +62,8 @@ describe('useDiffStore', () => {
   beforeEach(() => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     mockGetFiles = api.githubBackends.file.getFiles as Mock;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    mockGetFileContent = api.githubBackends.file.getFileContent as Mock;
     useDiffStore.setState({
       files: [],
       selectedFileIndex: PR_DESCRIPTION_INDEX,
@@ -67,6 +72,8 @@ describe('useDiffStore', () => {
       viewMode: DiffViewMode.Inline,
       contentFilter: DiffContentFilter.Both,
       displayMode: DiffDisplayMode.ChangesOnly,
+      whitespace: WhitespaceBehavior.None,
+      fileContentCache: new Map(),
     });
     vi.clearAllMocks();
   });
@@ -256,6 +263,58 @@ describe('useDiffStore', () => {
       useDiffStore.getState().setDisplayMode(DiffDisplayMode.FullFile);
 
       expect(useDiffStore.getState().displayMode).toBe(DiffDisplayMode.FullFile);
+    });
+
+    it('sets whitespace to Ignore', () => {
+      useDiffStore.getState().setWhitespace(WhitespaceBehavior.Ignore);
+
+      expect(useDiffStore.getState().whitespace).toBe(WhitespaceBehavior.Ignore);
+    });
+
+    it('sets whitespace to None', () => {
+      useDiffStore.getState().setWhitespace(WhitespaceBehavior.None);
+
+      expect(useDiffStore.getState().whitespace).toBe(WhitespaceBehavior.None);
+    });
+  });
+
+  describe('full file content', () => {
+    beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      mockGetFileContent = api.githubBackends.file.getFileContent as Mock;
+    });
+
+    it('loads and caches file content', async () => {
+      mockGetFileContent.mockResolvedValue('file content');
+
+      await useDiffStore
+        .getState()
+        .loadFullFileContent('owner', 'repo', 'file.ts', 'base123', 'head456');
+
+      expect(mockGetFileContent).toHaveBeenCalledTimes(2); // base and head
+      expect(mockGetFileContent).toHaveBeenCalledWith('owner', 'repo', 'file.ts', 'base123');
+      expect(mockGetFileContent).toHaveBeenCalledWith('owner', 'repo', 'file.ts', 'head456');
+
+      const cache = useDiffStore.getState().fileContentCache;
+      expect(cache.has('file.ts:base123:head456')).toBe(true);
+    });
+
+    it('uses cached content on second call', async () => {
+      mockGetFileContent.mockResolvedValue('file content');
+
+      // First call
+      await useDiffStore
+        .getState()
+        .loadFullFileContent('owner', 'repo', 'file.ts', 'base123', 'head456');
+
+      const callCount = mockGetFileContent.mock.calls.length;
+
+      // Second call - should use cache
+      await useDiffStore
+        .getState()
+        .loadFullFileContent('owner', 'repo', 'file.ts', 'base123', 'head456');
+
+      expect(mockGetFileContent.mock.calls.length).toBe(callCount); // No additional calls
     });
   });
 

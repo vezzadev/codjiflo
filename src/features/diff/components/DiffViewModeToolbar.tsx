@@ -1,13 +1,14 @@
 import { useDiffStore } from '../stores';
-import { DiffViewMode, DiffContentFilter, DiffDisplayMode } from '../types';
+import { DiffViewMode, DiffContentFilter, DiffDisplayMode, WhitespaceBehavior } from '../types';
 
 /**
  * Toolbar for switching diff view modes
  * Implements S-3.3: View Mode Toggle Buttons
+ * Implements S-3.7: Toggle Whitespace
  * AC-3.3.1 through AC-3.3.16
  */
 export function DiffViewModeToolbar() {
-  const { viewMode, contentFilter, displayMode, setViewMode, setContentFilter, setDisplayMode } =
+  const { viewMode, contentFilter, displayMode, whitespace, setViewMode, setContentFilter, setDisplayMode, setWhitespace } =
     useDiffStore();
 
   return (
@@ -128,6 +129,22 @@ export function DiffViewModeToolbar() {
             Full File
           </button>
         </div>
+      </div>
+
+      {/* S-3.7: Whitespace Toggle */}
+      <div className="flex items-center gap-2" role="group" aria-label="Whitespace handling">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={whitespace === WhitespaceBehavior.Ignore}
+            onChange={(e) =>
+              setWhitespace(e.target.checked ? WhitespaceBehavior.Ignore : WhitespaceBehavior.None)
+            }
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            aria-label="Ignore whitespace changes"
+          />
+          <span className="text-sm font-medium text-gray-700">Ignore Whitespace</span>
+        </label>
       </div>
     </div>
   );

@@ -27,13 +27,31 @@ export enum DiffContentFilter {
 }
 
 /**
- * Display mode for file content
+ * Display mode for file content - S-3.1
  * ChangesOnly: Show only changed hunks (default)
  * FullFile: Show complete file content
  */
 export enum DiffDisplayMode {
   ChangesOnly = 'changes_only',
   FullFile = 'full_file',
+}
+
+/**
+ * Whitespace behavior - S-3.7
+ */
+export enum WhitespaceBehavior {
+  None = 'none',
+  Ignore = 'ignore',
+}
+
+/**
+ * Full file content cache entry - S-3.1 AC-3.1.2
+ */
+export interface FileContentCache {
+  baseContent: string;
+  headContent: string;
+  baseSha: string;
+  headSha: string;
 }
 
 export interface DiffState {
@@ -44,13 +62,23 @@ export interface DiffState {
   viewMode: DiffViewMode;
   contentFilter: DiffContentFilter;
   displayMode: DiffDisplayMode;
+  whitespace: WhitespaceBehavior;
+  fileContentCache: Map<string, FileContentCache>;
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
+  loadFullFileContent: (
+    owner: string,
+    repo: string,
+    filename: string,
+    baseSha: string,
+    headSha: string
+  ) => Promise<void>;
   selectFile: (index: number) => void;
   selectNextFile: () => void;
   selectPreviousFile: () => void;
   setViewMode: (mode: DiffViewMode) => void;
   setContentFilter: (filter: DiffContentFilter) => void;
   setDisplayMode: (mode: DiffDisplayMode) => void;
+  setWhitespace: (behavior: WhitespaceBehavior) => void;
   reset: () => void;
 }
 
