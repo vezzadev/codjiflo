@@ -3,10 +3,23 @@ import { render, screen, fireEvent, waitFor } from '@/tests/helpers';
 import { DiffView } from './DiffView';
 import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
+import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
 
 vi.mock('../stores', () => ({
   useDiffStore: vi.fn(),
+  PR_DESCRIPTION_INDEX: -1,
+}));
+
+vi.mock('@/features/pr', () => ({
+  usePRStore: vi.fn(),
+}));
+
+vi.mock('@/features/pr/components', () => ({
+  PRMetadata: ({ pr }: { pr: { title: string } }) => <div data-testid="pr-metadata">{pr.title}</div>,
+  PRDescription: ({ description }: { description: string }) => (
+    <div data-testid="pr-description">{description || 'No description'}</div>
+  ),
 }));
 
 vi.mock('@/features/comments', async () => {
@@ -35,6 +48,10 @@ describe('DiffView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useCommentsStore).mockReturnValue(mockDefaultCommentsState);
+    vi.mocked(usePRStore).mockReturnValue({
+      currentPR: null,
+      isLoading: false,
+    });
   });
 
   it('shows loading state', () => {
@@ -423,5 +440,71 @@ describe('DiffView', () => {
     expect(clearAnnouncement).toHaveBeenCalled();
 
     vi.useRealTimers();
+  });
+
+  describe('PR Description view', () => {
+    it('displays PR metadata and description when PR description is selected', () => {
+      vi.mocked(useDiffStore).mockReturnValue({
+        files: [],
+        selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
+        isLoading: false,
+      });
+
+      vi.mocked(usePRStore).mockReturnValue({
+        currentPR: {
+          id: 1,
+          number: 123,
+          title: 'Test PR Title',
+          description: 'Test PR description content',
+          state: 'open',
+          author: { id: 'user-1', displayName: 'testuser', avatarUrl: 'https://example.com/avatar.png' },
+          sourceBranch: 'feature/test',
+          targetBranch: 'main',
+          htmlUrl: 'https://github.com/test/repo/pull/123',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-02'),
+        },
+        isLoading: false,
+      });
+
+      render(<DiffView />);
+
+      expect(screen.getByTestId('pr-metadata')).toHaveTextContent('Test PR Title');
+      expect(screen.getByTestId('pr-description')).toHaveTextContent('Test PR description content');
+    });
+
+    it('shows loading state when PR is loading and description is selected', () => {
+      vi.mocked(useDiffStore).mockReturnValue({
+        files: [],
+        selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
+        isLoading: false,
+      });
+
+      vi.mocked(usePRStore).mockReturnValue({
+        currentPR: null,
+        isLoading: true,
+      });
+
+      render(<DiffView />);
+
+      expect(screen.getByRole('status', { name: /Loading diff/i })).toBeInTheDocument();
+    });
+
+    it('shows fallback message when currentPR is null', () => {
+      vi.mocked(useDiffStore).mockReturnValue({
+        files: [],
+        selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
+        isLoading: false,
+      });
+
+      vi.mocked(usePRStore).mockReturnValue({
+        currentPR: null,
+        isLoading: false,
+      });
+
+      render(<DiffView />);
+
+      expect(screen.getByText(/No PR data available/i)).toBeInTheDocument();
+    });
   });
 });

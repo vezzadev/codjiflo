@@ -7,6 +7,7 @@ import { FileChangeStatus } from '@/api/types';
 
 vi.mock('../stores', () => ({
   useDiffStore: vi.fn(),
+  PR_DESCRIPTION_INDEX: -1,
 }));
 
 describe('FileList', () => {
@@ -45,10 +46,10 @@ describe('FileList', () => {
     expect(screen.getByText('Failed to load files')).toBeInTheDocument();
   });
 
-  it('shows empty state when no files', () => {
+  it('shows PR description entry even when no files', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       files: [],
-      selectedFileIndex: 0,
+      selectedFileIndex: -1,
       selectFile: mockSelectFile,
       isLoading: false,
       error: null,
@@ -56,7 +57,8 @@ describe('FileList', () => {
 
     render(<FileList />);
 
-    expect(screen.getByText('No files changed')).toBeInTheDocument();
+    // PR description entry should always be visible
+    expect(screen.getByText('Pull Request Description')).toBeInTheDocument();
   });
 
   it('renders file list', () => {
@@ -96,5 +98,24 @@ describe('FileList', () => {
     await user.click(screen.getByText('file2.ts'));
 
     expect(mockSelectFile).toHaveBeenCalledWith(1);
+  });
+
+  it('calls selectFile with PR_DESCRIPTION_INDEX when PR description is clicked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useDiffStore).mockReturnValue({
+      files: [
+        { filename: 'file1.ts', status: FileChangeStatus.Added, additions: 10, deletions: 0, changes: 10, patch: '' },
+      ],
+      selectedFileIndex: 0,
+      selectFile: mockSelectFile,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<FileList />);
+
+    await user.click(screen.getByText('Pull Request Description'));
+
+    expect(mockSelectFile).toHaveBeenCalledWith(-1); // PR_DESCRIPTION_INDEX
   });
 });

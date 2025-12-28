@@ -1,6 +1,7 @@
-import { useDiffStore } from '../stores';
+import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
+import { cn } from '@/utils/cn';
 
 /**
  * List of changed files in the PR
@@ -30,18 +31,37 @@ export function FileList() {
     );
   }
 
-  if (files.length === 0) {
-    return (
-      <div className="p-4 text-gray-500 text-center">
-        No files changed
-      </div>
-    );
-  }
+  const isDescriptionSelected = selectedFileIndex === PR_DESCRIPTION_INDEX;
 
   return (
     <nav aria-label="Changed files">
       {/* AC-1.3.7: File list is keyboard navigable */}
       <ul role="list" className="divide-y divide-gray-200">
+        {/* PR Description entry */}
+        <li>
+          <button
+            onClick={() => selectFile(PR_DESCRIPTION_INDEX)}
+            type="button"
+            aria-current={isDescriptionSelected ? 'location' : undefined}
+            aria-label="Pull Request Description"
+            className={cn(
+              'w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500',
+              isDescriptionSelected && 'bg-blue-50 border-l-4 border-blue-600'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className="flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-gray-600 bg-gray-100"
+                aria-hidden="true"
+              >
+                PR
+              </span>
+              <span className="flex-1 text-sm font-medium">
+                Pull Request Description
+              </span>
+            </div>
+          </button>
+        </li>
         {files.map((file, index) => (
           <FileListItem
             key={file.filename}

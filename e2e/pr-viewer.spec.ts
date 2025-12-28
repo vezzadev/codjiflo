@@ -144,6 +144,69 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     }
   });
 
+  test("PR Description is shown as first entry in file list", async ({ page }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+
+    // Wait for page to load
+    await page.waitForLoadState("networkidle");
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible({ timeout: 30000 });
+
+    // PR Description should be the first entry in the file list
+    const prDescButton = fileNav.getByRole("button", { name: /Pull Request Description/i });
+    await expect(prDescButton).toBeVisible({ timeout: 10000 });
+
+    // PR Description should be selected by default
+    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+
+    if (isMockMode()) {
+      // Main panel should show the PR title and metadata
+      await expect(page.getByRole("heading", { level: 1, name: /Add new feature: Button component/i })).toBeVisible();
+      // Description content should be visible (rendered as markdown)
+      await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
+    } else {
+      // Real mode: verify PR title heading exists
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30000 });
+    }
+  });
+
+  test("Clicking file switches from PR Description to diff view", async ({ page }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+
+    // Wait for page to load
+    await page.waitForLoadState("networkidle");
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible({ timeout: 30000 });
+
+    // Verify PR Description is selected initially
+    const prDescButton = fileNav.getByRole("button", { name: /Pull Request Description/i });
+    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+
+    if (isMockMode()) {
+      // Click on a file to switch to diff view
+      await fileNav.getByText("src/components/Button.tsx").click();
+
+      // Diff view should show the file header
+      await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
+
+      // PR Description should no longer be selected
+      await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+    } else {
+      // Real mode: click first actual file
+      const fileButtons = fileNav.getByRole("button");
+      const allButtons = await fileButtons.all();
+      if (allButtons.length > 1) {
+        await allButtons[1]?.click();
+        // PR Description should no longer be selected
+        await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+      }
+    }
+  });
+
   test("File list displays correctly", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
@@ -152,11 +215,14 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.waitForLoadState("networkidle");
 
     if (isMockMode()) {
-      // Wait for specific mock file
+      // Click on a file first to show the diff (PR description is default)
+      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+      await fileNav.getByText("src/components/Button.tsx").click();
+
+      // Wait for specific mock file header
       await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible({ timeout: 20000 });
 
       // [S-1.3] Wait for files to load
-      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
       await expect(fileNav.getByText("src/components/Button.tsx")).toBeVisible({ timeout: 10000 });
       await expect(fileNav.getByText("src/index.ts")).toBeVisible({ timeout: 5000 });
       await expect(fileNav.getByText("src/old-file.ts")).toBeVisible({ timeout: 5000 });
@@ -175,16 +241,35 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
 
-    // [S-1.4] First file should be selected by default
-    const diffRegion = page.getByRole("region", { name: /Diff content/i });
-    await expect(diffRegion).toBeVisible({ timeout: 30000 });
+    // Wait for page to load
+    await page.waitForLoadState("networkidle");
+
+    // PR Description is now the default selection, so click a file first
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible({ timeout: 30000 });
 
     if (isMockMode()) {
+      // Click on a file to show diff
+      await fileNav.getByText("src/components/Button.tsx").click();
+
+      // [S-1.4] Diff region should be visible
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible({ timeout: 30000 });
+
       // Wait for content to load - check the diff view heading
       await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
 
       // [AC-1.4.1] Code is displayed
       await expect(page.getByText(/import React from/)).toBeVisible();
+    } else {
+      // Real mode: click first actual file
+      const fileButtons = fileNav.getByRole("button");
+      const allButtons = await fileButtons.all();
+      if (allButtons.length > 1) {
+        await allButtons[1]?.click();
+        const diffRegion = page.getByRole("region", { name: /Diff content/i });
+        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+      }
     }
   });
 
@@ -205,37 +290,37 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible({ timeout: 30000 });
 
-    // Wait for at least 2 files to be visible
+    // Wait for at least 2 buttons to be visible (PR description + at least 1 file)
     const fileButtons = fileNav.getByRole("button");
     await expect(fileButtons.first()).toBeVisible({ timeout: 15000 });
 
-    // Get all file buttons and verify we have at least 2
+    // Get all file buttons and verify we have at least 2 (PR description + 1 file)
     const allButtons = await fileButtons.all();
     if (allButtons.length < 2) {
-      test.skip(true, "PR needs at least 2 files for keyboard navigation test");
+      test.skip(true, "PR needs at least 1 file for keyboard navigation test");
       return;
     }
 
-    // First file should be selected
-    const firstFile = fileButtons.first();
-    await expect(firstFile).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    // PR Description (first button) should be selected by default
+    const prDescButton = fileButtons.first();
+    await expect(prDescButton).toHaveAttribute("aria-current", "location", { timeout: 15000 });
 
     // Focus on the page body to ensure keyboard events work
     await page.locator("body").click();
     await page.waitForTimeout(500); // Give time for focus to settle
 
-    // [AC-1.5.1] Press j to go to next file
+    // [AC-1.5.1] Press j to go to first file
     await page.keyboard.press("j");
     await page.waitForTimeout(200); // Small delay for state update
 
-    // Second file should be selected
-    const secondFile = fileButtons.nth(1);
-    await expect(secondFile).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    // First file (second button) should be selected
+    const firstFile = fileButtons.nth(1);
+    await expect(firstFile).toHaveAttribute("aria-current", "location", { timeout: 15000 });
 
-    // [AC-1.5.1] Press k to go to previous file
+    // [AC-1.5.1] Press k to go back to PR Description
     await page.keyboard.press("k");
     await page.waitForTimeout(200); // Small delay for state update
-    await expect(firstFile).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    await expect(prDescButton).toHaveAttribute("aria-current", "location", { timeout: 15000 });
   });
 
   test("Shortcuts modal opens with ? button", async ({ page }) => {
