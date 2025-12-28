@@ -193,6 +193,143 @@ When a file is renamed, the artifact stores both paths: the old path at the left
 
 ---
 
+## Storage Architecture
+
+### Overview
+
+CodjiFlo uses a **GitHub Action + Artifact** approach to store iteration data. No backend server is required. The GitHub repository itself becomes the source of truth for iteration history.
+
+```
+┌─────────────────┐   on: pull_request   ┌──────────────────┐
+│   GitHub Repo   │ ──────────────────►  │  GitHub Action   │
+│   (with workflow)                      │  (codjiflo.yml)  │
+└─────────────────┘                      └────────┬─────────┘
+                                                  │
+                     ┌────────────────────────────┼────────────────────────────┐
+                     │                            │                            │
+                     ▼                            ▼                            ▼
+              ┌─────────────┐           ┌─────────────────┐           ┌───────────────┐
+              │  Upload     │           │  Post/Update    │           │  Store file   │
+              │  SQLite     │           │  PR Comment     │           │  contents in  │
+              │  artifact   │           │  with artifact  │           │  artifact     │
+              └─────────────┘           │  reference      │           └───────────────┘
+                                        └─────────────────┘
+
+┌─────────────────┐                     ┌──────────────────┐
+│  CodjiFlo SPA   │ ─── reads ───────►  │  PR Comments     │
+│  (React)        │                     │  (find pointer)  │
+└────────┬────────┘                     └──────────────────┘
+         │
+         │ downloads
+         ▼
+┌─────────────────┐
+│  SQLite artifact│
+│  (iterations,   │
+│   file contents)│
+└─────────────────┘
+```
+
+### Why This Approach
+
+1. **No backend costs**: GitHub hosts everything (Actions, Artifacts, Comments)
+2. **Team sync**: PR comment is single source of truth for artifact reference
+3. **Force-push resilient**: Workflow event payload includes `before` SHA
+4. **Graceful degradation**: Repos without workflow get standard GitHub experience
+
+### Data Flow
+
+**On PR Event (GitHub Action):**
+1. Workflow triggers on `pull_request` events (opened, synchronize, reopened)
+2. Action downloads previous artifact (if exists)
+3. Captures `head_sha`, `base_sha`, `before` (from event payload)
+4. Fetches changed files content via GitHub API
+5. Appends new iteration to SQLite database
+6. Uploads updated SQLite as artifact
+7. Posts/updates PR comment with artifact reference
+
+**On Frontend Load:**
+1. Fetch PR comments via GitHub API
+2. Find comment with `<!-- codjiflo-data -->` marker
+3. Download SQLite artifact
+4. Load iterations from SQLite (client-side via SQL.js)
+5. SpanTrackers computed client-side
+
+**On Repo Without Workflow (Graceful Degradation):**
+1. No `<!-- codjiflo-data -->` comment found
+2. Show banner: "Install CodjiFlo workflow for iteration tracking"
+3. Fall back to GitHub API for current diff only
+
+### SQLite Schema
+
+```sql
+-- Iteration snapshots
+CREATE TABLE iterations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  revision INTEGER NOT NULL,           -- Sequential 1, 2, 3...
+  head_sha TEXT NOT NULL,
+  base_sha TEXT NOT NULL,
+  before_sha TEXT,                     -- For force-push tracking
+  author TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(revision)
+);
+
+-- File artifacts (tracks files across renames)
+CREATE TABLE file_artifacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  change_tracking_id TEXT NOT NULL UNIQUE
+);
+
+-- File paths per snapshot
+CREATE TABLE artifact_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artifact_id INTEGER REFERENCES file_artifacts(id),
+  snapshot_index INTEGER NOT NULL,     -- Even=left, Odd=right
+  file_path TEXT,
+  UNIQUE(artifact_id, snapshot_index)
+);
+
+-- File contents (the actual blobs)
+CREATE TABLE file_contents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artifact_id INTEGER REFERENCES file_artifacts(id),
+  snapshot_index INTEGER NOT NULL,
+  content TEXT,                        -- Full file content (NULL if binary)
+  content_hash TEXT,                   -- SHA256 for dedup
+  size_bytes INTEGER,
+  UNIQUE(artifact_id, snapshot_index)
+);
+
+-- Comment anchors (character-level precision)
+CREATE TABLE comment_anchors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artifact_id INTEGER REFERENCES file_artifacts(id),
+  left_snapshot_index INTEGER NOT NULL,
+  right_snapshot_index INTEGER NOT NULL,
+  line_start INTEGER NOT NULL,
+  line_end INTEGER NOT NULL,
+  column_start INTEGER,                -- Character-level (optional)
+  column_end INTEGER,
+  github_comment_id INTEGER,
+  created_at TEXT NOT NULL
+);
+```
+
+### Trade-offs
+
+| Trade-off | Mitigation |
+|-----------|------------|
+| 90-day artifact retention | Acceptable for active PRs |
+| Requires workflow install | Clear onboarding, one-click install |
+| Can't use on repos you don't control | Graceful degradation + future public repo hosting |
+| Artifact download latency | Cache in IndexedDB after first load |
+
+### Future: Public Repo Hosting
+
+High-value public repos (react, kubernetes, etc.) will be indexed by CodjiFlo infrastructure and made available to all users without workflow installation.
+
+---
+
 ## Platform Differences
 
 ### Azure DevOps (AzDO)
@@ -219,31 +356,36 @@ interface AzDOIteration extends Iteration {
 
 ### GitHub
 
+GitHub lacks native iteration support. CodjiFlo implements iterations via GitHub Action + Artifact (see Storage Architecture above).
+
 ```typescript
 interface GitHubIteration extends Iteration {
   commitSha: string;           // Git commit SHA
   baseSha: string;             // Base branch commit
-
-  // Limitations
-  commentPrecision: 'line';    // No character-level
+  beforeSha?: string;          // SHA before force-push (from workflow event)
 }
 ```
 
-**GitHub Limitations:**
-- Comments anchor to lines, not characters
-- Commit SHAs can change on force-push
-- No server-side iteration concept
-- Less precise tracking
+**GitHub with CodjiFlo Workflow:**
+- Full iteration tracking via artifact storage
+- Force-push resilient (before SHA captured)
+- Character-level comment anchors (stored in artifact)
+- Cross-iteration comparison
+
+**GitHub without Workflow (degraded):**
+- Current diff only
+- No iteration history
+- Standard GitHub comment anchoring (line-level)
 
 ### Capability Matrix
 
-| Feature | Azure DevOps | GitHub | GitLab |
-|---------|--------------|--------|--------|
-| Iteration ID stability | ✓ Server-assigned | ✗ Commit SHA | ✗ Commit SHA |
-| Character-level comments | ✓ | ✗ | ✗ |
-| Force-push handling | ✓ | ✗ (comments lost) | ✗ |
-| Create iteration | ✓ | ✗ (implicit) | ✗ |
-| Code coverage | ✓ | ✗ | ✗ |
+| Feature | Azure DevOps | GitHub + Workflow | GitHub (degraded) |
+|---------|--------------|-------------------|-------------------|
+| Iteration ID stability | ✓ Server-assigned | ✓ Artifact-stored | ✗ None |
+| Character-level comments | ✓ | ✓ (in artifact) | ✗ Line-level |
+| Force-push handling | ✓ | ✓ (before SHA) | ✗ Comments lost |
+| Cross-iteration compare | ✓ | ✓ | ✗ |
+| Requires setup | ✗ | Workflow install | ✗ |
 
 ---
 

@@ -111,9 +111,29 @@ src/
 ### 1.5 Authentication
 GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
+### 1.6 Iteration Storage (GitHub Action + Artifact)
+
+CodjiFlo tracks PR iterations using a **no-backend** approach:
+
+1. **GitHub Action** (`codjiflo/action`) runs on PR events
+2. Captures iteration data (commits, file contents) to **SQLite database**
+3. Uploads SQLite as **GitHub Artifact**
+4. Posts/updates **PR comment** with artifact reference (`<!-- codjiflo-data -->`)
+5. Frontend downloads artifact, parses with **SQL.js** (WASM)
+
+**Key benefits:**
+- No backend infrastructure costs
+- Force-push resilient (workflow captures `before` SHA)
+- Team sync via PR comment pointer
+- 90-day artifact retention (sufficient for active PRs)
+
+**Graceful degradation:** Repos without workflow get standard GitHub diff (no iteration tracking).
+
+See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
+
 ## 2. Milestone Architectural Plans
 
-### Milestone 1: SPA Foundation
+### [Milestone 1: SPA Foundation](spec/stories/milestone-1-spa-github-data.md)
 **Goal**: Establish the app shell and GitHub Data integration.
 - **Scaffolding Needs**:
   - `src/api/github-client.ts`: The central HTTP/Rest adapter.
@@ -122,7 +142,7 @@ GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR preview
   - `src/features/diff`: Basic "Unified Hacker View" renderer.
 - **Framework**: Next.js 15 with App Router. Pages in `src/app/`, API routes in `src/app/api/`.
 
-### Milestone 2: Comments Engine
+### [Milestone 2: Comments Engine](spec/stories/milestone-2-minimal-comments.md)
 **Goal**: Inline commenting system.
 - **Scaffolding Needs**:
   - `src/features/comments`:
@@ -130,30 +150,35 @@ GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR preview
     - `types.ts`: `ReviewComment` interface matching GitHub API.
 - **Constraint**: Comments must be mapped to `diff-line-index`. The logic for "which line does this belong to" belongs in a pure function/helper in `src/features/diff/utils`.
 
-### Milestone 3: Extension Bridge
-**Goal**: Inject into GitHub.
-- **Architecture**:
-  - **Content Script**: Independent entry point `src/extension/content.tsx`.
-  - **Shadow DOM**: The React App must be capable of mounting inside a `shadowRoot` to avoid style bleeding.
-  - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M3 uses direct API calls).
-- **Refactor Alert**: `App.tsx` might need to support a "Widget Mode" vs "Full Page Mode".
-
-### Milestone 4: Advanced Diffing
-**Goal**: Side-by-Side and Iterations.
+### [Milestone 3: Advanced Diffing](spec/stories/milestone-3-advanced-diff.md)
+**Goal**: Side-by-Side view, full file content, iteration tracking.
 - **Scaffolding Needs**:
-  - `src/workers/diff-worker.ts`: Offload heavy text comparison (Myers Diff Algorithm) to a Web Worker to keep UI responsive.
-  - `src/features/diff/components/SideBySideView.tsx`: new complex grid layout.
+  - `src/workers/diff-worker.ts`: Offload heavy text comparison (Myers Diff Algorithm) to a Web Worker.
+  - `src/features/diff/components/SideBySideView.tsx`: Side-by-side diff layout.
+  - `src/features/iterations/artifact-loader.ts`: Download and parse SQLite artifact.
+  - `src/lib/sqlite-wasm.ts`: SQL.js wrapper for browser SQLite reading.
+- **External Repos**:
+  - `codjiflo/action`: GitHub Action for iteration capture.
+  - `codjiflo/comment-action`: GitHub Action for PR comment updates.
 
-### Milestone 5: Canvas Layouts
+### [Milestone 4: Canvas Layouts](spec/stories/milestone-4-full-comments.md)
 **Goal**: Floating Bubbles (The "CodeFlow" feel).
 - **Architecture**:
   - **Layering**: Code View is Layer 0. SVG Connector Layer is Layer 1. Comment Cloud is Layer 2.
   - **Layout Engine**: `src/features/comments/layout-engine.ts`. A pure logic class that takes a list of comments + scroll position and returns X/Y coordinates for bubbles.
 
-### Milestone 6: Real-Time & Polish
+### [Milestone 5: Real-Time & Polish](spec/stories/milestone-5-remaining-features.md)
 **Goal**: Performance and Synchronization.
 - **Architecture**:
   - `src/api/realtime.ts`: A polling manager (Interval based) that checks `ETag` or `Last-Modified` headers to fetch delta updates.
+
+### [Milestone 6: Extension Bridge](spec/stories/milestone-6-browser-extension.md)
+**Goal**: Inject into GitHub.
+- **Architecture**:
+  - **Content Script**: Independent entry point `src/extension/content.tsx`.
+  - **Shadow DOM**: The React App must be capable of mounting inside a `shadowRoot` to avoid style bleeding.
+  - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M6 uses direct API calls).
+- **Refactor Alert**: `App.tsx` might need to support a "Widget Mode" vs "Full Page Mode".
 
 ## 3. General Agent Rules
 1.  **Do Not Delete Logic**: When refactoring, verify usage. Use "Find Usages".
