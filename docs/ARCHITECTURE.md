@@ -3,7 +3,7 @@
 ## Authentication
 
 ### Overview
-GitHub OAuth 2.0 with PKCE. Supports cross-subdomain auth for PR previews.
+GitHub App with OAuth 2.0 and PKCE (not a standalone OAuth App). Supports cross-subdomain auth for PR previews.
 
 ### Key Files
 | File | Purpose |
@@ -63,14 +63,27 @@ NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
 NEXT_PUBLIC_APP_URL = https://codjiflo.vza.net     # preview & prod
 ```
 
-### GitHub OAuth App Setup
-1. Go to https://github.com/settings/developers → "New OAuth App"
+### GitHub App Setup
+1. Go to https://github.com/settings/apps → "New GitHub App"
 2. Set Homepage URL: `https://codjiflo.vza.net`
-3. Add callback URLs:
+3. Under "Identifying and authorizing users", add callback URLs:
    - `http://localhost:3000/auth/callback` (local dev)
    - `https://codjiflo.vza.net/auth/callback` (production + PR previews)
-4. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
-5. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`
+4. Set required permissions (see table below)
+5. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
+6. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`
+
+### Required Permissions
+
+**Repository permissions:**
+| Permission | Access | Purpose |
+|------------|--------|---------|
+| Pull requests | Read & Write | View PRs, files, diffs; create/edit comments |
+| Contents | Read | View raw file contents for diffs |
+| Checks | Read | View CI status, code coverage results |
+| Deployments | Read | View deployment status for PRs |
+| Issues | Read | View linked issue titles, assignees |
+| Metadata | Read | Required for all GitHub Apps |
 
 ### Security Considerations
 - Return origin validated against `KNOWN_BASE_DOMAIN` to prevent open redirects
