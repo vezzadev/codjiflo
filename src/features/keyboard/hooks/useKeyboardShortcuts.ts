@@ -1,13 +1,16 @@
 import { useEffect, useCallback } from 'react';
 import { useDiffStore } from '@/features/diff';
+import { DiffViewMode } from '@/features/diff/types';
 
 /**
  * Global keyboard shortcuts hook
  * S-1.5: AC-1.5.1 through AC-1.5.3
+ * S-3.3: AC-3.3.4 (View mode keyboard shortcuts)
  */
 export function useKeyboardShortcuts() {
   const selectNextFile = useDiffStore((s) => s.selectNextFile);
   const selectPreviousFile = useDiffStore((s) => s.selectPreviousFile);
+  const setViewMode = useDiffStore((s) => s.setViewMode);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // AC-1.5.3: Don't trigger if user is in an input field
@@ -20,7 +23,7 @@ export function useKeyboardShortcuts() {
       return;
     }
 
-    switch (event.key) {
+    switch (event.key.toLowerCase()) {
       // AC-1.5.1: j = Next file
       case 'j':
         event.preventDefault();
@@ -42,8 +45,20 @@ export function useKeyboardShortcuts() {
         }
         break;
       }
+
+      // AC-3.3.4: u = Unified view
+      case 'u':
+        event.preventDefault();
+        setViewMode(DiffViewMode.Inline);
+        break;
+
+      // AC-3.3.4: s = Side-by-side view
+      case 's':
+        event.preventDefault();
+        setViewMode(DiffViewMode.SideBySide);
+        break;
     }
-  }, [selectNextFile, selectPreviousFile]);
+  }, [selectNextFile, selectPreviousFile, setViewMode]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -54,11 +69,14 @@ export function useKeyboardShortcuts() {
 /**
  * Returns list of available shortcuts for documentation
  * S-1.5: AC-1.5.4, AC-1.5.5
+ * S-3.3: AC-3.3.4
  */
 export function getShortcutsList(): { key: string; description: string }[] {
   return [
     { key: 'j', description: 'Next file' },
     { key: 'k', description: 'Previous file' },
     { key: 'Space', description: 'Scroll down in diff view' },
+    { key: 'u', description: 'Switch to Unified diff view' },
+    { key: 's', description: 'Switch to Side-by-side diff view' },
   ];
 }
