@@ -3,7 +3,7 @@
 ## Authentication
 
 ### Overview
-GitHub OAuth 2.0 with PKCE. Supports cross-subdomain auth for PR previews.
+GitHub App with OAuth 2.0 and PKCE (not a standalone OAuth App). Supports cross-subdomain auth for PR previews.
 
 ### Key Files
 | File | Purpose |
@@ -63,17 +63,65 @@ NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
 NEXT_PUBLIC_APP_URL = https://codjiflo.vza.net     # preview & prod
 ```
 
-### GitHub OAuth App Setup
-1. Go to https://github.com/settings/developers → "New OAuth App"
+### GitHub App Setup
+1. Go to https://github.com/settings/apps → "New GitHub App"
 2. Set Homepage URL: `https://codjiflo.vza.net`
-3. Add callback URLs:
+3. Under "Identifying and authorizing users", add callback URLs:
    - `http://localhost:3000/auth/callback` (local dev)
    - `https://codjiflo.vza.net/auth/callback` (production + PR previews)
-4. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
-5. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`
+4. Set required permissions (see table below)
+5. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
+6. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`
+
+### Required Permissions
+
+**Repository permissions:**
+| Permission | Access | Purpose |
+|------------|--------|---------|
+| Pull requests | Read & Write | View PRs, files, diffs; create/edit comments |
+| Contents | Read | View raw file contents for diffs |
+| Checks | Read | View CI status, code coverage results |
+| Deployments | Read | View deployment status for PRs |
+| Issues | Read | View linked issue titles, assignees |
+| Metadata | Read | Required for all GitHub Apps |
 
 ### Security Considerations
 - Return origin validated against `KNOWN_BASE_DOMAIN` to prevent open redirects
 - Token transfer cookie uses 1-min TTL and is cleared immediately after read
 - Base64 encoding is for transport only, not encryption
 - HTTP status checked before JSON parsing
+
+## E2E Testing
+
+### Overview
+E2E tests use Playwright and support two modes: mock (for local dev and PRs) and prod (for production validation).
+
+### Test Modes
+
+| Mode | Command | Target | GitHub API |
+|------|---------|--------|------------|
+| Mock | `npm run test:e2e` | `localhost:3000` | Mocked via Playwright routes |
+| Prod | `npm run test:e2e:prod` | `codjiflo.vza.net` | Real API with PAT |
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `e2e/fixtures/mode.ts` | Mode detection (`isMockMode()`, `isProdMode()`) |
+| `e2e/fixtures/github-mocks.ts` | Centralized mock handlers |
+| `playwright.config.ts` | Loads `.env.local`, configures baseURL per mode |
+
+### Environment Variables
+| Variable | Purpose |
+|----------|---------|
+| `E2E_DEPENDENCIES_MODE` | `mock` (default) or `prod` |
+| `CODJIFLO_E2E_GITHUB_TOKEN` | GitHub PAT for prod mode (needs `public_repo` scope) |
+
+### CI/CD Integration
+- **PR workflows:** `npm run test:e2e` (mock mode, fast, no external deps)
+- **Main branch:** Deploy → `npm run test:e2e:prod` (validates production)
+
+### Test Repository
+Prod mode tests use `pedropaulovc/codjiflo`:
+- PR #1 for valid PR tests
+- PR #6 for keyboard navigation tests
+- PR #0 for 404 error handling tests

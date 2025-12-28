@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { isMockMode } from "./fixtures/mode";
+import { setupAuthMock } from "./fixtures/github-mocks";
 
 test.describe("CodjiFlo App", () => {
   test("should redirect unauthenticated users to login", async ({ page }) => {
@@ -8,14 +10,8 @@ test.describe("CodjiFlo App", () => {
   });
 
   test("should show dashboard when authenticated", async ({ page }) => {
-    // Mock the GitHub API
-    await page.route("https://api.github.com/user", (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ login: "testuser", id: 1 }),
-      });
-    });
+    // Set up auth mock (only applies in mock mode)
+    await setupAuthMock(page);
 
     // Login first
     await page.goto("/login");
@@ -25,7 +21,13 @@ test.describe("CodjiFlo App", () => {
 
     const input = page.getByLabel(/Personal Access Token/i);
     const button = page.getByRole("button", { name: /Connect with PAT/i });
-    await input.fill("ghp_validtoken123456789");
+
+    // Use appropriate token based on mode
+    const token = isMockMode()
+      ? "ghp_validtoken123456789"
+      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
+
+    await input.fill(token);
     await button.click();
 
     // Should be on dashboard with PR URL input

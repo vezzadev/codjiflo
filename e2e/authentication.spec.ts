@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "./fixtures/mode";
+import { setupAuthMock } from "./fixtures/github-mocks";
 
 test.describe("Authentication Flow (S-1.1)", () => {
   test.beforeEach(async ({ page }) => {
@@ -32,17 +34,16 @@ test.describe("Authentication Flow (S-1.1)", () => {
     await expect(input).toBeVisible();
     await expect(input).toHaveAttribute("type", "password");
 
-    // Mock the GitHub API for successful authentication
-    await page.route("https://api.github.com/user", (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ login: "testuser", id: 1 }),
-      });
-    });
+    // Set up auth mock (only applies in mock mode)
+    await setupAuthMock(page);
+
+    // Use appropriate token based on mode
+    const token = isMockMode()
+      ? "ghp_validtoken123456789"
+      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
 
     // Enter valid token and submit
-    await input.fill("ghp_validtoken123456789");
+    await input.fill(token);
     const button = page.getByRole("button", { name: /Connect with PAT/i });
     await button.click();
 
@@ -69,7 +70,7 @@ test.describe("Authentication Flow (S-1.1)", () => {
     const input = page.getByLabel(/Personal Access Token/i);
     const button = page.getByRole("button", { name: /Connect with PAT/i });
 
-    // [AC-1.1.3] Validate token format - invalid prefix
+    // [AC-1.1.3] Validate token format - invalid prefix (works in both modes)
     await input.fill("invalid_token");
     await button.click();
 
@@ -87,21 +88,23 @@ test.describe("Authentication Flow (S-1.1)", () => {
     await expect(formatError).not.toBeVisible();
 
     // [AC-1.1.7] Network/API error handling
-    await page.route("https://api.github.com/user", (route) => {
-      route.fulfill({
-        status: 401,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "Bad credentials" }),
-      });
-    });
+    if (isMockMode()) {
+      // Mock mode: use route interception
+      await setupAuthMock(page, { failWith: 401 });
+    }
 
-    await input.fill("ghp_invalidtoken123456789");
+    // Use invalid token - in prod mode this hits GitHub and gets 401
+    const invalidToken = isMockMode()
+      ? "ghp_invalidtoken123456789"
+      : prodModeConfig.invalidToken;
+
+    await input.fill(invalidToken);
     await button.click();
 
     // Should show authentication failed error
     await expect(
       page.getByText(/Authentication failed. Please check your token./i)
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
 
     // [AC-1.1.10] Input should remain accessible for correction
     await expect(input).toBeVisible();

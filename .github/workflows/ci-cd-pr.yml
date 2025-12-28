@@ -98,7 +98,7 @@ jobs:
         timeout-minutes: 1
         run: npx playwright install --with-deps chromium-headless-shell
 
-      - name: Run E2E tests
+      - name: Run E2E tests (mock mode)
         timeout-minutes: 3
         run: npm run test:e2e
 
