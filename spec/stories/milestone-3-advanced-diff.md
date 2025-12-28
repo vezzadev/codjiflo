@@ -109,21 +109,29 @@ Implement a toolbar with toggle buttons for:
     - [ ] [AC-3.3.3] Switching modes preserves scroll position (map line numbers between modes).
     - [ ] [AC-3.3.4] Keyboard shortcut `U` for Unified, `S` for Side-by-Side.
 2.  **Content Filter Toggle (Left/Both/Right)**:
-    - [ ] [AC-3.3.5] Three-way toggle: "Left Only", "Both", "Right Only".
-    - [ ] [AC-3.3.6] "Left Only" shows only the original file with deletions highlighted.
-    - [ ] [AC-3.3.7] "Both" shows the standard diff view (default).
-    - [ ] [AC-3.3.8] "Right Only" shows only the modified file with additions highlighted.
-    - [ ] [AC-3.3.9] Filter applies to both Unified and Side-by-Side modes.
-3.  **Toolbar Layout**:
-    - [ ] [AC-3.3.10] Toggles positioned in diff viewer toolbar (right-aligned).
-    - [ ] [AC-3.3.11] Tooltips on hover explaining each mode.
-    - [ ] [AC-3.3.12] Icons + text labels (collapsible to icons-only on narrow screens).
-4.  **State Persistence**:
-    - [ ] [AC-3.3.13] View mode preference saved to local storage.
-    - [ ] [AC-3.3.14] Content filter preference saved to local storage.
-5.  **Accessibility**:
-    - [ ] [AC-3.3.15] Toggle buttons are keyboard navigable (arrow keys within group).
-    - [ ] [AC-3.3.16] Aria-pressed state correctly set on active button.
+    - [ ] [AC-3.3.5] Three-way toggle: "Left", "Both", "Right".
+    - [ ] [AC-3.3.6] "Both" shows the standard diff view (default).
+    - [ ] [AC-3.3.7] Filter applies to both Unified and Split modes.
+3.  **Content Filter in Split Mode**:
+    - [ ] [AC-3.3.8] "Left" hides the right pane, showing only the original file.
+    - [ ] [AC-3.3.9] "Both" shows both panes side-by-side (default).
+    - [ ] [AC-3.3.10] "Right" hides the left pane, showing only the modified file.
+4.  **Content Filter in Unified Mode**:
+    - [ ] [AC-3.3.11] "Left" shows only removed lines and unchanged lines (added lines hidden).
+    - [ ] [AC-3.3.12] "Both" shows all three line types: removed, added, and unchanged (default).
+    - [ ] [AC-3.3.13] "Right" shows only added lines and unchanged lines (removed lines hidden).
+    - [ ] [AC-3.3.14] Line numbers in "Left" mode reflect original file line numbers.
+    - [ ] [AC-3.3.15] Line numbers in "Right" mode reflect modified file line numbers.
+5.  **Toolbar Layout**:
+    - [ ] [AC-3.3.16] Toggles positioned in diff viewer toolbar (right-aligned).
+    - [ ] [AC-3.3.17] Tooltips on hover explaining each mode.
+    - [ ] [AC-3.3.18] Icons + text labels (collapsible to icons-only on narrow screens).
+6.  **State Persistence**:
+    - [ ] [AC-3.3.19] View mode preference saved to local storage.
+    - [ ] [AC-3.3.20] Content filter preference saved to local storage.
+7.  **Accessibility**:
+    - [ ] [AC-3.3.21] Toggle buttons are keyboard navigable (arrow keys within group).
+    - [ ] [AC-3.3.22] Aria-pressed state correctly set on active button.
 
 ---
 
