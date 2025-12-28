@@ -146,6 +146,6 @@ vite.config.ts.timestamp-*
 
 # Storybook
 storybook-static/
-.vercel
+.vercel/*
 !.vercel/project.json
 .env*.local
