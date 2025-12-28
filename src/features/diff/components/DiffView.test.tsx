@@ -44,6 +44,14 @@ const mockDefaultCommentsState = {
   clearAnnouncement: vi.fn(),
 };
 
+// Default viewConfig for all tests
+const mockDefaultViewConfig = {
+  mode: 'unified' as const,
+  filter: 'both' as const,
+  showFullFile: false,
+  ignoreWhitespace: false,
+};
+
 describe('DiffView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -59,6 +67,7 @@ describe('DiffView', () => {
       files: [],
       selectedFileIndex: 0,
       isLoading: true,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -71,6 +80,7 @@ describe('DiffView', () => {
       files: [],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -92,6 +102,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -114,6 +125,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -136,6 +148,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -162,6 +175,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -188,6 +202,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -214,6 +229,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -248,6 +264,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -291,6 +308,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -331,6 +349,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -374,6 +393,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -424,6 +444,7 @@ describe('DiffView', () => {
       ],
       selectedFileIndex: 0,
       isLoading: false,
+      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -448,6 +469,7 @@ describe('DiffView', () => {
         files: [],
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
         isLoading: false,
+        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({
@@ -478,6 +500,7 @@ describe('DiffView', () => {
         files: [],
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
         isLoading: false,
+        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({
@@ -495,6 +518,7 @@ describe('DiffView', () => {
         files: [],
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
         isLoading: false,
+        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({

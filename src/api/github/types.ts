@@ -52,3 +52,18 @@ export interface GitHubReviewComment {
   position: number | null;
   in_reply_to_id?: number;
 }
+
+/**
+ * GitHub Contents API response
+ * Used for fetching file content at a specific ref
+ */
+export interface GitHubContentsResponse {
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  type: 'file' | 'dir' | 'symlink' | 'submodule';
+  content?: string; // Base64 encoded for files
+  encoding?: string;
+  download_url: string | null;
+}

@@ -1,22 +1,33 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
-import { parsePatch, detectLanguage, getDiffLinePosition } from '../utils';
+import {
+  parsePatch,
+  detectLanguage,
+  getDiffLinePosition,
+  alignDiffLines,
+  filterWhitespaceChanges,
+} from '../utils';
 import { DiffLine } from './DiffLine';
+import { DiffToolbar } from './DiffToolbar';
+import { SideBySideDiffView } from './SideBySideDiffView';
 import { Skeleton } from '@/components/ui';
 import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
+import type { ParsedDiffLine, AlignedDiffLine } from '../types';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
 /**
- * Unified diff view for the selected file
- * S-1.4: AC-1.4.1 through AC-1.4.10
+ * Main diff view component with support for unified and side-by-side modes
+ * S-1.4: AC-1.4.1 through AC-1.4.10 (Unified view)
+ * S-3.2: AC-3.2.1 through AC-3.2.9 (Side-by-side view)
+ * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     threads,
@@ -32,21 +43,43 @@ export function DiffView() {
     clearAnnouncement,
   } = useCommentsStore();
 
+  // Draft comment state (shared between unified and SxS views)
+  const [draftLineIndex, setDraftLineIndex] = useState<number | null>(null);
+  const [draftSide, setDraftSide] = useState<'LEFT' | 'RIGHT' | null>(null);
+  const [draftBody, setDraftBody] = useState('');
+  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
+
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
   // Parse the patch and detect language
   const patch = selectedFile?.patch;
   const filename = selectedFile?.filename;
+
   const { diffLines, language } = useMemo(() => {
     if (!patch) {
-      return { diffLines: [], language: 'plaintext' };
+      return { diffLines: [] as ParsedDiffLine[], language: 'plaintext' };
     }
+    let lines = parsePatch(patch);
+
+    // Apply whitespace filter (S-3.5)
+    if (viewConfig.ignoreWhitespace) {
+      lines = filterWhitespaceChanges(lines);
+    }
+
     return {
-      diffLines: parsePatch(patch),
+      diffLines: lines,
       language: detectLanguage(filename ?? ''),
     };
-  }, [patch, filename]);
+  }, [patch, filename, viewConfig.ignoreWhitespace]);
+
+  // Compute aligned lines for side-by-side view (S-3.2)
+  const alignedLines = useMemo((): AlignedDiffLine[] => {
+    if (viewConfig.mode !== 'split') return [];
+    return alignDiffLines(diffLines);
+  }, [diffLines, viewConfig.mode]);
 
   const threadsForFile = useMemo(() => {
     if (!filename) return [];
@@ -65,7 +98,7 @@ export function DiffView() {
   }, [threads, filename]);
 
   const threadsByLineAndSide = useMemo(() => {
-    const map = new Map<string, typeof threadsForFile>();
+    const map = new Map<string, ReviewThread[]>();
     threadsForFile.forEach((thread) => {
       const key = `${String(thread.line)}-${thread.side}`;
       const existing = map.get(key) ?? [];
@@ -82,6 +115,81 @@ export function DiffView() {
     return () => window.clearTimeout(timer);
   }, [announcement, clearAnnouncement]);
 
+  // Clear draft when switching files
+  useEffect(() => {
+    setDraftLineIndex(null);
+    setDraftSide(null);
+    setDraftBody('');
+    setSubmitError(null);
+  }, [selectedFileIndex]);
+
+  // Handle comment submission for both unified and SxS views
+  const handleSubmitComment = useCallback(
+    async (index: number, side: 'LEFT' | 'RIGHT', body: string) => {
+      if (isSubmittingRef.current) return;
+
+      // For unified view, get line from diffLines
+      // For SxS view, get line from alignedLines
+      let targetLine: ParsedDiffLine | null = null;
+      let lineNumber: number | null = null;
+
+      if (viewConfig.mode === 'unified') {
+        targetLine = diffLines[index] ?? null;
+        lineNumber =
+          side === 'LEFT' ? targetLine?.oldLineNumber ?? null : targetLine?.newLineNumber ?? null;
+      } else {
+        const pair = alignedLines[index];
+        targetLine = (side === 'LEFT' ? pair?.left : pair?.right) ?? null;
+        lineNumber = side === 'LEFT' ? targetLine?.oldLineNumber ?? null : targetLine?.newLineNumber ?? null;
+      }
+
+      const position = getDiffLinePosition(diffLines, index);
+
+      if (!targetLine || !lineNumber || !filename) {
+        return;
+      }
+
+      isSubmittingRef.current = true;
+      setIsSubmittingDraft(true);
+      setSubmitError(null);
+
+      try {
+        await addComment({
+          path: filename,
+          line: lineNumber,
+          side,
+          body: body.trim(),
+          position,
+        });
+        setDraftLineIndex(null);
+        setDraftSide(null);
+        setDraftBody('');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to post comment';
+        setSubmitError(message);
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmittingDraft(false);
+      }
+    },
+    [addComment, diffLines, alignedLines, filename, viewConfig.mode]
+  );
+
+  const handleStartComment = useCallback((index: number, side: 'LEFT' | 'RIGHT') => {
+    setDraftLineIndex(index);
+    setDraftSide(side);
+    setDraftBody('');
+    setSubmitError(null);
+  }, []);
+
+  const handleCancelDraft = useCallback(() => {
+    setDraftLineIndex(null);
+    setDraftSide(null);
+    setDraftBody('');
+    setSubmitError(null);
+  }, []);
+
+  // Loading state
   if (isLoading || (isShowingDescription && isPRLoading)) {
     return (
       <div className="p-4 space-y-2" role="status" aria-label="Loading diff">
@@ -132,36 +240,69 @@ export function DiffView() {
       <div className="sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
-      {/* Sticky file header */}
+
+      {/* Sticky file header with toolbar (S-3.3) */}
       <div className="sticky top-0 bg-gray-100 px-4 py-2 border-b z-10">
-        <h2 className="font-mono text-sm font-semibold truncate" title={selectedFile.filename}>
-          {selectedFile.filename}
-        </h2>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="font-mono text-sm font-semibold truncate" title={selectedFile.filename}>
+            {selectedFile.filename}
+          </h2>
+          <DiffToolbar />
+        </div>
       </div>
 
-      {/* AC-1.4.7: Horizontal scroll for long lines */}
-      {/* AC-1.4.8: Accessible code block */}
-      <div
-        className="flex-1 overflow-auto"
-        role="region"
-        aria-label={`Diff content for ${selectedFile.filename}`}
-        tabIndex={0}
-      >
-        {commentsError && (
-          <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
-            {commentsError}
-          </div>
-        )}
-        {isLoadingComments && (
-          <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100">
-            Loading comments...
-          </div>
-        )}
-        <DiffTable
-          key={filename ?? 'diff-table'}
-          diffLines={diffLines}
+      {/* Error and loading states for comments */}
+      {commentsError && (
+        <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
+          {commentsError}
+        </div>
+      )}
+      {isLoadingComments && (
+        <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100">
+          Loading comments...
+        </div>
+      )}
+
+      {/* Diff content - conditional rendering based on view mode */}
+      {viewConfig.mode === 'unified' ? (
+        <div
+          className="flex-1 overflow-auto"
+          role="region"
+          aria-label={`Diff content for ${selectedFile.filename}`}
+          tabIndex={0}
+        >
+          <UnifiedDiffTable
+            key={filename ?? 'diff-table'}
+            diffLines={diffLines}
+            language={language}
+            filename={filename ?? ''}
+            threadsByLineAndSide={threadsByLineAndSide}
+            currentUserLogin={currentUser.login}
+            addReply={addReply}
+            editComment={editComment}
+            deleteComment={deleteComment}
+            toggleResolved={toggleResolved}
+            draftLineIndex={draftLineIndex}
+            draftBody={draftBody}
+            isSubmittingDraft={isSubmittingDraft}
+            submitError={submitError}
+            onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+            onCancelDraft={handleCancelDraft}
+            onChangeDraftBody={setDraftBody}
+            onSubmitDraft={() => {
+              if (draftLineIndex !== null) {
+                const targetLine = diffLines[draftLineIndex];
+                const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+                void handleSubmitComment(draftLineIndex, side, draftBody);
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <SideBySideDiffView
+          alignedLines={alignedLines}
           language={language}
-          filename={filename}
+          filename={filename ?? ''}
           threadsByLineAndSide={threadsByLineAndSide}
           currentUserLogin={currentUser.login}
           addComment={addComment}
@@ -169,84 +310,68 @@ export function DiffView() {
           editComment={editComment}
           deleteComment={deleteComment}
           toggleResolved={toggleResolved}
+          contentFilter={viewConfig.filter}
+          draftLineIndex={draftLineIndex}
+          draftSide={draftSide}
+          draftBody={draftBody}
+          isSubmittingDraft={isSubmittingDraft}
+          submitError={submitError}
+          onStartComment={handleStartComment}
+          onCancelDraft={handleCancelDraft}
+          onChangeDraftBody={setDraftBody}
+          onSubmitDraft={() => {
+            if (draftLineIndex !== null && draftSide !== null) {
+              void handleSubmitComment(draftLineIndex, draftSide, draftBody);
+            }
+          }}
         />
-      </div>
+      )}
     </div>
   );
 }
 
-type ThreadArray = ReviewThread[];
+// ============================================================================
+// Unified Diff Table (extracted for clarity)
+// ============================================================================
 
-interface DiffTableProps {
-  diffLines: ReturnType<typeof parsePatch>;
+interface UnifiedDiffTableProps {
+  diffLines: ParsedDiffLine[];
   language: string;
-  filename: string | undefined;
-  threadsByLineAndSide: Map<string, ThreadArray>;
+  filename: string;
+  threadsByLineAndSide: Map<string, ReviewThread[]>;
   currentUserLogin: string;
-  addComment: ReturnType<typeof useCommentsStore.getState>['addComment'];
-  addReply: ReturnType<typeof useCommentsStore.getState>['addReply'];
-  editComment: ReturnType<typeof useCommentsStore.getState>['editComment'];
-  deleteComment: ReturnType<typeof useCommentsStore.getState>['deleteComment'];
-  toggleResolved: ReturnType<typeof useCommentsStore.getState>['toggleResolved'];
+  addReply: (threadId: string, body: string) => Promise<void>;
+  editComment: (commentId: string, body: string) => Promise<void>;
+  deleteComment: (commentId: string) => Promise<void>;
+  toggleResolved: (threadId: string) => void;
+  draftLineIndex: number | null;
+  draftBody: string;
+  isSubmittingDraft: boolean;
+  submitError: string | null;
+  onStartComment: (index: number) => void;
+  onCancelDraft: () => void;
+  onChangeDraftBody: (body: string) => void;
+  onSubmitDraft: () => void;
 }
 
-function DiffTable({
+function UnifiedDiffTable({
   diffLines,
   language,
-  filename,
   threadsByLineAndSide,
   currentUserLogin,
-  addComment,
   addReply,
   editComment,
   deleteComment,
   toggleResolved,
-}: DiffTableProps) {
-  const [draftLineIndex, setDraftLineIndex] = useState<number | null>(null);
-  const [draftBody, setDraftBody] = useState('');
-  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const isSubmittingRef = useRef(false);
-
-  const handleSubmitComment = useCallback(
-    async (index: number, body: string) => {
-      if (isSubmittingRef.current) return; // Prevent double submission
-
-      const targetLine = diffLines[index];
-      const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-      const lineNumber =
-        side === 'LEFT' ? targetLine?.oldLineNumber : targetLine?.newLineNumber;
-      const position = getDiffLinePosition(diffLines, index);
-
-      if (!targetLine || !lineNumber || !filename) {
-        return;
-      }
-
-      isSubmittingRef.current = true;
-      setIsSubmittingDraft(true);
-      setSubmitError(null);
-
-      try {
-        await addComment({
-          path: filename,
-          line: lineNumber,
-          side,
-          body: body.trim(),
-          position,
-        });
-        setDraftLineIndex(null);
-        setDraftBody('');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to post comment';
-        setSubmitError(message);
-      } finally {
-        isSubmittingRef.current = false;
-        setIsSubmittingDraft(false);
-      }
-    },
-    [addComment, diffLines, filename]
-  );
-
+  draftLineIndex,
+  draftBody,
+  isSubmittingDraft,
+  submitError,
+  onStartComment,
+  onCancelDraft,
+  onChangeDraftBody,
+  onSubmitDraft,
+}: UnifiedDiffTableProps) {
   return (
     <table className="w-full border-collapse text-sm">
       <tbody>
@@ -271,11 +396,7 @@ function DiffTable({
                 line={line}
                 language={language}
                 showCommentButton={showCommentButton}
-                onStartComment={() => {
-                  setDraftLineIndex(index);
-                  setDraftBody('');
-                  setSubmitError(null);
-                }}
+                onStartComment={() => onStartComment(index)}
               />
               {draftLineIndex === index && (
                 <tr>
@@ -285,15 +406,9 @@ function DiffTable({
                     )}
                     <CommentEditor
                       value={draftBody}
-                      onChange={setDraftBody}
-                      onSubmit={() => {
-                        void handleSubmitComment(index, draftBody);
-                      }}
-                      onCancel={() => {
-                        setDraftLineIndex(null);
-                        setDraftBody('');
-                        setSubmitError(null);
-                      }}
+                      onChange={onChangeDraftBody}
+                      onSubmit={onSubmitDraft}
+                      onCancel={onCancelDraft}
                       isSubmitting={isSubmittingDraft}
                       label="Add comment"
                     />
