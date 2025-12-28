@@ -43,6 +43,7 @@ jobs:
 
   deploy-main:
     runs-on: ubuntu-latest
+    needs: [coverage-baseline]
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -58,3 +59,35 @@ jobs:
 
       - name: Deploy to Vercel (Production)
         run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }}
+
+  e2e-tests-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-main]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 1
+        run: npm ci
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Wait for deployment to propagate
+        run: sleep 10
+
+      - name: Run E2E tests against production
+        timeout-minutes: 5
+        env:
+          CODJIFLO_E2E_GITHUB_TOKEN: ${{ secrets.CODJIFLO_E2E_GITHUB_TOKEN }}
+        run: npm run test:e2e:prod

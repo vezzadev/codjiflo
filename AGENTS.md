@@ -12,7 +12,8 @@ npm run typecheck        # TypeScript type checking (tsc)
 npm run test             # Unit and integration tests (Vitest)
 npm run test:coverage    # Unit and integration tests with coverage, min 70% enforced
 npm run test:storybook   # Storybook interaction tests
-npm run test:e2e         # Playwright E2E
+npm run test:e2e         # Playwright E2E (mock mode, localhost)
+npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.vza.net)
 npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e2e + storybook)
 ```
 
@@ -25,8 +26,30 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
 | Integration | `*.integration.test.tsx` | Use `data-testid`, helpers in `src/tests/helpers/`. Test happy AND unhappy paths |
-| E2E | `e2e/**/*.spec.ts` | Playwright. Critical flows only |
+| E2E | `e2e/**/*.spec.ts` | Playwright. Critical flows only. Supports mock/prod modes |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
+
+### E2E Test Modes
+
+E2E tests support two modes:
+
+| Mode | Command | Target | GitHub API |
+|------|---------|--------|------------|
+| Mock | `npm run test:e2e` | `localhost:3000` | Mocked via Playwright routes |
+| Prod | `npm run test:e2e:prod` | `codjiflo.vza.net` | Real API with PAT |
+
+**Environment:**
+- `CODJIFLO_E2E_GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, from secrets in CI)
+
+**CI/CD:**
+- **PR workflows:** `npm run test:e2e` (mock mode, fast)
+- **Main branch:** Deploy → `npm run test:e2e:prod` (validates production)
+
+**Test repository:** Prod mode uses `pedropaulovc/codjiflo` (PR #1 for valid tests, PR #6 for keyboard nav, PR #0 for 404 tests)
+
+**Test fixtures:**
+- `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
+- `e2e/fixtures/github-mocks.ts` - Centralized mock handlers
 
 ## Tech Stack
 
@@ -81,8 +104,9 @@ src/
 ### 1.4 Testing Strategy
 1.  **Unit Tests (Vitest)**: Focus on logic in `utils/` and `stores/`. Code coverage goal: 70%.
 2.  **E2E Tests (Playwright)**:
-    - **Mocking**: Use MSW (Mock Service Worker) for network isolation during tests. Do NOT hit real GitHub API in CI.
+    - **Mocking**: Uses Playwright route interception. Mock mode for PRs, real mode for main branch.
     - **Coverage**: One E2E spec per User Story Acceptance Criteria set.
+    - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
 GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.

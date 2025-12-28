@@ -1,34 +1,52 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load .env.local for local development (contains CODJIFLO_E2E_GITHUB_TOKEN)
+config({ path: ".env.local" });
 
 const isCI = !!process.env['CI'];
+const e2eMode = process.env['E2E_DEPENDENCIES_MODE'] ?? 'mock';
+const isProdMode = e2eMode === 'prod';
+
+// URLs for different modes
+const baseURL = isProdMode
+  ? 'https://codjiflo.vza.net'
+  : 'http://localhost:3000';
+
+// Log the E2E mode at startup for visibility
+console.log(`\n📋 E2E Dependencies Mode: ${e2eMode.toUpperCase()}`);
+console.log(`📍 Target URL: ${baseURL}\n`);
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 1,
-  timeout: 60000,
+  timeout: isProdMode ? 90000 : 60000, // Longer timeout for prod mode (network latency)
   expect: {
-    timeout: 10000,
+    timeout: isProdMode ? 15000 : 10000,
   },
   reporter: "html",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
-    actionTimeout: 15000,
+    actionTimeout: isProdMode ? 20000 : 15000,
   },
   projects: [
     {
       name: "chromium",
-      use: { 
+      use: {
         ...devices["Desktop Chrome"],
       },
     },
   ],
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !isCI,
-    timeout: 120_000,
-  },
+  // Only start dev server in mock mode
+  ...(isProdMode ? {} : {
+    webServer: {
+      command: "npm run dev",
+      url: "http://localhost:3000",
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+  }),
 });
