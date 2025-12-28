@@ -42,6 +42,10 @@ export interface MockFile {
   deletions: number;
   changes: number;
   patch: string;
+  /** Full file content for base (original) version */
+  baseContent?: string;
+  /** Full file content for head (modified) version */
+  headContent?: string;
 }
 
 export interface MockComment {
@@ -222,6 +226,69 @@ export async function setupCommentsMock(
 }
 
 /**
+ * Set up file contents mock for full file view
+ * In mock mode: returns mock file content
+ * In real mode: no-op (uses real API)
+ */
+export async function setupFileContentsMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  files: MockFile[],
+  pr: MockPR
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  // Mock contents API for each file with baseContent/headContent
+  for (const file of files) {
+    if (!file.baseContent && !file.headContent) continue;
+
+    // Encode path segments individually (matches backend encoding)
+    const encodedPath = file.filename.split('/').map(encodeURIComponent).join('/');
+
+    // Mock base version (original)
+    if (file.baseContent) {
+      await page.route(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(pr.base.sha)}`,
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              type: "file",
+              encoding: "base64",
+              content: Buffer.from(file.baseContent ?? "").toString("base64"),
+              path: file.filename,
+              sha: pr.base.sha,
+            }),
+          });
+        }
+      );
+    }
+
+    // Mock head version (modified)
+    if (file.headContent) {
+      await page.route(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(pr.head.sha)}`,
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              type: "file",
+              encoding: "base64",
+              content: Buffer.from(file.headContent ?? "").toString("base64"),
+              path: file.filename,
+              sha: pr.head.sha,
+            }),
+          });
+        }
+      );
+    }
+  }
+}
+
+/**
  * Set up all mocks for a complete PR view test
  * Convenience function that sets up PR, files, and comments mocks
  */
@@ -254,6 +321,11 @@ export async function setupFullPRMocks(
     await setupCommentsMock(page, owner, repo, prNumber, { comments: options.comments });
   } else {
     await setupCommentsMock(page, owner, repo, prNumber);
+  }
+
+  // Set up file contents mocks for full file view (if files have content)
+  if (options?.files && options?.pr) {
+    await setupFileContentsMock(page, owner, repo, options.files, options.pr);
   }
 }
 

@@ -16,6 +16,10 @@ export interface Review {
   author: Author;
   sourceBranch: string;
   targetBranch: string;
+  /** SHA of the base (target) commit */
+  baseSha: string;
+  /** SHA of the head (source) commit */
+  headSha: string;
   htmlUrl: string;
   createdAt: Date;
   updatedAt: Date;

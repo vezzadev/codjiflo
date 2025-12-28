@@ -23,6 +23,8 @@ export function createMockReview(overrides: Partial<Review> = {}): Review {
     author: createMockAuthor(),
     sourceBranch: 'feature/test-branch',
     targetBranch: 'main',
+    baseSha: 'abc123def456',
+    headSha: '789ghi012jkl',
     htmlUrl: `https://github.com/owner/repo/pull/${String(idCounter)}`,
     createdAt: new Date('2024-01-01T10:00:00Z'),
     updatedAt: new Date('2024-01-02T15:30:00Z'),
