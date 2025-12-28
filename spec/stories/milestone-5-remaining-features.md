@@ -95,7 +95,7 @@ Display the status of GitHub Actions or distinct Check Runs.
 
 ---
 
-## [S-6.4] Story 6.4: Settings & Personalization
+## [S-5.4] Story 5.4: Settings & Personalization
 
 As a user, I want to customize the font size and theme to match my preference.
 
@@ -104,10 +104,29 @@ Implement the `DiffViewerSettings` interface from `diff-viewing.md`.
 
 ### Acceptance Criteria
 1.  **Options**:
-    - [ ] [AC-6.4.1] Font Size (Slider or presets).
-    - [ ] [AC-6.4.2] Tab Size (2, 4, 8).
-    - [ ] [AC-6.4.3] Theme (Light, Dark, High Contrast, Auto).
-    - [ ] [AC-6.4.4] "Show Line Numbers" toggle.
+    - [ ] [AC-5.4.1] Font Size (Slider or presets).
+    - [ ] [AC-5.4.2] Tab Size (2, 4, 8).
+    - [ ] [AC-5.4.3] Theme (Light, Dark, High Contrast, Auto).
+    - [ ] [AC-5.4.4] "Show Line Numbers" toggle.
 2.  **Persistence**:
-    - [ ] [AC-6.4.5] Save to `localStorage`.
-    - [ ] [AC-6.4.6] Load improved defaults based on OS (e.g., Dark Mode detection).
+    - [ ] [AC-5.4.5] Save to `localStorage`.
+    - [ ] [AC-5.4.6] Load improved defaults based on OS (e.g., Dark Mode detection).
+
+---
+
+## [S-5.5] Story 5.5: Toggle Whitespace
+
+As a reviewer, I want to ignore whitespace changes so I can focus on code logic.
+
+### Description
+Add a settings toggle "Ignore Whitespace".
+
+### Acceptance Criteria
+1.  **Functionality**:
+    - [ ] [AC-5.5.1] Toggle ON: Re-fetches or re-renders diff with `?w=1` (GitHub API whitespace ignore) or filters whitespace-only hunks client-side.
+    - [ ] [AC-5.5.2] Toggle OFF: Standard view showing all changes.
+2.  **Persistence**:
+    - [ ] [AC-5.5.3] Setting saved in local storage.
+3.  **UI**:
+    - [ ] [AC-5.5.4] Toggle in toolbar near view mode toggles.
+    - [ ] [AC-5.5.5] Visual indicator when whitespace is being ignored.

@@ -252,12 +252,15 @@ CodjiFlo uses a **GitHub Action + Artifact** approach to store iteration data. N
 2. Find comment with `<!-- codjiflo-data -->` marker
 3. Download SQLite artifact
 4. Load iterations from SQLite (client-side via SQL.js)
-5. SpanTrackers computed client-side
+5. Load precomputed SpanTrackers from artifact (adjacent pairs + base→latest)
+6. Compute cross-iteration SpanTrackers on-demand by chaining
 
 **On Repo Without Workflow (Graceful Degradation):**
 1. No `<!-- codjiflo-data -->` comment found
-2. Show banner: "Install CodjiFlo workflow for iteration tracking"
-3. Fall back to GitHub API for current diff only
+2. Fetch PR commits via GitHub API (`/pulls/{number}/commits`)
+3. Enable commit range comparison (parity with GitHub native UI)
+4. Diff via `/compare/{base}...{head}` endpoint
+5. Show banner: "Install workflow for force-push resilience and comment tracking"
 
 ### SQLite Schema
 
@@ -313,7 +316,22 @@ CREATE TABLE comment_anchors (
   github_comment_id INTEGER,
   created_at TEXT NOT NULL
 );
+
+-- Precomputed SpanTrackers (adjacent pairs + base→latest)
+CREATE TABLE span_trackers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  artifact_id INTEGER REFERENCES file_artifacts(id),
+  left_snapshot_index INTEGER NOT NULL,
+  right_snapshot_index INTEGER NOT NULL,
+  span_data BLOB NOT NULL,             -- Serialized SpanTracker data
+  UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)
+);
 ```
+
+**Precomputed SpanTrackers:**
+- Adjacent pairs: 0→1, 2→3, 4→5 (each iteration's before/after)
+- Base→latest: 0→(latest right snapshot) for quick "full diff" view
+- Cross-iteration: computed client-side by chaining adjacent trackers
 
 ### Trade-offs
 
@@ -373,18 +391,21 @@ interface GitHubIteration extends Iteration {
 - Cross-iteration comparison
 
 **GitHub without Workflow (degraded):**
-- Current diff only
-- No iteration history
+- Commit range comparison via GitHub API (`/compare/{base}...{head}`)
+- User can select any two commits from PR commit list
+- No force-push resilience (old commits become unreachable)
 - Standard GitHub comment anchoring (line-level)
+- No precomputed SpanTrackers (comments may not track correctly across ranges)
 
 ### Capability Matrix
 
 | Feature | Azure DevOps | GitHub + Workflow | GitHub (degraded) |
 |---------|--------------|-------------------|-------------------|
-| Iteration ID stability | ✓ Server-assigned | ✓ Artifact-stored | ✗ None |
+| Iteration ID stability | ✓ Server-assigned | ✓ Artifact-stored | ✗ Commit SHA |
 | Character-level comments | ✓ | ✓ (in artifact) | ✗ Line-level |
 | Force-push handling | ✓ | ✓ (before SHA) | ✗ Comments lost |
-| Cross-iteration compare | ✓ | ✓ | ✗ |
+| Cross-iteration compare | ✓ | ✓ | ✓ (commit range) |
+| SpanTracker (comment tracking) | ✓ | ✓ (precomputed) | ✗ None |
 | Requires setup | ✗ | Workflow install | ✗ |
 
 ---

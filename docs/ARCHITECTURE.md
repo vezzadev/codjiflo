@@ -171,15 +171,17 @@ CodjiFlo tracks PR iterations using a **GitHub Action + Artifact** approach with
 3. Captures `head_sha`, `base_sha`, `before` (force-push tracking)
 4. Fetches changed file contents via GitHub API
 5. Appends new iteration to SQLite database
-6. Uploads SQLite as artifact (90-day retention)
-7. Posts/updates PR comment with artifact reference
+6. Computes SpanTrackers (adjacent iteration + base→latest)
+7. Uploads SQLite as artifact (90-day retention)
+8. Posts/updates PR comment with artifact reference
 
 **On Frontend Load:**
 1. Fetch PR comments via GitHub API
 2. Find comment with `<!-- codjiflo-data -->` marker
 3. Download SQLite artifact
 4. Parse SQLite using SQL.js (WASM)
-5. Cache artifact in IndexedDB
+5. Load precomputed SpanTrackers (adjacent pairs + base→latest)
+6. Cache artifact in IndexedDB
 
 ### Key Files
 | File | Purpose |
@@ -196,9 +198,11 @@ CodjiFlo tracks PR iterations using a **GitHub Action + Artifact** approach with
 
 ### Graceful Degradation
 Repos without the CodjiFlo workflow installed:
-- Show "Install CodjiFlo workflow for iteration tracking" banner
-- Fall back to GitHub API for current diff only
-- Basic diff viewing works, no iteration comparison
+- Commit range comparison via GitHub API (parity with GitHub native)
+- User can select any two commits from PR commit list
+- Show banner: "Install workflow for force-push resilience and comment tracking"
+- No SpanTrackers (comments won't track across ranges)
+- Force-push causes old commits to become unreachable
 
 ### Trade-offs
 | Trade-off | Mitigation |

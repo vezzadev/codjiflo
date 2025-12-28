@@ -161,9 +161,9 @@ See [spec/functional/iterations.md](../functional/iterations.md) for the full it
     - [ ] [AC-3.4.14] Cache artifact in IndexedDB for subsequent loads.
 
 4.  **Graceful Degradation**:
-    - [ ] [AC-3.4.15] If no CodjiFlo comment found, show "Install workflow" banner.
-    - [ ] [AC-3.4.16] Fall back to GitHub API for current diff only.
-    - [ ] [AC-3.4.17] Basic diff viewing works without iteration tracking.
+    - [ ] [AC-3.4.15] If no CodjiFlo comment found, fetch PR commits from GitHub API.
+    - [ ] [AC-3.4.16] Enable commit range comparison (parity with GitHub native).
+    - [ ] [AC-3.4.17] Show banner: "Install workflow for force-push resilience and comment tracking".
 
 5.  **SQLite Schema**:
     - [ ] [AC-3.4.18] `iterations` table: id, revision, head_sha, base_sha, before_sha, author, created_at.
@@ -171,11 +171,17 @@ See [spec/functional/iterations.md](../functional/iterations.md) for the full it
     - [ ] [AC-3.4.20] `artifact_snapshots` table: artifact_id, snapshot_index, file_path.
     - [ ] [AC-3.4.21] `file_contents` table: artifact_id, snapshot_index, content, content_hash.
     - [ ] [AC-3.4.22] `comment_anchors` table: artifact_id, snapshot indices, line/column positions.
+    - [ ] [AC-3.4.23] `span_trackers` table: precomputed SpanTracker data per file/snapshot pair.
 
-6.  **Data Model**:
-    - [ ] [AC-3.4.23] Implement `Iteration` interface per spec.
-    - [ ] [AC-3.4.24] Implement `ReviewFileArtifact` interface per spec.
-    - [ ] [AC-3.4.25] Implement snapshot index conversion functions (iteration ↔ snapshot).
+6.  **Precomputed SpanTrackers**:
+    - [ ] [AC-3.4.24] Compute SpanTrackers for adjacent iteration pairs (0→1, 2→3, etc.).
+    - [ ] [AC-3.4.25] Compute SpanTracker for base→latest (snapshot 0 → latest right snapshot).
+    - [ ] [AC-3.4.26] Serialize SpanTracker data to BLOB for storage.
+
+7.  **Data Model**:
+    - [ ] [AC-3.4.27] Implement `Iteration` interface per spec.
+    - [ ] [AC-3.4.28] Implement `ReviewFileArtifact` interface per spec.
+    - [ ] [AC-3.4.29] Implement snapshot index conversion functions (iteration ↔ snapshot).
 
 ---
 
@@ -202,18 +208,20 @@ Provide a selector mechanism to choose any two iterations for comparison. Iterat
     - [ ] [AC-3.5.9] Update diff view with computed changes.
 
 3.  **Degraded Mode (no artifact)**:
-    - [ ] [AC-3.5.10] If no artifact, disable iteration selector.
-    - [ ] [AC-3.5.11] Show only current diff via GitHub API.
-    - [ ] [AC-3.5.12] Display "Install workflow for iteration tracking" message.
+    - [ ] [AC-3.5.10] If no artifact, fetch PR commits via GitHub API.
+    - [ ] [AC-3.5.11] Populate iteration selector with commit list (parity with GitHub's commit range picker).
+    - [ ] [AC-3.5.12] Diff via GitHub `/compare/{base}...{head}` endpoint.
+    - [ ] [AC-3.5.13] Display banner: "Install workflow for force-push resilience and comment tracking".
 
 4.  **SpanTracker Integration**:
-    - [ ] [AC-3.5.13] Create SpanTracker for the selected iteration pair.
-    - [ ] [AC-3.5.14] Cache SpanTrackers by snapshot pair key for performance.
-    - [ ] [AC-3.5.15] Comments correctly positioned using span tracking.
+    - [ ] [AC-3.5.14] Load precomputed SpanTrackers from `span_trackers` table (adjacent + base→latest).
+    - [ ] [AC-3.5.15] For cross-iteration comparisons, chain adjacent SpanTrackers client-side.
+    - [ ] [AC-3.5.16] Cache computed SpanTrackers by snapshot pair key for performance.
+    - [ ] [AC-3.5.17] Comments correctly positioned using span tracking.
 
 5.  **Accessibility**:
-    - [ ] [AC-3.5.16] Dropdowns labeled "Compare from" and "Compare to".
-    - [ ] [AC-3.5.17] Selection changes announced to screen readers.
+    - [ ] [AC-3.5.18] Dropdowns labeled "Compare from" and "Compare to".
+    - [ ] [AC-3.5.19] Selection changes announced to screen readers.
 
 ---
 
@@ -235,21 +243,3 @@ Refine the diff visualization. For lines that are modified (not fully added/remo
 3.  **Accessibility**:
     - [ ] [AC-3.6.6] Screen reader announces "Line X modified. Original: [...], New: [...]".
 
----
-
-## [S-3.7] Story 3.7: Toggle Whitespace
-
-As a reviewer, I want to ignore whitespace changes so I can focus on code logic.
-
-### Description
-Add a settings toggle "Ignore Whitespace".
-
-### Acceptance Criteria
-1.  **Functionality**:
-    - [ ] [AC-3.7.1] Toggle ON: Re-fetches or re-renders diff with `?w=1` (GitHub API whitespace ignore) or filters whitespace-only hunks client-side.
-    - [ ] [AC-3.7.2] Toggle OFF: Standard view showing all changes.
-2.  **Persistence**:
-    - [ ] [AC-3.7.3] Setting saved in local storage.
-3.  **UI**:
-    - [ ] [AC-3.7.4] Toggle in toolbar near view mode toggles.
-    - [ ] [AC-3.7.5] Visual indicator when whitespace is being ignored.
