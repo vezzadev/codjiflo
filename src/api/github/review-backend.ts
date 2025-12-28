@@ -26,6 +26,8 @@ export class GitHubReviewBackend implements IReviewBackend {
       },
       sourceBranch: data.head.ref,
       targetBranch: data.base.ref,
+      baseSha: data.base.sha,
+      headSha: data.head.sha,
       htmlUrl: data.html_url,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),

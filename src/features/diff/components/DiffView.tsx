@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
+import { useParams } from 'next/navigation';
+import { useDiffStore, useDiffContentStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   parsePatch,
   detectLanguage,
@@ -15,7 +16,7 @@ import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comme
 import type { ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
-import type { ParsedDiffLine, AlignedDiffLine } from '../types';
+import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -27,8 +28,10 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
+  const params = useParams<{ owner: string; repo: string }>();
   const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
+  const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -42,6 +45,10 @@ export function DiffView() {
     toggleResolved,
     clearAnnouncement,
   } = useCommentsStore();
+
+  // Full file diff state
+  const [fullFileDiff, setFullFileDiff] = useState<FullFileDiff | null>(null);
+  const [fullFileError, setFullFileError] = useState<string | null>(null);
 
   // Draft comment state (shared between unified and SxS views)
   const [draftLineIndex, setDraftLineIndex] = useState<number | null>(null);
@@ -59,6 +66,22 @@ export function DiffView() {
   const filename = selectedFile?.filename;
 
   const { diffLines, language } = useMemo(() => {
+    // Use full file diff when available (AC-3.1.3-6)
+    if (viewConfig.showFullFile && fullFileDiff) {
+      let lines = fullFileDiff.diffLines;
+
+      // Apply whitespace filter (S-3.5)
+      if (viewConfig.ignoreWhitespace) {
+        lines = filterWhitespaceChanges(lines);
+      }
+
+      return {
+        diffLines: lines,
+        language: detectLanguage(filename ?? ''),
+      };
+    }
+
+    // Fall back to patch-based diff
     if (!patch) {
       return { diffLines: [] as ParsedDiffLine[], language: 'plaintext' };
     }
@@ -73,13 +96,19 @@ export function DiffView() {
       diffLines: lines,
       language: detectLanguage(filename ?? ''),
     };
-  }, [patch, filename, viewConfig.ignoreWhitespace]);
+  }, [patch, filename, viewConfig.ignoreWhitespace, viewConfig.showFullFile, fullFileDiff]);
 
   // Compute aligned lines for side-by-side view (S-3.2)
   const alignedLines = useMemo((): AlignedDiffLine[] => {
     if (viewConfig.mode !== 'split') return [];
+
+    // Use full file aligned lines when available (AC-3.1.7-9)
+    if (viewConfig.showFullFile && fullFileDiff) {
+      return fullFileDiff.alignedLines;
+    }
+
     return alignDiffLines(diffLines);
-  }, [diffLines, viewConfig.mode]);
+  }, [diffLines, viewConfig.mode, viewConfig.showFullFile, fullFileDiff]);
 
   const threadsForFile = useMemo(() => {
     if (!filename) return [];
@@ -122,6 +151,41 @@ export function DiffView() {
     setDraftBody('');
     setSubmitError(null);
   }, [selectedFileIndex]);
+
+  // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
+  useEffect(() => {
+    if (!viewConfig.showFullFile || !filename || !currentPR || !params?.owner || !params?.repo) {
+      setFullFileDiff(null);
+      setFullFileError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setFullFileError(null);
+
+    computeFullFileDiff(
+      params.owner,
+      params.repo,
+      filename,
+      currentPR.baseSha,
+      currentPR.headSha
+    )
+      .then((result) => {
+        if (!cancelled) {
+          setFullFileDiff(result);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : 'Failed to load full file';
+          setFullFileError(message);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewConfig.showFullFile, filename, currentPR, params?.owner, params?.repo, computeFullFileDiff]);
 
   // Handle comment submission for both unified and SxS views
   const handleSubmitComment = useCallback(
@@ -189,8 +253,9 @@ export function DiffView() {
     setSubmitError(null);
   }, []);
 
-  // Loading state
-  if (isLoading || (isShowingDescription && isPRLoading)) {
+  // Loading state (includes full file content loading AC-3.1.13)
+  const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff;
+  if (isLoading || (isShowingDescription && isPRLoading) || isLoadingFullFile) {
     return (
       <div className="p-4 space-y-2" role="status" aria-label="Loading diff">
         {Array.from({ length: 20 }).map((_, i) => (
@@ -251,7 +316,12 @@ export function DiffView() {
         </div>
       </div>
 
-      {/* Error and loading states for comments */}
+      {/* Error and loading states */}
+      {(fullFileError ?? contentError) && (
+        <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
+          {fullFileError ?? contentError}
+        </div>
+      )}
       {commentsError && (
         <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
           {commentsError}

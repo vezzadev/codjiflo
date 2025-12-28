@@ -6,8 +6,15 @@ import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
 
+const mockDiffContentStore = {
+  computeFullFileDiff: vi.fn().mockResolvedValue(null),
+  isLoadingContent: false,
+  contentError: null,
+};
+
 vi.mock('../stores', () => ({
   useDiffStore: vi.fn(),
+  useDiffContentStore: vi.fn(() => mockDiffContentStore),
   PR_DESCRIPTION_INDEX: -1,
 }));
 
@@ -29,6 +36,10 @@ vi.mock('@/features/comments', async () => {
     useCommentsStore: vi.fn(),
   };
 });
+
+vi.mock('next/navigation', () => ({
+  useParams: vi.fn(() => ({ owner: 'testowner', repo: 'testrepo' })),
+}));
 
 const mockDefaultCommentsState = {
   threads: [],

@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { isMockMode, prodModeConfig } from "./fixtures/mode";
 import {
   setupAuthState,
+  setupAuthMock,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
@@ -37,6 +38,22 @@ test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
       changes: 3,
       patch:
         "@@ -1,3 +1,4 @@\n const foo = 'bar';\n-const old = true;\n+const new1 = true;\n+const new2 = false;",
+      // Full file content for testing full file toggle
+      baseContent: `const foo = 'bar';
+const old = true;
+const baz = 'qux';
+// This is line 4
+// This is line 5
+// This is line 6
+// End of file`,
+      headContent: `const foo = 'bar';
+const new1 = true;
+const new2 = false;
+const baz = 'qux';
+// This is line 5
+// This is line 6
+// This is line 7
+// End of file`,
     },
   ];
 
@@ -60,6 +77,7 @@ test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
+    await setupAuthMock(page);
     const config = getTestConfig();
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,
@@ -298,6 +316,79 @@ test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible({ timeout: 30000 });
+      }
+    }
+  });
+
+  test("Full file toggle switches between changes only and full file (S-3.1)", async ({
+    page,
+  }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("networkidle");
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible({ timeout: 30000 });
+
+    if (isMockMode()) {
+      await fileNav.getByText("src/example.ts").click();
+      await expect(
+        page.getByRole("heading", { name: "src/example.ts" })
+      ).toBeVisible({ timeout: 15000 });
+
+      const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+      await expect(toolbar).toBeVisible({ timeout: 10000 });
+
+      // Find the full file toggle button
+      const fullFileButton = toolbar.getByRole("button", {
+        name: /full file|changes only/i,
+      });
+      await expect(fullFileButton).toBeVisible({ timeout: 10000 });
+
+      // [AC-3.1.1] Default should be "Changes only" (not pressed)
+      await expect(fullFileButton).toHaveAttribute("aria-pressed", "false");
+      await expect(fullFileButton).toContainText("Changes only");
+
+      // Verify we see the hunk header (changes only mode)
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
+      await expect(diffRegion.getByText("@@")).toBeVisible();
+
+      // [AC-3.1.2] Toggle to full file mode
+      await fullFileButton.click();
+      await expect(fullFileButton).toHaveAttribute("aria-pressed", "true");
+      await expect(fullFileButton).toContainText("Full file");
+
+      // [AC-3.1.3-6] Full file mode should show more lines
+      // Wait for content to load
+      await page.waitForTimeout(500);
+
+      // Should now see content from the full file (line numbers starting from 1)
+      // In full file mode, we should see lines that weren't in the patch
+      await expect(diffRegion.getByText("End of file")).toBeVisible({ timeout: 10000 });
+
+      // [AC-3.1.7] Toggle back to changes only
+      await fullFileButton.click();
+      await expect(fullFileButton).toHaveAttribute("aria-pressed", "false");
+      await expect(fullFileButton).toContainText("Changes only");
+
+      // Should be back to showing only the hunk
+      await expect(diffRegion.getByText("@@")).toBeVisible();
+    } else {
+      // Prod mode: verify structure
+      const fileButtons = fileNav.getByRole("button");
+      const allButtons = await fileButtons.all();
+      if (allButtons.length > 1) {
+        await allButtons[1]?.click();
+        const diffRegion = page.getByRole("region", { name: /Diff content/i });
+        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+
+        // Verify full file toggle exists
+        const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+        const fullFileButton = toolbar.getByRole("button", {
+          name: /full file|changes only/i,
+        });
+        await expect(fullFileButton).toBeVisible({ timeout: 10000 });
       }
     }
   });
