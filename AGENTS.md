@@ -150,34 +150,40 @@ See [spec/functional/iterations.md](spec/functional/iterations.md) for full arch
     - `types.ts`: `ReviewComment` interface matching GitHub API.
 - **Constraint**: Comments must be mapped to `diff-line-index`. The logic for "which line does this belong to" belongs in a pure function/helper in `src/features/diff/utils`.
 
-### [Milestone 3: Advanced Diffing](spec/stories/milestone-3-advanced-diff.md)
-**Goal**: Side-by-Side view, full file content, iteration tracking.
+### [Milestone 3: Advanced Diff Engine](spec/stories/milestone-3-advanced-diff.md)
+**Goal**: Side-by-Side view, full file content, word-level diffs.
 - **Scaffolding Needs**:
   - `src/workers/diff-worker.ts`: Offload heavy text comparison (Myers Diff Algorithm) to a Web Worker.
   - `src/features/diff/components/SideBySideView.tsx`: Side-by-side diff layout.
+
+### [Milestone 4: Iteration Management](spec/stories/milestone-4-iteration-management.md)
+**Goal**: Force-push resilient iteration tracking via GitHub Action artifacts.
+- **Phase 1 - Producer (GitHub Action)**:
+  - `codjiflo/action`: GitHub Action for iteration capture to SQLite.
+  - `codjiflo/comment-action`: GitHub Action for PR comment pointer updates.
+  - SQLite schema for iterations, file contents, and SpanTrackers.
+- **Phase 2 - Consumer (Frontend)**:
   - `src/features/iterations/artifact-loader.ts`: Download and parse SQLite artifact.
   - `src/lib/sqlite-wasm.ts`: SQL.js wrapper for browser SQLite reading.
-- **External Repos**:
-  - `codjiflo/action`: GitHub Action for iteration capture.
-  - `codjiflo/comment-action`: GitHub Action for PR comment updates.
+  - Iteration selector UI and cross-iteration diff computation.
 
-### [Milestone 4: Canvas Layouts](spec/stories/milestone-4-full-comments.md)
+### [Milestone 5: Full Comments & Canvas Layouts](spec/stories/milestone-5-full-comments.md)
 **Goal**: Floating Bubbles (The "CodeFlow" feel).
 - **Architecture**:
   - **Layering**: Code View is Layer 0. SVG Connector Layer is Layer 1. Comment Cloud is Layer 2.
   - **Layout Engine**: `src/features/comments/layout-engine.ts`. A pure logic class that takes a list of comments + scroll position and returns X/Y coordinates for bubbles.
 
-### [Milestone 5: Real-Time & Polish](spec/stories/milestone-5-remaining-features.md)
+### [Milestone 6: Real-Time & Polish](spec/stories/milestone-6-remaining-features.md)
 **Goal**: Performance and Synchronization.
 - **Architecture**:
   - `src/api/realtime.ts`: A polling manager (Interval based) that checks `ETag` or `Last-Modified` headers to fetch delta updates.
 
-### [Milestone 6: Extension Bridge](spec/stories/milestone-6-browser-extension.md)
+### [Milestone 7: Extension Bridge](spec/stories/milestone-7-browser-extension.md)
 **Goal**: Inject into GitHub.
 - **Architecture**:
   - **Content Script**: Independent entry point `src/extension/content.tsx`.
   - **Shadow DOM**: The React App must be capable of mounting inside a `shadowRoot` to avoid style bleeding.
-  - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M6 uses direct API calls).
+  - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M7 uses direct API calls).
 - **Refactor Alert**: `App.tsx` might need to support a "Widget Mode" vs "Full Page Mode".
 
 ## 3. General Agent Rules

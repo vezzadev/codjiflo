@@ -15,7 +15,7 @@
 
 ```mermaid
 graph TD
-    M4[Milestone 4 Diff] --> S5.0[S-5.0 Layout Engine]
+    M4[Milestone 4 Iterations] --> S5.0[S-5.0 Layout Engine]
     S5.0 --> S5.1[S-5.1 Region Selection]
     S5.0 --> S5.2[S-5.2 Floating Bubbles]
     S5.1 --> S5.3[S-5.3 Lasso Connectors]
