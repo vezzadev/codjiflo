@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { useDiffStore } from './useDiffStore';
+import { useDiffStore, PR_DESCRIPTION_INDEX } from './useDiffStore';
 import { FileChangeStatus } from '@/api/types';
 import * as api from '@/api';
 
@@ -60,7 +60,7 @@ describe('useDiffStore', () => {
     mockGetFiles = api.githubBackends.file.getFiles as Mock;
     useDiffStore.setState({
       files: [],
-      selectedFileIndex: 0,
+      selectedFileIndex: PR_DESCRIPTION_INDEX,
       isLoading: false,
       error: null,
     });
@@ -78,7 +78,7 @@ describe('useDiffStore', () => {
       await useDiffStore.getState().loadFiles('owner', 'repo', 123);
 
       expect(useDiffStore.getState().files).toEqual(mockFiles);
-      expect(useDiffStore.getState().selectedFileIndex).toBe(0);
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
       expect(useDiffStore.getState().isLoading).toBe(false);
       expect(useDiffStore.getState().error).toBeNull();
     });
@@ -89,7 +89,7 @@ describe('useDiffStore', () => {
 
       await useDiffStore.getState().loadFiles('owner', 'repo', 123);
 
-      expect(useDiffStore.getState().selectedFileIndex).toBe(0);
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
     });
 
     it('handles 404 error with specific message', async () => {
@@ -150,8 +150,14 @@ describe('useDiffStore', () => {
       expect(useDiffStore.getState().selectedFileIndex).toBe(1);
     });
 
-    it('does not select invalid index (negative)', () => {
-      useDiffStore.getState().selectFile(-1);
+    it('selects PR description index (-1)', () => {
+      useDiffStore.getState().selectFile(PR_DESCRIPTION_INDEX);
+
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
+    });
+
+    it('does not select invalid index (too negative)', () => {
+      useDiffStore.getState().selectFile(-2);
 
       expect(useDiffStore.getState().selectedFileIndex).toBe(0);
     });
@@ -194,12 +200,20 @@ describe('useDiffStore', () => {
       expect(useDiffStore.getState().selectedFileIndex).toBe(1);
     });
 
-    it('does not go before the first file', () => {
+    it('moves from first file to PR description', () => {
       useDiffStore.setState({ selectedFileIndex: 0 });
 
       useDiffStore.getState().selectPreviousFile();
 
-      expect(useDiffStore.getState().selectedFileIndex).toBe(0);
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
+    });
+
+    it('does not go before PR description', () => {
+      useDiffStore.setState({ selectedFileIndex: PR_DESCRIPTION_INDEX });
+
+      useDiffStore.getState().selectPreviousFile();
+
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
     });
   });
 
@@ -215,7 +229,7 @@ describe('useDiffStore', () => {
       useDiffStore.getState().reset();
 
       expect(useDiffStore.getState().files).toEqual([]);
-      expect(useDiffStore.getState().selectedFileIndex).toBe(0);
+      expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
       expect(useDiffStore.getState().isLoading).toBe(false);
       expect(useDiffStore.getState().error).toBeNull();
     });

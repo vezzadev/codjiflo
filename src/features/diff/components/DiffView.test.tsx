@@ -3,10 +3,16 @@ import { render, screen, fireEvent, waitFor } from '@/tests/helpers';
 import { DiffView } from './DiffView';
 import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
+import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
 
 vi.mock('../stores', () => ({
   useDiffStore: vi.fn(),
+  PR_DESCRIPTION_INDEX: -1,
+}));
+
+vi.mock('@/features/pr', () => ({
+  usePRStore: vi.fn(),
 }));
 
 vi.mock('@/features/comments', async () => {
@@ -35,6 +41,10 @@ describe('DiffView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useCommentsStore).mockReturnValue(mockDefaultCommentsState);
+    vi.mocked(usePRStore).mockReturnValue({
+      currentPR: null,
+      isLoading: false,
+    });
   });
 
   it('shows loading state', () => {

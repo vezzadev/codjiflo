@@ -99,13 +99,16 @@ test.describe("Inline comments flow (S-2.x)", () => {
     await page.waitForLoadState("networkidle");
 
     if (isMockMode()) {
-      // Wait for page to load - check the diff heading as a stable indicator
-      await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible({ timeout: 30000 });
-
       // Wait for the file navigation to be fully loaded
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
       await expect(fileNav).toBeVisible({ timeout: 10000 });
       await expect(fileNav.getByText("src/example.ts")).toBeVisible({ timeout: 10000 });
+
+      // PR Description is selected by default, click on the file to show diff
+      await fileNav.getByText("src/example.ts").click();
+
+      // Wait for page to load - check the diff heading as a stable indicator
+      await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible({ timeout: 30000 });
 
       // Wait for the file list item to be visible and selected
       const fileListItem = page.getByRole("button", { name: /src\/example\.ts/ });
@@ -122,6 +125,13 @@ test.describe("Inline comments flow (S-2.x)", () => {
       // Real mode: just verify structure loads
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
       await expect(fileNav).toBeVisible({ timeout: 30000 });
+
+      // Click first file to show diff (PR description is default)
+      const fileButtons = fileNav.getByRole("button");
+      const allButtons = await fileButtons.all();
+      if (allButtons.length > 1) {
+        await allButtons[1]?.click();
+      }
 
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
       await expect(diffRegion).toBeVisible({ timeout: 30000 });

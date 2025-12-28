@@ -1,10 +1,12 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useDiffStore } from '../stores';
+import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { parsePatch, detectLanguage, getDiffLinePosition } from '../utils';
 import { DiffLine } from './DiffLine';
 import { Skeleton } from '@/components/ui';
 import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
+import { usePRStore } from '@/features/pr';
+import { PRDescription } from '@/features/pr/components';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -15,6 +17,7 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  */
 export function DiffView() {
   const { files, selectedFileIndex, isLoading } = useDiffStore();
+  const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -28,6 +31,8 @@ export function DiffView() {
     toggleResolved,
     clearAnnouncement,
   } = useCommentsStore();
+
+  const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
   // Parse the patch and detect language
@@ -77,12 +82,30 @@ export function DiffView() {
     return () => window.clearTimeout(timer);
   }, [announcement, clearAnnouncement]);
 
-  if (isLoading) {
+  if (isLoading || (isShowingDescription && isPRLoading)) {
     return (
       <div className="p-4 space-y-2" role="status" aria-label="Loading diff">
         {Array.from({ length: 20 }).map((_, i) => (
           <Skeleton key={i} className="h-5 w-full" />
         ))}
+      </div>
+    );
+  }
+
+  // Show PR description when selected
+  if (isShowingDescription) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="sticky top-0 bg-gray-100 px-4 py-2 border-b z-10">
+          <h2 className="font-mono text-sm font-semibold">Pull Request Description</h2>
+        </div>
+        <div className="flex-1 overflow-auto pt-6">
+          {currentPR ? (
+            <PRDescription description={currentPR.description} />
+          ) : (
+            <div className="px-6 text-gray-500">No description available</div>
+          )}
+        </div>
       </div>
     );
   }

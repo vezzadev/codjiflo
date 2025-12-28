@@ -1,10 +1,9 @@
 import { usePRStore } from '../stores';
-import { SkeletonText, Skeleton } from '@/components/ui';
+import { Skeleton } from '@/components/ui';
 import { PRMetadata } from './PRMetadata';
-import { PRDescription } from './PRDescription';
 
 /**
- * PR Header section with metadata and description
+ * PR Header section with metadata
  * S-1.2: AC-1.2.7 - Skeleton loader while fetching
  */
 export function PRHeader() {
@@ -24,13 +23,11 @@ export function PRHeader() {
         {/* Title skeleton */}
         <Skeleton className="h-9 w-3/4 mb-4" />
         {/* Metadata skeleton */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
           <Skeleton className="h-8 w-8 rounded-full" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-6 w-16 rounded-full" />
         </div>
-        {/* Description skeleton */}
-        <SkeletonText lines={3} />
       </div>
     );
   }
@@ -38,7 +35,6 @@ export function PRHeader() {
   return (
     <div className="border-b">
       <PRMetadata pr={currentPR} />
-      <PRDescription description={currentPR.description} />
     </div>
   );
 }
