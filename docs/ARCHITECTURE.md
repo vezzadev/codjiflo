@@ -63,6 +63,15 @@ NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
 NEXT_PUBLIC_APP_URL = https://codjiflo.vza.net     # preview & prod
 ```
 
+### GitHub OAuth App Setup
+1. Go to https://github.com/settings/developers → "New OAuth App"
+2. Set Homepage URL: `https://codjiflo.vza.net`
+3. Add callback URLs:
+   - `http://localhost:3000/auth/callback` (local dev)
+   - `https://codjiflo.vza.net/auth/callback` (production + PR previews)
+4. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
+5. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`
+
 ### Security Considerations
 - Return origin validated against `KNOWN_BASE_DOMAIN` to prevent open redirects
 - Token transfer cookie uses 1-min TTL and is cleared immediately after read
