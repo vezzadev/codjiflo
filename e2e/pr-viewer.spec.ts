@@ -9,6 +9,10 @@ import {
   type MockFile,
 } from "./fixtures/github-mocks";
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
   // Mock PR data - used in mock mode
   const mockPR: MockPR = {
@@ -108,7 +112,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.getByRole("button", { name: /Load Pull Request/i }).click();
 
     // [S-1.2] Verify PR metadata is displayed
-    await expect(page).toHaveURL(new RegExp(`.*${config.pageUrl.replace(/\//g, "\\/")}`));
+    await expect(page).toHaveURL(new RegExp(`.*${escapeRegExp(config.pageUrl)}`));
 
     if (isMockMode()) {
       // Mock mode: verify exact mock data
