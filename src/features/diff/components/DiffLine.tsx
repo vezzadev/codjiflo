@@ -31,6 +31,8 @@ interface DiffLineProps {
   side?: 'left' | 'right';
   /** Show only one line number column (for side-by-side) */
   singleLineNumber?: boolean;
+  /** When true, render whitespace characters visibly (· for spaces, → for tabs) */
+  showWhitespace?: boolean;
 }
 
 const LINE_STYLES = {
@@ -61,6 +63,50 @@ const WORD_DIFF_STYLES: Record<WordDiffSegment['type'], string> = {
   unchanged: '',
 };
 
+/**
+ * Render whitespace characters visibly (S-3.5)
+ * Replaces spaces with · and tabs with → followed by spaces to maintain alignment
+ */
+function renderVisibleWhitespace(content: string): React.ReactNode {
+  if (!content) return content;
+
+  const parts: React.ReactNode[] = [];
+  let i = 0;
+  let nonWsStart = 0;
+
+  while (i < content.length) {
+    const char = content[i];
+
+    if (char === ' ' || char === '\t') {
+      // Push any accumulated non-whitespace text
+      if (i > nonWsStart) {
+        parts.push(content.slice(nonWsStart, i));
+      }
+
+      if (char === ' ') {
+        parts.push(
+          <span key={i} className="text-gray-400 opacity-60">·</span>
+        );
+      } else {
+        // char === '\t'
+        parts.push(
+          <span key={i} className="text-gray-400 opacity-60">→{'   '}</span>
+        );
+      }
+
+      nonWsStart = i + 1;
+    }
+    i++;
+  }
+
+  // Push remaining non-whitespace text
+  if (nonWsStart < content.length) {
+    parts.push(content.slice(nonWsStart));
+  }
+
+  return parts.length > 0 ? parts : content;
+}
+
 // Custom style to match diff view - minimal styling, let parent handle background
 const codeStyle: React.CSSProperties = {
   margin: 0,
@@ -76,7 +122,13 @@ const codeStyle: React.CSSProperties = {
  * Render content with word-level diff highlighting (S-3.4)
  * AC-3.4.1-2: Modified lines show lighter background with darker changed segments
  */
-function WordDiffContent({ segments }: { segments: WordDiffSegment[] }) {
+function WordDiffContent({
+  segments,
+  showWhitespace = false,
+}: {
+  segments: WordDiffSegment[];
+  showWhitespace?: boolean;
+}) {
   return (
     <span className="font-mono text-sm whitespace-pre">
       {segments.map((segment, index) => (
@@ -84,7 +136,7 @@ function WordDiffContent({ segments }: { segments: WordDiffSegment[] }) {
           key={index}
           className={cn(WORD_DIFF_STYLES[segment.type])}
         >
-          {segment.text}
+          {showWhitespace ? renderVisibleWhitespace(segment.text) : segment.text}
         </span>
       ))}
     </span>
@@ -103,6 +155,7 @@ export function DiffLine({
   showCommentButton = false,
   side,
   singleLineNumber = false,
+  showWhitespace = false,
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
@@ -173,10 +226,15 @@ export function DiffLine({
         </span>
         {/* AC-1.4.5: Syntax highlighting, AC-1.4.6: Preserve indentation */}
         {/* AC-3.4.1-2: Word-level diff highlighting */}
+        {/* S-3.5: Show whitespace characters when enabled */}
         {line.type === 'header' ? (
           <pre className="font-mono text-sm whitespace-pre m-0">{line.content}</pre>
         ) : hasWordDiff && line.wordDiff ? (
-          <WordDiffContent segments={line.wordDiff} />
+          <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
+        ) : showWhitespace ? (
+          <span className="font-mono text-sm whitespace-pre">
+            {renderVisibleWhitespace(line.content)}
+          </span>
         ) : (
           <SyntaxHighlighter
             language={language}

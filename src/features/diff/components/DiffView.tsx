@@ -6,7 +6,6 @@ import {
   detectLanguage,
   getDiffLinePosition,
   alignDiffLines,
-  filterWhitespaceChanges,
 } from '../utils';
 import { DiffLine } from './DiffLine';
 import { DiffToolbar } from './DiffToolbar';
@@ -28,7 +27,8 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
-  const params = useParams<{ owner: string; repo: string }>();
+  // useParams can return null in test environments even though TypeScript says otherwise
+  const params = useParams<{ owner: string; repo: string }>() as { owner: string; repo: string } | null;
   const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
@@ -68,15 +68,8 @@ export function DiffView() {
   const { diffLines, language } = useMemo(() => {
     // Use full file diff when available (AC-3.1.3-6)
     if (viewConfig.showFullFile && fullFileDiff) {
-      let lines = fullFileDiff.diffLines;
-
-      // Apply whitespace filter (S-3.5)
-      if (viewConfig.ignoreWhitespace) {
-        lines = filterWhitespaceChanges(lines);
-      }
-
       return {
-        diffLines: lines,
+        diffLines: fullFileDiff.diffLines,
         language: detectLanguage(filename ?? ''),
       };
     }
@@ -85,18 +78,12 @@ export function DiffView() {
     if (!patch) {
       return { diffLines: [] as ParsedDiffLine[], language: 'plaintext' };
     }
-    let lines = parsePatch(patch);
-
-    // Apply whitespace filter (S-3.5)
-    if (viewConfig.ignoreWhitespace) {
-      lines = filterWhitespaceChanges(lines);
-    }
 
     return {
-      diffLines: lines,
+      diffLines: parsePatch(patch),
       language: detectLanguage(filename ?? ''),
     };
-  }, [patch, filename, viewConfig.ignoreWhitespace, viewConfig.showFullFile, fullFileDiff]);
+  }, [patch, filename, viewConfig.showFullFile, fullFileDiff]);
 
   // Compute aligned lines for side-by-side view (S-3.2)
   const alignedLines = useMemo((): AlignedDiffLine[] => {
@@ -152,9 +139,13 @@ export function DiffView() {
     setSubmitError(null);
   }, [selectedFileIndex]);
 
+  // Extract params values safely (null check for test environment)
+  const owner = params?.owner ?? null;
+  const repo = params?.repo ?? null;
+
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {
-    if (!viewConfig.showFullFile || !filename || !currentPR || !params?.owner || !params?.repo) {
+    if (!viewConfig.showFullFile || !filename || !currentPR || !owner || !repo) {
       setFullFileDiff(null);
       setFullFileError(null);
       return;
@@ -164,8 +155,8 @@ export function DiffView() {
     setFullFileError(null);
 
     computeFullFileDiff(
-      params.owner,
-      params.repo,
+      owner,
+      repo,
       filename,
       currentPR.baseSha,
       currentPR.headSha
@@ -185,7 +176,7 @@ export function DiffView() {
     return () => {
       cancelled = true;
     };
-  }, [viewConfig.showFullFile, filename, currentPR, params?.owner, params?.repo, computeFullFileDiff]);
+  }, [viewConfig.showFullFile, filename, currentPR, owner, repo, computeFullFileDiff]);
 
   // Handle comment submission for both unified and SxS views
   const handleSubmitComment = useCallback(
@@ -366,13 +357,13 @@ export function DiffView() {
                 void handleSubmitComment(draftLineIndex, side, draftBody);
               }
             }}
+            showWhitespace={viewConfig.showWhitespace}
           />
         </div>
       ) : (
         <SideBySideDiffView
           alignedLines={alignedLines}
           language={language}
-          filename={filename ?? ''}
           threadsByLineAndSide={threadsByLineAndSide}
           currentUserLogin={currentUser.login}
           addComment={addComment}
@@ -394,6 +385,7 @@ export function DiffView() {
               void handleSubmitComment(draftLineIndex, draftSide, draftBody);
             }
           }}
+          showWhitespace={viewConfig.showWhitespace}
         />
       )}
     </div>
@@ -422,6 +414,8 @@ interface UnifiedDiffTableProps {
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
+  /** Show whitespace characters visibly */
+  showWhitespace: boolean;
 }
 
 function UnifiedDiffTable({
@@ -441,6 +435,7 @@ function UnifiedDiffTable({
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
+  showWhitespace,
 }: UnifiedDiffTableProps) {
   return (
     <table className="w-full border-collapse text-sm">
@@ -467,6 +462,7 @@ function UnifiedDiffTable({
                 language={language}
                 showCommentButton={showCommentButton}
                 onStartComment={() => onStartComment(index)}
+                showWhitespace={showWhitespace}
               />
               {draftLineIndex === index && (
                 <tr>

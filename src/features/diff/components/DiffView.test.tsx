@@ -60,7 +60,7 @@ const mockDefaultViewConfig = {
   mode: 'unified' as const,
   filter: 'both' as const,
   showFullFile: false,
-  ignoreWhitespace: false,
+  showWhitespace: false,
 };
 
 describe('DiffView', () => {

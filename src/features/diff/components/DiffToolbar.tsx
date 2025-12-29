@@ -201,20 +201,20 @@ export function DiffToolbar() {
 
       {/* Whitespace Toggle (AC-3.5.4-5) */}
       <ToggleButton
-        isActive={viewConfig.ignoreWhitespace}
+        isActive={viewConfig.showWhitespace}
         onClick={toggleWhitespace}
         icon={
-          viewConfig.ignoreWhitespace ? (
-            <EyeOff className="w-4 h-4" aria-hidden />
-          ) : (
+          viewConfig.showWhitespace ? (
             <Eye className="w-4 h-4" aria-hidden />
+          ) : (
+            <EyeOff className="w-4 h-4" aria-hidden />
           )
         }
-        label={viewConfig.ignoreWhitespace ? 'WS hidden' : 'WS visible'}
+        label={viewConfig.showWhitespace ? 'WS visible' : 'WS hidden'}
         ariaLabel={
-          viewConfig.ignoreWhitespace
-            ? 'Show whitespace changes'
-            : 'Hide whitespace changes'
+          viewConfig.showWhitespace
+            ? 'Hide whitespace characters'
+            : 'Show whitespace characters'
         }
       />
     </div>

@@ -11,7 +11,7 @@ const DEFAULT_VIEW_CONFIG: DiffViewConfig = {
   mode: 'unified',
   filter: 'both',
   showFullFile: false,
-  ignoreWhitespace: false,
+  showWhitespace: false,
 };
 
 export const useDiffStore = create<DiffState>()(
@@ -97,7 +97,7 @@ export const useDiffStore = create<DiffState>()(
         set((state) => ({
           viewConfig: {
             ...state.viewConfig,
-            ignoreWhitespace: !state.viewConfig.ignoreWhitespace,
+            showWhitespace: !state.viewConfig.showWhitespace,
           },
         }));
       },
