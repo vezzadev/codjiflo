@@ -216,12 +216,21 @@ export const useIterationStore = create<IterationState>()(
       reset: () => {
         const { client, spanTrackerService } = get();
 
-        // Cleanup
-        if (client) {
-          client.close();
+        // Cleanup with error handling to ensure both resources are released
+        try {
+          if (client) {
+            client.close();
+          }
+        } catch (error) {
+          console.warn('Failed to close iteration client:', error);
         }
-        if (spanTrackerService) {
-          spanTrackerService.clearCache();
+
+        try {
+          if (spanTrackerService) {
+            spanTrackerService.clearCache();
+          }
+        } catch (error) {
+          console.warn('Failed to clear SpanTracker cache:', error);
         }
 
         set(initialState);

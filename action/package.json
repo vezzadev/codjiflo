@@ -20,6 +20,7 @@
     "@types/diff-match-patch": "^1.0.36",
     "@types/node": "^20.0.0",
     "@vercel/ncc": "^0.38.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.8.0",
     "vitest": "^2.0.0"
   }

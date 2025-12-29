@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { SCHEMA_SQL } from './schema.js';
+import { SCHEMA_SQL } from './schema';
 import { createHash } from 'crypto';
 
 // ============================================================================

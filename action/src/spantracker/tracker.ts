@@ -4,8 +4,8 @@
  * Computes line mappings between file versions using diff.
  */
 
-import type { IterationDatabase, SpanMappingRow } from '../db/database.js';
-import { computeLineDiff, LineDiff } from './diff-engine.js';
+import type { IterationDatabase, SpanMappingRow } from '../db/database';
+import { computeLineDiff, LineDiff } from './diff-engine';
 
 // ============================================================================
 // Types

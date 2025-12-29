@@ -5,8 +5,8 @@
  */
 
 import * as github from '@actions/github';
-import type { IterationDatabase } from '../db/database.js';
-import { fetchFileContent } from './file-fetcher.js';
+import type { IterationDatabase } from '../db/database';
+import { fetchFileContent } from './file-fetcher';
 
 // ============================================================================
 // Types
@@ -70,16 +70,17 @@ export async function captureIteration(
 
 /**
  * Fetch list of changed files in the PR.
+ * Uses pagination to handle PRs with more than 100 files.
  */
 async function fetchChangedFiles(ctx: CaptureContext): Promise<ChangedFile[]> {
-  const { data } = await ctx.octokit.rest.pulls.listFiles({
+  const files = await ctx.octokit.paginate(ctx.octokit.rest.pulls.listFiles, {
     owner: ctx.owner,
     repo: ctx.repo,
     pull_number: ctx.prNumber,
-    per_page: 100, // TODO: Handle pagination for large PRs
+    per_page: 100,
   });
 
-  return data as ChangedFile[];
+  return files as ChangedFile[];
 }
 
 /**

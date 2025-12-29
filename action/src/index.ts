@@ -15,14 +15,14 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as artifact from '@actions/artifact';
-import { writeFileSync, unlinkSync, existsSync, mkdirSync, readFileSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { IterationDatabase } from './db/database.js';
-import { captureIteration, getCaptureContext } from './capture/iteration-capture.js';
-import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker.js';
-import { updatePRComment } from './comment/comment-manager.js';
+import { IterationDatabase } from './db/database';
+import { captureIteration, getCaptureContext } from './capture/iteration-capture';
+import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
+import { updatePRComment } from './comment/comment-manager';
 
 // ============================================================================
 // Main Action

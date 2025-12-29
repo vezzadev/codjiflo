@@ -13,5 +13,13 @@ inputs:
     default: ${{ github.token }}
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: 'composite'
+  steps:
+    - name: Run iteration capture
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd ${{ github.action_path }}
+        npx tsx src/index.ts

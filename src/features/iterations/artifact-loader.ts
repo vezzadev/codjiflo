@@ -6,6 +6,7 @@
  */
 
 import { githubClient, GitHubAPIError } from '@/api/github/github-client';
+import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { SQLiteDatabase } from '@/lib/sqlite-wasm';
 import JSZip from 'jszip';
 import type { ArtifactReference } from './types';
@@ -220,12 +221,8 @@ export class ArtifactLoader {
    * Get auth token from store.
    */
   private getToken(): string {
-    // Import dynamically to avoid circular dependencies
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-    const { useAuthStore } = require('@/features/auth/stores/useAuthStore');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const token: unknown = useAuthStore.getState().token;
-    if (typeof token !== 'string' || !token) {
+    const token = useAuthStore.getState().token;
+    if (!token) {
       throw new GitHubAPIError(401, 'Unauthorized', 'Not authenticated');
     }
     return token;
@@ -269,6 +266,7 @@ export class ArtifactLoader {
           resolve(getRequest.result as CachedArtifact | null);
         };
         getRequest.onerror = () => {
+          console.warn('Failed to read from IndexedDB cache:', getRequest.error?.message);
           resolve(null);
         };
       };
