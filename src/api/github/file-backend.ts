@@ -75,10 +75,13 @@ export class GitHubFileBackend implements IFileBackend {
         const cleanBase64 = data.content.replace(/\n/g, '');
         content = atob(cleanBase64);
         encoding = 'utf-8';
-      } catch {
-        // If decoding fails, it might be binary
-        encoding = 'base64';
-        content = data.content;
+      } catch (error) {
+        // If decoding fails, the base64 content is invalid and should not be treated as valid binary
+        throw new GitHubAPIError(
+          500,
+          'Internal Server Error',
+          `Failed to decode base64 content for path: ${path}. ${(error as Error).message}`
+        );
       }
     } else if (data.content) {
       content = data.content;

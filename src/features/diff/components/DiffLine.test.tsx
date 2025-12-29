@@ -328,6 +328,90 @@ describe('DiffLine', () => {
     });
   });
 
+  // Line number mode tests (AC-3.3.14-15)
+  describe('lineNumberMode', () => {
+    it('shows only old line number when lineNumberMode is left', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" lineNumberMode="left" />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.queryByText('10')).not.toBeInTheDocument();
+    });
+
+    it('shows only new line number when lineNumberMode is right', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" lineNumberMode="right" />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.queryByText('5')).not.toBeInTheDocument();
+    });
+
+    it('shows both line numbers when lineNumberMode is both (default)', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" lineNumberMode="both" />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
+    });
+
+    it('singleLineNumber takes precedence over lineNumberMode', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged',
+        oldLineNumber: 5,
+        newLineNumber: 10,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" side="left" singleLineNumber lineNumberMode="both" />
+          </tbody>
+        </table>
+      );
+
+      // singleLineNumber with side="left" should show only old line number
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.queryByText('10')).not.toBeInTheDocument();
+    });
+  });
+
   // Comment button tests
   describe('comment button', () => {
     it('shows comment button when showCommentButton is true', () => {
