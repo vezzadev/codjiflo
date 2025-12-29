@@ -11,6 +11,7 @@ import * as github from '@actions/github';
 // ============================================================================
 
 const COMMENT_MARKER = '<!-- codjiflo-data -->';
+const ARTIFACT_NAME_PATTERN = /\*\*Artifact\*\*: `([^`]+)`/;
 
 // ============================================================================
 // Types
@@ -69,7 +70,7 @@ async function findExistingComment(
   owner: string,
   repo: string,
   prNumber: number
-): Promise<{ id: number } | null> {
+): Promise<{ id: number; body: string } | null> {
   const { data: comments } = await octokit.rest.issues.listComments({
     owner,
     repo,
@@ -79,8 +80,32 @@ async function findExistingComment(
 
   const codjifloComment = comments.find((c) => c.body?.includes(COMMENT_MARKER));
 
-  if (codjifloComment) {
-    return { id: codjifloComment.id };
+  if (codjifloComment && codjifloComment.body) {
+    return { id: codjifloComment.id, body: codjifloComment.body };
+  }
+
+  return null;
+}
+
+/**
+ * Get the artifact name from the existing PR comment.
+ * Returns null if no comment exists or artifact name is not found.
+ */
+export async function getArtifactNameFromComment(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<string | null> {
+  const existingComment = await findExistingComment(octokit, owner, repo, prNumber);
+
+  if (!existingComment) {
+    return null;
+  }
+
+  const match = existingComment.body.match(ARTIFACT_NAME_PATTERN);
+  if (match && match[1]) {
+    return match[1];
   }
 
   return null;

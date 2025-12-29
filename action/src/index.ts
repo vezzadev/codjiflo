@@ -21,8 +21,8 @@ import AdmZip from 'adm-zip';
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
-import { updatePRComment } from './comment/comment-manager';
-import { downloadPreviousArtifact } from './artifact/artifact-download';
+import { updatePRComment, getArtifactNameFromComment } from './comment/comment-manager';
+import { downloadArtifactWithFallback } from './artifact/artifact-download';
 
 // ============================================================================
 // Main Action
@@ -55,21 +55,34 @@ async function run(): Promise<void> {
       mkdirSync(workDir, { recursive: true });
     }
     const dbPath = join(workDir, 'iterations.db');
-    const artifactName = `codjiflo-pr-${prNumber}`;
-
-    // Download previous artifact from GitHub API (not from current run)
-    core.info('Checking for previous artifact...');
     const currentRunId = github.context.runId;
-    const previousArtifact = await downloadPreviousArtifact(
+
+    // New artifact name includes run ID for uniqueness
+    const artifactName = `codjiflo-pr-${prNumber}-run-${currentRunId}`;
+
+    // Get artifact name from PR comment (if exists)
+    core.info('Checking for previous artifact...');
+    const previousArtifactName = await getArtifactNameFromComment(octokit, owner, repo, prNumber);
+    if (previousArtifactName) {
+      core.info(`PR comment references artifact: ${previousArtifactName}`);
+    }
+
+    // Download previous artifact with fallback logic
+    const previousArtifact = await downloadArtifactWithFallback(
       octokit,
       owner,
       repo,
-      artifactName,
-      currentRunId
+      prNumber,
+      previousArtifactName
     );
 
     if (previousArtifact) {
-      core.info(`Found previous artifact from run ${previousArtifact.artifactInfo.workflow_run_id}`);
+      const usedFallback = previousArtifactName && previousArtifact.artifactInfo.name !== previousArtifactName;
+      if (usedFallback) {
+        core.info(`Referenced artifact not found, using fallback: ${previousArtifact.artifactInfo.name}`);
+      } else {
+        core.info(`Found previous artifact: ${previousArtifact.artifactInfo.name}`);
+      }
       // Extract the database from the ZIP
       const zip = new AdmZip(Buffer.from(previousArtifact.data));
       const dbEntry = zip.getEntry('iterations.db');

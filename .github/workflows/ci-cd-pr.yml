@@ -199,8 +199,7 @@ jobs:
       - name: Upload iteration artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codjiflo-pr-${{ github.event.pull_request.number }}
+          name: codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}
           path: codjiflo-data/
           retention-days: 90
-          overwrite: true
 

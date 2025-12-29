@@ -122,3 +122,91 @@ export async function downloadPreviousArtifact(
     artifactInfo,
   };
 }
+
+/**
+ * Find the newest artifact matching a PR pattern.
+ * Used as fallback when the specific artifact from comment is not found.
+ */
+export async function findNewestArtifactForPR(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<ArtifactInfo | null> {
+  // List all artifacts and filter by PR pattern
+  const { data } = await octokit.rest.actions.listArtifactsForRepo({
+    owner,
+    repo,
+    per_page: 100,
+  });
+
+  const prPattern = new RegExp(`^codjiflo-pr-${prNumber}(-run-\\d+)?$`);
+
+  // Find the first matching, non-expired artifact
+  for (const artifact of data.artifacts) {
+    if (artifact.expired) {
+      continue;
+    }
+
+    if (prPattern.test(artifact.name)) {
+      return {
+        id: artifact.id,
+        name: artifact.name,
+        created_at: artifact.created_at ?? '',
+        workflow_run_id: artifact.workflow_run?.id ?? 0,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Download artifact with fallback logic:
+ * 1. Try to download specific artifact by name (from PR comment)
+ * 2. If not found/expired, fall back to newest artifact for the PR
+ *
+ * Returns null if no artifact exists at all.
+ */
+export async function downloadArtifactWithFallback(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  specificArtifactName: string | null
+): Promise<DownloadResult | null> {
+  // Strategy 1: Try specific artifact from PR comment
+  if (specificArtifactName) {
+    const specificArtifact = await findLatestArtifact(
+      octokit,
+      owner,
+      repo,
+      specificArtifactName
+    );
+
+    if (specificArtifact) {
+      try {
+        const data = await downloadArtifact(octokit, owner, repo, specificArtifact);
+        return { data, artifactInfo: specificArtifact };
+      } catch {
+        // Artifact may have been deleted or expired since we found it
+        // Fall through to strategy 2
+      }
+    }
+  }
+
+  // Strategy 2: Find newest artifact for this PR (fallback)
+  const newestArtifact = await findNewestArtifactForPR(octokit, owner, repo, prNumber);
+
+  if (newestArtifact) {
+    try {
+      const data = await downloadArtifact(octokit, owner, repo, newestArtifact);
+      return { data, artifactInfo: newestArtifact };
+    } catch {
+      // All artifacts are gone
+      return null;
+    }
+  }
+
+  return null;
+}
