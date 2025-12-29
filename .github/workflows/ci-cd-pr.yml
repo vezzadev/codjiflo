@@ -1,5 +1,7 @@
 name: CI/CD Pull Request
 permissions:
+  contents: read
+  actions: read
   pull-requests: write
 
 on:
@@ -173,4 +175,13 @@ jobs:
 
             _Updated for commit ${{ github.event.pull_request.head.sha }}_
           edit-mode: replace
+
+  # Capture iteration data for CodjiFlo iteration tracking
+  capture-iteration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Capture PR iteration
+        uses: codjiflo/action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
