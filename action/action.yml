@@ -19,7 +19,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         cd ${{ github.action_path }}
         npx tsx src/index.ts
