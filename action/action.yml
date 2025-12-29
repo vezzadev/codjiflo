@@ -13,12 +13,9 @@ inputs:
     default: ${{ github.token }}
 
 outputs:
-  iteration-count:
-    description: 'Number of iterations captured'
-    value: ${{ steps.capture.outputs.iteration-count }}
   artifact-name:
     description: 'Name of the uploaded artifact'
-    value: ${{ steps.capture.outputs.artifact-name }}
+    value: codjiflo-pr-${{ github.event.pull_request.number }}
 
 runs:
   using: 'composite'
@@ -28,7 +25,7 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: codjiflo-pr-${{ github.event.pull_request.number }}
-        path: .codjiflo
+        path: ${{ github.workspace }}/.codjiflo
       continue-on-error: true
 
     - name: Capture iteration
@@ -40,10 +37,13 @@ runs:
         cd ${{ github.action_path }}
         npx tsx src/index.ts
 
+        # Export outputs for subsequent steps
+        echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ steps.capture.outputs.artifact-name }}
-        path: ${{ steps.capture.outputs.work-dir }}
+        name: codjiflo-pr-${{ github.event.pull_request.number }}
+        path: ${{ github.workspace }}/.codjiflo
         retention-days: 90
         overwrite: true
