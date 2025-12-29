@@ -12,13 +12,38 @@ inputs:
     required: true
     default: ${{ github.token }}
 
+outputs:
+  iteration-count:
+    description: 'Number of iterations captured'
+    value: ${{ steps.capture.outputs.iteration-count }}
+  artifact-name:
+    description: 'Name of the uploaded artifact'
+    value: ${{ steps.capture.outputs.artifact-name }}
+
 runs:
   using: 'composite'
   steps:
-    - name: Run iteration capture
+    - name: Download existing artifact
+      id: download
+      uses: actions/download-artifact@v4
+      with:
+        name: codjiflo-pr-${{ github.event.pull_request.number }}
+        path: .codjiflo
+      continue-on-error: true
+
+    - name: Capture iteration
+      id: capture
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         cd ${{ github.action_path }}
         npx tsx src/index.ts
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.capture.outputs.artifact-name }}
+        path: ${{ steps.capture.outputs.work-dir }}
+        retention-days: 90
+        overwrite: true

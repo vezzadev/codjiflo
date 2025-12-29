@@ -4,19 +4,16 @@
  * Captures PR iterations for force-push resilient code review.
  *
  * Workflow:
- * 1. Download previous artifact (if exists)
- * 2. Open/create SQLite database
- * 3. Capture iteration data (files, content)
- * 4. Compute SpanTrackers
- * 5. Upload artifact
- * 6. Update PR comment
+ * 1. Open/create SQLite database
+ * 2. Capture iteration data (files, content)
+ * 3. Compute SpanTrackers
+ * 4. Output paths for artifact upload (handled by action.yml)
+ * 5. Update PR comment
  */
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import * as artifact from '@actions/artifact';
-import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
-import { tmpdir } from 'os';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 import { IterationDatabase } from './db/database';
@@ -47,26 +44,22 @@ async function run(): Promise<void> {
     const { owner, repo, prNumber } = ctx;
     core.info(`Processing PR #${prNumber} in ${owner}/${repo}`);
 
-    // Setup paths
-    const workDir = join(tmpdir(), 'codjiflo-action');
+    // Setup paths - use workspace for artifact upload
+    const workDir = process.env.GITHUB_WORKSPACE
+      ? join(process.env.GITHUB_WORKSPACE, '.codjiflo')
+      : join(process.cwd(), '.codjiflo');
     if (!existsSync(workDir)) {
       mkdirSync(workDir, { recursive: true });
     }
     const dbPath = join(workDir, 'iterations.db');
     const artifactName = `codjiflo-pr-${prNumber}`;
 
-    // Try to download existing artifact
-    const artifactClient = artifact.default ?? artifact;
-    let hasExistingArtifact = false;
-
-    try {
-      const downloadResult = await artifactClient.downloadArtifact(artifactName, {
-        path: workDir,
-      });
-      hasExistingArtifact = downloadResult.downloadPath !== undefined;
-      core.info(`Downloaded existing artifact: ${hasExistingArtifact}`);
-    } catch {
-      core.info('No existing artifact found, creating new database');
+    // Check if we have an existing database (downloaded by action.yml)
+    const hasExistingDb = existsSync(dbPath);
+    if (hasExistingDb) {
+      core.info('Found existing database from previous iteration');
+    } else {
+      core.info('Creating new database');
     }
 
     // Open database
@@ -106,15 +99,15 @@ async function run(): Promise<void> {
       const dbBuffer = db.export();
       db.close();
 
-      // Write to file
+      // Write to file for artifact upload
       writeFileSync(dbPath, dbBuffer);
+      core.info(`Database written to ${dbPath}`);
 
-      // Upload artifact
-      core.info('Uploading artifact...');
-      await artifactClient.uploadArtifact(artifactName, [dbPath], workDir, {
-        retentionDays: 90,
-      });
-      core.info('Artifact uploaded');
+      // Set outputs for subsequent steps
+      core.setOutput('db-path', dbPath);
+      core.setOutput('artifact-name', artifactName);
+      core.setOutput('iteration-count', iteration.revision);
+      core.setOutput('work-dir', workDir);
 
       // Update PR comment
       core.info('Updating PR comment...');
@@ -126,14 +119,7 @@ async function run(): Promise<void> {
       });
       core.info('PR comment updated');
 
-      // Cleanup
-      if (existsSync(dbPath)) {
-        unlinkSync(dbPath);
-      }
-
-      core.info('Done!');
-      core.setOutput('iteration-count', iteration.revision);
-      core.setOutput('artifact-name', artifactName);
+      core.info('Done! Artifact upload will be handled by action.yml');
     } catch (error) {
       db.close();
       throw error;
