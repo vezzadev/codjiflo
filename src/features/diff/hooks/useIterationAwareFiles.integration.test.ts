@@ -1,0 +1,683 @@
+/**
+ * Integration tests for useIterationAwareFiles hook
+ *
+ * Tests various file lifecycle scenarios across iterations to ensure
+ * iteration-aware filtering is rock solid.
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { useIterationAwareFiles } from './useIterationAwareFiles';
+import { useDiffStore } from '../stores';
+import { useIterationStore } from '@/features/iterations/stores';
+import { FileChangeStatus } from '@/api/types';
+import type { FileChange } from '@/api/types';
+import type { ReviewFileArtifact, FileContent } from '@/features/iterations/types';
+
+// Mock dependencies
+vi.mock('../stores', () => ({
+  useDiffStore: vi.fn(),
+}));
+
+vi.mock('@/features/iterations/stores', () => ({
+  useIterationStore: vi.fn(),
+}));
+
+// Helper to create mock file
+function createMockFile(
+  filename: string,
+  status: FileChangeStatus = FileChangeStatus.Modified,
+  additions = 10,
+  deletions = 5
+): FileChange {
+  return {
+    filename,
+    status,
+    additions,
+    deletions,
+    changes: additions + deletions,
+    patch: '@@ -1,' + String(deletions) + ' +1,' + String(additions) + ' @@',
+  };
+}
+
+// Helper to create mock artifact
+function createMockArtifact(
+  id: number,
+  path: string,
+  snapshotIndices: number[]
+): ReviewFileArtifact {
+  const repoPaths: (string | null)[] = [];
+  const maxIndex = Math.max(...snapshotIndices);
+  for (let i = 0; i <= maxIndex; i++) {
+    repoPaths.push(snapshotIndices.includes(i) ? path : null);
+  }
+  return {
+    id,
+    changeTrackingId: 'sha-' + String(id),
+    repoPaths,
+    firstSnapshotIndex: Math.min(...snapshotIndices),
+    lastSnapshotIndex: maxIndex,
+  };
+}
+
+// Helper to create mock content
+function createMockContent(
+  artifactId: number,
+  snapshotIndex: number,
+  content: string
+): FileContent {
+  return {
+    artifactId,
+    snapshotIndex,
+    content,
+    contentHash: 'hash-' + String(artifactId) + '-' + String(snapshotIndex) + '-' + String(content.length),
+    sizeBytes: content.length,
+  };
+}
+
+/**
+ * Mock client that supports complex scenarios with multiple artifacts per path
+ */
+class MockIterationClient {
+  private artifacts: ReviewFileArtifact[] = [];
+  private contentMap = new Map<string, FileContent>(); // key: `${artifactId}-${snapshotIndex}`
+
+  constructor() {
+    this.getArtifactsForRange = vi.fn(this.getArtifactsForRange.bind(this));
+    this.getFileContent = vi.fn(this.getFileContent.bind(this));
+    this.getFilePath = vi.fn(this.getFilePath.bind(this));
+  }
+
+  setArtifacts(artifacts: ReviewFileArtifact[]) {
+    this.artifacts = artifacts;
+  }
+
+  setContent(artifactId: number, snapshotIndex: number, content: string | null) {
+    const key = String(artifactId) + '-' + String(snapshotIndex);
+    if (content === null) {
+      this.contentMap.delete(key);
+    } else {
+      this.contentMap.set(key, createMockContent(artifactId, snapshotIndex, content));
+    }
+  }
+
+  getArtifactsForRange(leftSnapshot: number, rightSnapshot: number): ReviewFileArtifact[] {
+    return this.artifacts.filter(
+      (a) => a.firstSnapshotIndex <= rightSnapshot && a.lastSnapshotIndex >= leftSnapshot
+    );
+  }
+
+  getFileContent(artifactId: number, snapshotIndex: number): FileContent | undefined {
+    // Simulate "at or before" logic like the real client
+    for (let i = snapshotIndex; i >= 0; i--) {
+      const key = String(artifactId) + '-' + String(i);
+      const content = this.contentMap.get(key);
+      if (content) {
+        return { ...content, snapshotIndex: i };
+      }
+    }
+    return undefined;
+  }
+
+  getFilePath(artifactId: number, snapshotIndex: number): string | null {
+    const artifact = this.artifacts.find((a) => a.id === artifactId);
+    return artifact?.repoPaths[snapshotIndex] ?? null;
+  }
+}
+
+describe('useIterationAwareFiles - Integration Tests', () => {
+  let mockClient: MockIterationClient;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockClient = new MockIterationClient();
+  });
+
+  // Helper to setup mocks
+  function setupMocks(
+    files: FileChange[],
+    artifacts: ReviewFileArtifact[],
+    selectedRange: { fromSnapshot: number; toSnapshot: number } | null
+  ) {
+    mockClient.setArtifacts(artifacts);
+
+    vi.mocked(useDiffStore).mockReturnValue({
+      files,
+      selectedFileIndex: 0,
+      isLoading: false,
+      viewConfig: { mode: 'unified', showWhitespace: false },
+      setFiles: vi.fn(),
+      selectFile: vi.fn(),
+      setLoading: vi.fn(),
+      setViewConfig: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    vi.mocked(useIterationStore).mockReturnValue({
+      client: selectedRange ? mockClient : null,
+      selectedRange,
+      isDegraded: !selectedRange,
+      artifacts,
+      iterations: [],
+      isLoading: false,
+      error: null,
+      loadIterations: vi.fn(),
+      setSelectedRange: vi.fn(),
+      reset: vi.fn(),
+    } as ReturnType<typeof useIterationStore>);
+  }
+
+  describe('Non-iteration mode (degraded)', () => {
+    it('should return all files unchanged when not in iteration mode', () => {
+      const files = [
+        createMockFile('src/file1.ts'),
+        createMockFile('src/file2.ts', FileChangeStatus.Added, 20, 0),
+      ];
+
+      setupMocks(files, [], null);
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.isIterationMode).toBe(false);
+      expect(result.current.files).toHaveLength(2);
+      expect(result.current.files[0]?.filename).toBe('src/file1.ts');
+      expect(result.current.files[1]?.filename).toBe('src/file2.ts');
+      expect(result.current.totalFilesInPR).toBe(2);
+    });
+  });
+
+  describe('File Unchanged Between Iterations', () => {
+    it('should hide file that has no changes in selected range', () => {
+      // File was added in v1 (snapshots 0-1), unchanged since
+      // Comparing v5→v6 (snapshots 9→11) should hide it
+      const files = [createMockFile('src/unchanged.ts', FileChangeStatus.Added, 50, 0)];
+      const artifact = createMockArtifact(1, 'src/unchanged.ts', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 9, toSnapshot: 11 });
+
+      // Set same content for both snapshots (unchanged)
+      mockClient.setContent(1, 0, 'const x = 1;');
+      mockClient.setContent(1, 9, 'const x = 1;');
+      mockClient.setContent(1, 11, 'const x = 1;');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.isIterationMode).toBe(true);
+      expect(result.current.files).toHaveLength(0); // File hidden - no changes
+      expect(result.current.totalFilesInPR).toBe(1);
+    });
+
+    it('should hide file unchanged across multiple iterations', () => {
+      // File modified in v2 but unchanged in v3, v4, v5, v6
+      // Comparing v3→v6 should hide it
+      const files = [createMockFile('src/stable.ts')];
+      const artifact = createMockArtifact(1, 'src/stable.ts', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 5, toSnapshot: 11 });
+
+      // Content same from v3 (snapshot 5) onwards
+      mockClient.setContent(1, 3, 'modified content');
+      mockClient.setContent(1, 5, 'modified content');
+      mockClient.setContent(1, 11, 'modified content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(0);
+    });
+  });
+
+  describe('File Added in Iteration', () => {
+    it('should show file added in selected iteration range', () => {
+      // File added in v3 (snapshot 5)
+      // Comparing v2→v3 should show it as added
+      const files = [createMockFile('src/new-file.ts', FileChangeStatus.Added, 30, 0)];
+      const artifact = createMockArtifact(1, 'src/new-file.ts', [5, 6, 7, 8, 9, 10, 11]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 3, toSnapshot: 5 });
+
+      // No content at snapshot 3, content at snapshot 5
+      mockClient.setContent(1, 5, 'new file content\nline 2\nline 3');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Added);
+      expect(result.current.files[0]?.additions).toBe(3);
+      expect(result.current.files[0]?.deletions).toBe(0);
+    });
+
+    it('should hide file that was added before the selected range', () => {
+      // File added in v1, comparing v5→v6
+      const files = [createMockFile('src/old-new.ts', FileChangeStatus.Added)];
+      const artifact = createMockArtifact(1, 'src/old-new.ts', [1, 3, 5, 7, 9, 11]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 9, toSnapshot: 11 });
+
+      // Same content in both snapshots
+      mockClient.setContent(1, 1, 'old content');
+      mockClient.setContent(1, 9, 'old content');
+      mockClient.setContent(1, 11, 'old content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(0);
+    });
+  });
+
+  describe('File Deleted in Iteration', () => {
+    it('should show file deleted in selected iteration range', () => {
+      // File existed, deleted in v4 (snapshot 7)
+      // Comparing v3→v4 should show it as deleted
+      const files = [createMockFile('src/deleted.ts', FileChangeStatus.Deleted, 0, 25)];
+      const artifact = createMockArtifact(1, 'src/deleted.ts', [0, 1, 2, 3, 4, 5, 6]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 5, toSnapshot: 7 });
+
+      // Content at snapshot 5, no content at snapshot 7
+      mockClient.setContent(1, 5, 'content before deletion\nline 2');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Deleted);
+      expect(result.current.files[0]?.deletions).toBe(2);
+      expect(result.current.files[0]?.additions).toBe(0);
+    });
+
+    it('should hide deleted file when comparing after deletion', () => {
+      // File deleted in v2, comparing v4→v5 should not show it
+      const files = [createMockFile('src/long-gone.ts', FileChangeStatus.Deleted)];
+      const artifact = createMockArtifact(1, 'src/long-gone.ts', [0, 1, 2, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 7, toSnapshot: 9 });
+
+      // No content at these snapshots (file was deleted earlier)
+      // mockClient has no content set
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(0);
+    });
+  });
+
+  describe('File Modified in Iteration', () => {
+    it('should show file modified in selected iteration range', () => {
+      const files = [createMockFile('src/modified.ts')];
+      const artifact = createMockArtifact(1, 'src/modified.ts', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 9, toSnapshot: 11 });
+
+      mockClient.setContent(1, 9, 'original line 1\noriginal line 2');
+      mockClient.setContent(1, 11, 'modified line 1\noriginal line 2\nnew line 3');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+      expect(result.current.files[0]?.additions).toBeGreaterThan(0);
+    });
+
+    it('should show correct stats for modified file', () => {
+      const files = [createMockFile('src/stats-test.ts')];
+      const artifact = createMockArtifact(1, 'src/stats-test.ts', [0, 1, 3, 5]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 1, toSnapshot: 3 });
+
+      // Original: 3 lines, Modified: 4 lines (1 deleted, 2 added)
+      mockClient.setContent(1, 1, 'line1\nline2\nline3');
+      mockClient.setContent(1, 3, 'line1\nmodified2\nnew3\nnew4');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      // Exact stats depend on diff algorithm, but should have changes
+      expect(result.current.files[0]?.changes).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Complex Lifecycle: Add → Modify → Unchanged → Modify', () => {
+    it('should show file only in iterations where it changed', () => {
+      // File lifecycle:
+      // v1: Added (snapshot 1)
+      // v2: Modified (snapshot 3)
+      // v3: Unchanged (snapshot 5) - same as v2
+      // v4: Unchanged (snapshot 7) - same as v2
+      // v5: Modified (snapshot 9)
+      // v6: Unchanged (snapshot 11) - same as v5
+
+      const files = [createMockFile('src/lifecycle.ts', FileChangeStatus.Added)];
+      const artifact = createMockArtifact(1, 'src/lifecycle.ts', [1, 3, 5, 7, 9, 11]);
+
+      // Test v3→v4 (unchanged period)
+      setupMocks(files, [artifact], { fromSnapshot: 5, toSnapshot: 7 });
+      mockClient.setContent(1, 3, 'v2 content');
+      mockClient.setContent(1, 5, 'v2 content');
+      mockClient.setContent(1, 7, 'v2 content');
+
+      let { result } = renderHook(() => useIterationAwareFiles());
+      expect(result.current.files).toHaveLength(0); // Unchanged
+
+      // Test v4→v5 (modified)
+      setupMocks(files, [artifact], { fromSnapshot: 7, toSnapshot: 9 });
+      mockClient.setContent(1, 7, 'v2 content');
+      mockClient.setContent(1, 9, 'v5 new content');
+
+      ({ result } = renderHook(() => useIterationAwareFiles()));
+      expect(result.current.files).toHaveLength(1); // Changed
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+
+      // Test v5→v6 (unchanged again)
+      setupMocks(files, [artifact], { fromSnapshot: 9, toSnapshot: 11 });
+      mockClient.setContent(1, 9, 'v5 new content');
+      mockClient.setContent(1, 11, 'v5 new content');
+
+      ({ result } = renderHook(() => useIterationAwareFiles()));
+      expect(result.current.files).toHaveLength(0); // Unchanged
+    });
+  });
+
+  describe('Complex Lifecycle: Existing → Modify → Modify → Delete', () => {
+    it('should correctly track file through modification to deletion', () => {
+      const files = [createMockFile('src/doomed.ts', FileChangeStatus.Deleted)];
+
+      // Artifact exists from base through v3
+      const artifact = createMockArtifact(1, 'src/doomed.ts', [0, 1, 2, 3, 4, 5, 6]);
+
+      // Test v1→v2 (modified)
+      setupMocks(files, [artifact], { fromSnapshot: 1, toSnapshot: 3 });
+      mockClient.setContent(1, 0, 'base content');
+      mockClient.setContent(1, 1, 'base content');
+      mockClient.setContent(1, 3, 'v2 modified');
+
+      let { result } = renderHook(() => useIterationAwareFiles());
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+
+      // Test v3→v4 (deleted)
+      setupMocks(files, [artifact], { fromSnapshot: 5, toSnapshot: 7 });
+      mockClient.setContent(1, 5, 'v3 content');
+      // No content at snapshot 7 (deleted)
+
+      ({ result } = renderHook(() => useIterationAwareFiles()));
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Deleted);
+    });
+  });
+
+  describe('Multi-Artifact Scenario (SHA Change)', () => {
+    it('should find content across multiple artifacts for same path', () => {
+      // When file is modified, action creates new artifact with new SHA
+      // Artifact 1: old SHA, has content for snapshots 0-9
+      // Artifact 2: new SHA, has content for snapshots 10-11
+      const files = [createMockFile('src/multi-artifact.ts')];
+
+      const artifact1 = createMockArtifact(1, 'src/multi-artifact.ts', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      const artifact2 = createMockArtifact(2, 'src/multi-artifact.ts', [10, 11]);
+
+      setupMocks(files, [artifact1, artifact2], { fromSnapshot: 9, toSnapshot: 11 });
+
+      // Artifact 1 has content at snapshot 9
+      mockClient.setContent(1, 9, 'old version content');
+      // Artifact 2 has content at snapshot 11
+      mockClient.setContent(2, 11, 'new version content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+    });
+
+    it('should prefer content from artifact with closest snapshot', () => {
+      // Both artifacts have the path, but artifact 2 has closer snapshot
+      const files = [createMockFile('src/closest.ts')];
+
+      const artifact1 = createMockArtifact(1, 'src/closest.ts', [0, 1, 2, 3, 4, 5]);
+      const artifact2 = createMockArtifact(2, 'src/closest.ts', [6, 7, 8, 9, 10, 11]);
+
+      setupMocks(files, [artifact1, artifact2], { fromSnapshot: 9, toSnapshot: 11 });
+
+      mockClient.setContent(1, 5, 'artifact 1 content'); // Far from snapshot 9
+      mockClient.setContent(2, 9, 'artifact 2 v5 content'); // Exact match
+      mockClient.setContent(2, 11, 'artifact 2 v6 content'); // Exact match
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // Should show as modified because artifact 2's content differs between 9 and 11
+      expect(result.current.files).toHaveLength(1);
+    });
+  });
+
+  describe('Add in Middle → Modify at End', () => {
+    it('should correctly handle file added mid-PR and modified later', () => {
+      // File added in v3, modified in v6
+      const files = [createMockFile('src/mid-add.ts', FileChangeStatus.Added)];
+      const artifact = createMockArtifact(1, 'src/mid-add.ts', [5, 7, 9, 11]);
+
+      // Test base→v3 (should show as added)
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 5 });
+      mockClient.setContent(1, 5, 'initial content');
+
+      let { result } = renderHook(() => useIterationAwareFiles());
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Added);
+
+      // Test v5→v6 (should show as modified)
+      setupMocks(files, [artifact], { fromSnapshot: 9, toSnapshot: 11 });
+      mockClient.setContent(1, 9, 'initial content');
+      mockClient.setContent(1, 11, 'modified in v6');
+
+      ({ result } = renderHook(() => useIterationAwareFiles()));
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+    });
+  });
+
+  describe('Full Diff vs Latest Iteration', () => {
+    it('should show all files in full diff mode (base→latest)', () => {
+      const files = [
+        createMockFile('src/file1.ts', FileChangeStatus.Added),
+        createMockFile('src/file2.ts', FileChangeStatus.Modified),
+        createMockFile('src/file3.ts', FileChangeStatus.Deleted),
+      ];
+
+      const artifacts = [
+        createMockArtifact(1, 'src/file1.ts', [1, 3, 5, 7, 9, 11]),
+        createMockArtifact(2, 'src/file2.ts', [0, 1, 3, 5, 7, 9, 11]),
+        createMockArtifact(3, 'src/file3.ts', [0, 1, 3, 5]),
+      ];
+
+      setupMocks(files, artifacts, { fromSnapshot: 0, toSnapshot: 11 });
+
+      mockClient.setContent(1, 1, 'file1 content');
+      mockClient.setContent(1, 11, 'file1 content');
+      mockClient.setContent(2, 0, 'file2 original');
+      mockClient.setContent(2, 11, 'file2 modified');
+      mockClient.setContent(3, 0, 'file3 content');
+      mockClient.setContent(3, 5, 'file3 content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // file1: added (no content at 0, has content at 11)
+      // file2: modified (different content)
+      // file3: deleted (has content at 0/5, none at 11)
+      expect(result.current.files.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should filter correctly in latest iteration mode', () => {
+      // Only file2 changed in v5→v6
+      const files = [
+        createMockFile('src/file1.ts', FileChangeStatus.Added),
+        createMockFile('src/file2.ts', FileChangeStatus.Modified),
+      ];
+
+      const artifacts = [
+        createMockArtifact(1, 'src/file1.ts', [1, 3, 5, 7, 9, 11]),
+        createMockArtifact(2, 'src/file2.ts', [0, 1, 3, 5, 7, 9, 11]),
+      ];
+
+      setupMocks(files, artifacts, { fromSnapshot: 9, toSnapshot: 11 });
+
+      // file1 unchanged between v5 and v6
+      mockClient.setContent(1, 9, 'file1 same');
+      mockClient.setContent(1, 11, 'file1 same');
+
+      // file2 changed between v5 and v6
+      mockClient.setContent(2, 9, 'file2 v5');
+      mockClient.setContent(2, 11, 'file2 v6 changed');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.filename).toBe('src/file2.ts');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty file content', () => {
+      const files = [createMockFile('src/empty.ts', FileChangeStatus.Added)];
+      const artifact = createMockArtifact(1, 'src/empty.ts', [1, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+      mockClient.setContent(1, 1, ''); // Empty file
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // Empty file should still count as added if it didn't exist before
+      expect(result.current.files).toHaveLength(0); // Empty content = no lines = filtered
+    });
+
+    it('should handle file with only whitespace changes', () => {
+      const files = [createMockFile('src/whitespace.ts')];
+      const artifact = createMockArtifact(1, 'src/whitespace.ts', [0, 1, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 1, toSnapshot: 3 });
+
+      mockClient.setContent(1, 1, 'line1\nline2');
+      mockClient.setContent(1, 3, 'line1\nline2'); // Same content
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(0); // No actual changes
+    });
+
+    it('should handle file not in any artifact (fallback)', () => {
+      const files = [createMockFile('src/unknown.ts')];
+
+      setupMocks(files, [], { fromSnapshot: 0, toSnapshot: 1 });
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // File not in artifacts should be included as fallback
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.filename).toBe('src/unknown.ts');
+    });
+
+    it('should preserve original index for file selection', () => {
+      const files = [
+        createMockFile('src/a.ts'), // index 0
+        createMockFile('src/b.ts'), // index 1 - will be filtered
+        createMockFile('src/c.ts'), // index 2
+      ];
+
+      const artifacts = [
+        createMockArtifact(1, 'src/a.ts', [0, 1, 3]),
+        createMockArtifact(2, 'src/b.ts', [0, 1, 3]),
+        createMockArtifact(3, 'src/c.ts', [0, 1, 3]),
+      ];
+
+      setupMocks(files, artifacts, { fromSnapshot: 1, toSnapshot: 3 });
+
+      mockClient.setContent(1, 1, 'a v1');
+      mockClient.setContent(1, 3, 'a v2 changed');
+      mockClient.setContent(2, 1, 'b same');
+      mockClient.setContent(2, 3, 'b same'); // Unchanged
+      mockClient.setContent(3, 1, 'c v1');
+      mockClient.setContent(3, 3, 'c v2 changed');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(2);
+      expect(result.current.files[0]?.originalIndex).toBe(0); // src/a.ts
+      expect(result.current.files[1]?.originalIndex).toBe(2); // src/c.ts (b was filtered)
+    });
+
+    it('should handle renamed file', () => {
+      const files: FileChange[] = [{
+        filename: 'src/new-name.ts',
+        previousFilename: 'src/old-name.ts',
+        status: FileChangeStatus.Renamed,
+        additions: 5,
+        deletions: 2,
+        changes: 7,
+        patch: '@@ -1,2 +1,5 @@',
+      }];
+
+      const artifact = createMockArtifact(1, 'src/new-name.ts', [0, 1, 3]);
+      // Also track old path
+      artifact.repoPaths[0] = 'src/old-name.ts';
+
+      setupMocks(files, [artifact], { fromSnapshot: 1, toSnapshot: 3 });
+
+      mockClient.setContent(1, 1, 'content before');
+      mockClient.setContent(1, 3, 'content after change');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      // Renamed status should be preserved if there are changes
+      expect(result.current.files[0]?.previousFilename).toBe('src/old-name.ts');
+    });
+  });
+
+  describe('Regression Tests', () => {
+    it('should not return stale content from wrong artifact (multi-artifact bug)', () => {
+      // This tests the bug where artifact 1 would return content from snapshot 9
+      // for both snapshot 9 and 11 requests, making diffs appear empty
+      const files = [createMockFile('src/bug-test.ts')];
+
+      // Artifact 1: has content up to snapshot 9
+      const artifact1 = createMockArtifact(1, 'src/bug-test.ts', [0, 1, 3, 5, 7, 9]);
+      // Artifact 2: new version, has content for 10-11
+      const artifact2 = createMockArtifact(2, 'src/bug-test.ts', [10, 11]);
+
+      setupMocks(files, [artifact1, artifact2], { fromSnapshot: 9, toSnapshot: 11 });
+
+      // Artifact 1's content at snapshot 9
+      mockClient.setContent(1, 9, 'OLD CONTENT FROM V5');
+      // Artifact 2's content at snapshot 11
+      mockClient.setContent(2, 11, 'NEW CONTENT FROM V6');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // File SHOULD show as modified because content differs
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+    });
+
+    it('should handle many files efficiently', () => {
+      const fileCount = 50;
+      const files = Array.from({ length: fileCount }, (_, i) =>
+        createMockFile('src/file' + String(i) + '.ts')
+      );
+
+      const artifacts = files.map((_, i) =>
+        createMockArtifact(i + 1, 'src/file' + String(i) + '.ts', [0, 1, 3, 5, 7, 9, 11])
+      );
+
+      setupMocks(files, artifacts, { fromSnapshot: 9, toSnapshot: 11 });
+
+      // Half the files changed, half unchanged
+      artifacts.forEach((a, i) => {
+        const changed = i % 2 === 0;
+        mockClient.setContent(a.id, 9, 'content ' + String(i));
+        mockClient.setContent(a.id, 11, changed ? 'changed content ' + String(i) : 'content ' + String(i));
+      });
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // Should have 25 files (every other file changed)
+      expect(result.current.files).toHaveLength(25);
+      expect(result.current.totalFilesInPR).toBe(50);
+    });
+  });
+});

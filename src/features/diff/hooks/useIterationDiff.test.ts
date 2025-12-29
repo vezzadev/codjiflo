@@ -175,6 +175,24 @@ describe('useIterationDiff', () => {
       });
 
       it('should compute diff for deleted file', () => {
+        // Set up artifact for deleted file: exists at snapshot 0, deleted at snapshot 1
+        const deletedFileArtifacts = [
+          {
+            id: 3,
+            changeTrackingId: 'deleted-file',
+            repoPaths: ['src/deleted.ts'], // Only exists at snapshot 0
+            firstSnapshotIndex: 0,
+            lastSnapshotIndex: 0,
+          },
+        ];
+
+        vi.mocked(useIterationStore).mockReturnValue({
+          client: mockClient,
+          selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+          isDegraded: false,
+          artifacts: deletedFileArtifacts,
+        } as unknown);
+
         mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
           if (snapshotIndex === 1) return undefined; // File deleted at head
           return {
@@ -187,7 +205,7 @@ describe('useIterationDiff', () => {
         });
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiffByPath('src/file1.ts');
+        const diff = result.current.getFileDiffByPath('src/deleted.ts');
 
         expect(diff).not.toBeNull();
         expect(diff?.base).not.toBeNull();
@@ -197,6 +215,7 @@ describe('useIterationDiff', () => {
       });
 
       it('should compute diff for modified file', () => {
+        // Use file2 which exists at both snapshot 0 and 1 (repoPaths: ['src/file2.ts', 'src/file2.ts'])
         mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
           const content = snapshotIndex === 0 ? 'original' : 'modified';
           return {
@@ -209,7 +228,7 @@ describe('useIterationDiff', () => {
         });
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiffByPath('src/file1.ts');
+        const diff = result.current.getFileDiffByPath('src/file2.ts');
 
         expect(diff).not.toBeNull();
         expect(diff?.base).not.toBeNull();

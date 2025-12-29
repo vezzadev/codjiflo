@@ -2,18 +2,17 @@
  * Test: Iteration-aware file list filtering
  *
  * Verifies that files with no changes in the selected iteration range are hidden.
+ *
+ * NOTE: This test only runs in PROD mode because it requires real iteration data
+ * from the GitHub artifact. Mock mode doesn't include iteration data.
  */
 
 import { test, expect } from '@playwright/test';
-import { setupFullPRMocks } from './fixtures/github-mocks';
 import { isMockMode } from './fixtures/mode';
 
 test.describe('Iteration-aware File List (AC-4.8.11)', () => {
-  test.beforeEach(async ({ page }) => {
-    if (isMockMode()) {
-      await setupFullPRMocks(page, 'pedropaulovc', 'codjiflo', 28);
-    }
-  });
+  // Skip all tests in mock mode - iteration data requires prod mode
+  test.skip(() => isMockMode(), 'Iteration tests require prod mode with real artifact data');
 
   test('Latest preset hides unchanged files', async ({ page }) => {
     // Navigate to PR 28
@@ -34,7 +33,7 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
 
     // Count files shown in Latest view
     const latestFileCount = await fileButtons.count();
-    console.log(`Latest view shows ${latestFileCount} files`);
+    console.log('Latest view shows ' + String(latestFileCount) + ' files');
 
     // ci-cd-pr.yml should NOT appear if it wasn't changed between v5 and v6
     // (It was added in an earlier iteration)
@@ -44,7 +43,7 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
     if (await ciCdFile.isVisible()) {
       // If visible, it should be because it actually changed, not because of a bug
       const ariaLabel = await ciCdFile.getAttribute('aria-label');
-      console.log(`ci-cd-pr.yml is visible with label: ${ariaLabel}`);
+      console.log('ci-cd-pr.yml is visible with label: ' + (ariaLabel ?? ''));
 
       // The file should show as modified, not added (if it actually changed)
       // If it shows as "added" with 206 additions, that's the bug we fixed
@@ -58,7 +57,7 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
     await page.waitForTimeout(1000);
 
     const fullDiffFileCount = await fileButtons.count();
-    console.log(`Full diff view shows ${fullDiffFileCount} files`);
+    console.log('Full diff view shows ' + String(fullDiffFileCount) + ' files');
 
     // Full diff should show more files than Latest (or equal if all files changed in latest)
     expect(fullDiffFileCount).toBeGreaterThanOrEqual(latestFileCount);
@@ -74,6 +73,6 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
     // eslint.config.mjs should NOT be visible in Latest if it wasn't changed in v5→v6
     const eslintInLatest = fileList.getByRole('button', { name: /eslint\.config\.mjs/ });
     const isEslintVisible = await eslintInLatest.isVisible();
-    console.log(`eslint.config.mjs visible in Latest: ${isEslintVisible}`);
+    console.log('eslint.config.mjs visible in Latest: ' + String(isEslintVisible));
   });
 });
