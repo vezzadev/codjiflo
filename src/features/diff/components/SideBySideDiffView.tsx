@@ -12,7 +12,6 @@ import { CommentThread, CommentEditor } from '@/features/comments';
 interface SideBySideDiffViewProps {
   alignedLines: AlignedDiffLine[];
   language: string;
-  filename: string;
   threadsByLineAndSide: Map<string, ReviewThread[]>;
   currentUserLogin: string;
   addComment: (params: {
@@ -38,6 +37,8 @@ interface SideBySideDiffViewProps {
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
+  /** Show whitespace characters visibly */
+  showWhitespace?: boolean;
 }
 
 /**
@@ -46,7 +47,6 @@ interface SideBySideDiffViewProps {
 export function SideBySideDiffView({
   alignedLines,
   language,
-  filename: _filename, // unused but kept for API consistency
   threadsByLineAndSide,
   currentUserLogin,
   addReply,
@@ -63,6 +63,7 @@ export function SideBySideDiffView({
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
+  showWhitespace = false,
 }: SideBySideDiffViewProps) {
   const leftPaneRef = useRef<HTMLDivElement>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -155,6 +156,7 @@ export function SideBySideDiffView({
                         singleLineNumber
                         showCommentButton={leftLine.type !== 'header'}
                         onStartComment={() => onStartComment(index, 'LEFT')}
+                        showWhitespace={showWhitespace}
                       />
                     ) : (
                       <DiffLineSpacer />
@@ -229,6 +231,7 @@ export function SideBySideDiffView({
                         singleLineNumber
                         showCommentButton={rightLine.type !== 'header'}
                         onStartComment={() => onStartComment(index, 'RIGHT')}
+                        showWhitespace={showWhitespace}
                       />
                     ) : (
                       <DiffLineSpacer />

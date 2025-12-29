@@ -241,7 +241,7 @@ describe('useDiffStore', () => {
           mode: 'split',
           filter: 'left',
           showFullFile: true,
-          ignoreWhitespace: true,
+          showWhitespace: true,
         },
       });
 
@@ -251,7 +251,7 @@ describe('useDiffStore', () => {
       expect(viewConfig.mode).toBe('split');
       expect(viewConfig.filter).toBe('left');
       expect(viewConfig.showFullFile).toBe(true);
-      expect(viewConfig.ignoreWhitespace).toBe(true);
+      expect(viewConfig.showWhitespace).toBe(true);
     });
   });
 
@@ -264,7 +264,7 @@ describe('useDiffStore', () => {
           mode: 'unified',
           filter: 'both',
           showFullFile: false,
-          ignoreWhitespace: false,
+          showWhitespace: false,
         },
       });
     });
@@ -289,7 +289,7 @@ describe('useDiffStore', () => {
             mode: 'unified',
             filter: 'left',
             showFullFile: true,
-            ignoreWhitespace: true,
+            showWhitespace: true,
           },
         });
 
@@ -299,7 +299,7 @@ describe('useDiffStore', () => {
         expect(config.mode).toBe('split');
         expect(config.filter).toBe('left');
         expect(config.showFullFile).toBe(true);
-        expect(config.ignoreWhitespace).toBe(true);
+        expect(config.showWhitespace).toBe(true);
       });
     });
 
@@ -339,17 +339,17 @@ describe('useDiffStore', () => {
     });
 
     describe('toggleWhitespace', () => {
-      it('toggles ignoreWhitespace from false to true', () => {
+      it('toggles showWhitespace from false to true', () => {
         useDiffStore.getState().toggleWhitespace();
-        expect(useDiffStore.getState().viewConfig.ignoreWhitespace).toBe(true);
+        expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
       });
 
-      it('toggles ignoreWhitespace from true to false', () => {
+      it('toggles showWhitespace from true to false', () => {
         useDiffStore.setState({
-          viewConfig: { ...useDiffStore.getState().viewConfig, ignoreWhitespace: true },
+          viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
         });
         useDiffStore.getState().toggleWhitespace();
-        expect(useDiffStore.getState().viewConfig.ignoreWhitespace).toBe(false);
+        expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(false);
       });
     });
   });

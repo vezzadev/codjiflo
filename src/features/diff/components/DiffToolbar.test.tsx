@@ -24,7 +24,7 @@ describe('DiffToolbar', () => {
         mode: 'unified',
         filter: 'both',
         showFullFile: false,
-        ignoreWhitespace: false,
+        showWhitespace: false,
       },
     });
   });
@@ -57,7 +57,7 @@ describe('DiffToolbar', () => {
 
     it('renders whitespace toggle button', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /hide whitespace/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /show whitespace characters/i })).toBeInTheDocument();
     });
   });
 
@@ -155,33 +155,33 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const button = screen.getByRole('button', { name: /hide whitespace/i });
+      const button = screen.getByRole('button', { name: /show whitespace characters/i });
       await user.click(button);
 
-      expect(useDiffStore.getState().viewConfig.ignoreWhitespace).toBe(true);
+      expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
     });
 
-    it('shows correct label when whitespace is ignored', () => {
+    it('shows correct label when whitespace is shown', () => {
       useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, ignoreWhitespace: true },
+        viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByRole('button', { name: /show whitespace/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /hide whitespace characters/i })).toBeInTheDocument();
     });
 
-    it('shows EyeOff icon when whitespace is ignored', () => {
+    it('shows Eye icon when whitespace is shown', () => {
       useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, ignoreWhitespace: true },
+        viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByTestId('icon-eyeoff')).toBeInTheDocument();
-    });
-
-    it('shows Eye icon when whitespace is visible', () => {
-      render(<DiffToolbar />);
       expect(screen.getByTestId('icon-eye')).toBeInTheDocument();
+    });
+
+    it('shows EyeOff icon when whitespace is hidden', () => {
+      render(<DiffToolbar />);
+      expect(screen.getByTestId('icon-eyeoff')).toBeInTheDocument();
     });
   });
 

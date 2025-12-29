@@ -11,7 +11,8 @@ export interface DiffViewConfig {
   mode: DiffViewMode;
   filter: ContentFilter;
   showFullFile: boolean;
-  ignoreWhitespace: boolean;
+  /** When true, render whitespace characters visibly (· for spaces, → for tabs) */
+  showWhitespace: boolean;
 }
 
 // ============================================================================

@@ -324,7 +324,7 @@ export async function setupFullPRMocks(
   }
 
   // Set up file contents mocks for full file view (if files have content)
-  if (options?.files && options?.pr) {
+  if (options?.files && options.pr) {
     await setupFileContentsMock(page, owner, repo, options.files, options.pr);
   }
 }
