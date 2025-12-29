@@ -37,8 +37,9 @@ export const oauthConfig = {
    * Required OAuth scopes for the application
    * - repo: Access to private repositories (read/write)
    * - read:user: Read user profile data
+   * - actions:read: Read GitHub Actions artifacts (M4 iteration tracking)
    */
-  scopes: ['repo', 'read:user'] as const,
+  scopes: ['repo', 'read:user', 'actions:read'] as const,
 
   /**
    * Token refresh threshold in milliseconds

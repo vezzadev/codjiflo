@@ -289,6 +289,43 @@ export async function setupFileContentsMock(
 }
 
 /**
+ * Set up mocks for iteration-related endpoints (artifact discovery).
+ * Returns empty data to trigger degraded mode.
+ */
+export async function setupIterationMocks(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  // Mock issue comments endpoint (used to find codjiflo artifact comment)
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/comments`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    }
+  );
+
+  // Mock actions artifacts endpoint
+  await page.route(
+    new RegExp(`repos/${owner}/${repo}/actions/artifacts`),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ artifacts: [] }),
+      });
+    }
+  );
+}
+
+/**
  * Set up all mocks for a complete PR view test
  * Convenience function that sets up PR, files, and comments mocks
  */
@@ -327,6 +364,9 @@ export async function setupFullPRMocks(
   if (options?.files && options.pr) {
     await setupFileContentsMock(page, owner, repo, options.files, options.pr);
   }
+
+  // Set up iteration-related mocks (returns empty to trigger degraded mode)
+  await setupIterationMocks(page, owner, repo, prNumber);
 }
 
 /**
