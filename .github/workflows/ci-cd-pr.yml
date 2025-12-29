@@ -169,7 +169,7 @@ jobs:
           body: |
             ## Preview Deployment
 
-            :rocket: **Preview:** https://pr-${{ github.event.pull_request.number }}.codjiflo.vza.net/${{ github.repository }}/${{ github.event.pull_request.number }}
+            :rocket: **Preview:** https://pr-${{ github.event.pull_request.number }}.codjiflo.vza.net/pr/${{ github.repository }}/${{ github.event.pull_request.number }}
 
             _Updated for commit ${{ github.event.pull_request.head.sha }}_
           edit-mode: replace
