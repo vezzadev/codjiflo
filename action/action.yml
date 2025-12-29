@@ -15,7 +15,7 @@ inputs:
 outputs:
   artifact-name:
     description: 'Name of the uploaded artifact'
-    value: codjiflo-pr-${{ github.event.pull_request.number }}
+    value: codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}
 
 runs:
   using: 'composite'
@@ -33,7 +33,7 @@ runs:
         npx tsx src/index.ts
 
         # Export outputs for subsequent steps
-        echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}" >> $GITHUB_OUTPUT
 
     - name: Verify database
       shell: bash
