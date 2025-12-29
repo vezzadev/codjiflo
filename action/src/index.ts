@@ -4,22 +4,25 @@
  * Captures PR iterations for force-push resilient code review.
  *
  * Workflow:
- * 1. Open/create SQLite database
- * 2. Capture iteration data (files, content)
- * 3. Compute SpanTrackers
- * 4. Output paths for artifact upload (handled by action.yml)
- * 5. Update PR comment
+ * 1. Download previous artifact from GitHub API (if exists)
+ * 2. Open/create SQLite database
+ * 3. Capture iteration data (files, content)
+ * 4. Compute SpanTrackers
+ * 5. Output paths for artifact upload (handled by action.yml)
+ * 6. Update PR comment
  */
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import AdmZip from 'adm-zip';
 
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
 import { updatePRComment } from './comment/comment-manager';
+import { downloadPreviousArtifact } from './artifact/artifact-download';
 
 // ============================================================================
 // Main Action
@@ -54,10 +57,37 @@ async function run(): Promise<void> {
     const dbPath = join(workDir, 'iterations.db');
     const artifactName = `codjiflo-pr-${prNumber}`;
 
-    // Check if we have an existing database (downloaded by action.yml)
+    // Download previous artifact from GitHub API (not from current run)
+    core.info('Checking for previous artifact...');
+    const currentRunId = github.context.runId;
+    const previousArtifact = await downloadPreviousArtifact(
+      octokit,
+      owner,
+      repo,
+      artifactName,
+      currentRunId
+    );
+
+    if (previousArtifact) {
+      core.info(`Found previous artifact from run ${previousArtifact.artifactInfo.workflow_run_id}`);
+      // Extract the database from the ZIP
+      const zip = new AdmZip(Buffer.from(previousArtifact.data));
+      const dbEntry = zip.getEntry('iterations.db');
+      if (dbEntry) {
+        const dbData = dbEntry.getData();
+        writeFileSync(dbPath, dbData);
+        core.info('Extracted previous database');
+      } else {
+        core.warning('Previous artifact did not contain iterations.db');
+      }
+    } else {
+      core.info('No previous artifact found, creating new database');
+    }
+
+    // Check if we have an existing database
     const hasExistingDb = existsSync(dbPath);
     if (hasExistingDb) {
-      core.info('Found existing database from previous iteration');
+      core.info('Using existing database');
     } else {
       core.info('Creating new database');
     }
