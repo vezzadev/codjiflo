@@ -30,8 +30,11 @@ import { updatePRComment } from './comment/comment-manager';
 
 async function run(): Promise<void> {
   try {
-    // Get inputs
-    const token = core.getInput('github-token', { required: true });
+    // Get token from environment (set by action.yml)
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      throw new Error('GITHUB_TOKEN environment variable is required');
+    }
     const octokit = github.getOctokit(token);
 
     // Get context
