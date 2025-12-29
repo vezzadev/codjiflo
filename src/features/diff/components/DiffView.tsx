@@ -358,6 +358,7 @@ export function DiffView() {
               }
             }}
             showWhitespace={viewConfig.showWhitespace}
+            contentFilter={viewConfig.filter}
           />
         </div>
       ) : (
@@ -416,6 +417,8 @@ interface UnifiedDiffTableProps {
   onSubmitDraft: () => void;
   /** Show whitespace characters visibly */
   showWhitespace: boolean;
+  /** Content filter: left (original), both, or right (modified) - AC-3.3.11-15 */
+  contentFilter: 'left' | 'both' | 'right';
 }
 
 function UnifiedDiffTable({
@@ -436,11 +439,35 @@ function UnifiedDiffTable({
   onChangeDraftBody,
   onSubmitDraft,
   showWhitespace,
+  contentFilter,
 }: UnifiedDiffTableProps) {
+  // Filter lines based on content filter (AC-3.3.11-13)
+  const filteredLines = useMemo(() => {
+    if (contentFilter === 'both') return diffLines;
+
+    return diffLines.filter((line) => {
+      // Always show headers
+      if (line.type === 'header') return true;
+      // Context lines shown in all modes
+      if (line.type === 'context') return true;
+
+      if (contentFilter === 'left') {
+        // Left: show deletions, hide additions
+        return line.type === 'deletion';
+      } else {
+        // Right: show additions, hide deletions
+        return line.type === 'addition';
+      }
+    });
+  }, [diffLines, contentFilter]);
+
+  // Determine line number display mode based on content filter (AC-3.3.14-15)
+  const lineNumberMode = contentFilter === 'left' ? 'left' : contentFilter === 'right' ? 'right' : 'both';
+
   return (
     <table className="w-full border-collapse text-sm">
       <tbody>
-        {diffLines.map((line, index) => {
+        {filteredLines.map((line, index) => {
           const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
           const rightKey = line.newLineNumber != null ? `${String(line.newLineNumber)}-RIGHT` : null;
           const lineThreads = [
@@ -455,6 +482,9 @@ function UnifiedDiffTable({
               ? `${String(line.oldLineNumber ?? 'n')}-${String(line.newLineNumber ?? 'n')}-${line.type}`
               : `${String(index)}-${line.type}`;
 
+          // colSpan depends on line number mode: both = 4 (2 line nums + marker + content), left/right = 3 (1 line num + marker + content)
+          const colSpan = lineNumberMode === 'both' ? 4 : 3;
+
           return (
             <Fragment key={lineKey}>
               <DiffLine
@@ -463,10 +493,11 @@ function UnifiedDiffTable({
                 showCommentButton={showCommentButton}
                 onStartComment={() => onStartComment(index)}
                 showWhitespace={showWhitespace}
+                lineNumberMode={lineNumberMode}
               />
               {draftLineIndex === index && (
                 <tr>
-                  <td colSpan={4} className="bg-gray-50 px-8 py-4">
+                  <td colSpan={colSpan} className="bg-gray-50 px-8 py-4">
                     {submitError && (
                       <div className="mb-2 text-sm text-red-600">{submitError}</div>
                     )}
@@ -483,7 +514,7 @@ function UnifiedDiffTable({
               )}
               {lineThreads.map((thread) => (
                 <tr key={`thread-${thread.id}`}>
-                  <td colSpan={4} className="bg-gray-50 px-8 py-4">
+                  <td colSpan={colSpan} className="bg-gray-50 px-8 py-4">
                     <CommentThread
                       thread={thread}
                       currentUserLogin={currentUserLogin}

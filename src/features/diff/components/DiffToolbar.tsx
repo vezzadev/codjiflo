@@ -180,15 +180,13 @@ export function DiffToolbar() {
         ariaLabel="View mode"
       />
 
-      {/* Content Filter Toggle (AC-3.3.5-9) - only show in split mode */}
-      {viewConfig.mode === 'split' && (
-        <ToggleGroup
-          options={contentFilterOptions}
-          value={viewConfig.filter}
-          onChange={setContentFilter}
-          ariaLabel="Content filter"
-        />
-      )}
+      {/* Content Filter Toggle (AC-3.3.5-15) - applies to both Unified and Split modes */}
+      <ToggleGroup
+        options={contentFilterOptions}
+        value={viewConfig.filter}
+        onChange={setContentFilter}
+        ariaLabel="Content filter"
+      />
 
       {/* Full File Toggle (AC-3.1.10-11) */}
       <ToggleButton

@@ -33,6 +33,8 @@ interface DiffLineProps {
   singleLineNumber?: boolean;
   /** When true, render whitespace characters visibly (· for spaces, → for tabs) */
   showWhitespace?: boolean;
+  /** Line number display mode for unified view with content filter (AC-3.3.14-15) */
+  lineNumberMode?: 'left' | 'both' | 'right';
 }
 
 const LINE_STYLES = {
@@ -156,6 +158,7 @@ export function DiffLine({
   side,
   singleLineNumber = false,
   showWhitespace = false,
+  lineNumberMode = 'both',
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
@@ -178,9 +181,29 @@ export function DiffLine({
         >
           {displayLineNumber ?? ''}
         </td>
+      ) : lineNumberMode === 'left' ? (
+        /* AC-3.3.14: Left filter shows only old line numbers */
+        <td
+          className={cn(
+            'px-2 py-0.5 text-right text-xs select-none w-12 border-r border-gray-200',
+            GUTTER_STYLES[line.type]
+          )}
+        >
+          {line.oldLineNumber ?? ''}
+        </td>
+      ) : lineNumberMode === 'right' ? (
+        /* AC-3.3.15: Right filter shows only new line numbers */
+        <td
+          className={cn(
+            'px-2 py-0.5 text-right text-xs select-none w-12 border-r border-gray-200',
+            GUTTER_STYLES[line.type]
+          )}
+        >
+          {line.newLineNumber ?? ''}
+        </td>
       ) : (
         <>
-          {/* AC-1.4.4: Line numbers */}
+          {/* AC-1.4.4: Line numbers - both mode shows old and new */}
           <td
             className={cn(
               'px-2 py-0.5 text-right text-xs select-none w-12 border-r border-gray-200',

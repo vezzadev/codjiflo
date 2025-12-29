@@ -46,7 +46,10 @@ describe('DiffToolbar', () => {
 
     it('renders unified button as active by default', () => {
       render(<DiffToolbar />);
-      const unifiedButton = screen.getByRole('button', { pressed: true });
+      // Get the Unified button by its role within the View mode group
+      const viewModeGroup = screen.getByRole('group', { name: 'View mode' });
+      const unifiedButton = viewModeGroup.querySelector('button[aria-pressed="true"]');
+      expect(unifiedButton).toBeInTheDocument();
       expect(unifiedButton).toHaveTextContent('Unified');
     });
 
@@ -88,24 +91,17 @@ describe('DiffToolbar', () => {
   });
 
   describe('content filter toggle', () => {
-    beforeEach(() => {
-      // Set to split mode so filter is visible
-      useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
-      });
-    });
-
-    it('shows content filter only in split mode', () => {
+    it('shows content filter in unified mode (AC-3.3.11-13)', () => {
       render(<DiffToolbar />);
       expect(screen.getByRole('group', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('hides content filter in unified mode', () => {
+    it('shows content filter in split mode (AC-3.3.8-10)', () => {
       useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'unified' },
+        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
-      expect(screen.queryByRole('group', { name: 'Content filter' })).not.toBeInTheDocument();
+      expect(screen.getByRole('group', { name: 'Content filter' })).toBeInTheDocument();
     });
 
     it('calls setContentFilter when clicking Left button', async () => {
