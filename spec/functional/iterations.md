@@ -97,6 +97,30 @@ Files are matched by artifact ID using a two-pointer merge:
 - File only on right → added
 - File on both → compare content to determine change type (edit, rename, unchanged)
 
+### Iteration-Aware File List
+
+The file list dynamically reflects the selected iteration range:
+
+1. **File Visibility**: A file only appears in the list if it has **actual changes** between the selected snapshots. If the content is identical at both snapshots, the file is hidden.
+
+2. **Lines Added/Removed Counters**: The `+N` and `-M` counters reflect the **iteration diff**, not the full PR diff:
+   - When viewing "Full diff" (Base → Latest): Counters match GitHub's PR diff
+   - When viewing a specific range (e.g., v5 → v6): Counters show only changes in that range
+   - Files with no changes in the range are not displayed
+
+3. **Example**:
+   ```
+   Full diff (Base → v6):
+   ├── eslint.config.mjs  [M] +1 -1    ← Shows the ignores array change
+   ├── action/action.yml  [+] +50 -0   ← New file added
+
+   Latest (v5 → v6):
+   ├── action/action.yml  [+] +50 -0   ← Added in v6
+   └── (eslint.config.mjs not shown - no changes between v5 and v6)
+   ```
+
+4. **File Status Badges**: Status (Added `+`, Modified `M`, Deleted `-`, Renamed `R`) is computed from the iteration range, not the full PR.
+
 ---
 
 ## Comment Tracking Across Iterations
