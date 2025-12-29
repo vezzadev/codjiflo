@@ -18,7 +18,7 @@ runs:
     - name: Run iteration capture
       shell: bash
       env:
-        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         cd ${{ github.action_path }}
         npx tsx src/index.ts
