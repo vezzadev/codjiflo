@@ -38,7 +38,7 @@ export function DiffView() {
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
 
   // Iteration-based diff for cross-iteration comparison
-  const { isIterationMode, getFileDiff, getArtifactByPath, selectedRange } = useIterationDiff();
+  const { isIterationMode, getFileDiff, getArtifactByPath } = useIterationDiff();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -73,6 +73,8 @@ export function DiffView() {
   const filename = selectedFile?.filename;
 
   // Get iteration-based diff when in iteration mode
+  // selectedRange is accessed via getFileDiff closure, so changes to it will
+  // trigger recomputation through the hook's internal memoization
   const iterationDiff = useMemo((): FullFileDiff | null => {
     if (!isIterationMode || !filename) {
       return null;
@@ -84,7 +86,7 @@ export function DiffView() {
     }
 
     return getFileDiff(artifact.id);
-  }, [isIterationMode, filename, getArtifactByPath, getFileDiff, selectedRange]);
+  }, [isIterationMode, filename, getArtifactByPath, getFileDiff]);
 
   const { diffLines, language } = useMemo(() => {
     // Priority 1: Use iteration diff when in iteration mode (S-4.8)
