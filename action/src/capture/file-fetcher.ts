@@ -32,9 +32,9 @@ export async function fetchFileContent(
         return null;
       }
 
-      // Decode base64 content
+      // Decode base64 content and remove trailing newline added by GitHub API
       const content = Buffer.from(data.content, 'base64').toString('utf-8');
-      return content;
+      return content.replace(/\n$/, '');
     }
 
     return null;
