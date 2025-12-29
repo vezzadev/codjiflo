@@ -6,6 +6,10 @@ import { useDiffStore } from "../stores";
 import { useCommentsStore } from "@/features/comments";
 import { FileChangeStatus } from "@/api/types";
 
+vi.mock('next/navigation', () => ({
+  useParams: vi.fn(() => ({ owner: 'testowner', repo: 'testrepo' })),
+}));
+
 describe("DiffView comments integration", () => {
   beforeEach(() => {
     // Suppress React act() warnings that occur due to Zustand store updates

@@ -27,16 +27,11 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
+  // useParams returns object with owner/repo from route, may be empty object in tests
   const params = useParams<{ owner: string; repo: string }>();
+  const owner = (params as Record<string, string | undefined>).owner ?? '';
+  const repo = (params as Record<string, string | undefined>).repo ?? '';
 
-  if (!params) {
-    // In production-like environments, this should never happen and indicates a routing/setup issue.
-    if (process.env.NODE_ENV !== 'test') {
-      throw new Error('DiffView requires route params "owner" and "repo".');
-    }
-    // In test environments, render nothing rather than failing with a cryptic null-access error.
-    return null;
-  }
   const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
@@ -146,10 +141,6 @@ export function DiffView() {
     setDraftBody('');
     setSubmitError(null);
   }, [selectedFileIndex]);
-
-  // Extract params values safely (null check for test environment)
-  const owner = params?.owner ?? null;
-  const repo = params?.repo ?? null;
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {
