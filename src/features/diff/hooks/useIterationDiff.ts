@@ -77,6 +77,9 @@ export function useIterationDiff(): IterationDiffResult {
    *
    * Returns the content from the artifact with the CLOSEST snapshot to the requested one,
    * preferring exact matches over "at or before" matches.
+   *
+   * IMPORTANT: Only returns content if the file actually EXISTS at the requested snapshot.
+   * This ensures deleted files return undefined at the deletion snapshot.
    */
   const getContentFromAnyArtifact = useCallback(
     (path: string, snapshotIndex: number): IterationFileContent | undefined => {
@@ -89,6 +92,14 @@ export function useIterationDiff(): IterationDiffResult {
       let bestDistance = Infinity;
 
       for (const artifact of artifactsForPath) {
+        // Check if file actually exists at the requested snapshot
+        // If the file was deleted, repoPaths[snapshotIndex] will be null/undefined
+        const pathAtSnapshot = artifact.repoPaths[snapshotIndex];
+        if (pathAtSnapshot !== path) {
+          // File doesn't exist at this snapshot in this artifact
+          continue;
+        }
+
         const content = client.getFileContent(artifact.id, snapshotIndex);
         if (content?.content) {
           // getFileContent returns content at or before snapshotIndex
