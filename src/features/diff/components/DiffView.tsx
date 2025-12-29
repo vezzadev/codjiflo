@@ -7,6 +7,7 @@ import {
   getDiffLinePosition,
   alignDiffLines,
 } from '../utils';
+import { useIterationDiff } from '../hooks';
 import { DiffLine } from './DiffLine';
 import { DiffToolbar } from './DiffToolbar';
 import { SideBySideDiffView } from './SideBySideDiffView';
@@ -35,6 +36,9 @@ export function DiffView() {
   const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
+
+  // Iteration-based diff for cross-iteration comparison
+  const { isIterationMode, getFileDiff, getArtifactByPath, selectedRange } = useIterationDiff();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -68,8 +72,30 @@ export function DiffView() {
   const patch = selectedFile?.patch;
   const filename = selectedFile?.filename;
 
+  // Get iteration-based diff when in iteration mode
+  const iterationDiff = useMemo((): FullFileDiff | null => {
+    if (!isIterationMode || !filename) {
+      return null;
+    }
+
+    const artifact = getArtifactByPath(filename);
+    if (!artifact) {
+      return null;
+    }
+
+    return getFileDiff(artifact.id);
+  }, [isIterationMode, filename, getArtifactByPath, getFileDiff, selectedRange]);
+
   const { diffLines, language } = useMemo(() => {
-    // Use full file diff when available (AC-3.1.3-6)
+    // Priority 1: Use iteration diff when in iteration mode (S-4.8)
+    if (isIterationMode && iterationDiff) {
+      return {
+        diffLines: iterationDiff.diffLines,
+        language: detectLanguage(filename ?? ''),
+      };
+    }
+
+    // Priority 2: Use full file diff when available (AC-3.1.3-6)
     if (viewConfig.showFullFile && fullFileDiff) {
       return {
         diffLines: fullFileDiff.diffLines,
@@ -86,19 +112,24 @@ export function DiffView() {
       diffLines: parsePatch(patch),
       language: detectLanguage(filename ?? ''),
     };
-  }, [patch, filename, viewConfig.showFullFile, fullFileDiff]);
+  }, [patch, filename, viewConfig.showFullFile, fullFileDiff, isIterationMode, iterationDiff]);
 
   // Compute aligned lines for side-by-side view (S-3.2)
   const alignedLines = useMemo((): AlignedDiffLine[] => {
     if (viewConfig.mode !== 'split') return [];
 
-    // Use full file aligned lines when available (AC-3.1.7-9)
+    // Priority 1: Use iteration diff aligned lines
+    if (isIterationMode && iterationDiff) {
+      return iterationDiff.alignedLines;
+    }
+
+    // Priority 2: Use full file aligned lines when available (AC-3.1.7-9)
     if (viewConfig.showFullFile && fullFileDiff) {
       return fullFileDiff.alignedLines;
     }
 
     return alignDiffLines(diffLines);
-  }, [diffLines, viewConfig.mode, viewConfig.showFullFile, fullFileDiff]);
+  }, [diffLines, viewConfig.mode, viewConfig.showFullFile, fullFileDiff, isIterationMode, iterationDiff]);
 
   const threadsForFile = useMemo(() => {
     if (!filename) return [];
