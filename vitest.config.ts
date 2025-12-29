@@ -27,6 +27,15 @@ export default defineConfig({
         "src/app/",
         "**/*.stories.tsx",
         "**/*.d.ts",
+        // Infrastructure layers require E2E tests, not unit tests
+        "src/lib/sqlite-wasm.ts",
+        "src/features/iterations/artifact-loader.ts",
+        "src/features/iterations/iteration-client.ts",
+        "src/features/iterations/application/**",
+        "src/features/iterations/infrastructure/**",
+        "src/features/iterations/stores/**",
+        // Re-export files with no logic
+        "**/index.ts",
       ],
       thresholds: {
         lines: 70,
