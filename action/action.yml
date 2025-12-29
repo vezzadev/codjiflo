@@ -1,0 +1,17 @@
+name: 'CodjiFlo Iteration Tracker'
+description: 'Captures PR iterations for force-push resilient code review'
+author: 'CodjiFlo'
+
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token with repo and actions permissions'
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

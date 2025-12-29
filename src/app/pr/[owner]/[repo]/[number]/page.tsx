@@ -7,6 +7,11 @@ import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
 import { useRequireAuth } from '@/features/auth/hooks';
+import {
+  useIterationStore,
+  IterationSelector,
+  DegradedModeBanner,
+} from '@/features/iterations';
 
 interface PRPageProps {
   params: Promise<{
@@ -24,6 +29,7 @@ export default function PullRequestPage({ params }: PRPageProps) {
   const { loadPR, reset: resetPR } = usePRStore();
   const { loadFiles, reset: resetDiff } = useDiffStore();
   const { loadThreads, reset: resetComments } = useCommentsStore();
+  const { loadIterations, reset: resetIterations } = useIterationStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts();
@@ -56,13 +62,15 @@ export default function PullRequestPage({ params }: PRPageProps) {
     void loadPR(owner, repo, prNumber);
     void loadFiles(owner, repo, prNumber);
     void loadThreads(owner, repo, prNumber);
+    void loadIterations(owner, repo, prNumber);
 
     return () => {
       resetPR();
       resetDiff();
       resetComments();
+      resetIterations();
     };
-  }, [owner, repo, number, loadPR, loadFiles, loadThreads, resetPR, resetDiff, resetComments]);
+  }, [owner, repo, number, loadPR, loadFiles, loadThreads, loadIterations, resetPR, resetDiff, resetComments, resetIterations]);
 
   const handleBackToDashboard = useCallback(() => {
     router.push('/dashboard');
@@ -119,8 +127,11 @@ export default function PullRequestPage({ params }: PRPageProps) {
         </button>
       </header>
 
+      <DegradedModeBanner />
+
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-80 shrink-0 flex flex-col bg-white border-r overflow-hidden">
+          <IterationSelector className="shrink-0 border-b" />
           <div className="flex-1 overflow-y-auto">
             <FileList />
           </div>

@@ -8,7 +8,7 @@ import nextConfig from "eslint-config-next/core-web-vitals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", "next-env.d.ts"] },
+  { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", "next-env.d.ts", "action/**/*"] },
   // Next.js recommended config (includes React, React Hooks, and Next.js rules)
   ...nextConfig,
   // TypeScript strict checking
