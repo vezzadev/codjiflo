@@ -15,6 +15,12 @@ const projectRoot = join(__dirname, '..');
 const sourceDir = join(projectRoot, 'node_modules', 'sql.js', 'dist');
 const targetDir = join(projectRoot, 'public', 'sql-wasm');
 
+// Check if sql.js is installed (may not exist during partial installs)
+if (!existsSync(sourceDir)) {
+  console.log('[postinstall] sql.js not found; skipping SQL WASM copy.');
+  process.exit(0);
+}
+
 // Files to copy
 const files = ['sql-wasm.wasm', 'sql-wasm.js'];
 
