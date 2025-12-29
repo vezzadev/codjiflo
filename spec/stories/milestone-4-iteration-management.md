@@ -249,7 +249,7 @@ Provide UI controls for selecting iteration comparison range. Integrate with the
 As a reviewer, I want to see diffs between any two iterations so that I can understand incremental changes.
 
 ### Description
-Compute diffs client-side using file contents from the SQLite artifact. Support non-adjacent iteration comparisons.
+Compute diffs client-side using file contents from the SQLite artifact. Support non-adjacent iteration comparisons. The file list and diff statistics dynamically reflect the selected iteration range.
 
 ### Acceptance Criteria
 1.  **Diff Computation**:
@@ -265,6 +265,12 @@ Compute diffs client-side using file contents from the SQLite artifact. Support 
     - [ ] [AC-4.8.8] Update diff view with computed changes.
     - [ ] [AC-4.8.9] Update file tree to show changed files for selected range.
     - [ ] [AC-4.8.10] Show iteration metadata in UI (author, timestamp).
+4.  **Iteration-Aware File List**:
+    - [ ] [AC-4.8.11] Hide files from list when iteration diff is empty (no changes between selected snapshots).
+    - [ ] [AC-4.8.12] Lines added counter (`+N`) reflects actual additions in iteration diff, not GitHub patch.
+    - [ ] [AC-4.8.13] Lines removed counter (`-M`) reflects actual deletions in iteration diff, not GitHub patch.
+    - [ ] [AC-4.8.14] File status badge (Added/Modified/Deleted/Renamed) computed from iteration range.
+    - [ ] [AC-4.8.15] When switching iteration range, file list immediately updates to show only affected files.
 
 ---
 

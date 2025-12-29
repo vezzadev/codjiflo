@@ -183,6 +183,12 @@ CodjiFlo tracks PR iterations using a **GitHub Action + Artifact** approach with
 5. Load precomputed SpanTrackers (adjacent pairs + base→latest)
 6. Cache artifact in IndexedDB
 
+**Iteration-Aware File List:**
+- File list is filtered to show only files with actual changes in the selected iteration range
+- Files with identical content at both snapshots are hidden from the list
+- Lines added/removed counters (`+N -M`) reflect the iteration diff, not the full PR diff
+- File status badges (Added, Modified, Deleted, Renamed) are computed per iteration range
+
 ### Key Files
 | File | Purpose |
 |------|---------|
