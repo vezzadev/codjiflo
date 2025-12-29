@@ -46,8 +46,8 @@ async function run(): Promise<void> {
 
     // Setup paths - use workspace for artifact upload
     const workDir = process.env.GITHUB_WORKSPACE
-      ? join(process.env.GITHUB_WORKSPACE, '.codjiflo')
-      : join(process.cwd(), '.codjiflo');
+      ? join(process.env.GITHUB_WORKSPACE, 'codjiflo-data')
+      : join(process.cwd(), 'codjiflo-data');
     if (!existsSync(workDir)) {
       mkdirSync(workDir, { recursive: true });
     }
