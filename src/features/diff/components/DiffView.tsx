@@ -27,8 +27,16 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
  */
 export function DiffView() {
-  // useParams can return null in test environments even though TypeScript says otherwise
-  const params = useParams<{ owner: string; repo: string }>() as { owner: string; repo: string } | null;
+  const params = useParams<{ owner: string; repo: string }>();
+
+  if (!params) {
+    // In production-like environments, this should never happen and indicates a routing/setup issue.
+    if (process.env.NODE_ENV !== 'test') {
+      throw new Error('DiffView requires route params "owner" and "repo".');
+    }
+    // In test environments, render nothing rather than failing with a cryptic null-access error.
+    return null;
+  }
   const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
