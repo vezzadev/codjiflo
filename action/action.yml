@@ -25,7 +25,7 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: codjiflo-pr-${{ github.event.pull_request.number }}
-        path: ${{ github.workspace }}/.codjiflo
+        path: ${{ github.workspace }}/codjiflo-data
       continue-on-error: true
 
     - name: Capture iteration
@@ -40,17 +40,14 @@ runs:
         # Export outputs for subsequent steps
         echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
 
-    - name: Verify and upload database
+    - name: Verify database
       shell: bash
-      env:
-        ARTIFACT_NAME: codjiflo-pr-${{ github.event.pull_request.number }}
       run: |
-        CODJIFLO_DIR="${GITHUB_WORKSPACE}/.codjiflo"
+        CODJIFLO_DIR="${GITHUB_WORKSPACE}/codjiflo-data"
         echo "Checking for database file..."
         ls -la "${CODJIFLO_DIR}/" || echo "Directory not found"
         if [ -f "${CODJIFLO_DIR}/iterations.db" ]; then
           echo "Database file exists: $(stat -c%s ${CODJIFLO_DIR}/iterations.db) bytes"
-          echo "CODJIFLO_DIR=${CODJIFLO_DIR}" >> $GITHUB_OUTPUT
         else
           echo "ERROR: Database file not found!"
           exit 1
