@@ -180,8 +180,19 @@ jobs:
   capture-iteration:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install action dependencies
+        run: cd action && npm ci
+
       - name: Capture PR iteration
-        uses: codjiflo/action@main
+        uses: ./action
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
