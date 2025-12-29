@@ -17,8 +17,8 @@ interface IterationDiffResult {
   isIterationMode: boolean;
   /** Files changed in the selected range */
   changedFiles: ReviewFileArtifact[];
-  /** Get file content for a specific artifact at the selected snapshots */
-  getFileDiff: (artifactId: number) => FullFileDiff | null;
+  /** Get file diff by path at the selected snapshots */
+  getFileDiffByPath: (path: string) => FullFileDiff | null;
   /** Get artifact by file path */
   getArtifactByPath: (path: string) => ReviewFileArtifact | undefined;
   /** Currently selected snapshot range */
@@ -45,47 +45,83 @@ export function useIterationDiff(): IterationDiffResult {
     return client.getArtifactsForRange(selectedRange.fromSnapshot, selectedRange.toSnapshot);
   }, [isIterationMode, client, selectedRange]);
 
-  // Map path to artifact for quick lookup
-  const pathToArtifact = useMemo(() => {
-    const map = new Map<string, ReviewFileArtifact>();
+  // Map path to ALL artifacts that have that path (needed because action uses SHA as tracking ID)
+  const pathToArtifacts = useMemo(() => {
+    const map = new Map<string, ReviewFileArtifact[]>();
     for (const artifact of artifacts) {
-      // Use the latest path for the artifact
-      const latestPath = artifact.repoPaths[artifact.lastSnapshotIndex];
-      if (latestPath) {
-        map.set(latestPath, artifact);
-      }
-      // Also map by all known paths (for renames)
+      // Map by all known paths
       for (const path of artifact.repoPaths) {
-        if (path && !map.has(path)) {
-          map.set(path, artifact);
+        if (path) {
+          const existing = map.get(path) ?? [];
+          existing.push(artifact);
+          map.set(path, existing);
         }
       }
     }
     return map;
   }, [artifacts]);
 
+  // For backwards compatibility - returns first artifact
   const getArtifactByPath = useCallback(
     (path: string): ReviewFileArtifact | undefined => {
-      return pathToArtifact.get(path);
+      const artifacts = pathToArtifacts.get(path);
+      return artifacts?.[0];
     },
-    [pathToArtifact]
+    [pathToArtifacts]
   );
 
-  // Compute diff for a specific artifact
-  const getFileDiff = useCallback(
-    (artifactId: number): FullFileDiff | null => {
+  /**
+   * Get file content by trying all artifacts that match the path.
+   * This is needed because the action uses file SHA as tracking ID,
+   * so different versions of the same file have different artifacts.
+   *
+   * Returns the content from the artifact with the CLOSEST snapshot to the requested one,
+   * preferring exact matches over "at or before" matches.
+   */
+  const getContentFromAnyArtifact = useCallback(
+    (path: string, snapshotIndex: number): IterationFileContent | undefined => {
+      if (!client) return undefined;
+
+      const artifactsForPath = pathToArtifacts.get(path) ?? [];
+
+      // Find the best content - prefer content at the closest snapshot
+      let bestContent: IterationFileContent | undefined;
+      let bestDistance = Infinity;
+
+      for (const artifact of artifactsForPath) {
+        const content = client.getFileContent(artifact.id, snapshotIndex);
+        if (content?.content) {
+          // getFileContent returns content at or before snapshotIndex
+          // Calculate how far this content is from the requested snapshot
+          const distance = snapshotIndex - content.snapshotIndex;
+          if (distance < bestDistance) {
+            bestContent = content;
+            bestDistance = distance;
+            // If we found exact match, no need to check more
+            if (distance === 0) break;
+          }
+        }
+      }
+
+      return bestContent;
+    },
+    [client, pathToArtifacts]
+  );
+
+  /**
+   * Compute diff for a file path in the selected iteration range.
+   * Searches all artifacts matching the path to find content.
+   */
+  const getFileDiffByPath = useCallback(
+    (path: string): FullFileDiff | null => {
       if (!isIterationMode || !client || !selectedRange) {
         return null;
       }
 
-      // Get file content at left and right snapshots
-      const leftContent = client.getFileContent(artifactId, selectedRange.fromSnapshot);
-      const rightContent = client.getFileContent(artifactId, selectedRange.toSnapshot);
-
-      // Get file paths for metadata
-      const leftPath = client.getFilePath(artifactId, selectedRange.fromSnapshot);
-      const rightPath = client.getFilePath(artifactId, selectedRange.toSnapshot);
-      const path = rightPath ?? leftPath ?? '';
+      // Try to get content from ANY artifact with this path
+      // This handles the case where different file versions have different artifacts
+      const leftContent = getContentFromAnyArtifact(path, selectedRange.fromSnapshot);
+      const rightContent = getContentFromAnyArtifact(path, selectedRange.toSnapshot);
 
       // Convert to FileContent format
       const baseContent = iterationToFileContent(leftContent, path, 'snapshot-' + String(selectedRange.fromSnapshot));
@@ -135,13 +171,13 @@ export function useIterationDiff(): IterationDiffResult {
         alignedLines,
       };
     },
-    [isIterationMode, client, selectedRange]
+    [isIterationMode, client, selectedRange, getContentFromAnyArtifact]
   );
 
   return {
     isIterationMode,
     changedFiles,
-    getFileDiff,
+    getFileDiffByPath,
     getArtifactByPath,
     selectedRange,
   };

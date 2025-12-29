@@ -1,4 +1,5 @@
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
+import { useIterationAwareFiles } from '../hooks';
 import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
 import { cn } from '@/utils/cn';
@@ -6,9 +7,11 @@ import { cn } from '@/utils/cn';
 /**
  * List of changed files in the PR
  * S-1.3: AC-1.3.1 through AC-1.3.9
+ * M4: AC-4.8.11 through AC-4.8.15 (iteration-aware filtering)
  */
 export function FileList() {
-  const { files, selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
+  const { selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
+  const { files } = useIterationAwareFiles();
 
   if (error) {
     return (
@@ -62,12 +65,12 @@ export function FileList() {
             </div>
           </button>
         </li>
-        {files.map((file, index) => (
+        {files.map((file) => (
           <FileListItem
             key={file.filename}
             file={file}
-            isSelected={index === selectedFileIndex}
-            onClick={() => selectFile(index)}
+            isSelected={file.originalIndex === selectedFileIndex}
+            onClick={() => selectFile(file.originalIndex)}
           />
         ))}
       </ul>
