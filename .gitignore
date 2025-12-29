@@ -149,3 +149,6 @@ storybook-static/
 .vercel/*
 !.vercel/project.json
 .env*.local
+
+# SQL.js WASM files (copied from node_modules at build time)
+public/sql-wasm/
