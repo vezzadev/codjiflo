@@ -11,10 +11,12 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
+    "adm-zip": "^0.5.16",
     "better-sqlite3": "^11.0.0",
     "diff-match-patch": "^1.0.5"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/better-sqlite3": "^7.6.11",
     "@types/diff-match-patch": "^1.0.36",
     "@types/node": "^20.0.0",

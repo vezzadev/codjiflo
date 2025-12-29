@@ -20,13 +20,8 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Download existing artifact
-      id: download
-      uses: actions/download-artifact@v4
-      with:
-        name: codjiflo-pr-${{ github.event.pull_request.number }}
-        path: ${{ github.workspace }}/codjiflo-data
-      continue-on-error: true
+    # Note: Previous artifact is downloaded via GitHub API in the action code
+    # because actions/download-artifact@v4 only works for the current run
 
     - name: Capture iteration
       id: capture
