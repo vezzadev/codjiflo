@@ -40,6 +40,17 @@ runs:
         # Export outputs for subsequent steps
         echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
 
+    - name: Verify database exists
+      shell: bash
+      run: |
+        echo "Checking for database file..."
+        ls -la ${{ github.workspace }}/.codjiflo/ || echo "Directory not found"
+        if [ -f "${{ github.workspace }}/.codjiflo/iterations.db" ]; then
+          echo "Database file exists: $(stat -c%s ${{ github.workspace }}/.codjiflo/iterations.db) bytes"
+        else
+          echo "ERROR: Database file not found!"
+        fi
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
