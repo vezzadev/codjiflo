@@ -137,7 +137,7 @@ describe('useIterationDiff', () => {
       });
     });
 
-    describe('getFileDiff', () => {
+    describe('getFileDiffByPath', () => {
       it('should return null when not in iteration mode', () => {
         vi.mocked(useIterationStore).mockReturnValue({
           client: null,
@@ -147,7 +147,7 @@ describe('useIterationDiff', () => {
         } as ReturnType<typeof useIterationStore>);
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiff(1);
+        const diff = result.current.getFileDiffByPath('src/file1.ts');
 
         expect(diff).toBeNull();
       });
@@ -163,13 +163,9 @@ describe('useIterationDiff', () => {
             sizeBytes: 11,
           };
         });
-        mockClient.getFilePath.mockImplementation((_artifactId: number, snapshotIndex: number) => {
-          if (snapshotIndex === 0) return null;
-          return 'src/new-file.ts';
-        });
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiff(1);
+        const diff = result.current.getFileDiffByPath('src/file1.ts');
 
         expect(diff).not.toBeNull();
         expect(diff?.base).toBeNull();
@@ -189,13 +185,9 @@ describe('useIterationDiff', () => {
             sizeBytes: 19,
           };
         });
-        mockClient.getFilePath.mockImplementation((_artifactId: number, snapshotIndex: number) => {
-          if (snapshotIndex === 1) return null;
-          return 'src/deleted-file.ts';
-        });
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiff(1);
+        const diff = result.current.getFileDiffByPath('src/file1.ts');
 
         expect(diff).not.toBeNull();
         expect(diff?.base).not.toBeNull();
@@ -215,10 +207,9 @@ describe('useIterationDiff', () => {
             sizeBytes: content.length,
           };
         });
-        mockClient.getFilePath.mockReturnValue('src/modified.ts');
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiff(1);
+        const diff = result.current.getFileDiffByPath('src/file1.ts');
 
         expect(diff).not.toBeNull();
         expect(diff?.base).not.toBeNull();
@@ -227,14 +218,13 @@ describe('useIterationDiff', () => {
         expect(diff?.diffLines.length).toBeGreaterThan(0);
       });
 
-      it('should return null diff when both snapshots have null content', () => {
+      it('should return empty diff when path not found', () => {
         mockClient.getFileContent.mockReturnValue(undefined);
-        mockClient.getFilePath.mockReturnValue(null);
 
         const { result } = renderHook(() => useIterationDiff());
-        const diff = result.current.getFileDiff(1);
+        const diff = result.current.getFileDiffByPath('unknown-file.ts');
 
-        // Both null content = no diff
+        // Unknown path = no content found = empty diff
         expect(diff).not.toBeNull();
         expect(diff?.diffLines.length).toBe(0);
       });

@@ -223,10 +223,21 @@ export class IterationClient {
 
   /**
    * Get file content at a specific snapshot.
+   *
+   * Since content is only stored when a file changes, this method looks for
+   * the most recent non-null content at or before the requested snapshot index.
+   * This ensures:
+   * - Files added in earlier iterations are found when comparing later iterations
+   * - Files marked as "added" in the PR (where left snapshots have null content)
+   *   correctly find their actual content from right snapshots
    */
   getFileContent(artifactId: number, snapshotIndex: number): FileContent | undefined {
+    // Look for most recent non-null content at or before the requested snapshot
+    // This handles the case where left snapshots of "added" files have null content
     const row = this.db.queryOne<FileContentRow>(
-      'SELECT * FROM file_contents WHERE artifact_id = ? AND snapshot_index = ?',
+      `SELECT * FROM file_contents
+       WHERE artifact_id = ? AND snapshot_index <= ? AND content IS NOT NULL
+       ORDER BY snapshot_index DESC LIMIT 1`,
       [artifactId, snapshotIndex]
     );
 
