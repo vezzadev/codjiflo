@@ -88,8 +88,8 @@ export function useIterationDiff(): IterationDiffResult {
       const path = rightPath ?? leftPath ?? '';
 
       // Convert to FileContent format
-      const baseContent = iterationToFileContent(leftContent, path, `snapshot-${selectedRange.fromSnapshot}`);
-      const headContent = iterationToFileContent(rightContent, path, `snapshot-${selectedRange.toSnapshot}`);
+      const baseContent = iterationToFileContent(leftContent, path, 'snapshot-' + String(selectedRange.fromSnapshot));
+      const headContent = iterationToFileContent(rightContent, path, 'snapshot-' + String(selectedRange.toSnapshot));
 
       // Compute diff
       let diffLines: ParsedDiffLine[] = [];
@@ -111,7 +111,7 @@ export function useIterationDiff(): IterationDiffResult {
         alignedLines = diffLines.map((line, index) => ({
           left: null,
           right: line,
-          key: `add-${index}`,
+          key: 'add-' + String(index),
         }));
       } else if (baseContent) {
         // Deleted file - all lines are deletions
@@ -124,7 +124,7 @@ export function useIterationDiff(): IterationDiffResult {
         alignedLines = diffLines.map((line, index) => ({
           left: line,
           right: null,
-          key: `del-${index}`,
+          key: 'del-' + String(index),
         }));
       }
 
@@ -155,7 +155,7 @@ function iterationToFileContent(
   path: string,
   ref: string
 ): FileContent | null {
-  if (!content || content.content === null) {
+  if (!content?.content) {
     return null;
   }
 
