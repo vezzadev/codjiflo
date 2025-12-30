@@ -77,7 +77,7 @@ export function isValidReturnOrigin(origin: string): boolean {
 /**
  * Sets a cookie with optional domain for cross-subdomain access
  */
-export function setCookie(
+function setCookie(
   name: string,
   value: string,
   options: {
@@ -115,7 +115,7 @@ export function setCookie(
 /**
  * Gets a cookie value by name
  */
-export function getCookie(name: string): string | null {
+function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
 
   const cookies = document.cookie.split(';');
@@ -134,7 +134,7 @@ export function getCookie(name: string): string | null {
 /**
  * Deletes a cookie by setting its expiry in the past
  */
-export function deleteCookie(name: string, domain?: string): void {
+function deleteCookie(name: string, domain?: string): void {
   const baseDomain = domain ?? getBaseDomain();
   let cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
 
