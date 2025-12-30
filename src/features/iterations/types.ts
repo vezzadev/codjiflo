@@ -65,30 +65,14 @@ export interface FileContent {
  * Iteration 3: Snapshot 4 (left) <-> Snapshot 5 (right)
  */
 
-/** Convert snapshot index to iteration revision (1-based) */
-export function snapshotToIteration(snapshotIndex: number): number {
-  return Math.floor(snapshotIndex / 2) + 1;
-}
 
-/** Get left (before) snapshot index for an iteration */
-export function iterationToLeftSnapshot(revision: number): number {
-  return (revision - 1) * 2;
-}
 
 /** Get right (after) snapshot index for an iteration */
 export function iterationToRightSnapshot(revision: number): number {
   return (revision - 1) * 2 + 1;
 }
 
-/** Check if snapshot is a left (before) snapshot */
-export function isLeftSnapshot(snapshotIndex: number): boolean {
-  return snapshotIndex % 2 === 0;
-}
 
-/** Check if snapshot is a right (after) snapshot */
-export function isRightSnapshot(snapshotIndex: number): boolean {
-  return snapshotIndex % 2 === 1;
-}
 
 // ============================================================================
 // Iteration Comparison Types
