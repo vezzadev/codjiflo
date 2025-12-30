@@ -289,26 +289,85 @@ export async function setupFileContentsMock(
 }
 
 /**
+ * Mock iteration data structure
+ */
+export interface MockIteration {
+  id: number;
+  revision: number;
+  head_sha: string;
+  base_sha: string;
+  before_sha?: string | undefined;
+  author: string;
+  created_at: string;
+}
+
+/**
+ * Options for iteration mock setup
+ */
+export interface IterationMockOptions {
+  /** If true, returns empty data to trigger degraded mode (default) */
+  degradedMode?: boolean;
+  /** Iteration data to return when not in degraded mode */
+  iterations?: MockIteration[];
+  /** Artifact ID for the mock artifact */
+  artifactId?: number;
+}
+
+/**
  * Set up mocks for iteration-related endpoints (artifact discovery).
- * Returns empty data to trigger degraded mode.
+ * By default, returns empty data to trigger degraded mode.
+ * Pass options to provide iteration data.
  */
 export async function setupIterationMocks(
   page: Page,
   owner: string,
   repo: string,
-  prNumber: number
+  prNumber: number,
+  options?: IterationMockOptions
 ): Promise<void> {
   if (!isMockMode()) return;
+
+  const degradedMode = options?.degradedMode ?? true;
+  const iterations = options?.iterations ?? [];
+  const artifactId = options?.artifactId ?? 12345;
 
   // Mock issue comments endpoint (used to find codjiflo artifact comment)
   await page.route(
     `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/comments`,
     async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
+      if (degradedMode || iterations.length === 0) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      } else {
+        // Return a comment with the codjiflo-data marker
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: 99999,
+              body: `<!-- codjiflo-data -->
+**CodjiFlo Iteration Tracking** is enabled for this PR.
+
+| Iterations | Latest Update |
+|------------|---------------|
+| ${iterations.length} | ${iterations[iterations.length - 1]?.created_at ?? "N/A"} |
+
+[View iteration details](https://github.com/${owner}/${repo}/actions/artifacts/${artifactId})`,
+              user: {
+                id: 0,
+                login: "github-actions[bot]",
+                avatar_url: "https://avatars.githubusercontent.com/in/15368",
+              },
+              created_at: iterations[0]?.created_at ?? "2024-01-01T00:00:00Z",
+              updated_at: iterations[iterations.length - 1]?.created_at ?? "2024-01-01T00:00:00Z",
+            },
+          ]),
+        });
+      }
     }
   );
 
@@ -316,13 +375,49 @@ export async function setupIterationMocks(
   await page.route(
     new RegExp(`repos/${owner}/${repo}/actions/artifacts`),
     async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ artifacts: [] }),
-      });
+      if (degradedMode || iterations.length === 0) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ artifacts: [] }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            artifacts: [
+              {
+                id: artifactId,
+                name: `codjiflo-pr-${prNumber}`,
+                size_in_bytes: 1024,
+                created_at: iterations[0]?.created_at ?? "2024-01-01T00:00:00Z",
+                updated_at: iterations[iterations.length - 1]?.created_at ?? "2024-01-01T00:00:00Z",
+                expired: false,
+              },
+            ],
+          }),
+        });
+      }
     }
   );
+
+  // Mock artifact download endpoint (returns minimal SQLite-like structure)
+  // Note: Full SQLite mocking would require binary data; for E2E tests,
+  // we verify UI behavior rather than actual database parsing
+  if (!degradedMode && iterations.length > 0) {
+    await page.route(
+      new RegExp(`repos/${owner}/${repo}/actions/artifacts/${artifactId}/zip`),
+      async (route) => {
+        // Return a minimal response - actual SQLite parsing tests should use prod mode
+        await route.fulfill({
+          status: 200,
+          contentType: "application/zip",
+          body: Buffer.from([]),
+        });
+      }
+    );
+  }
 }
 
 /**
@@ -338,6 +433,7 @@ export async function setupFullPRMocks(
     pr?: MockPR;
     files?: MockFile[];
     comments?: MockComment[];
+    iterations?: IterationMockOptions;
   }
 ): Promise<void> {
   if (!isMockMode()) return;
@@ -365,8 +461,8 @@ export async function setupFullPRMocks(
     await setupFileContentsMock(page, owner, repo, options.files, options.pr);
   }
 
-  // Set up iteration-related mocks (returns empty to trigger degraded mode)
-  await setupIterationMocks(page, owner, repo, prNumber);
+  // Set up iteration-related mocks (returns empty by default to trigger degraded mode)
+  await setupIterationMocks(page, owner, repo, prNumber, options?.iterations);
 }
 
 /**
