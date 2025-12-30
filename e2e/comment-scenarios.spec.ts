@@ -3,10 +3,14 @@
  *
  * Tests based on Azure DevOps Test Matrix (spec/test/azure-devops-test-matrix.md)
  * Covers user stories: S-2.1, S-2.3, S-2.5
+ *
+ * These tests run in both mock and prod modes:
+ * - Mock mode: Uses Playwright route mocking with predefined data
+ * - Prod mode: Uses real PRs in pedropaulovc/codjiflo-e2e-test-repo
  */
 
 import { test, expect } from "@playwright/test";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
+import { isMockMode } from "./fixtures/mode";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -16,7 +20,7 @@ import {
   pr3CommentThreading,
   pr4FileOperations,
   pr10EdgeCases,
-  testRepository,
+  getTestConfig,
 } from "./fixtures/azure-devops-test-matrix";
 
 // Helper to build page URL with proper string conversion
@@ -29,11 +33,7 @@ function buildPageUrl(owner: string, repo: string, prNumber: number): string {
 // ============================================================================
 
 test.describe("Comment Positioning (S-2.1, PR#2)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 2,
-  };
+  const testConfig = getTestConfig(2);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -54,17 +54,12 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
   });
 
   test("CP-01: displays comment on added line (RIGHT side)", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     // Navigate to the file with comments
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
 
     const fileButton = fileNav.getByText("src/positioning-test.ts");
     await expect(fileButton).toBeVisible({ timeout: 10000 });
@@ -82,16 +77,11 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
   });
 
   test("CP-02: displays comment on deleted line (LEFT side)", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/positioning-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/positioning-test.ts" })).toBeVisible({
@@ -105,16 +95,11 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
   });
 
   test("CP-03: displays comment on context (unchanged) line", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/positioning-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/positioning-test.ts" })).toBeVisible({
@@ -133,11 +118,7 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
 // ============================================================================
 
 test.describe("Multiple Threads on Same Line (S-2.1, PR#3 CT-08)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 3,
-  };
+  const testConfig = getTestConfig(3);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -158,16 +139,11 @@ test.describe("Multiple Threads on Same Line (S-2.1, PR#3 CT-08)", () => {
   });
 
   test("CT-08: displays multiple parallel threads on the same line", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/threading-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/threading-test.ts" })).toBeVisible({
@@ -186,11 +162,7 @@ test.describe("Multiple Threads on Same Line (S-2.1, PR#3 CT-08)", () => {
 });
 
 test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 4,
-  };
+  const testConfig = getTestConfig(4);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -211,16 +183,11 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
   });
 
   test("FO-01: displays comment on newly added file", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/new-file.txt").click();
 
     await expect(page.getByRole("heading", { name: "src/new-file.txt" })).toBeVisible({
@@ -234,16 +201,11 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
   });
 
   test("FO-02: displays comment on deleted file", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/file-to-delete.txt").click();
 
     await expect(page.getByRole("heading", { name: "src/file-to-delete.txt" })).toBeVisible({
@@ -262,11 +224,7 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
 // ============================================================================
 
 test.describe("Edge Cases (S-2.1, PR#10)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 10,
-  };
+  const testConfig = getTestConfig(10);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -287,16 +245,11 @@ test.describe("Edge Cases (S-2.1, PR#10)", () => {
   });
 
   test("EC-04: displays comment with unicode/emoji content correctly", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/unicode-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/unicode-test.ts" })).toBeVisible({
@@ -312,19 +265,12 @@ test.describe("Edge Cases (S-2.1, PR#10)", () => {
     await expect(page.getByText("🎉")).toBeVisible({ timeout: 5000 });
   });
 
-  test("EC-05: displays comment at first character of file (boundary)", async ({
-    page,
-  }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
+  test("EC-05: displays comment at first character of file (boundary)", async ({ page }) => {
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/unicode-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/unicode-test.ts" })).toBeVisible({
@@ -343,11 +289,7 @@ test.describe("Edge Cases (S-2.1, PR#10)", () => {
 // ============================================================================
 
 test.describe("Reply Chains (S-2.3, PR#3 CT-07)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 3,
-  };
+  const testConfig = getTestConfig(3);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -368,16 +310,11 @@ test.describe("Reply Chains (S-2.3, PR#3 CT-07)", () => {
   });
 
   test("CT-07: displays 3-level deep reply chain in correct order", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/threading-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/threading-test.ts" })).toBeVisible({
@@ -417,11 +354,7 @@ test.describe("Reply Chains (S-2.3, PR#3 CT-07)", () => {
 // ============================================================================
 
 test.describe("Resolved Threads (S-2.5, PR#3 CT-02)", () => {
-  const testConfig = {
-    owner: testRepository.mockOwner,
-    repo: testRepository.mockRepo,
-    prNumber: 3,
-  };
+  const testConfig = getTestConfig(3);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -441,19 +374,12 @@ test.describe("Resolved Threads (S-2.5, PR#3 CT-02)", () => {
     }
   });
 
-  test("CT-02: displays resolved/fixed thread with appropriate styling", async ({
-    page,
-  }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
+  test("CT-02: displays resolved/fixed thread with appropriate styling", async ({ page }) => {
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/threading-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/threading-test.ts" })).toBeVisible({
@@ -464,22 +390,14 @@ test.describe("Resolved Threads (S-2.5, PR#3 CT-02)", () => {
     await expect(
       page.getByText("[CT-02] This thread has been RESOLVED (status 2 - Fixed)")
     ).toBeVisible({ timeout: 20000 });
-
-    // Note: Visual distinction for resolved threads depends on implementation
-    // Future: Add check for collapsed state or visual indicator
   });
 
   test("CT-01: displays active thread normally", async ({ page }) => {
-    if (!isMockMode()) {
-      test.skip();
-      return;
-    }
-
     await page.goto(buildPageUrl(testConfig.owner, testConfig.repo, testConfig.prNumber));
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 10000 });
+    await expect(fileNav).toBeVisible({ timeout: 15000 });
     await fileNav.getByText("src/threading-test.ts").click();
 
     await expect(page.getByRole("heading", { name: "src/threading-test.ts" })).toBeVisible({
@@ -490,32 +408,5 @@ test.describe("Resolved Threads (S-2.5, PR#3 CT-02)", () => {
     await expect(
       page.getByText("[CT-01] Active thread - status 1 (open discussion)")
     ).toBeVisible({ timeout: 20000 });
-  });
-});
-
-// ============================================================================
-// Prod Mode Tests (using real GitHub API)
-// ============================================================================
-
-test.describe("Comment display (prod mode)", () => {
-  test.skip(isMockMode(), "Prod mode tests only run in E2E_DEPENDENCIES_MODE=prod");
-
-  const config = prodModeConfig.testRepo;
-
-  test.beforeEach(async ({ page }) => {
-    await setupAuthState(page);
-  });
-
-  test("loads and displays comments from real PR", async ({ page }) => {
-    await page.goto(buildPageUrl(config.owner, config.repo, config.prNumber));
-    await page.waitForLoadState("networkidle");
-
-    // Verify file navigation loads
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
-
-    // Verify diff region is accessible
-    const diffRegion = page.getByRole("region", { name: /Diff content/i });
-    await expect(diffRegion).toBeVisible({ timeout: 30000 });
   });
 });

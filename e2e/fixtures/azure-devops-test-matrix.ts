@@ -18,11 +18,19 @@ import type { MockPR, MockFile, MockComment, MockUser } from "./github-mocks";
 export const testRepository = {
   // GitHub test repository for E2E mock data
   owner: "pedropaulovc",
-  repo: "codjiflo-mock-e2e-repo",
-  // For mock mode, we use the same owner/repo
-  mockOwner: "pedropaulovc",
-  mockRepo: "codjiflo-mock-e2e-repo",
+  repo: "codjiflo-e2e-test-repo",
 };
+
+/**
+ * Get test config for a specific PR based on mode
+ */
+export function getTestConfig(prNumber: number) {
+  return {
+    owner: testRepository.owner,
+    repo: testRepository.repo,
+    prNumber,
+  };
+}
 
 // ============================================================================
 // Common Test Users
@@ -63,7 +71,7 @@ export const pr2CommentPositioning = {
     user: testUsers.author,
     head: { ref: "test/comment-positioning", sha: "cp-head-sha" },
     base: { ref: "main", sha: "cp-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/2",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/2",
     created_at: "2024-06-01T10:00:00Z",
     updated_at: "2024-06-01T12:00:00Z",
   } as MockPR,
@@ -172,7 +180,7 @@ export const pr3CommentThreading = {
     user: testUsers.author,
     head: { ref: "test/comment-threading", sha: "ct-head-sha" },
     base: { ref: "main", sha: "ct-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/3",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/3",
     created_at: "2024-06-02T10:00:00Z",
     updated_at: "2024-06-02T14:00:00Z",
   } as MockPR,
@@ -336,7 +344,7 @@ export const pr4FileOperations = {
     user: testUsers.author,
     head: { ref: "test/file-operations", sha: "fo-head-sha" },
     base: { ref: "main", sha: "fo-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/4",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/4",
     created_at: "2024-06-03T10:00:00Z",
     updated_at: "2024-06-03T12:00:00Z",
   } as MockPR,
@@ -471,7 +479,7 @@ export const pr7TopLevelComments = {
     user: testUsers.author,
     head: { ref: "test/top-level-comments", sha: "tl-head-sha" },
     base: { ref: "main", sha: "tl-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/7",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/7",
     created_at: "2024-06-07T10:00:00Z",
     updated_at: "2024-06-07T14:00:00Z",
   } as MockPR,
@@ -552,7 +560,7 @@ export const pr10EdgeCases = {
     user: testUsers.author,
     head: { ref: "test/edge-cases", sha: "ec-head-sha" },
     base: { ref: "main", sha: "ec-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/10",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/10",
     created_at: "2024-06-10T10:00:00Z",
     updated_at: "2024-06-10T12:00:00Z",
   } as MockPR,
@@ -655,7 +663,7 @@ export const pr13CommentInteractions = {
     user: testUsers.author,
     head: { ref: "test/comment-interactions", sha: "ci-head-sha" },
     base: { ref: "main", sha: "ci-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/13",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/13",
     created_at: "2024-06-13T10:00:00Z",
     updated_at: "2024-06-13T12:00:00Z",
   } as MockPR,
@@ -732,7 +740,7 @@ export const pr5IterationTracking = {
     user: testUsers.author,
     head: { ref: "test/iteration-tracking", sha: "it-head-sha-v4" },
     base: { ref: "main", sha: "it-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/5",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/5",
     created_at: "2024-06-05T10:00:00Z",
     updated_at: "2024-06-05T18:00:00Z",
   } as MockPR,
@@ -885,7 +893,7 @@ export const pr15MultiCommitPush = {
     user: testUsers.author,
     head: { ref: "test/multi-commit-push", sha: "mc-head-sha-iter2" },
     base: { ref: "main", sha: "mc-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-mock-e2e-repo/pull/15",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/15",
     created_at: "2024-06-15T10:00:00Z",
     updated_at: "2024-06-15T14:00:00Z",
   } as MockPR,
