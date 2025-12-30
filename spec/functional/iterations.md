@@ -352,7 +352,7 @@ CREATE TABLE span_trackers (
 ```
 
 **Content Deduplication:**
-- `content_blobs` stores each unique file content exactly once, keyed by SHA256 hash
+- `content_blobs` stores each unique file content exactly once, keyed by SHA-1 hash
 - `artifact_snapshots` references content by hash, enabling space savings when:
   - Same file unchanged across multiple iterations
   - Multiple files have identical content
