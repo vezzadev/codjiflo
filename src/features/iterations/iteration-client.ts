@@ -31,14 +31,16 @@ interface ArtifactSnapshotRow {
   artifact_id: number;
   snapshot_index: number;
   file_path: string | null;
+  content_hash: string | null;
 }
 
-interface FileContentRow {
+interface SnapshotWithContentRow {
   artifact_id: number;
   snapshot_index: number;
+  file_path: string | null;
   content: string | null;
-  content_hash: string;
-  size_bytes: number;
+  content_hash: string | null;
+  size_bytes: number | null;
 }
 
 // ============================================================================
@@ -131,7 +133,7 @@ export class IterationClient {
     );
 
     const snapshotRows = this.db.query<ArtifactSnapshotRow>(
-      'SELECT * FROM artifact_snapshots ORDER BY artifact_id, snapshot_index'
+      'SELECT artifact_id, snapshot_index, file_path, content_hash FROM artifact_snapshots ORDER BY artifact_id, snapshot_index'
     );
 
     // Build repo paths map per artifact
@@ -195,7 +197,7 @@ export class IterationClient {
     if (!artifact) return undefined;
 
     const snapshots = this.db.query<ArtifactSnapshotRow>(
-      'SELECT * FROM artifact_snapshots WHERE artifact_id = ? ORDER BY snapshot_index',
+      'SELECT artifact_id, snapshot_index, file_path, content_hash FROM artifact_snapshots WHERE artifact_id = ? ORDER BY snapshot_index',
       [artifactId]
     );
 
@@ -234,10 +236,18 @@ export class IterationClient {
   getFileContent(artifactId: number, snapshotIndex: number): FileContent | undefined {
     // Look for most recent non-null content at or before the requested snapshot
     // This handles the case where left snapshots of "added" files have null content
-    const row = this.db.queryOne<FileContentRow>(
-      `SELECT * FROM file_contents
-       WHERE artifact_id = ? AND snapshot_index <= ? AND content IS NOT NULL
-       ORDER BY snapshot_index DESC LIMIT 1`,
+    const row = this.db.queryOne<SnapshotWithContentRow>(
+      `SELECT
+         s.artifact_id,
+         s.snapshot_index,
+         s.file_path,
+         b.content,
+         s.content_hash,
+         b.size_bytes
+       FROM artifact_snapshots s
+       LEFT JOIN content_blobs b ON s.content_hash = b.content_hash
+       WHERE s.artifact_id = ? AND s.snapshot_index <= ? AND b.content IS NOT NULL
+       ORDER BY s.snapshot_index DESC LIMIT 1`,
       [artifactId, snapshotIndex]
     );
 
@@ -247,8 +257,8 @@ export class IterationClient {
       artifactId: row.artifact_id,
       snapshotIndex: row.snapshot_index,
       content: row.content,
-      contentHash: row.content_hash,
-      sizeBytes: row.size_bytes,
+      contentHash: row.content_hash ?? '',
+      sizeBytes: row.size_bytes ?? 0,
     };
   }
 
@@ -272,8 +282,9 @@ export class IterationClient {
     leftSnapshot: number,
     rightSnapshot: number
   ): boolean {
-    const hashes = this.db.query<{ content_hash: string }>(
-      `SELECT content_hash FROM file_contents
+    const hashes = this.db.query<{ content_hash: string | null }>(
+      `SELECT content_hash
+       FROM artifact_snapshots
        WHERE artifact_id = ? AND snapshot_index IN (?, ?)`,
       [artifactId, leftSnapshot, rightSnapshot]
     );
@@ -299,6 +310,7 @@ export class IterationClient {
     iterationCount: number;
     artifactCount: number;
     totalContentSize: number;
+    uniqueBlobCount: number;
   } {
     const iterationCount = this.db.queryOne<{ count: number }>(
       'SELECT COUNT(*) as count FROM iterations'
@@ -308,14 +320,20 @@ export class IterationClient {
       'SELECT COUNT(*) as count FROM file_artifacts'
     )?.count ?? 0;
 
+    // Total deduplicated content size (only unique blobs)
     const totalContentSize = this.db.queryOne<{ total: number }>(
-      'SELECT COALESCE(SUM(size_bytes), 0) as total FROM file_contents'
+      'SELECT COALESCE(SUM(size_bytes), 0) as total FROM content_blobs'
     )?.total ?? 0;
+
+    const uniqueBlobCount = this.db.queryOne<{ count: number }>(
+      'SELECT COUNT(*) as count FROM content_blobs'
+    )?.count ?? 0;
 
     return {
       iterationCount,
       artifactCount,
       totalContentSize,
+      uniqueBlobCount,
     };
   }
 

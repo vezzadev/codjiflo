@@ -25,26 +25,24 @@ CREATE TABLE IF NOT EXISTS file_artifacts (
   change_tracking_id TEXT NOT NULL UNIQUE
 );
 
+-- Content blobs table (deduplicated storage)
+-- Each unique content is stored only once, keyed by SHA-1 hash
+CREATE TABLE IF NOT EXISTS content_blobs (
+  content_hash TEXT PRIMARY KEY,
+  content TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL
+);
+
 -- Artifact snapshots table
--- Maps artifact ID to file path at each snapshot
+-- Maps artifact ID to file path and content at each snapshot
 -- null path means file doesn't exist at that snapshot
+-- null content_hash means file was deleted
 CREATE TABLE IF NOT EXISTS artifact_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),
   snapshot_index INTEGER NOT NULL,
   file_path TEXT,
-  UNIQUE(artifact_id, snapshot_index)
-);
-
--- File contents table (with deduplication via content_hash)
--- Stores actual file content at each snapshot
-CREATE TABLE IF NOT EXISTS file_contents (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),
-  snapshot_index INTEGER NOT NULL,
-  content TEXT,
-  content_hash TEXT NOT NULL,
-  size_bytes INTEGER NOT NULL,
+  content_hash TEXT REFERENCES content_blobs(content_hash),
   UNIQUE(artifact_id, snapshot_index)
 );
 
@@ -72,9 +70,9 @@ CREATE TABLE IF NOT EXISTS span_mappings (
 
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots(artifact_id);
-CREATE INDEX IF NOT EXISTS idx_file_contents_artifact ON file_contents(artifact_id);
+CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);
 CREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);
 `;
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;

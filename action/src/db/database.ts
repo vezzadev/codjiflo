@@ -28,16 +28,16 @@ export interface FileArtifactRow {
 }
 
 export interface ArtifactSnapshotRow {
+  id: number;
   artifact_id: number;
   snapshot_index: number;
   file_path: string | null;
+  content_hash: string | null;
 }
 
-export interface FileContentRow {
-  artifact_id: number;
-  snapshot_index: number;
-  content: string | null;
+export interface ContentBlobRow {
   content_hash: string;
+  content: string;
   size_bytes: number;
 }
 
@@ -119,35 +119,112 @@ export class IterationDatabase {
     return result.lastInsertRowid as number;
   }
 
-  insertArtifactSnapshot(artifactId: number, snapshotIndex: number, filePath: string | null): void {
-    this.db.prepare(`
-      INSERT OR REPLACE INTO artifact_snapshots (artifact_id, snapshot_index, file_path)
-      VALUES (?, ?, ?)
-    `).run(artifactId, snapshotIndex, filePath);
-  }
-
   // --------------------------------------------------------------------------
-  // File Content Methods
+  // Artifact Snapshot Methods
   // --------------------------------------------------------------------------
 
-  insertFileContent(
+  /**
+   * Insert or update an artifact snapshot with optional content.
+   * Content is deduplicated via content_blobs table.
+   */
+  insertArtifactSnapshot(
     artifactId: number,
     snapshotIndex: number,
+    filePath: string | null,
     content: string | null
   ): void {
-    const contentHash = content ? this.hashContent(content) : 'null';
-    const sizeBytes = content ? Buffer.byteLength(content, 'utf-8') : 0;
+    let contentHash: string | null = null;
+
+    if (content !== null) {
+      contentHash = this.getOrCreateContentBlob(content);
+    }
 
     this.db.prepare(`
-      INSERT OR REPLACE INTO file_contents (artifact_id, snapshot_index, content, content_hash, size_bytes)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(artifactId, snapshotIndex, content, contentHash, sizeBytes);
+      INSERT OR REPLACE INTO artifact_snapshots (artifact_id, snapshot_index, file_path, content_hash)
+      VALUES (?, ?, ?, ?)
+    `).run(artifactId, snapshotIndex, filePath, contentHash);
   }
 
-  getFileContent(artifactId: number, snapshotIndex: number): FileContentRow | undefined {
-    return this.db.prepare<[number, number], FileContentRow>(`
-      SELECT * FROM file_contents WHERE artifact_id = ? AND snapshot_index = ?
+  /**
+   * Get artifact snapshot with content.
+   */
+  getArtifactSnapshot(artifactId: number, snapshotIndex: number): {
+    artifactId: number;
+    snapshotIndex: number;
+    filePath: string | null;
+    content: string | null;
+    contentHash: string | null;
+    sizeBytes: number;
+  } | undefined {
+    const row = this.db.prepare<[number, number], {
+      artifact_id: number;
+      snapshot_index: number;
+      file_path: string | null;
+      content: string | null;
+      content_hash: string | null;
+      size_bytes: number | null;
+    }>(`
+      SELECT
+        s.artifact_id,
+        s.snapshot_index,
+        s.file_path,
+        b.content,
+        s.content_hash,
+        b.size_bytes
+      FROM artifact_snapshots s
+      LEFT JOIN content_blobs b ON s.content_hash = b.content_hash
+      WHERE s.artifact_id = ? AND s.snapshot_index = ?
     `).get(artifactId, snapshotIndex);
+
+    if (!row) return undefined;
+
+    return {
+      artifactId: row.artifact_id,
+      snapshotIndex: row.snapshot_index,
+      filePath: row.file_path,
+      content: row.content,
+      contentHash: row.content_hash,
+      sizeBytes: row.size_bytes ?? 0,
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // Content Blob Methods
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get or create a content blob with deduplication.
+   * Returns the content hash (which is the primary key).
+   */
+  getOrCreateContentBlob(content: string): string {
+    const contentHash = this.hashContent(content);
+
+    // Try to find existing blob with same hash
+    const existing = this.db.prepare<[string], { content_hash: string }>(`
+      SELECT content_hash FROM content_blobs WHERE content_hash = ?
+    `).get(contentHash);
+
+    if (existing) {
+      return existing.content_hash;
+    }
+
+    // Create new blob
+    const sizeBytes = Buffer.byteLength(content, 'utf-8');
+    this.db.prepare(`
+      INSERT INTO content_blobs (content_hash, content, size_bytes)
+      VALUES (?, ?, ?)
+    `).run(contentHash, content, sizeBytes);
+
+    return contentHash;
+  }
+
+  /**
+   * Get content by hash.
+   */
+  getContentBlob(contentHash: string): ContentBlobRow | undefined {
+    return this.db.prepare<[string], ContentBlobRow>(`
+      SELECT * FROM content_blobs WHERE content_hash = ?
+    `).get(contentHash);
   }
 
   // --------------------------------------------------------------------------
@@ -186,7 +263,7 @@ export class IterationDatabase {
   // --------------------------------------------------------------------------
 
   private hashContent(content: string): string {
-    return createHash('sha256').update(content).digest('hex').slice(0, 16);
+    return createHash('sha1').update(content).digest('hex');
   }
 
   export(): Buffer {

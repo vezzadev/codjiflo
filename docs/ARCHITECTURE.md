@@ -183,6 +183,33 @@ CodjiFlo tracks PR iterations using a **GitHub Action + Artifact** approach with
 5. Load precomputed SpanTrackers (adjacent pairs + base→latest)
 6. Cache artifact in IndexedDB
 
+### SQLite Schema (Content Deduplication)
+
+The schema uses content-addressable storage to deduplicate file contents:
+
+```sql
+-- Deduplicated content storage (each unique content stored once)
+CREATE TABLE content_blobs (
+  content_hash TEXT PRIMARY KEY,  -- SHA-1 hash (same as Git)
+  content TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL
+);
+
+-- Artifact snapshots reference content by hash
+CREATE TABLE artifact_snapshots (
+  artifact_id INTEGER REFERENCES file_artifacts(id),
+  snapshot_index INTEGER NOT NULL,
+  file_path TEXT,
+  content_hash TEXT REFERENCES content_blobs(content_hash),
+  UNIQUE(artifact_id, snapshot_index)
+);
+```
+
+**Benefits:**
+- Same file unchanged across iterations → stored once
+- Multiple files with identical content → stored once
+- File reverted to previous state → reuses existing blob
+
 **Iteration-Aware File List:**
 - File list is filtered to show only files with actual changes in the selected iteration range
 - Files with identical content at both snapshots are hidden from the list
