@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "npx @playwright/mcp@latest"
+      ],
+      "env": {}
+    }
+  }
+}

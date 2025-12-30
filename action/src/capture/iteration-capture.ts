@@ -101,37 +101,17 @@ async function captureFile(
   const leftPath = file.status === 'added' ? null : (file.previous_filename ?? file.filename);
   const rightPath = file.status === 'removed' ? null : file.filename;
 
-  // Insert artifact snapshots (path at each snapshot)
-  db.insertArtifactSnapshot(artifactId, leftSnapshotIndex, leftPath);
-  db.insertArtifactSnapshot(artifactId, rightSnapshotIndex, rightPath);
+  // Fetch and store left snapshot (base) - path and content together
+  const leftContent = leftPath
+    ? await fetchFileContent(ctx.octokit, ctx.owner, ctx.repo, leftPath, ctx.baseSha)
+    : null;
+  db.insertArtifactSnapshot(artifactId, leftSnapshotIndex, leftPath, leftContent);
 
-  // Fetch and store file content for left snapshot (base)
-  if (leftPath) {
-    const leftContent = await fetchFileContent(
-      ctx.octokit,
-      ctx.owner,
-      ctx.repo,
-      leftPath,
-      ctx.baseSha
-    );
-    db.insertFileContent(artifactId, leftSnapshotIndex, leftContent);
-  } else {
-    db.insertFileContent(artifactId, leftSnapshotIndex, null);
-  }
-
-  // Fetch and store file content for right snapshot (head)
-  if (rightPath) {
-    const rightContent = await fetchFileContent(
-      ctx.octokit,
-      ctx.owner,
-      ctx.repo,
-      rightPath,
-      ctx.headSha
-    );
-    db.insertFileContent(artifactId, rightSnapshotIndex, rightContent);
-  } else {
-    db.insertFileContent(artifactId, rightSnapshotIndex, null);
-  }
+  // Fetch and store right snapshot (head) - path and content together
+  const rightContent = rightPath
+    ? await fetchFileContent(ctx.octokit, ctx.owner, ctx.repo, rightPath, ctx.headSha)
+    : null;
+  db.insertArtifactSnapshot(artifactId, rightSnapshotIndex, rightPath, rightContent);
 }
 
 /**
