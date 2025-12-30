@@ -54,27 +54,42 @@ export function getE2EGitHubToken(): string | undefined {
 
 /**
  * Configuration for prod mode E2E tests
- * Uses the CodjiFlo repository for testing
+ * Uses the dedicated E2E test repository
  */
 export const prodModeConfig = {
-  // CodjiFlo repository for prod mode tests
+  // E2E test repository
   testRepo: {
     owner: "pedropaulovc",
-    repo: "codjiflo",
-    // PR #1 exists and is open
+    repo: "codjiflo-e2e-test-repo",
+    // PR #1: Comment Positioning - has comments on various line types
     prNumber: 1,
   },
   // PR with multiple files for keyboard navigation testing
   keyboardNavPR: {
     owner: "pedropaulovc",
-    repo: "codjiflo",
-    prNumber: 6,
+    repo: "codjiflo-e2e-test-repo",
+    // PR #3: File Operations - has 3 files (new, delete marker, renamed)
+    prNumber: 3,
+  },
+  // PR for diff view testing (has content changes)
+  diffViewPR: {
+    owner: "pedropaulovc",
+    repo: "codjiflo-e2e-test-repo",
+    // PR #1: Comment Positioning - has file modifications
+    prNumber: 1,
+  },
+  // PR with comments for comment flow testing
+  commentsPR: {
+    owner: "pedropaulovc",
+    repo: "codjiflo-e2e-test-repo",
+    // PR #2: Comment Threading - has multiple comment threads
+    prNumber: 2,
   },
   // Non-existent PR for 404 testing
   notFoundPR: {
     owner: "pedropaulovc",
-    repo: "codjiflo",
-    prNumber: 0,
+    repo: "codjiflo-e2e-test-repo",
+    prNumber: 9999,
   },
   // Invalid PAT for auth error testing
   invalidToken: "ghp_invalidtoken123456789",

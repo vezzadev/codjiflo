@@ -35,8 +35,8 @@ function buildPageUrl(owner: string, repo: string, prNumber: number): string {
 // S-4.2: Iteration Snapshot Capture (Force-push handling)
 // ============================================================================
 
-test.describe("Force-Push Handling (S-4.2, PR#5)", () => {
-  const testConfig = getTestConfig(5);
+test.describe("Force-Push Handling (S-4.2, PR#6)", () => {
+  const testConfig = getTestConfig(6);
 
   const mockIterations: MockIteration[] = pr5IterationTracking.iterations.map((iter) => ({
     id: iter.id,
@@ -86,7 +86,7 @@ test.describe("Force-Push Handling (S-4.2, PR#5)", () => {
 
     // The IT-05 comment should be visible (survives force-push)
     await expect(
-      page.getByText("[IT-05] Comment survives force-push")
+      page.getByText("[IT-05] Comment survives force-push").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -106,7 +106,7 @@ test.describe("Force-Push Handling (S-4.2, PR#5)", () => {
 
     // The IT-01 comment should be visible with position preserved
     await expect(
-      page.getByText("[IT-01] Comment on iter 1, file unchanged in iter 2")
+      page.getByText("[IT-01] Comment on iter 1, file unchanged in iter 2").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });
@@ -115,8 +115,8 @@ test.describe("Force-Push Handling (S-4.2, PR#5)", () => {
 // S-4.8: Cross-Iteration Diff Computation
 // ============================================================================
 
-test.describe("Cross-Iteration Diff (S-4.8, PR#5)", () => {
-  const testConfig = getTestConfig(5);
+test.describe("Cross-Iteration Diff (S-4.8, PR#6)", () => {
+  const testConfig = getTestConfig(6);
 
   const mockIterations: MockIteration[] = pr5IterationTracking.iterations.map((iter) => ({
     id: iter.id,
@@ -239,7 +239,7 @@ test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#5)", () => {
 
     // MC-01 comment should be visible
     await expect(
-      page.getByText("[MC-01] Comment on line 6 from Commit 3")
+      page.getByText("[MC-01] Comment on line 6 from Commit 3").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -259,7 +259,7 @@ test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#5)", () => {
 
     // MC-02 comment should be visible
     await expect(
-      page.getByText("[MC-02] Comment on second-file.txt line 5")
+      page.getByText("[MC-02] Comment on second-file.txt line 5").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -279,7 +279,7 @@ test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#5)", () => {
 
     // MC-03 comment (from iteration 2) should be visible
     await expect(
-      page.getByText("[MC-03] Comment on line 13 from Commit 7")
+      page.getByText("[MC-03] Comment on line 13 from Commit 7").first()
     ).toBeVisible({ timeout: 20000 });
   });
 

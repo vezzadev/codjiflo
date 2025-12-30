@@ -72,7 +72,7 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
 
     // Verify CP-01 comment is visible (comment on added line)
     await expect(
-      page.getByText("[CP-01] Comment on added line - should appear on RIGHT side of diff")
+      page.getByText("[CP-01] Comment on added line - should appear on RIGHT side of diff").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -90,7 +90,7 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
 
     // Verify CP-02 comment on deleted line is visible
     await expect(
-      page.getByText("[CP-02] Comment on deleted line - should appear on LEFT side of diff")
+      page.getByText("[CP-02] Comment on deleted line - should appear on LEFT side of diff").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -108,7 +108,7 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
 
     // Verify CP-03 comment on context line is visible
     await expect(
-      page.getByText("[CP-03] Comment on context (unchanged) line - visible in both views")
+      page.getByText("[CP-03] Comment on context (unchanged) line - visible in both views").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });
@@ -152,11 +152,11 @@ test.describe("Multiple Threads on Same Line (S-2.1, PR#2 CT-08)", () => {
 
     // Both CT-08 threads should be visible (different thread IDs on same line 10)
     await expect(
-      page.getByText("[CT-08] Thread 1 on line 10 - First parallel thread")
+      page.getByText("[CT-08] Thread 1 on line 10 - First parallel thread").first()
     ).toBeVisible({ timeout: 20000 });
 
     await expect(
-      page.getByText("[CT-08] Thread 2 on line 10 - Second parallel thread")
+      page.getByText("[CT-08] Thread 2 on line 10 - Second parallel thread").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });
@@ -196,7 +196,7 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#3)", () => {
 
     // Verify FO-01 comment on new file is visible
     await expect(
-      page.getByText("[FO-01] Comment on NEW FILE - rightFileStart only")
+      page.getByText("[FO-01] Comment on NEW FILE - rightFileStart only").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -214,7 +214,7 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#3)", () => {
 
     // Verify FO-02 comment on deleted file is visible
     await expect(
-      page.getByText("[FO-02] Comment on DELETED FILE - leftFileStart only")
+      page.getByText("[FO-02] Comment on DELETED FILE - leftFileStart only").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });
@@ -257,7 +257,7 @@ test.describe("Edge Cases (S-2.1, PR#4)", () => {
     });
 
     // Verify EC-04 comment with unicode/emoji renders correctly
-    await expect(page.getByText(/\[EC-04\].*Unicode\/emoji rendering test/)).toBeVisible({
+    await expect(page.getByText(/\[EC-04\].*Unicode\/emoji rendering test/).first()).toBeVisible({
       timeout: 20000,
     });
 
@@ -279,7 +279,7 @@ test.describe("Edge Cases (S-2.1, PR#4)", () => {
 
     // Verify EC-05 comment at file start is visible
     await expect(
-      page.getByText("[EC-05] Comment at first character of file")
+      page.getByText("[EC-05] Comment at first character of file").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });
@@ -322,9 +322,9 @@ test.describe("Reply Chains (S-2.3, PR#2 CT-07)", () => {
     });
 
     // All three levels of the CT-07 reply chain should be visible
-    const rootComment = page.getByText("[CT-07] ROOT COMMENT - Starting discussion");
-    const level2Reply = page.getByText("[CT-07] LEVEL 2 REPLY - Responding to root");
-    const level3Reply = page.getByText("[CT-07] LEVEL 3 REPLY - Responding to level 2");
+    const rootComment = page.getByText("[CT-07] ROOT COMMENT - Starting discussion").first();
+    const level2Reply = page.getByText("[CT-07] LEVEL 2 REPLY - Responding to root").first();
+    const level3Reply = page.getByText("[CT-07] LEVEL 3 REPLY - Responding to level 2").first();
 
     await expect(rootComment).toBeVisible({ timeout: 20000 });
     await expect(level2Reply).toBeVisible({ timeout: 5000 });
@@ -388,7 +388,7 @@ test.describe("Resolved Threads (S-2.5, PR#2 CT-02)", () => {
 
     // CT-02 resolved thread should be visible
     await expect(
-      page.getByText("[CT-02] This thread has been RESOLVED (status 2 - Fixed)")
+      page.getByText("[CT-02] This thread has been RESOLVED (status 2 - Fixed)").first()
     ).toBeVisible({ timeout: 20000 });
   });
 
@@ -406,7 +406,7 @@ test.describe("Resolved Threads (S-2.5, PR#2 CT-02)", () => {
 
     // CT-01 active thread should be visible and fully expanded
     await expect(
-      page.getByText("[CT-01] Active thread - status 1 (open discussion)")
+      page.getByText("[CT-01] Active thread - status 1 (open discussion)").first()
     ).toBeVisible({ timeout: 20000 });
   });
 });

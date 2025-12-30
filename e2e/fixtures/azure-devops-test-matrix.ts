@@ -730,8 +730,8 @@ const line4 = 'for like test';
 
 export const pr5IterationTracking = {
   pr: {
-    id: 5,
-    number: 5,
+    id: 6,
+    number: 6,
     title: "test: Iteration Tracking",
     body: "Test PR for comments across multiple iterations with varying file deltas",
     state: "open",
@@ -740,7 +740,7 @@ export const pr5IterationTracking = {
     user: testUsers.author,
     head: { ref: "test/iteration-tracking", sha: "it-head-sha-v4" },
     base: { ref: "main", sha: "it-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/5",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/6",
     created_at: "2024-06-05T10:00:00Z",
     updated_at: "2024-06-05T18:00:00Z",
   } as MockPR,
@@ -1104,8 +1104,8 @@ export function getTestPRByNumber(prNumber: number): TestPRData | undefined {
     3: pr4FileOperations,
     4: pr10EdgeCases,
     5: pr15MultiCommitPush,
+    6: pr5IterationTracking,
     // Legacy PR numbers for reference (not in test repo):
-    // 5: pr5IterationTracking,
     // 7: pr7TopLevelComments,
     // 13: pr13CommentInteractions,
   };

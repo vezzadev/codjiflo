@@ -66,7 +66,8 @@ const baz = 'qux';
         pageUrl: "/pr/test/repo/123",
       };
     }
-    const { owner, repo, prNumber } = prodModeConfig.testRepo;
+    // Prod mode uses PR #1 which has file modifications
+    const { owner, repo, prNumber } = prodModeConfig.diffViewPR;
     return {
       owner,
       repo,

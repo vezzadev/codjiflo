@@ -68,8 +68,8 @@ test.describe("Inline comments flow (S-2.x)", () => {
         pageUrl: "/pr/test/repo/123",
       };
     }
-    // Prod mode uses a known public PR
-    const { owner, repo, prNumber } = prodModeConfig.testRepo;
+    // Prod mode uses PR with comments (PR #2: Comment Threading)
+    const { owner, repo, prNumber } = prodModeConfig.commentsPR;
     return {
       owner,
       repo,

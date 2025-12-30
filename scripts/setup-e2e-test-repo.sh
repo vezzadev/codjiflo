@@ -431,6 +431,71 @@ gh api "repos/$OWNER/$REPO/pulls/$PR5_NUM/comments" \
     -f side="RIGHT" 2>/dev/null || echo "Comment MC-03 may already exist"
 
 # ============================================================================
+# PR #6: Iteration Tracking (test/iteration-tracking)
+# ============================================================================
+echo ""
+echo "Creating PR: Iteration Tracking..."
+
+git checkout main
+git pull origin main
+git checkout -B test/iteration-tracking
+
+mkdir -p src
+# fileA.txt: Modified from base
+cat > src/fileA.txt << 'EOF'
+// fileA.txt
+const modified = 'iteration 1';
+const extra = 'added in iter 1';
+EOF
+
+# fileC.txt: Has the IT-05 comment that survives force-push
+cat > src/fileC.txt << 'EOF'
+// fileC.txt
+const stable = 'preserved';
+const addedInIter3 = 'force-push change';
+EOF
+
+# fileD.txt: Added file
+cat > src/fileD.txt << 'EOF'
+// fileD.txt - new file
+const newFile = 'added in iteration 3';
+const modifiedInIter4 = 'updated';
+EOF
+
+git add .
+git commit -m "test: Add iteration tracking files"
+git push -u origin test/iteration-tracking --force
+
+PR6_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: Iteration Tracking" \
+    --body "Test PR for comments across multiple iterations" \
+    --base main \
+    --head test/iteration-tracking 2>/dev/null || gh pr view test/iteration-tracking --repo "$OWNER/$REPO" --json url -q .url)
+PR6_NUM=$(echo "$PR6_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR6_NUM"
+
+COMMIT_SHA=$(git rev-parse HEAD)
+
+# IT-01: Comment on fileA.txt (preserved across iterations)
+gh api "repos/$OWNER/$REPO/pulls/$PR6_NUM/comments" \
+    --method POST \
+    -f body="[IT-01] Comment on iter 1, file unchanged in iter 2" \
+    -f path="src/fileA.txt" \
+    -f commit_id="$COMMIT_SHA" \
+    -F line=2 \
+    -f side="RIGHT" 2>/dev/null || echo "Comment IT-01 may already exist"
+
+# IT-05: Comment on fileC.txt (survives force-push)
+gh api "repos/$OWNER/$REPO/pulls/$PR6_NUM/comments" \
+    --method POST \
+    -f body="[IT-05] Comment survives force-push" \
+    -f path="src/fileC.txt" \
+    -f commit_id="$COMMIT_SHA" \
+    -F line=3 \
+    -f side="RIGHT" 2>/dev/null || echo "Comment IT-05 may already exist"
+
+# ============================================================================
 # Cleanup
 # ============================================================================
 echo ""
@@ -448,9 +513,7 @@ echo "  - PR #$PR2_NUM: Comment Threading & States"
 echo "  - PR #$PR3_NUM: File Operations"
 echo "  - PR #$PR4_NUM: Edge Cases"
 echo "  - PR #$PR5_NUM: Multi-Commit Push"
-echo ""
-echo "IMPORTANT: Update e2e/fixtures/azure-devops-test-matrix.ts"
-echo "to use these PR numbers for prod mode tests."
+echo "  - PR #$PR6_NUM: Iteration Tracking"
 echo ""
 echo "To run E2E tests in prod mode:"
 echo "  npm run test:e2e:prod"
