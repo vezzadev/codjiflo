@@ -307,23 +307,22 @@ CREATE TABLE file_artifacts (
   change_tracking_id TEXT NOT NULL UNIQUE
 );
 
--- File paths per snapshot
+-- Deduplicated content storage
+-- Each unique file content is stored exactly once
+CREATE TABLE content_blobs (
+  content_hash TEXT PRIMARY KEY,       -- SHA-1 hash (same as Git)
+  content TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL
+);
+
+-- Artifact snapshots (file state at each snapshot)
+-- Combines path and content reference in one table
 CREATE TABLE artifact_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   artifact_id INTEGER REFERENCES file_artifacts(id),
   snapshot_index INTEGER NOT NULL,     -- Even=left, Odd=right
-  file_path TEXT,
-  UNIQUE(artifact_id, snapshot_index)
-);
-
--- File contents (the actual blobs)
-CREATE TABLE file_contents (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  artifact_id INTEGER REFERENCES file_artifacts(id),
-  snapshot_index INTEGER NOT NULL,
-  content TEXT,                        -- Full file content (NULL if binary)
-  content_hash TEXT,                   -- SHA256 for dedup
-  size_bytes INTEGER,
+  file_path TEXT,                      -- NULL if file doesn't exist
+  content_hash TEXT REFERENCES content_blobs(content_hash),  -- NULL if deleted
   UNIQUE(artifact_id, snapshot_index)
 );
 
@@ -351,6 +350,13 @@ CREATE TABLE span_trackers (
   UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)
 );
 ```
+
+**Content Deduplication:**
+- `content_blobs` stores each unique file content exactly once, keyed by SHA256 hash
+- `artifact_snapshots` references content by hash, enabling space savings when:
+  - Same file unchanged across multiple iterations
+  - Multiple files have identical content
+  - File reverted to previous state
 
 **Precomputed SpanTrackers:**
 - Adjacent pairs: 0→1, 2→3, 4→5 (each iteration's before/after)
