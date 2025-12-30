@@ -354,9 +354,9 @@ export async function setupIterationMocks(
 
 | Iterations | Latest Update |
 |------------|---------------|
-| ${iterations.length} | ${iterations[iterations.length - 1]?.created_at ?? "N/A"} |
+| ${String(iterations.length)} | ${iterations[iterations.length - 1]?.created_at ?? "N/A"} |
 
-[View iteration details](https://github.com/${owner}/${repo}/actions/artifacts/${artifactId})`,
+[View iteration details](https://github.com/${owner}/${repo}/actions/artifacts/${String(artifactId)})`,
               user: {
                 id: 0,
                 login: "github-actions[bot]",
@@ -389,7 +389,7 @@ export async function setupIterationMocks(
             artifacts: [
               {
                 id: artifactId,
-                name: `codjiflo-pr-${prNumber}`,
+                name: `codjiflo-pr-${String(prNumber)}`,
                 size_in_bytes: 1024,
                 created_at: iterations[0]?.created_at ?? "2024-01-01T00:00:00Z",
                 updated_at: iterations[iterations.length - 1]?.created_at ?? "2024-01-01T00:00:00Z",
@@ -407,7 +407,7 @@ export async function setupIterationMocks(
   // we verify UI behavior rather than actual database parsing
   if (!degradedMode && iterations.length > 0) {
     await page.route(
-      new RegExp(`repos/${owner}/${repo}/actions/artifacts/${artifactId}/zip`),
+      new RegExp(`repos/${owner}/${repo}/actions/artifacts/${String(artifactId)}/zip`),
       async (route) => {
         // Return a minimal response - actual SQLite parsing tests should use prod mode
         await route.fulfill({
