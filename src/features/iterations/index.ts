@@ -29,17 +29,3 @@ export {
   FileChangeType,
   iterationToRightSnapshot,
 } from './types';
-
-// Domain (SpanTracker)
-export type { TextSpan, LineSpan } from './domain';
-export type { ISpanTracker, LineMapping, SpanMappingData, SpanMappingType } from './domain';
-
-
-// Application
-export { SpanTrackerService } from './application';
-export type { ISpanTrackerReader } from './application';
-
-// Infrastructure (for advanced use cases)
-export { SQLiteSpanTrackerReader } from './infrastructure';
-
-
