@@ -13,7 +13,8 @@
     "@actions/github": "^6.0.0",
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^11.0.0",
-    "diff-match-patch": "^1.0.5"
+    "diff-match-patch": "^1.0.5",
+    "pino": "^10.1.0"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",

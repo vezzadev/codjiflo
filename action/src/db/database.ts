@@ -5,9 +5,9 @@
  */
 
 import Database from 'better-sqlite3';
-import * as core from '@actions/core';
 import { SCHEMA_SQL, SCHEMA_VERSION } from './schema';
 import { createHash } from 'crypto';
+import { logger } from '../utils/logger';
 
 // ============================================================================
 // Types
@@ -80,12 +80,11 @@ export class IterationDatabase {
   private checkSchemaVersion(): void {
     const dbVersion = this.getSchemaVersion();
     if (dbVersion !== SCHEMA_VERSION) {
-      core.warning(JSON.stringify({
+      logger.warn({
         event: 'schema_version_mismatch',
-        dbVersion,
-        codeVersion: SCHEMA_VERSION,
-        message: 'Schema migrations will be added in a future release',
-      }));
+        'db.schema.version': dbVersion,
+        'db.schema.expected': SCHEMA_VERSION,
+      }, 'Schema migrations will be added in a future release');
     }
   }
 

@@ -11,11 +11,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-// Mock @actions/core
-vi.mock('@actions/core', () => ({
-  warning: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
+// Mock logger
+vi.mock('../utils/logger', () => ({
+  logger: {
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 describe('IterationDatabase', () => {
