@@ -5,7 +5,7 @@ import { config } from "dotenv";
 // Load .env.local for local development (contains CODJIFLO_E2E_GITHUB_TOKEN)
 const envLocalPath = ".env.local";
 if (existsSync(envLocalPath)) {
-  config({ path: envLocalPath });
+  config({ path: envLocalPath, quiet: true });
 }
 
 const isCI = !!process.env.CI;
