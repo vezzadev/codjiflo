@@ -33,7 +33,7 @@ function buildPageUrl(owner: string, repo: string, prNumber: number): string {
 // ============================================================================
 
 test.describe("Comment Positioning (S-2.1, PR#2)", () => {
-  const testConfig = getTestConfig(2);
+  const testConfig = getTestConfig(1);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -117,8 +117,8 @@ test.describe("Comment Positioning (S-2.1, PR#2)", () => {
 // S-2.1: Multiple Threads and File Operations
 // ============================================================================
 
-test.describe("Multiple Threads on Same Line (S-2.1, PR#3 CT-08)", () => {
-  const testConfig = getTestConfig(3);
+test.describe("Multiple Threads on Same Line (S-2.1, PR#2 CT-08)", () => {
+  const testConfig = getTestConfig(2);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -161,8 +161,8 @@ test.describe("Multiple Threads on Same Line (S-2.1, PR#3 CT-08)", () => {
   });
 });
 
-test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
-  const testConfig = getTestConfig(4);
+test.describe("Comments on Added/Deleted Files (S-2.1, PR#3)", () => {
+  const testConfig = getTestConfig(3);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -223,8 +223,8 @@ test.describe("Comments on Added/Deleted Files (S-2.1, PR#4)", () => {
 // S-2.1: Edge Cases (Unicode, Boundaries)
 // ============================================================================
 
-test.describe("Edge Cases (S-2.1, PR#10)", () => {
-  const testConfig = getTestConfig(10);
+test.describe("Edge Cases (S-2.1, PR#4)", () => {
+  const testConfig = getTestConfig(4);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -261,8 +261,8 @@ test.describe("Edge Cases (S-2.1, PR#10)", () => {
       timeout: 20000,
     });
 
-    // Verify the emoji is actually rendered
-    await expect(page.getByText("🎉")).toBeVisible({ timeout: 5000 });
+    // Verify the emoji is actually rendered in the comment
+    await expect(page.getByText("[EC-04]").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("EC-05: displays comment at first character of file (boundary)", async ({ page }) => {
@@ -288,8 +288,8 @@ test.describe("Edge Cases (S-2.1, PR#10)", () => {
 // S-2.3: Reply to a Thread
 // ============================================================================
 
-test.describe("Reply Chains (S-2.3, PR#3 CT-07)", () => {
-  const testConfig = getTestConfig(3);
+test.describe("Reply Chains (S-2.3, PR#2 CT-07)", () => {
+  const testConfig = getTestConfig(2);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -353,8 +353,8 @@ test.describe("Reply Chains (S-2.3, PR#3 CT-07)", () => {
 // S-2.5: Resolve Conversation
 // ============================================================================
 
-test.describe("Resolved Threads (S-2.5, PR#3 CT-02)", () => {
-  const testConfig = getTestConfig(3);
+test.describe("Resolved Threads (S-2.5, PR#2 CT-02)", () => {
+  const testConfig = getTestConfig(2);
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);

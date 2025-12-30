@@ -61,8 +61,8 @@ export const testUsers = {
 
 export const pr2CommentPositioning = {
   pr: {
-    id: 2,
-    number: 2,
+    id: 1,
+    number: 1,
     title: "test: Comment Positioning",
     body: "Test PR for validating line-level and character-level comment positions",
     state: "open",
@@ -71,7 +71,7 @@ export const pr2CommentPositioning = {
     user: testUsers.author,
     head: { ref: "test/comment-positioning", sha: "cp-head-sha" },
     base: { ref: "main", sha: "cp-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/2",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/1",
     created_at: "2024-06-01T10:00:00Z",
     updated_at: "2024-06-01T12:00:00Z",
   } as MockPR,
@@ -170,8 +170,8 @@ const partialLineEnd = 'ends here at 15';
 
 export const pr3CommentThreading = {
   pr: {
-    id: 3,
-    number: 3,
+    id: 2,
+    number: 2,
     title: "test: Comment Threading & States",
     body: "Test PR for thread status transitions and reply chains",
     state: "open",
@@ -180,7 +180,7 @@ export const pr3CommentThreading = {
     user: testUsers.author,
     head: { ref: "test/comment-threading", sha: "ct-head-sha" },
     base: { ref: "main", sha: "ct-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/3",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/2",
     created_at: "2024-06-02T10:00:00Z",
     updated_at: "2024-06-02T14:00:00Z",
   } as MockPR,
@@ -334,8 +334,8 @@ export const pr3CommentThreading = {
 
 export const pr4FileOperations = {
   pr: {
-    id: 4,
-    number: 4,
+    id: 3,
+    number: 3,
     title: "test: File Operations",
     body: "Test PR for comments on added/deleted/renamed files",
     state: "open",
@@ -344,7 +344,7 @@ export const pr4FileOperations = {
     user: testUsers.author,
     head: { ref: "test/file-operations", sha: "fo-head-sha" },
     base: { ref: "main", sha: "fo-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/4",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/3",
     created_at: "2024-06-03T10:00:00Z",
     updated_at: "2024-06-03T12:00:00Z",
   } as MockPR,
@@ -550,8 +550,8 @@ const code = 'block';
 
 export const pr10EdgeCases = {
   pr: {
-    id: 10,
-    number: 10,
+    id: 4,
+    number: 4,
     title: "test: Edge Cases",
     body: "Test PR for unusual but valid scenarios",
     state: "open",
@@ -560,7 +560,7 @@ export const pr10EdgeCases = {
     user: testUsers.author,
     head: { ref: "test/edge-cases", sha: "ec-head-sha" },
     base: { ref: "main", sha: "ec-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/10",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/4",
     created_at: "2024-06-10T10:00:00Z",
     updated_at: "2024-06-10T12:00:00Z",
   } as MockPR,
@@ -883,8 +883,8 @@ const modifiedInIter4 = 'updated';
 
 export const pr15MultiCommitPush = {
   pr: {
-    id: 15,
-    number: 15,
+    id: 5,
+    number: 5,
     title: "test: Multi-Commit Push",
     body: "Test PR for multiple commits pushed in a single push operation",
     state: "open",
@@ -893,7 +893,7 @@ export const pr15MultiCommitPush = {
     user: testUsers.author,
     head: { ref: "test/multi-commit-push", sha: "mc-head-sha-iter2" },
     base: { ref: "main", sha: "mc-base-sha" },
-    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/15",
+    html_url: "https://github.com/pedropaulovc/codjiflo-e2e-test-repo/pull/5",
     created_at: "2024-06-15T10:00:00Z",
     updated_at: "2024-06-15T14:00:00Z",
   } as MockPR,
@@ -1099,14 +1099,15 @@ export const storyTestMapping: Record<string, { prNumber: number; testCases: str
  */
 export function getTestPRByNumber(prNumber: number): TestPRData | undefined {
   const prMap: Record<number, TestPRData> = {
-    2: pr2CommentPositioning,
-    3: pr3CommentThreading,
-    4: pr4FileOperations,
-    5: pr5IterationTracking,
-    7: pr7TopLevelComments,
-    10: pr10EdgeCases,
-    13: pr13CommentInteractions,
-    15: pr15MultiCommitPush,
+    1: pr2CommentPositioning,
+    2: pr3CommentThreading,
+    3: pr4FileOperations,
+    4: pr10EdgeCases,
+    5: pr15MultiCommitPush,
+    // Legacy PR numbers for reference (not in test repo):
+    // 5: pr5IterationTracking,
+    // 7: pr7TopLevelComments,
+    // 13: pr13CommentInteractions,
   };
   return prMap[prNumber];
 }

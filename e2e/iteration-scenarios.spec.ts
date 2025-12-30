@@ -189,8 +189,8 @@ test.describe("Cross-Iteration Diff (S-4.8, PR#5)", () => {
 // Multi-Commit Push Tests (S-4.2, S-4.7, PR#15)
 // ============================================================================
 
-test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#15)", () => {
-  const testConfig = getTestConfig(15);
+test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#5)", () => {
+  const testConfig = getTestConfig(5);
 
   const mockIterations: MockIteration[] = pr15MultiCommitPush.iterations.map((iter) => ({
     id: iter.id,
@@ -304,7 +304,7 @@ test.describe("Multi-Commit Push (S-4.2/S-4.7, PR#15)", () => {
 // ============================================================================
 
 test.describe("Iteration Selector (S-4.7)", () => {
-  const testConfig = getTestConfig(15);
+  const testConfig = getTestConfig(5);
 
   const mockIterations: MockIteration[] = pr15MultiCommitPush.iterations.map((iter) => ({
     id: iter.id,

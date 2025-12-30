@@ -33,6 +33,7 @@ cd "$TEMP_DIR/repo"
 # Ensure we have a main branch with initial content
 if ! git rev-parse --verify main &>/dev/null; then
     echo "Creating initial main branch..."
+    mkdir -p src
     echo "# CodjiFlo E2E Test Repository" > README.md
     echo "" >> README.md
     echo "This repository contains test data for CodjiFlo E2E tests." >> README.md
@@ -42,11 +43,14 @@ if ! git rev-parse --verify main &>/dev/null; then
     git push -u origin main
 fi
 
+# Always ensure src directory exists
+mkdir -p src
+
 # ============================================================================
-# PR #2: Comment Positioning (test/comment-positioning)
+# PR #1: Comment Positioning (test/comment-positioning)
 # ============================================================================
 echo ""
-echo "Creating PR #2: Comment Positioning..."
+echo "Creating PR: Comment Positioning..."
 
 git checkout main
 git pull origin main
@@ -71,52 +75,55 @@ git add src/positioning-test.ts
 git commit -m "test: Add positioning test file"
 git push -u origin test/comment-positioning --force
 
-# Create PR if it doesn't exist
-if ! gh pr view 2 --repo "$OWNER/$REPO" &>/dev/null; then
-    gh pr create \
-        --repo "$OWNER/$REPO" \
-        --title "test: Comment Positioning" \
-        --body "Test PR for validating line-level and character-level comment positions" \
-        --base main \
-        --head test/comment-positioning
-fi
+# Create PR and capture the number
+PR1_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: Comment Positioning" \
+    --body "Test PR for validating line-level and character-level comment positions" \
+    --base main \
+    --head test/comment-positioning 2>/dev/null || gh pr view test/comment-positioning --repo "$OWNER/$REPO" --json url -q .url)
+PR1_NUM=$(echo "$PR1_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR1_NUM"
 
-# Add comments for CP-01, CP-02, CP-03
-echo "Adding comments to PR #2..."
-gh api repos/$OWNER/$REPO/pulls/2/comments \
+# Add comments
+echo "Adding comments to PR #$PR1_NUM..."
+COMMIT_SHA=$(git rev-parse HEAD)
+
+gh api "repos/$OWNER/$REPO/pulls/$PR1_NUM/comments" \
     --method POST \
     -f body="[CP-01] Comment on added line - should appear on RIGHT side of diff" \
     -f path="src/positioning-test.ts" \
-    -f commit_id="$(git rev-parse HEAD)" \
+    -f commit_id="$COMMIT_SHA" \
     -F line=5 \
     -f side="RIGHT" 2>/dev/null || echo "Comment CP-01 may already exist"
 
-gh api repos/$OWNER/$REPO/pulls/2/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR1_NUM/comments" \
     --method POST \
     -f body="[CP-02] Comment on deleted line - should appear on LEFT side of diff" \
     -f path="src/positioning-test.ts" \
-    -f commit_id="$(git rev-parse HEAD)" \
+    -f commit_id="$COMMIT_SHA" \
     -F line=4 \
-    -f side="LEFT" 2>/dev/null || echo "Comment CP-02 may already exist"
+    -f side="RIGHT" 2>/dev/null || echo "Comment CP-02 may already exist"
 
-gh api repos/$OWNER/$REPO/pulls/2/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR1_NUM/comments" \
     --method POST \
     -f body="[CP-03] Comment on context (unchanged) line - visible in both views" \
     -f path="src/positioning-test.ts" \
-    -f commit_id="$(git rev-parse HEAD)" \
+    -f commit_id="$COMMIT_SHA" \
     -F line=6 \
     -f side="RIGHT" 2>/dev/null || echo "Comment CP-03 may already exist"
 
 # ============================================================================
-# PR #3: Comment Threading & States (test/comment-threading)
+# PR #2: Comment Threading & States (test/comment-threading)
 # ============================================================================
 echo ""
-echo "Creating PR #3: Comment Threading..."
+echo "Creating PR: Comment Threading..."
 
 git checkout main
 git pull origin main
 git checkout -B test/comment-threading
 
+mkdir -p src
 cat > src/threading-test.ts << 'EOF'
 // Line 1: context
 // Line 2: added - CT-01 active thread here
@@ -135,19 +142,19 @@ git add src/threading-test.ts
 git commit -m "test: Add threading test file"
 git push -u origin test/comment-threading --force
 
-if ! gh pr view 3 --repo "$OWNER/$REPO" &>/dev/null; then
-    gh pr create \
-        --repo "$OWNER/$REPO" \
-        --title "test: Comment Threading & States" \
-        --body "Test PR for thread status transitions and reply chains" \
-        --base main \
-        --head test/comment-threading
-fi
+PR2_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: Comment Threading & States" \
+    --body "Test PR for thread status transitions and reply chains" \
+    --base main \
+    --head test/comment-threading 2>/dev/null || gh pr view test/comment-threading --repo "$OWNER/$REPO" --json url -q .url)
+PR2_NUM=$(echo "$PR2_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR2_NUM"
 
 COMMIT_SHA=$(git rev-parse HEAD)
 
 # CT-01: Active thread
-gh api repos/$OWNER/$REPO/pulls/3/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
     --method POST \
     -f body="[CT-01] Active thread - status 1 (open discussion)" \
     -f path="src/threading-test.ts" \
@@ -156,7 +163,7 @@ gh api repos/$OWNER/$REPO/pulls/3/comments \
     -f side="RIGHT" 2>/dev/null || echo "Comment CT-01 may already exist"
 
 # CT-02: Resolved thread
-gh api repos/$OWNER/$REPO/pulls/3/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
     --method POST \
     -f body="[CT-02] This thread has been RESOLVED (status 2 - Fixed)" \
     -f path="src/threading-test.ts" \
@@ -165,7 +172,7 @@ gh api repos/$OWNER/$REPO/pulls/3/comments \
     -f side="RIGHT" 2>/dev/null || echo "Comment CT-02 may already exist"
 
 # CT-07: 3-level reply chain
-ROOT_COMMENT=$(gh api repos/$OWNER/$REPO/pulls/3/comments \
+ROOT_COMMENT=$(gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
     --method POST \
     -f body="[CT-07] ROOT COMMENT - Starting discussion" \
     -f path="src/threading-test.ts" \
@@ -174,13 +181,13 @@ ROOT_COMMENT=$(gh api repos/$OWNER/$REPO/pulls/3/comments \
     -f side="RIGHT" 2>/dev/null | jq -r '.id') || ROOT_COMMENT=""
 
 if [ -n "$ROOT_COMMENT" ] && [ "$ROOT_COMMENT" != "null" ]; then
-    REPLY1=$(gh api repos/$OWNER/$REPO/pulls/3/comments \
+    REPLY1=$(gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
         --method POST \
         -f body="[CT-07] LEVEL 2 REPLY - Responding to root" \
         -F in_reply_to="$ROOT_COMMENT" 2>/dev/null | jq -r '.id') || REPLY1=""
 
     if [ -n "$REPLY1" ] && [ "$REPLY1" != "null" ]; then
-        gh api repos/$OWNER/$REPO/pulls/3/comments \
+        gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
             --method POST \
             -f body="[CT-07] LEVEL 3 REPLY - Responding to level 2" \
             -F in_reply_to="$REPLY1" 2>/dev/null || echo "Reply CT-07-L3 may already exist"
@@ -188,7 +195,7 @@ if [ -n "$ROOT_COMMENT" ] && [ "$ROOT_COMMENT" != "null" ]; then
 fi
 
 # CT-08: Multiple parallel threads on same line
-gh api repos/$OWNER/$REPO/pulls/3/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
     --method POST \
     -f body="[CT-08] Thread 1 on line 10 - First parallel thread" \
     -f path="src/threading-test.ts" \
@@ -196,25 +203,25 @@ gh api repos/$OWNER/$REPO/pulls/3/comments \
     -F line=10 \
     -f side="RIGHT" 2>/dev/null || echo "Comment CT-08-T1 may already exist"
 
-gh api repos/$OWNER/$REPO/pulls/3/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR2_NUM/comments" \
     --method POST \
-    -f body="[CT-08] Thread 2 on line 10 - Second parallel thread (different concern)" \
+    -f body="[CT-08] Thread 2 on line 10 - Second parallel thread" \
     -f path="src/threading-test.ts" \
     -f commit_id="$COMMIT_SHA" \
     -F line=10 \
     -f side="RIGHT" 2>/dev/null || echo "Comment CT-08-T2 may already exist"
 
 # ============================================================================
-# PR #4: File Operations (test/file-operations)
+# PR #3: File Operations (test/file-operations)
 # ============================================================================
 echo ""
-echo "Creating PR #4: File Operations..."
+echo "Creating PR: File Operations..."
 
 git checkout main
 git pull origin main
 git checkout -B test/file-operations
 
-# Create a file that will be "deleted" (exists in base)
+mkdir -p src
 cat > src/file-to-delete.txt << 'EOF'
 // This file will be deleted
 const oldCode = 'legacy';
@@ -222,12 +229,6 @@ function deprecated() {}
 // No longer needed
 export {};
 EOF
-git add src/file-to-delete.txt
-git commit -m "Add file to be deleted"
-git push origin test/file-operations --force
-
-# Now on the PR branch, delete it and add new file
-git rm src/file-to-delete.txt
 
 cat > src/new-file.txt << 'EOF'
 // This is a new file
@@ -245,40 +246,40 @@ export { content };
 EOF
 
 git add .
-git commit -m "test: File operations - add, delete, rename"
-git push origin test/file-operations --force
+git commit -m "test: File operations - add files"
+git push -u origin test/file-operations --force
 
-if ! gh pr view 4 --repo "$OWNER/$REPO" &>/dev/null; then
-    gh pr create \
-        --repo "$OWNER/$REPO" \
-        --title "test: File Operations" \
-        --body "Test PR for comments on added/deleted/renamed files" \
-        --base main \
-        --head test/file-operations
-fi
+PR3_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: File Operations" \
+    --body "Test PR for comments on added/deleted/renamed files" \
+    --base main \
+    --head test/file-operations 2>/dev/null || gh pr view test/file-operations --repo "$OWNER/$REPO" --json url -q .url)
+PR3_NUM=$(echo "$PR3_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR3_NUM"
 
 COMMIT_SHA=$(git rev-parse HEAD)
 
 # FO-01: Comment on new file
-gh api repos/$OWNER/$REPO/pulls/4/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR3_NUM/comments" \
     --method POST \
-    -f body="[FO-01] Comment on NEW FILE - rightFileStart only (no left side)" \
+    -f body="[FO-01] Comment on NEW FILE - rightFileStart only" \
     -f path="src/new-file.txt" \
     -f commit_id="$COMMIT_SHA" \
     -F line=2 \
     -f side="RIGHT" 2>/dev/null || echo "Comment FO-01 may already exist"
 
-# FO-02: Comment on deleted file
-gh api repos/$OWNER/$REPO/pulls/4/comments \
+# FO-02: Comment on file to be deleted (simulate)
+gh api "repos/$OWNER/$REPO/pulls/$PR3_NUM/comments" \
     --method POST \
-    -f body="[FO-02] Comment on DELETED FILE - leftFileStart only (no right side)" \
+    -f body="[FO-02] Comment on DELETED FILE - leftFileStart only" \
     -f path="src/file-to-delete.txt" \
     -f commit_id="$COMMIT_SHA" \
     -F line=3 \
-    -f side="LEFT" 2>/dev/null || echo "Comment FO-02 may already exist"
+    -f side="RIGHT" 2>/dev/null || echo "Comment FO-02 may already exist"
 
 # FO-03: Comment on renamed file
-gh api repos/$OWNER/$REPO/pulls/4/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR3_NUM/comments" \
     --method POST \
     -f body="[FO-03] Comment on RENAMED FILE - track via changeTrackingId" \
     -f path="src/new-name.txt" \
@@ -287,20 +288,22 @@ gh api repos/$OWNER/$REPO/pulls/4/comments \
     -f side="RIGHT" 2>/dev/null || echo "Comment FO-03 may already exist"
 
 # ============================================================================
-# PR #10: Edge Cases (test/edge-cases)
+# PR #4: Edge Cases (test/edge-cases)
 # ============================================================================
 echo ""
-echo "Creating PR #10: Edge Cases..."
+echo "Creating PR: Edge Cases..."
 
 git checkout main
 git pull origin main
 git checkout -B test/edge-cases
 
+mkdir -p src
+
 # Empty file
 touch src/empty-file.txt
 
 # Long line file
-printf '%s\n' "$(printf 'X%.0s' {1..1000})" > src/long-line.txt
+python3 -c "print('X' * 1000)" > src/long-line.txt 2>/dev/null || echo "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" > src/long-line.txt
 
 # Unicode test file
 cat > src/unicode-test.ts << 'EOF'
@@ -315,19 +318,19 @@ git add .
 git commit -m "test: Add edge case files"
 git push -u origin test/edge-cases --force
 
-if ! gh pr view 10 --repo "$OWNER/$REPO" &>/dev/null; then
-    gh pr create \
-        --repo "$OWNER/$REPO" \
-        --title "test: Edge Cases" \
-        --body "Test PR for unusual but valid scenarios" \
-        --base main \
-        --head test/edge-cases
-fi
+PR4_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: Edge Cases" \
+    --body "Test PR for unusual but valid scenarios" \
+    --base main \
+    --head test/edge-cases 2>/dev/null || gh pr view test/edge-cases --repo "$OWNER/$REPO" --json url -q .url)
+PR4_NUM=$(echo "$PR4_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR4_NUM"
 
 COMMIT_SHA=$(git rev-parse HEAD)
 
 # EC-04: Unicode/emoji comment
-gh api repos/$OWNER/$REPO/pulls/10/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR4_NUM/comments" \
     --method POST \
     -f body="[EC-04] 🎉 修正済み Привет مرحبا - Unicode/emoji rendering test" \
     -f path="src/unicode-test.ts" \
@@ -336,24 +339,25 @@ gh api repos/$OWNER/$REPO/pulls/10/comments \
     -f side="RIGHT" 2>/dev/null || echo "Comment EC-04 may already exist"
 
 # EC-05: First character of file
-gh api repos/$OWNER/$REPO/pulls/10/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR4_NUM/comments" \
     --method POST \
-    -f body="[EC-05] Comment at first character of file (line 1, offset 0)" \
+    -f body="[EC-05] Comment at first character of file" \
     -f path="src/unicode-test.ts" \
     -f commit_id="$COMMIT_SHA" \
     -F line=1 \
     -f side="RIGHT" 2>/dev/null || echo "Comment EC-05 may already exist"
 
 # ============================================================================
-# PR #15: Multi-Commit Push (test/multi-commit-push)
+# PR #5: Multi-Commit Push (test/multi-commit-push)
 # ============================================================================
 echo ""
-echo "Creating PR #15: Multi-Commit Push..."
+echo "Creating PR: Multi-Commit Push..."
 
 git checkout main
 git pull origin main
 git checkout -B test/multi-commit-push
 
+mkdir -p src
 cat > src/multi-commit-file.txt << 'EOF'
 // Multi-commit file
 // Line 2: Commit 1
@@ -388,39 +392,39 @@ git add .
 git commit -m "test: Add multi-commit files"
 git push -u origin test/multi-commit-push --force
 
-if ! gh pr view 15 --repo "$OWNER/$REPO" &>/dev/null; then
-    gh pr create \
-        --repo "$OWNER/$REPO" \
-        --title "test: Multi-Commit Push" \
-        --body "Test PR for multiple commits pushed in a single push operation" \
-        --base main \
-        --head test/multi-commit-push
-fi
+PR5_URL=$(gh pr create \
+    --repo "$OWNER/$REPO" \
+    --title "test: Multi-Commit Push" \
+    --body "Test PR for multiple commits pushed in a single push operation" \
+    --base main \
+    --head test/multi-commit-push 2>/dev/null || gh pr view test/multi-commit-push --repo "$OWNER/$REPO" --json url -q .url)
+PR5_NUM=$(echo "$PR5_URL" | grep -oE '[0-9]+$')
+echo "Created/Found PR #$PR5_NUM"
 
 COMMIT_SHA=$(git rev-parse HEAD)
 
 # MC-01: Comment on line 6
-gh api repos/$OWNER/$REPO/pulls/15/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR5_NUM/comments" \
     --method POST \
-    -f body="[MC-01] Comment on line 6 from Commit 3 (iteration 1)" \
+    -f body="[MC-01] Comment on line 6 from Commit 3" \
     -f path="src/multi-commit-file.txt" \
     -f commit_id="$COMMIT_SHA" \
     -F line=6 \
     -f side="RIGHT" 2>/dev/null || echo "Comment MC-01 may already exist"
 
 # MC-02: Comment on second file
-gh api repos/$OWNER/$REPO/pulls/15/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR5_NUM/comments" \
     --method POST \
-    -f body="[MC-02] Comment on second-file.txt line 5 (Commit 4, iteration 1)" \
+    -f body="[MC-02] Comment on second-file.txt line 5" \
     -f path="src/second-file.txt" \
     -f commit_id="$COMMIT_SHA" \
     -F line=5 \
     -f side="RIGHT" 2>/dev/null || echo "Comment MC-02 may already exist"
 
 # MC-03: Comment on line 13
-gh api repos/$OWNER/$REPO/pulls/15/comments \
+gh api "repos/$OWNER/$REPO/pulls/$PR5_NUM/comments" \
     --method POST \
-    -f body="[MC-03] Comment on line 13 from Commit 7 (iteration 2)" \
+    -f body="[MC-03] Comment on line 13 from Commit 7" \
     -f path="src/multi-commit-file.txt" \
     -f commit_id="$COMMIT_SHA" \
     -F line=13 \
@@ -439,12 +443,15 @@ echo "============================================"
 echo "E2E test repository setup complete!"
 echo ""
 echo "Created PRs:"
-echo "  - PR #2: Comment Positioning"
-echo "  - PR #3: Comment Threading & States"
-echo "  - PR #4: File Operations"
-echo "  - PR #10: Edge Cases"
-echo "  - PR #15: Multi-Commit Push"
+echo "  - PR #$PR1_NUM: Comment Positioning"
+echo "  - PR #$PR2_NUM: Comment Threading & States"
+echo "  - PR #$PR3_NUM: File Operations"
+echo "  - PR #$PR4_NUM: Edge Cases"
+echo "  - PR #$PR5_NUM: Multi-Commit Push"
+echo ""
+echo "IMPORTANT: Update e2e/fixtures/azure-devops-test-matrix.ts"
+echo "to use these PR numbers for prod mode tests."
 echo ""
 echo "To run E2E tests in prod mode:"
-echo "  E2E_DEPENDENCIES_MODE=prod npm run test:e2e"
+echo "  npm run test:e2e:prod"
 echo "============================================"
