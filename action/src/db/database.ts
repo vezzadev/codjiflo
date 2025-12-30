@@ -80,10 +80,12 @@ export class IterationDatabase {
   private checkSchemaVersion(): void {
     const dbVersion = this.getSchemaVersion();
     if (dbVersion !== SCHEMA_VERSION) {
-      core.warning(
-        `Database schema version mismatch: DB has v${dbVersion}, code expects v${SCHEMA_VERSION}. ` +
-        `This may cause compatibility issues. Schema migrations will be added in a future release.`
-      );
+      core.warning(JSON.stringify({
+        event: 'schema_version_mismatch',
+        dbVersion,
+        codeVersion: SCHEMA_VERSION,
+        message: 'Schema migrations will be added in a future release',
+      }));
     }
   }
 
