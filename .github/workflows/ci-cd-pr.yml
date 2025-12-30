@@ -55,7 +55,7 @@ jobs:
         run: npm ci
 
       - name: Install action dependencies
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: cd action && npm ci
 
       - name: Run unit tests with coverage
