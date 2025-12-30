@@ -274,31 +274,6 @@ export class IterationClient {
     return row?.file_path ?? null;
   }
 
-  /**
-   * Check if two snapshots have identical content (for optimization).
-   */
-  areContentsIdentical(
-    artifactId: number,
-    leftSnapshot: number,
-    rightSnapshot: number
-  ): boolean {
-    const hashes = this.db.query<{ content_hash: string | null }>(
-      `SELECT content_hash
-       FROM artifact_snapshots
-       WHERE artifact_id = ? AND snapshot_index IN (?, ?)`,
-      [artifactId, leftSnapshot, rightSnapshot]
-    );
-
-    const first = hashes[0];
-    const second = hashes[1];
-
-    if (!first || !second) {
-      return false;
-    }
-
-    return first.content_hash === second.content_hash;
-  }
-
   // ============================================================================
   // Utility Methods
   // ============================================================================
