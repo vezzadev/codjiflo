@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { IterationDatabase } from './database';
+import { SCHEMA_VERSION } from './schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -313,6 +314,21 @@ describe('IterationDatabase', () => {
       const buffer = db.export();
       expect(buffer).toBeInstanceOf(Buffer);
       expect(buffer.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('schema version', () => {
+    it('should store schema version in database', () => {
+      const version = db.getSchemaVersion();
+      expect(version).toBe(SCHEMA_VERSION);
+    });
+
+    it('should report schema as compatible', () => {
+      expect(db.isSchemaCompatible()).toBe(true);
+    });
+
+    it('should return current schema version constant', () => {
+      expect(SCHEMA_VERSION).toBe(2);
     });
   });
 });

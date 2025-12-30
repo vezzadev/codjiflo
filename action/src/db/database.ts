@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { SCHEMA_SQL } from './schema';
+import { SCHEMA_SQL, SCHEMA_VERSION } from './schema';
 import { createHash } from 'crypto';
 
 // ============================================================================
@@ -264,6 +264,23 @@ export class IterationDatabase {
 
   private hashContent(content: string): string {
     return createHash('sha1').update(content).digest('hex');
+  }
+
+  /**
+   * Get the schema version stored in the database.
+   */
+  getSchemaVersion(): number {
+    const row = this.db.prepare<[], { value: string }>(`
+      SELECT value FROM schema_meta WHERE key = 'version'
+    `).get();
+    return row ? parseInt(row.value, 10) : 0;
+  }
+
+  /**
+   * Check if the database schema is compatible with the current code.
+   */
+  isSchemaCompatible(): boolean {
+    return this.getSchemaVersion() === SCHEMA_VERSION;
   }
 
   export(): Buffer {

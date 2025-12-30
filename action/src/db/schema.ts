@@ -5,7 +5,19 @@
  * content, and precomputed SpanTrackers.
  */
 
+export const SCHEMA_VERSION = 2;
+
 export const SCHEMA_SQL = `
+-- Schema metadata table
+-- Stores database version for migration compatibility
+CREATE TABLE IF NOT EXISTS schema_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- Insert schema version (ignore if already exists)
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('version', '${SCHEMA_VERSION}');
+
 -- Iterations table
 -- Each row represents a PR revision (synchronize event)
 CREATE TABLE IF NOT EXISTS iterations (
@@ -74,5 +86,3 @@ CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(con
 CREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);
 `;
-
-export const SCHEMA_VERSION = 2;
