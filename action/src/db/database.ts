@@ -5,6 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
+import * as core from '@actions/core';
 import { SCHEMA_SQL, SCHEMA_VERSION } from './schema';
 import { createHash } from 'crypto';
 
@@ -68,6 +69,22 @@ export class IterationDatabase {
     this.db = new Database(filePath);
     this.db.pragma('journal_mode = WAL');
     this.db.exec(SCHEMA_SQL);
+    this.checkSchemaVersion();
+  }
+
+  /**
+   * Check if the database schema version matches the code version.
+   * Warns if there's a mismatch - this will be useful when we need to
+   * perform schema migrations in future versions.
+   */
+  private checkSchemaVersion(): void {
+    const dbVersion = this.getSchemaVersion();
+    if (dbVersion !== SCHEMA_VERSION) {
+      core.warning(
+        `Database schema version mismatch: DB has v${dbVersion}, code expects v${SCHEMA_VERSION}. ` +
+        `This may cause compatibility issues. Schema migrations will be added in a future release.`
+      );
+    }
   }
 
   // --------------------------------------------------------------------------

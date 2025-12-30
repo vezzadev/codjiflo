@@ -4,12 +4,19 @@
  * Verifies database operations including content deduplication.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IterationDatabase } from './database';
 import { SCHEMA_VERSION } from './schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+
+// Mock @actions/core
+vi.mock('@actions/core', () => ({
+  warning: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+}));
 
 describe('IterationDatabase', () => {
   let db: IterationDatabase;
