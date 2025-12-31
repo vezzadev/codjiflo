@@ -115,36 +115,15 @@ jobs:
     permissions:
       issues: write
     steps:
+      - run: npm install yaml
+
       - name: Calculate and create task
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
-            // Parse YAML tasks manually. The 'yaml' npm module is not available in actions/github-script
-            function parseTasksYaml(yamlString) {
-              const tasks = [];
-              const lines = yamlString.split('\n');
-              let currentTask = null;
-
-              for (const line of lines) {
-                const titleMatch = line.match(/^\s*-\s+title:\s+(.+)$/);
-                const descMatch = line.match(/^\s+description:\s+\|-$/);
-                const contentMatch = line.match(/^\s{8}(.+)$/);
-
-                if (titleMatch) {
-                  if (currentTask) tasks.push(currentTask);
-                  currentTask = { title: titleMatch[1], description: '' };
-                } else if (descMatch && currentTask) {
-                  currentTask.inDescription = true;
-                } else if (contentMatch && currentTask?.inDescription) {
-                  currentTask.description += (currentTask.description ? '\n' : '') + contentMatch[1];
-                }
-              }
-              if (currentTask) tasks.push(currentTask);
-              return tasks;
-            }
-
+            const yaml = require('yaml');
             const tasksYaml = `${{ env.TASKS }}`;
-            const tasks = parseTasksYaml(tasksYaml);
+            const tasks = yaml.parse(tasksYaml);
 
             let taskIndex = parseInt('${{ github.event.inputs.task_index }}', 10);
             if (Number.isNaN(taskIndex) || taskIndex < 0 || taskIndex >= tasks.length) {
