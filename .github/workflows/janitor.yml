@@ -137,6 +137,25 @@ jobs:
               taskIndex = (dayOfYear - 1) % tasks.length;
             }
 
+            // Query for repository ID and bot ID
+            const repoQuery = await github.graphql(`
+              query {
+                repository(owner: "${context.repo.owner}", name: "${context.repo.repo}") {
+                  id
+                  suggestedActors(first: 100, capabilities: CAN_BE_ASSIGNED) {
+                    nodes {
+                      ... on Bot { id login }
+                    }
+                  }
+                }
+              }
+            `);
+
+            const repositoryId = repoQuery.repository.id;
+            const botId = repoQuery.repository.suggestedActors.nodes.find(
+              actor => actor.login === 'copilot-swe-agent'
+            )?.id;
+
             const task = tasks[taskIndex];
             const today = new Date().toISOString().split('T')[0];
             const title = `[Janitor task #${today}]: ${task.title}`;
@@ -157,14 +176,41 @@ jobs:
               "- It is perfectly fine to not have anything to change.",
               "- You should only create a pull request if you believe you found something that will significantly improve the maintainability, ease of understanding, or performance of the code."
             ];
+            const body = bodyLines.join("\n");
 
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: title,
-              body: bodyLines.join("\n"),
-              labels: ['janitor'],
-              assignees: ['@copilot']
+            // Create issue with bot assignment via GraphQL
+            const createIssueQuery = await github.graphql(`
+              query {
+                repository(owner: "${context.repo.owner}", name: "${context.repo.repo}") {
+                  labels(first: 100, query: "janitor") {
+                    nodes {
+                      id
+                    }
+                  }
+                }
+              }
+            `);
+
+            const janitorLabelId = createIssueQuery.repository.labels.nodes[0]?.id;
+
+            const issueResult = await github.graphql(`
+              mutation CreateIssue($input: CreateIssueInput!) {
+                createIssue(input: $input) {
+                  issue {
+                    number
+                    url
+                    title
+                  }
+                }
+              }
+            `, {
+              input: {
+                repositoryId: repositoryId,
+                title: title,
+                body: body,
+                labelIds: janitorLabelId ? [janitorLabelId] : [],
+                assigneeIds: botId ? [botId] : []
+              }
             });
 
-            core.info(`Created issue #${issue.data.number}: ${title}`);
+            core.info(`Created issue #${issueResult.createIssue.issue.number}: ${title}`);
