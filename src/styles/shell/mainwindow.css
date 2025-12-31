@@ -148,7 +148,7 @@
   min-width: 10px;
   background-color: var(--default-bg);
   position: relative;
-  overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
 }
 
 .left-pane-header {
@@ -171,7 +171,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+  overflow: hidden; /* Contain scrollable children */
 }
 
 .file-explorer-header {
@@ -204,9 +205,18 @@
   color: var(--file-explorer-filter-placeholder);
 }
 
+/* File Tree Navigation Container */
+.file-explorer > nav {
+  flex: 1;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
 /* File Tree */
 .file-tree {
   flex: 1;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
   overflow-y: auto;
   padding: 4px 0;
 }
@@ -484,7 +494,7 @@
 .diff-viewer {
   flex: 1;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
   background-color: var(--main-bg);
 }
 
