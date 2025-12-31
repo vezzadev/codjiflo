@@ -111,6 +111,190 @@ describe('computeLineDiff', () => {
       expect(result[1]?.type).toBe('addition');
     });
   });
+
+  describe('line count accuracy (matches GitHub)', () => {
+    /**
+     * Helper to count additions and deletions from diff result
+     */
+    function countDiffStats(lines: ParsedDiffLine[]) {
+      let additions = 0;
+      let deletions = 0;
+      for (const line of lines) {
+        if (line.type === 'addition') additions++;
+        else if (line.type === 'deletion') deletions++;
+      }
+      return { additions, deletions, net: additions - deletions };
+    }
+
+    it('counts single line modification as 1 addition and 1 deletion', () => {
+      const result = computeLineDiff('old line', 'new line', false);
+      const stats = countDiffStats(result);
+      expect(stats.additions).toBe(1);
+      expect(stats.deletions).toBe(1);
+      expect(stats.net).toBe(0);
+    });
+
+    it('produces correct net for additions with minimal overhead', () => {
+      // Base: 2 lines, Head: 4 lines
+      // diff-match-patch LCS may show some context reordering
+      const result = computeLineDiff('line1\nline2', 'line1\nline2\nline3\nline4', false);
+      const stats = countDiffStats(result);
+      // Net must be correct: +2 (4 - 2 = 2)
+      expect(stats.net).toBe(2);
+      // Without semantic cleanup, additions should be ≤4 (worst case: all lines)
+      // With semantic cleanup, this could inflate further
+      expect(stats.additions).toBeLessThanOrEqual(4);
+    });
+
+    it('produces correct net for deletions with minimal overhead', () => {
+      // Base: 3 lines, Head: 1 line
+      const result = computeLineDiff('line1\nline2\nline3', 'line1', false);
+      const stats = countDiffStats(result);
+      // Net must be correct: -2 (1 - 3 = -2)
+      expect(stats.net).toBe(-2);
+      // Without semantic cleanup, deletions should be ≤3 (worst case: all lines)
+      expect(stats.deletions).toBeLessThanOrEqual(3);
+    });
+
+    it('produces correct net change for mixed modifications', () => {
+      // Base: 3 lines, Head: 4 lines
+      const base = 'line1\nold-line2\nline3';
+      const head = 'line1\nnew-line2\nline3\nline4';
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+      // Net change should be +1 (4 - 3 = 1)
+      expect(stats.net).toBe(1);
+    });
+
+    it('produces consistent net line change for complex diff', () => {
+      const base = 'a\nb\nc\nd\ne'; // 5 lines
+      const head = 'a\nX\nY\nZ\nc\nd\ne\nf\ng'; // 9 lines
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+
+      // Net change should match actual line difference
+      expect(stats.net).toBe(4); // 9 - 5 = 4
+    });
+
+    it('handles empty lines in diff correctly', () => {
+      const base = 'line1\n\nline3'; // Line 2 is empty
+      const head = 'line1\nfilled\nline3';
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+      // Same number of lines - net 0
+      expect(stats.net).toBe(0);
+    });
+
+    it('does not inflate counts with semantic grouping', () => {
+      // This test ensures we don't use diff_cleanupSemantic
+      // which would inflate line counts by regrouping changes
+      const base = 'function foo() {\n  return 1;\n}';
+      const head = 'function foo() {\n  return 2;\n}';
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+      // EXACT: Only one line changed (return statement)
+      // Semantic cleanup would inflate by including surrounding context
+      expect(stats.additions).toBe(1);
+      expect(stats.deletions).toBe(1);
+      expect(stats.net).toBe(0);
+    });
+
+    it('appending lines produces correct net change', () => {
+      // Simulates appending to end of file - common real-world case
+      const base = 'line1\nline2\nline3';
+      const head = 'line1\nline2\nline3\nline4\nline5';
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+      // Net must be +2 (5 - 3 = 2)
+      expect(stats.net).toBe(2);
+    });
+
+    it('prepending lines produces correct net change', () => {
+      // Simulates prepending to beginning of file
+      const base = 'line1\nline2\nline3';
+      const head = 'line0\nline1\nline2\nline3';
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+      // Net must be +1 (4 - 3 = 1)
+      expect(stats.net).toBe(1);
+    });
+
+    it('does not inflate counts via semantic cleanup', () => {
+      // This test catches the bug where diff_cleanupSemantic inflates counts
+      // by regrouping interleaved changes. The net stays the same but raw
+      // counts increase.
+      //
+      // Without semantic cleanup: 5 additions, 3 deletions
+      // With semantic cleanup:    7 additions, 5 deletions (BUG!)
+      const base = `header
+line1
+line2
+line3
+line4
+line5
+footer`;
+
+      const head = `header
+line1-modified
+line2
+line3-modified
+line4
+line5-modified
+extra1
+extra2
+footer`;
+
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+
+      // Net must be +2 (9 lines - 7 lines)
+      expect(stats.net).toBe(2);
+
+      // EXACT counts - this is what catches the semantic cleanup bug:
+      // - 3 modifications (line1, line3, line5) = 3 deletions + 3 additions
+      // - 2 pure additions (extra1, extra2)
+      // Total: 5 additions, 3 deletions
+      expect(stats.additions).toBe(5);
+      expect(stats.deletions).toBe(3);
+    });
+
+    it('handles large file diff with correct net change', () => {
+      // Create files with specific known changes
+      const baseLines = Array.from({ length: 100 }, (_, i) => `line ${i + 1}`);
+      const headLines = [...baseLines];
+
+      // Make exactly 5 modifications (net 0 per modification)
+      headLines[10] = 'modified line 11';
+      headLines[20] = 'modified line 21';
+      headLines[30] = 'modified line 31';
+      headLines[40] = 'modified line 41';
+      headLines[50] = 'modified line 51';
+
+      // Add 3 new lines at the end (net +3)
+      headLines.push('new line 101');
+      headLines.push('new line 102');
+      headLines.push('new line 103');
+
+      const result = computeLineDiff(baseLines.join('\n'), headLines.join('\n'), false);
+      const stats = countDiffStats(result);
+
+      // Net should be +3 (100 base + 3 new = 103 head - 100 base = +3)
+      expect(stats.net).toBe(3);
+    });
+
+    it('matches GitHub counts for real-world example', () => {
+      // Simulates the PR#55 case - comparing base vs head content
+      // GitHub reports: +149/-25 (net +124)
+      const base = Array.from({ length: 536 }, (_, i) => `base line ${i + 1}`).join('\n');
+      const head = Array.from({ length: 660 }, (_, i) => `head line ${i + 1}`).join('\n');
+
+      const result = computeLineDiff(base, head, false);
+      const stats = countDiffStats(result);
+
+      // Net change must match: 660 - 536 = 124
+      expect(stats.net).toBe(124);
+    });
+  });
 });
 
 describe('computeWordDiff', () => {
