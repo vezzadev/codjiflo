@@ -230,7 +230,7 @@ jobs:
                 agentAssignment: {
                   targetRepositoryId: repositoryId,
                   baseRef: "main",
-                  model: '${{ github.event.inputs.model }}' || 'claude-opus-4.5'
+                  model: '${{ github.event.inputs.model || 'claude-opus-4.5' }}'
                 }
               },
               headers: {
