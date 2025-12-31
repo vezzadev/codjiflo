@@ -14,6 +14,9 @@ npm run test:coverage    # Unit and integration tests with coverage, min 70% enf
 npm run test:storybook   # Storybook interaction tests
 npm run test:e2e         # Playwright E2E (mock mode, localhost)
 npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.vza.net)
+npm run test:e2e:headed  # Playwright E2E with visible browser (mock mode)
+npm run test:e2e:ui      # Playwright E2E with UI mode (mock mode)
+npm run test:e2e:debug   # Playwright E2E with debug mode (mock mode, step-through debugging)
 npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e2e + storybook)
 ```
 
@@ -50,6 +53,17 @@ E2E tests support two modes:
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
 - `e2e/fixtures/github-mocks.ts` - Centralized mock handlers
+
+**Debugging E2E tests:**
+For troubleshooting E2E test failures, Playwright provides several debugging modes:
+
+| Command | Description | Use Case |
+|---------|-------------|----------|
+| `npm run test:e2e:debug` | Opens Playwright Inspector for step-through debugging | Investigate test failures, set breakpoints |
+| `npm run test:e2e:headed` | Runs tests in a visible browser window | Watch test execution in real-time |
+| `npm run test:e2e:ui` | Opens Playwright UI mode | Visual test runner with watch mode |
+
+The `e2e/debug.spec.ts` file contains simple tests specifically designed for debugging purposes.
 
 ## Tech Stack
 
