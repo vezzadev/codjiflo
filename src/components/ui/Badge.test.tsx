@@ -9,8 +9,7 @@ describe('Badge', () => {
 
     const badge = screen.getByText('Open');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-green-100');
-    expect(badge).toHaveClass('text-green-800');
+    expect(badge).toHaveClass('badge-success');
   });
 
   it('renders Closed state with correct color', () => {
@@ -18,8 +17,7 @@ describe('Badge', () => {
 
     const badge = screen.getByText('Closed');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-red-100');
-    expect(badge).toHaveClass('text-red-800');
+    expect(badge).toHaveClass('badge-error');
   });
 
   it('renders Merged state with correct color', () => {
@@ -27,8 +25,7 @@ describe('Badge', () => {
 
     const badge = screen.getByText('Merged');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-purple-100');
-    expect(badge).toHaveClass('text-purple-800');
+    expect(badge).toHaveClass('badge-merged');
   });
 
   it('renders Draft state with correct color', () => {
@@ -36,8 +33,7 @@ describe('Badge', () => {
 
     const badge = screen.getByText('Draft');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-gray-100');
-    expect(badge).toHaveClass('text-gray-800');
+    expect(badge).toHaveClass('badge');
   });
 
   it('has accessible aria-label', () => {

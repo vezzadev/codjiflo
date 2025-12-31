@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components';
-import { cn } from '@/utils/cn';
 import type { ReviewThread } from '../types';
 import { CommentEditor } from './CommentEditor';
 import { CommentItem } from './CommentItem';
@@ -71,31 +70,28 @@ export function CommentThread({
     [onDelete]
   );
 
+  const classes = ['comment-thread', thread.isResolved ? 'resolved' : ''].filter(Boolean).join(' ');
+
   return (
     <section
-      className={cn(
-        'rounded-md border border-gray-200 bg-white p-4 space-y-4 shadow-sm',
-        thread.isResolved && 'opacity-75'
-      )}
+      className={classes}
       aria-label={threadLabel}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+      <header className="comment-thread-header">
+        <div className="comment-thread-title">
           <span>Thread on line {thread.line}</span>
           {thread.isResolved && (
-            <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700">
-              Resolved
-            </span>
+            <span className="badge badge-success">Resolved</span>
           )}
         </div>
-            <Button
-              label={thread.isResolved ? 'Unresolve' : 'Resolve conversation'}
-              variant="secondary"
-              size="sm"
-              onClick={() => onToggleResolved(thread.id)}
-            />
+        <Button
+          label={thread.isResolved ? 'Unresolve' : 'Resolve conversation'}
+          variant="secondary"
+          size="sm"
+          onClick={() => onToggleResolved(thread.id)}
+        />
       </header>
-      <div className="space-y-4">
+      <div className="comment-thread-body">
         {thread.comments.map((comment) =>
           editingCommentId === comment.id ? (
             <CommentEditor
@@ -123,7 +119,7 @@ export function CommentThread({
           )
         )}
       </div>
-      <div className="pt-2 border-t border-gray-200">
+      <div className="comment-thread-footer">
         <CommentEditor
           value={reply}
           onChange={setReply}

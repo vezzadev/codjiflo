@@ -1,0 +1,362 @@
+/* ============================================
+   BASE BUTTON
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--main-fg);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+  user-select: none;
+}
+
+.btn:hover {
+  background-color: var(--btn-hover);
+  color: var(--btn-hover-fg);
+}
+
+.btn:focus {
+  outline: none;
+  background-color: var(--window-btn-focus);
+}
+
+.btn:active {
+  background-color: var(--btn-press);
+}
+
+.btn:disabled {
+  background-color: var(--btn-disabled);
+  color: var(--control-disabled-fg);
+  cursor: not-allowed;
+}
+
+/* ============================================
+   COLORFUL BUTTON (Accent/Green)
+   ============================================ */
+.btn-colorful {
+  background-color: var(--colorful-btn-bg);
+  color: var(--colorful-btn-fg);
+  border: none;
+  padding: 6px 16px;
+  min-width: 80px;
+}
+
+.btn-colorful:hover {
+  background-color: var(--colorful-btn-bg);
+  box-shadow: inset 0 0 0 100px var(--colorful-btn-hover);
+  border: 1px solid var(--colorful-btn-hover-border);
+}
+
+.btn-colorful:focus {
+  box-shadow: inset 0 0 0 100px var(--colorful-btn-hover);
+}
+
+.btn-colorful:disabled {
+  background-color: var(--control-disabled);
+  color: var(--colorful-btn-disabled-fg);
+}
+
+/* ============================================
+   TOGGLE BUTTON
+   ============================================ */
+.btn-toggle {
+  padding: 4px 8px;
+  min-width: 22px;
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+}
+
+.btn-toggle:hover {
+  background-color: var(--btn-hover);
+}
+
+.btn-toggle.active,
+.btn-toggle[aria-pressed="true"] {
+  background-color: var(--toggle-btn-toggled);
+  color: var(--toggle-btn-toggled-fg);
+}
+
+.btn-toggle:focus {
+  border-color: #6AC5FB;
+}
+
+/* ============================================
+   MENU/SIDEBAR BUTTON
+   ============================================ */
+.btn-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 11px;
+}
+
+.btn-menu:hover {
+  background-color: rgba(153, 153, 153, 0.67);
+}
+
+.btn-menu:focus {
+  background-color: rgba(110, 110, 110, 0.67);
+}
+
+.btn-menu img,
+.btn-menu svg {
+  width: 16px;
+  height: 16px;
+  margin-bottom: 4px;
+}
+
+.btn-menu span {
+  font-size: 11px;
+}
+
+/* ============================================
+   WINDOW CONTROL BUTTONS (Min/Max/Close)
+   ============================================ */
+.btn-window {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-window:hover {
+  background-color: var(--window-btn-hover);
+}
+
+.btn-window:focus {
+  background-color: var(--window-btn-focus);
+}
+
+.btn-window svg {
+  stroke: var(--titlebar-text);
+  fill: none;
+}
+
+.btn-window.close:hover {
+  background-color: #E81123;
+}
+
+.btn-window.close:hover svg {
+  stroke: white;
+}
+
+/* Inactive window state */
+.window-inactive .btn-window svg {
+  stroke: var(--titlebar-text-inactive);
+}
+
+/* ============================================
+   ICON BUTTON
+   ============================================ */
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  min-width: 24px;
+  min-height: 24px;
+  background: transparent;
+  border: none;
+}
+
+.btn-icon:hover {
+  background-color: var(--btn-hover);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-icon img,
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   NAVIGATION BUTTON
+   ============================================ */
+.btn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.btn-nav:hover {
+  background-color: var(--btn-hover);
+  border-color: var(--combobox-border);
+}
+
+.btn-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   DIFF OPTIONS BUTTON
+   ============================================ */
+.btn-diff {
+  padding: 2px 8px;
+  margin: 2px;
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  border-radius: 2px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+}
+
+.btn-diff:hover {
+  background-color: var(--btn-hover);
+}
+
+.btn-diff:focus {
+  border-color: #6AC5FB;
+}
+
+/* ============================================
+   COLLAPSE/EXPAND BUTTON
+   ============================================ */
+.btn-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--window-bg);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.btn-collapse:hover {
+  background-color: #AAAAAA;
+}
+
+.btn-collapse.collapsed {
+  transform: rotate(180deg);
+}
+
+.btn-collapse img,
+.btn-collapse svg {
+  width: 22px;
+  height: 8px;
+}
+
+/* Vertical collapse button */
+.btn-collapse-v {
+  width: 10px;
+  height: 22px;
+}
+
+.btn-collapse-v img,
+.btn-collapse-v svg {
+  width: 8px;
+  height: 22px;
+}
+
+/* ============================================
+   CANCEL/CLOSE BUTTON (X)
+   ============================================ */
+.btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-close:hover {
+  background-color: var(--checkbox-hover);
+  border-color: #666666;
+}
+
+.btn-close img,
+.btn-close svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ============================================
+   BUTTON WITH TEXT AND ICON
+   ============================================ */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-with-icon img,
+.btn-with-icon svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   BUTTON GROUP
+   ============================================ */
+.btn-group {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.btn-group.right {
+  justify-content: flex-end;
+}
+
+/* ============================================
+   LINK BUTTON
+   ============================================ */
+.btn-link {
+  display: inline;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--hyperlink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.btn-link:hover {
+  text-decoration: none;
+}
+
+/* Button label - for responsive icon buttons */
+.btn-label {
+  margin-left: 6px;
+}
+
+@media (max-width: 640px) {
+  .btn-label {
+    display: none;
+  }
+}

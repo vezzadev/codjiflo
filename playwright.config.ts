@@ -25,24 +25,20 @@ const baseURL = isProdMode
   ? 'https://codjiflo.vza.net'
   : 'http://localhost:3000';
 
-// Log the E2E mode at startup for visibility
-console.log(`\n📋 E2E Dependencies Mode: ${e2eMode.toUpperCase()}`);
-console.log(`📍 Target URL: ${baseURL}\n`);
-
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: isCI ? 2 : 1,
-  timeout: isProdMode ? 90000 : 60000, // Longer timeout for prod mode (network latency)
+  retries: 0,
+  timeout: 5000,
   expect: {
-    timeout: isProdMode ? 15000 : 10000,
+    timeout: 2000,
   },
   reporter: "html",
   use: {
     baseURL,
-    trace: "on-first-retry",
-    actionTimeout: isProdMode ? 20000 : 15000,
+    trace: "retain-on-failure",
+    actionTimeout: 2000,
   },
   projects: [
     {
@@ -52,13 +48,13 @@ export default defineConfig({
       },
     },
   ],
-  // Only start dev server in mock mode
+  // Only start server in mock mode (production build to avoid Fast Refresh)
   ...(isProdMode ? {} : {
     webServer: {
-      command: "npm run dev",
+      command: "npm run build && npm run start",
       url: "http://localhost:3000",
       reuseExistingServer: !isCI,
-      timeout: 120_000,
+      timeout: 180_000,
     },
   }),
 });

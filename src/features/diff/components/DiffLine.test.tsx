@@ -210,7 +210,7 @@ describe('DiffLine', () => {
       );
 
       const addedSegment = screen.getByText('new');
-      expect(addedSegment).toHaveClass('bg-green-300');
+      expect(addedSegment).toHaveClass('word-diff-added');
     });
 
     it('applies correct styling to removed segments', () => {
@@ -234,7 +234,7 @@ describe('DiffLine', () => {
       );
 
       const removedSegment = screen.getByText('old');
-      expect(removedSegment).toHaveClass('bg-red-300');
+      expect(removedSegment).toHaveClass('word-diff-removed');
     });
 
     it('has screen reader accessible text for modified lines', () => {

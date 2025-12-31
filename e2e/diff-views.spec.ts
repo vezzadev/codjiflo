@@ -94,17 +94,17 @@ const baz = 'qux';
 
     // Click on a file to show diff (PR description is default)
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       // [AC-3.3.1] Unified mode should be default - find buttons in view mode group
       const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible({ timeout: 10000 });
+      await expect(viewModeGroup).toBeVisible();
 
       const unifiedButton = viewModeGroup.getByRole("button", {
         name: /Unified/i,
@@ -124,7 +124,7 @@ const baz = 'qux';
       // [AC-3.2.8-9] Split view should have accessible labels
       await expect(
         page.getByRole("region", { name: "Side-by-side diff view" })
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
       await expect(
         page.getByRole("region", { name: "Original version" })
       ).toBeVisible();
@@ -137,12 +137,12 @@ const baz = 'qux';
       await expect(unifiedButton).toHaveAttribute("aria-pressed", "true");
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
       }
     }
   });
@@ -153,16 +153,16 @@ const baz = 'qux';
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible({ timeout: 10000 });
+      await expect(viewModeGroup).toBeVisible();
 
       const unifiedButton = viewModeGroup.getByRole("button", {
         name: /Unified/i,
@@ -176,16 +176,12 @@ const baz = 'qux';
       // [AC-3.3.4] Press 's' for Split
       await page.keyboard.press("s");
       await page.waitForTimeout(200);
-      await expect(splitButton).toHaveAttribute("aria-pressed", "true", {
-        timeout: 5000,
-      });
+      await expect(splitButton).toHaveAttribute("aria-pressed", "true");
 
       // [AC-3.3.4] Press 'u' for Unified
       await page.keyboard.press("u");
       await page.waitForTimeout(200);
-      await expect(unifiedButton).toHaveAttribute("aria-pressed", "true", {
-        timeout: 5000,
-      });
+      await expect(unifiedButton).toHaveAttribute("aria-pressed", "true");
     } else {
       // Prod mode: skip keyboard shortcuts test (real PR may have modal conflicts)
       test.skip(true, "Keyboard shortcuts tested in mock mode only");
@@ -198,17 +194,17 @@ const baz = 'qux';
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       // Switch to Split for content filter to be visible
       const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible({ timeout: 10000 });
+      await expect(viewModeGroup).toBeVisible();
       const splitButton = viewModeGroup.getByRole("button", { name: /Split/i });
       await splitButton.click();
       await expect(splitButton).toHaveAttribute("aria-pressed", "true");
@@ -217,7 +213,7 @@ const baz = 'qux';
       const contentFilterGroup = page.getByRole("group", {
         name: "Content filter",
       });
-      await expect(contentFilterGroup).toBeVisible({ timeout: 10000 });
+      await expect(contentFilterGroup).toBeVisible();
 
       const leftButton = contentFilterGroup.getByRole("button", {
         name: /Left/i,
@@ -262,12 +258,12 @@ const baz = 'qux';
       ).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
       }
     }
   });
@@ -280,23 +276,23 @@ const baz = 'qux';
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       // [AC-3.5.4] Whitespace toggle in toolbar - find by aria-label pattern
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-      await expect(toolbar).toBeVisible({ timeout: 10000 });
+      await expect(toolbar).toBeVisible();
 
       // Whitespace button uses aria-label "Hide whitespace changes" or "Show whitespace changes"
       const whitespaceButton = toolbar.getByRole("button", {
         name: /whitespace/i,
       });
-      await expect(whitespaceButton).toBeVisible({ timeout: 10000 });
+      await expect(whitespaceButton).toBeVisible();
 
       // [AC-3.5.5] Toggle state indicator - starts off (WS visible)
       await expect(whitespaceButton).toHaveAttribute("aria-pressed", "false");
@@ -310,12 +306,12 @@ const baz = 'qux';
       await expect(whitespaceButton).toHaveAttribute("aria-pressed", "false");
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
       }
     }
   });
@@ -328,22 +324,22 @@ const baz = 'qux';
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-      await expect(toolbar).toBeVisible({ timeout: 10000 });
+      await expect(toolbar).toBeVisible();
 
       // Find the full file toggle button
       const fullFileButton = toolbar.getByRole("button", {
         name: /full file|changes only/i,
       });
-      await expect(fullFileButton).toBeVisible({ timeout: 10000 });
+      await expect(fullFileButton).toBeVisible();
 
       // [AC-3.1.1] Default should be "Changes only" (not pressed)
       await expect(fullFileButton).toHaveAttribute("aria-pressed", "false");
@@ -365,7 +361,7 @@ const baz = 'qux';
 
       // Should now see content from the full file (line numbers starting from 1)
       // In full file mode, we should see lines that weren't in the patch
-      await expect(diffRegion.getByText("End of file")).toBeVisible({ timeout: 10000 });
+      await expect(diffRegion.getByText("End of file")).toBeVisible();
 
       // [AC-3.1.7] Toggle back to changes only
       await fullFileButton.click();
@@ -376,19 +372,19 @@ const baz = 'qux';
       await expect(diffRegion.getByText("@@")).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
 
         // Verify full file toggle exists
         const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
         const fullFileButton = toolbar.getByRole("button", {
           name: /full file|changes only/i,
         });
-        await expect(fullFileButton).toBeVisible({ timeout: 10000 });
+        await expect(fullFileButton).toBeVisible();
       }
     }
   });
@@ -399,24 +395,24 @@ const baz = 'qux';
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       await fileNav.getByText("src/example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       // Switch to Split view
       const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible({ timeout: 10000 });
+      await expect(viewModeGroup).toBeVisible();
       await viewModeGroup.getByRole("button", { name: /Split/i }).click();
 
       // [AC-3.2.8] Screen reader can move between panes
       const leftPane = page.getByRole("region", { name: "Original version" });
       const rightPane = page.getByRole("region", { name: "Modified version" });
 
-      await expect(leftPane).toBeVisible({ timeout: 10000 });
+      await expect(leftPane).toBeVisible();
       await expect(rightPane).toBeVisible();
 
       // [AC-3.2.9] Aria labels correctly set
@@ -429,12 +425,12 @@ const baz = 'qux';
       await expect(rightPane.locator("table")).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
       }
     }
   });

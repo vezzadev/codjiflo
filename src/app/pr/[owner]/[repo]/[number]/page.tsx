@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Keyboard } from 'lucide-react';
 import { usePRStore } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
@@ -12,6 +13,14 @@ import {
   IterationSelector,
   DegradedModeBanner,
 } from '@/features/iterations';
+import {
+  AppShell,
+  Titlebar,
+  LeftPane,
+  MainContent,
+  BottomPane,
+} from '@/components/layout';
+import { useLayoutStore } from '@/stores/useLayoutStore';
 
 interface PRPageProps {
   params: Promise<{
@@ -26,10 +35,11 @@ export default function PullRequestPage({ params }: PRPageProps) {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useRequireAuth();
 
-  const { loadPR, reset: resetPR } = usePRStore();
+  const { currentPR, loadPR, reset: resetPR } = usePRStore();
   const { loadFiles, reset: resetDiff } = useDiffStore();
-  const { loadThreads, reset: resetComments } = useCommentsStore();
+  const { threads, loadThreads, reset: resetComments } = useCommentsStore();
   const { loadIterations, reset: resetIterations } = useIterationStore();
+  const { leftPaneWidth } = useLayoutStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts();
@@ -78,9 +88,11 @@ export default function PullRequestPage({ params }: PRPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-600">Loading...</div>
-      </div>
+      <AppShell>
+        <div className="diff-placeholder">
+          <p>Loading...</p>
+        </div>
+      </AppShell>
     );
   }
 
@@ -90,62 +102,111 @@ export default function PullRequestPage({ params }: PRPageProps) {
 
   if (!owner || !repo || !number) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid URL</h1>
-          <p className="text-gray-600 mb-4">Missing required parameters</p>
-          <button
-            onClick={handleBackToDashboard}
-            className="text-blue-600 hover:underline"
-          >
+      <AppShell>
+        <div className="diff-placeholder">
+          <p style={{ color: 'var(--error-fg)', fontWeight: 'bold' }}>Invalid URL</p>
+          <p style={{ color: 'var(--control-disabled-fg)' }}>Missing required parameters</p>
+          <button onClick={handleBackToDashboard} className="btn-link" style={{ marginTop: '16px' }}>
             Back to Dashboard
           </button>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
+  // Get PR title for titlebar
+  const prTitle = currentPR?.title ?? `${owner}/${repo}#${number}`;
+
+  // Bottom pane tabs configuration
+  const bottomPaneTabs = [
+    {
+      id: 'comments',
+      label: `Comments (${String(threads.length)})`,
+      content: (
+        <div className="comments-list">
+          {threads.length === 0 ? (
+            <p style={{ color: 'var(--control-disabled-fg)', padding: '16px' }}>
+              No comments yet
+            </p>
+          ) : (
+            threads.slice(0, 10).map((thread) => (
+              <div key={thread.id} className={`comment-item ${thread.isResolved ? 'resolved' : ''}`}>
+                <span className="comment-author">{thread.comments[0]?.author.login}</span>
+                <span className="comment-time">
+                  {thread.comments[0]?.createdAt.toLocaleDateString()}
+                </span>
+                <p className="comment-text">{thread.comments[0]?.body.slice(0, 100)}...</p>
+                {thread.isResolved && <span className="badge badge-success">Resolved</span>}
+              </div>
+            ))
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'activity',
+      label: 'Activity',
+      content: (
+        <div style={{ padding: '16px', color: 'var(--control-disabled-fg)' }}>
+          Activity feed coming soon
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      <header className="bg-white border-b px-4 py-2 flex items-center gap-4 shrink-0">
-        <button
-          onClick={handleBackToDashboard}
-          className="text-gray-600 hover:text-gray-900"
-          aria-label="Back to dashboard"
-        >
-          ← Back
-        </button>
-        <span className="text-sm text-gray-500 truncate">
-          {owner}/{repo}#{number}
-        </span>
-        <button
-          onClick={() => setShowShortcuts(true)}
-          className="ml-auto text-sm text-gray-500 hover:text-gray-900"
-          aria-label="Show keyboard shortcuts"
-        >
-          ? Shortcuts
-        </button>
-      </header>
+    <AppShell>
+      <Titlebar
+        title={prTitle}
+        leftContent={
+          <button
+            onClick={handleBackToDashboard}
+            className="btn-nav"
+            aria-label="Back to dashboard"
+            style={{ marginLeft: '8px' }}
+          >
+            <ArrowLeft size={16} />
+          </button>
+        }
+        rightContent={
+          <button
+            onClick={() => setShowShortcuts(true)}
+            className="btn-nav"
+            aria-label="Show keyboard shortcuts"
+            style={{ marginRight: '8px' }}
+          >
+            <Keyboard size={16} />
+          </button>
+        }
+      />
 
       <DegradedModeBanner />
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-80 shrink-0 flex flex-col bg-white border-r overflow-hidden">
-          <IterationSelector className="shrink-0 border-b" />
-          <div className="flex-1 overflow-y-auto">
-            <FileList />
+      <div className="main-layout" style={{ gridTemplateColumns: `${String(leftPaneWidth)}px 1fr` }}>
+        <LeftPane
+          header={
+            <div className="file-explorer-header">
+              <span>Files</span>
+            </div>
+          }
+        >
+          <div className="file-explorer-filter">
+            <IterationSelector className="" />
           </div>
-        </aside>
+          <FileList />
+        </LeftPane>
 
-        <main className="flex-1 overflow-hidden">
+        <MainContent>
           <DiffView />
-        </main>
+        </MainContent>
       </div>
+
+      <BottomPane tabs={bottomPaneTabs} defaultTab="comments" />
 
       <ShortcutsModal
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
-    </div>
+    </AppShell>
   );
 }

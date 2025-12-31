@@ -16,13 +16,12 @@ describe('FileListItem', () => {
     expect(screen.getByText('src/components/Button.tsx')).toBeInTheDocument();
   });
 
-  it('displays additions and deletions', () => {
-    const file = createMockFileChange({ additions: 25, deletions: 10 });
+  it('displays change type indicator', () => {
+    const file = createMockFileChange({ status: FileChangeStatus.Modified });
 
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
-    expect(screen.getByText('+25')).toBeInTheDocument();
-    expect(screen.getByText('−10')).toBeInTheDocument();
+    expect(screen.getByText('M')).toBeInTheDocument();
   });
 
   it('displays correct icon for added files', () => {
@@ -30,7 +29,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
-    expect(screen.getByText('+')).toBeInTheDocument();
+    expect(screen.getByText('A')).toBeInTheDocument();
   });
 
   it('displays correct icon for modified files', () => {
@@ -46,7 +45,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
-    expect(screen.getByText('−')).toBeInTheDocument();
+    expect(screen.getByText('D')).toBeInTheDocument();
   });
 
   it('applies selected styles when selected', () => {
@@ -54,9 +53,9 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={true} onClick={noop} />);
 
-    const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-current', 'location');
-    expect(button).toHaveClass('bg-blue-50');
+    const item = screen.getByRole('listitem');
+    expect(item).toHaveAttribute('aria-current', 'location');
+    expect(item).toHaveClass('selected');
   });
 
   it('calls onClick when clicked', async () => {
@@ -66,7 +65,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('listitem'));
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });
@@ -82,7 +81,7 @@ describe('FileListItem', () => {
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
     expect(
-      screen.getByRole('button', { name: /test.ts, modified, 5 additions, 3 deletions/i })
+      screen.getByRole('listitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
     ).toBeInTheDocument();
   });
 });

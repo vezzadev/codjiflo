@@ -1,0 +1,313 @@
+/* Feature Component Styles */
+
+/* ============================================
+   DIFF LINE STYLES
+   ============================================ */
+.diff-line {
+  transition: filter 0.1s ease;
+}
+
+.diff-line:hover {
+  filter: brightness(0.95);
+}
+
+.diff-line-addition {
+  background-color: var(--diff-add-line);
+}
+
+.diff-line-deletion {
+  background-color: var(--diff-delete-line);
+}
+
+.diff-line-context {
+  background-color: var(--main-bg);
+}
+
+.diff-line-header {
+  background-color: var(--control-bg);
+  color: var(--control-disabled-fg);
+  font-weight: 600;
+}
+
+.diff-line-spacer {
+  background-color: var(--control-bg);
+}
+
+/* Diff gutter (line numbers) */
+.diff-gutter {
+  padding: 2px 8px;
+  text-align: right;
+  font-size: 12px;
+  user-select: none;
+  min-width: 48px;
+  border-right: 1px solid var(--combobox-border);
+}
+
+.diff-gutter-addition {
+  color: var(--diff-add-fg);
+  background-color: var(--diff-add-gutter);
+}
+
+.diff-gutter-deletion {
+  color: var(--diff-delete-fg);
+  background-color: var(--diff-delete-gutter);
+}
+
+.diff-gutter-context {
+  color: var(--control-disabled-fg);
+  background-color: var(--control-bg);
+}
+
+.diff-gutter-header {
+  color: var(--control-disabled-fg);
+  background-color: var(--control-bg);
+}
+
+.diff-gutter-spacer {
+  background-color: var(--control-bg);
+}
+
+/* Diff marker (+/-) column */
+.diff-marker {
+  position: relative;
+  padding: 2px 4px;
+  text-align: center;
+  user-select: none;
+  width: 32px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.diff-comment-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.diff-line:hover .diff-comment-btn,
+.diff-line:focus-within .diff-comment-btn {
+  opacity: 1;
+}
+
+/* Diff content */
+.diff-content {
+  padding: 2px 0 2px 8px;
+  overflow: hidden;
+}
+
+.diff-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  white-space: pre;
+  margin: 0;
+}
+
+/* Word-level diff highlighting */
+.word-diff-added {
+  background-color: var(--diff-add-word);
+}
+
+.word-diff-removed {
+  background-color: var(--diff-delete-word);
+}
+
+/* Visible whitespace */
+.whitespace-visible {
+  color: var(--control-disabled-fg);
+  opacity: 0.6;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
+   DEGRADED MODE BANNER
+   ============================================ */
+.degraded-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--waiting-yellow);
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.degraded-banner-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--waiting-yellow-text);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.degraded-banner-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.degraded-banner-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--waiting-yellow-text);
+  margin: 0 0 4px 0;
+}
+
+.degraded-banner-text {
+  font-size: 13px;
+  color: var(--waiting-yellow-text);
+  margin: 0;
+}
+
+.degraded-banner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--waiting-yellow-text);
+  text-decoration: underline;
+}
+
+.degraded-banner-link:hover {
+  text-decoration: none;
+}
+
+/* ============================================
+   ITERATION SELECTOR
+   ============================================ */
+.iteration-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+}
+
+.iteration-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--control-disabled-fg);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.iteration-separator {
+  width: 1px;
+  height: 24px;
+  background-color: var(--combobox-border);
+}
+
+.iteration-dropdown-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iteration-dropdown-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--control-disabled-fg);
+}
+
+.iteration-dropdown-container {
+  position: relative;
+}
+
+.iteration-dropdown-chevron {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--control-disabled-fg);
+  pointer-events: none;
+}
+
+.iteration-range-dropdowns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iteration-range-icon {
+  color: var(--control-disabled-fg);
+}
+
+.iteration-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--control-disabled-fg);
+  font-size: 14px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--combobox-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   COMMENT THREAD
+   ============================================ */
+.comment-thread {
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  background-color: var(--main-bg);
+  padding: 16px;
+}
+
+.comment-thread.resolved {
+  opacity: 0.75;
+}
+
+.comment-thread-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.comment-thread-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--main-fg);
+}
+
+.comment-thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-thread-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--combobox-border);
+  margin-top: 16px;
+}

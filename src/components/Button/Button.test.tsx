@@ -28,13 +28,13 @@ describe("Button", () => {
   it("applies primary variant styles by default", () => {
     render(<Button label="Primary" />);
     const button = screen.getByRole("button");
-    expect(button).toHaveClass("bg-blue-600");
+    expect(button).toHaveClass("btn-colorful");
   });
 
   it("applies secondary variant styles when specified", () => {
     render(<Button label="Secondary" variant="secondary" />);
     const button = screen.getByRole("button");
-    expect(button).toHaveClass("bg-gray-200");
+    expect(button).toHaveClass("btn");
   });
 
   it("renders with type='button' by default", () => {

@@ -76,11 +76,11 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
 
     // Verify basic page structure is intact
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
-    // Verify sidebar exists (aside element where IterationSelector is placed)
-    const aside = page.locator("aside");
-    await expect(aside).toBeVisible();
+    // Verify sidebar exists (nav element where IterationSelector is placed)
+    const nav = page.locator("nav");
+    await expect(nav).toBeVisible();
   });
 
   test("Degraded mode banner shows when no artifact is available", async ({ page }) => {
@@ -97,7 +97,7 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
 
     // Look for the degraded mode banner (rendered as a status element)
     const banner = page.getByRole("status");
-    await expect(banner).toBeVisible({ timeout: 15000 });
+    await expect(banner).toBeVisible();
     await expect(banner).toContainText(/iteration tracking/i);
   });
 

@@ -1,1 +1,12 @@
-@import "tailwindcss";
+/* CodjiFlo Global Styles */
+
+/* Theme System - CSS Custom Properties */
+@import '../styles/themes/variables.css';
+
+/* Shared Component Styles */
+@import '../styles/shared/buttons.css';
+@import '../styles/shared/controls.css';
+@import '../styles/shared/features.css';
+
+/* Layout Shell Styles */
+@import '../styles/shell/mainwindow.css';

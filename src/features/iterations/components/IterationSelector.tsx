@@ -6,7 +6,6 @@
 
 import { useCallback, useMemo } from 'react';
 import { ChevronDown, GitCommit, RefreshCw } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import { useIterationStore } from '../stores';
 import type { Iteration, IterationPreset } from '../types';
 import { iterationToRightSnapshot } from '../types';
@@ -24,19 +23,15 @@ interface PresetButtonProps {
 }
 
 function PresetButton({ label, description, isActive, onClick }: PresetButtonProps) {
+  const classes = ['btn-toggle', isActive ? 'active' : ''].filter(Boolean).join(' ');
+
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={isActive}
       title={description}
-      className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500',
-        isActive
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      )}
+      className={classes}
     >
       {label}
     </button>
@@ -89,18 +84,13 @@ function SnapshotDropdown({
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-600">{label}</label>
-      <div className="relative">
+    <div className="iteration-dropdown-wrapper">
+      <label className="iteration-dropdown-label">{label}</label>
+      <div className="iteration-dropdown-container">
         <select
           value={value}
           onChange={handleChange}
-          className={cn(
-            'appearance-none bg-white border border-gray-300 rounded-md',
-            'pl-3 pr-8 py-1.5 text-sm',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-            'cursor-pointer'
-          )}
+          className="select"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -109,7 +99,7 @@ function SnapshotDropdown({
           ))}
         </select>
         <ChevronDown
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          className="iteration-dropdown-chevron"
           aria-hidden
         />
       </div>
@@ -190,26 +180,25 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     return null;
   }
 
+  const classes = ['iteration-selector', className].filter(Boolean).join(' ');
+
   return (
     <div
       data-testid="iteration-selector"
-      className={cn(
-        'flex items-center gap-4 flex-wrap p-3 bg-gray-50 rounded-lg border border-gray-200',
-        className
-      )}
+      className={classes}
       role="toolbar"
       aria-label="Iteration range selector"
     >
       {/* Iteration icon */}
-      <div className="flex items-center gap-2 text-gray-600">
-        <GitCommit className="w-5 h-5" aria-hidden />
-        <span className="text-sm font-medium">
+      <div className="iteration-count">
+        <GitCommit size={20} aria-hidden />
+        <span>
           {iterations.length} iteration{iterations.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Preset buttons */}
-      <div className="flex items-center gap-2" role="group" aria-label="Quick select presets">
+      <div className="btn-group" role="group" aria-label="Quick select presets">
         <PresetButton
           preset="full"
           label="Full diff"
@@ -227,11 +216,11 @@ export function IterationSelector({ className }: IterationSelectorProps) {
       </div>
 
       {/* Separator */}
-      <div className="h-6 w-px bg-gray-300" aria-hidden />
+      <div className="iteration-separator" aria-hidden />
 
       {/* Custom range dropdowns */}
       {selectedRange && (
-        <div className="flex items-center gap-3">
+        <div className="iteration-range-dropdowns">
           <SnapshotDropdown
             label="From:"
             value={selectedRange.fromSnapshot}
@@ -239,7 +228,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
             onChange={handleFromChange}
             includeBase
           />
-          <RefreshCw className="w-4 h-4 text-gray-400" aria-hidden />
+          <RefreshCw size={16} className="iteration-range-icon" aria-hidden />
           <SnapshotDropdown
             label="To:"
             value={selectedRange.toSnapshot}
@@ -251,9 +240,9 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="flex items-center gap-2 text-gray-500">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-          <span className="text-sm">Loading...</span>
+        <div className="iteration-loading">
+          <div className="spinner-small" />
+          <span>Loading...</span>
         </div>
       )}
     </div>

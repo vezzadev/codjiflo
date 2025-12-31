@@ -2,11 +2,13 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { parseGitHubPRUrl } from '@/features/pr';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useRequireAuth } from '@/features/auth/hooks';
+import { AppShell, Titlebar } from '@/components/layout';
 
 export default function DashboardPage() {
   const [url, setUrl] = useState('');
@@ -38,27 +40,29 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">CodjiFlo</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-600 hover:text-gray-900"
-        >
-          Logout
-        </button>
-      </header>
+    <AppShell>
+      <Titlebar
+        title="Dashboard"
+        rightContent={
+          <button
+            onClick={handleLogout}
+            className="btn-nav"
+            aria-label="Logout"
+            style={{ marginRight: '8px' }}
+          >
+            <LogOut size={16} />
+          </button>
+        }
+      />
 
-      <main className="max-w-2xl mx-auto mt-16 px-4">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            View Pull Request
-          </h2>
-          <p className="text-gray-600 mb-6">
+      <div className="dashboard-content">
+        <div className="dashboard-card">
+          <h2 className="dashboard-title">View Pull Request</h2>
+          <p className="dashboard-subtitle">
             Enter a GitHub Pull Request URL to start reviewing
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="dashboard-form">
             <Input
               id="pr-url"
               label="GitHub Pull Request URL"
@@ -82,10 +86,10 @@ export default function DashboardPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="dashboard-hint">
           Paste any public GitHub pull request URL to view its changes
         </p>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
