@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GitHubFileBackend } from './file-backend';
-import { githubClient } from './github-client';
+import { githubClient, GitHubAPIError } from './github-client';
 import { FileChangeStatus } from '../types';
 
 vi.mock('./github-client', () => ({
   githubClient: {
     fetch: vi.fn(),
+  },
+  GitHubAPIError: class extends Error {
+    constructor(public status: number, public statusText: string, message: string) {
+      super(message);
+      this.name = 'GitHubAPIError';
+    }
   },
 }));
 
@@ -89,6 +95,192 @@ describe('GitHubFileBackend', () => {
 
       const [first] = await backend.getFiles('owner', 'repo', 1);
       expect(first?.patch).toBe('');
+    });
+  });
+
+  describe('getFileContent', () => {
+    it('fetches and decodes base64 file content successfully', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'src/index.ts',
+        sha: 'abc123',
+        size: 100,
+        content: btoa('console.log("hello");'),
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const result = await backend.getFileContent('owner', 'repo', 'src/index.ts', 'main');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/repos/owner/repo/contents/src/index.ts?ref=main'
+      );
+      expect(result).toEqual({
+        path: 'src/index.ts',
+        sha: 'abc123',
+        content: 'console.log("hello");',
+        size: 100,
+        encoding: 'utf-8',
+      });
+    });
+
+    it('handles base64 content with line breaks', async () => {
+      const content = 'Line 1\nLine 2\nLine 3';
+      const base64WithLineBreaks = btoa(content).match(/.{1,64}/g)?.join('\n') || '';
+
+      const mockResponse = {
+        type: 'file',
+        path: 'file.txt',
+        sha: 'def456',
+        size: 50,
+        content: base64WithLineBreaks,
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const result = await backend.getFileContent('owner', 'repo', 'file.txt', 'branch');
+
+      expect(result.content).toBe(content);
+    });
+
+    it('properly encodes file path with special characters', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'src/components/my component.tsx',
+        sha: 'ghi789',
+        size: 200,
+        content: btoa('test'),
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await backend.getFileContent('owner', 'repo', 'src/components/my component.tsx', 'main');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/repos/owner/repo/contents/src/components/my%20component.tsx?ref=main'
+      );
+    });
+
+    it('properly encodes ref parameter', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'file.txt',
+        sha: 'jkl012',
+        size: 50,
+        content: btoa('test'),
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await backend.getFileContent('owner', 'repo', 'file.txt', 'feature/my-branch');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('?ref=feature%2Fmy-branch')
+      );
+    });
+
+    it('throws error when content type is not file', async () => {
+      const mockResponse = {
+        type: 'dir',
+        path: 'src',
+        sha: 'mno345',
+        size: 0,
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await expect(
+        backend.getFileContent('owner', 'repo', 'src', 'main')
+      ).rejects.toThrow(/Expected file but got dir/);
+    });
+
+    it('throws error when file is too large', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'large.bin',
+        sha: 'pqr678',
+        size: 2 * 1024 * 1024, // 2MB, exceeds 1MB limit
+        content: btoa('large content'),
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await expect(
+        backend.getFileContent('owner', 'repo', 'large.bin', 'main')
+      ).rejects.toThrow(/File too large/);
+    });
+
+    it('throws error when base64 decoding fails', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'corrupted.txt',
+        sha: 'stu901',
+        size: 100,
+        content: 'invalid-base64!!!@@@###',
+        encoding: 'base64',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await expect(
+        backend.getFileContent('owner', 'repo', 'corrupted.txt', 'main')
+      ).rejects.toThrow(/Failed to decode base64 content/);
+    });
+
+    it('handles non-base64 content when encoding is not base64', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'plain.txt',
+        sha: 'vwx234',
+        size: 50,
+        content: 'plain text content',
+        encoding: 'utf-8',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const result = await backend.getFileContent('owner', 'repo', 'plain.txt', 'main');
+
+      expect(result.content).toBe('plain text content');
+      expect(result.encoding).toBe('utf-8');
+    });
+
+    it('handles empty content with encoding none', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'empty.txt',
+        sha: 'yza567',
+        size: 0,
+        encoding: 'none',
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const result = await backend.getFileContent('owner', 'repo', 'empty.txt', 'main');
+
+      expect(result.content).toBe('');
+      expect(result.encoding).toBe('none');
+    });
+
+    it('handles files without content field', async () => {
+      const mockResponse = {
+        type: 'file',
+        path: 'no-content.bin',
+        sha: 'bcd890',
+        size: 0,
+      };
+
+      mockFetch.mockResolvedValue(mockResponse);
+
+      const result = await backend.getFileContent('owner', 'repo', 'no-content.bin', 'main');
+
+      expect(result.content).toBe('');
+      expect(result.encoding).toBe('none');
     });
   });
 });
