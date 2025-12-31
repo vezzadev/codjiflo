@@ -15,6 +15,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
+    "test:debug": "vitest --inspectBrk",
+    "test:debug:watch": "vitest --inspectBrk --watch",
     "test:coverage": "vitest --coverage",
     "test:storybook": "vitest --config=vitest.storybook.config.ts",
     "test:e2e": "cross-env E2E_DEPENDENCIES_MODE=mock playwright test",
