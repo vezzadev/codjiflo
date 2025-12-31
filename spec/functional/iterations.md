@@ -6,7 +6,7 @@
 
 Iteration management enables **comments to persist across code changes**. When code moves, is modified, or is deleted, comments automatically re-anchor to the correct location.
 
-This a CodjiFlo's key differentiator - treating comment locations as a "continuous thread" across all code versions.
+This is CodjiFlo's key differentiator - treating comment locations as a "continuous thread" across all code versions.
 
 ---
 
@@ -14,7 +14,7 @@ This a CodjiFlo's key differentiator - treating comment locations as a "continuo
 
 ### What is an Iteration?
 
-An iteration represents a **pull request revision** that authors would like reviewers to inspect. It can be interpreted as an augmented git tag with a snapshot of the before and after states of the codebase. It can then be analyzed and compared independently from the git history. Therefore, it is resilient to git force push - a diff between two iterations is constained to the union of files in them. Each iteration is immutable after creation. Users may diff any range of iterations they prefer. The latest iteration represents the desired state of the codebase once the pull request is closed.
+An iteration represents a **pull request revision** that authors would like reviewers to inspect. It can be interpreted as an augmented git tag with a snapshot of the before and after states of the codebase. It can then be analyzed and compared independently from the git history. Therefore, it is resilient to git force push - a diff between two iterations is constrained to the union of files in them. Each iteration is immutable after creation. Users may diff any range of iterations they prefer. The latest iteration represents the desired state of the codebase once the pull request is closed.
 
 ```typescript
 interface Iteration {
