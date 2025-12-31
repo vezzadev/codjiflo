@@ -10,6 +10,7 @@ npm run build            # Production build
 npm run lint             # ESLint
 npm run typecheck        # TypeScript type checking (tsc)
 npm run test             # Unit and integration tests (Vitest)
+npm run test:debug       # Debug unit tests with Node.js inspector
 npm run test:coverage    # Unit and integration tests with coverage, min 70% enforced
 npm run test:storybook   # Storybook interaction tests
 npm run test:e2e         # Playwright E2E (mock mode, localhost)
