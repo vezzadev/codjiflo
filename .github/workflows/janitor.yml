@@ -164,7 +164,7 @@ jobs:
               title: title,
               body: bodyLines.join("\n"),
               labels: ['janitor'],
-              assignees: ['copilot-swe-agent']
+              assignees: ['@copilot']
             });
 
             core.info(`Created issue #${issue.data.number}: ${title}`);
