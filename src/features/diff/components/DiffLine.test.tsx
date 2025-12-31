@@ -462,4 +462,150 @@ describe('DiffLine', () => {
       expect(screen.queryByRole('button', { name: 'Add comment' })).not.toBeInTheDocument();
     });
   });
+
+  // Whitespace visibility tests (S-3.5)
+  describe('showWhitespace', () => {
+    it('renders visible spaces when showWhitespace is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'hello world',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Space should be replaced with middle dot character
+      const whitespaceMarkers = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceMarkers.length).toBe(1);
+      expect(whitespaceMarkers[0]).toHaveTextContent('·');
+
+      // Content container should include the text parts
+      const diffCode = container.querySelector('.diff-code');
+      expect(diffCode?.textContent).toContain('hello');
+      expect(diffCode?.textContent).toContain('world');
+    });
+
+    it('renders visible tabs when showWhitespace is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'hello\tworld',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Tab should be replaced with arrow character followed by spaces
+      const tabMarkers = container.querySelectorAll('.whitespace-visible');
+      expect(tabMarkers.length).toBeGreaterThan(0);
+      expect(tabMarkers[0]).toHaveTextContent('→');
+    });
+
+    it('renders multiple whitespace characters correctly', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: '  indented',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Should have two middle dots for the two leading spaces
+      const whitespaceMarkers = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceMarkers.length).toBe(2);
+    });
+
+    it('applies showWhitespace to word diff segments', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // The space in " value" should be rendered with middle dot
+      const whitespaceMarkers = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceMarkers.length).toBeGreaterThan(0);
+    });
+
+    it('handles empty content with showWhitespace', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: '',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Should render without crashing
+      expect(container.querySelector('.diff-content')).toBeInTheDocument();
+    });
+
+    it('preserves non-whitespace text when showWhitespace is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'const x = 1;',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Content should contain all non-whitespace text
+      const diffCode = container.querySelector('.diff-code');
+      expect(diffCode?.textContent).toContain('const');
+      expect(diffCode?.textContent).toContain('x');
+      expect(diffCode?.textContent).toContain('=');
+      expect(diffCode?.textContent).toContain('1;');
+
+      // Whitespace markers should be present for the 3 spaces
+      const whitespaceMarkers = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceMarkers.length).toBe(3);
+    });
+  });
 });
