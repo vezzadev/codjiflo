@@ -58,7 +58,7 @@ Iteration 3:  Snapshot 4 (left)  ↔  Snapshot 5 (right)
 - **Iteration → Left Snapshot:** `(iteration - 1) * 2`
 - **Iteration → Right Snapshot:** `(iteration - 1) * 2 + 1`
 
-**Implementation Note:** As of the current implementation, only `iterationToRightSnapshot()` is exported in `src/features/iterations/types.ts`. The left snapshot conversion is typically not needed since most operations work with base (snapshot 0) or right snapshots. The snapshot-to-iteration conversion can be computed inline when needed.
+**Implementation Note:** As of the current implementation, only `iterationToRightSnapshot()` is exported in `src/features/iterations/types.ts`. The left snapshot conversion is typically not needed since most operations work with base (snapshot 0) or right snapshots. The snapshot-to-iteration conversion can be computed inline when needed using `Math.floor(snapshotIndex / 2) + 1`.
 
 **Examples:**
 | Iteration | Index | Left Snapshot | Right Snapshot |
@@ -553,7 +553,7 @@ interface CommentThread {
 - [x] Graceful degradation for repos without workflow - `isDegraded` flag and fallback to GitHub commits
 
 ### Partially Implemented
-- [~] Handle deleted files (anchor to context) - `trackSpanForward` returns null for deleted spans; nearest-valid-span logic exists but may need refinement
+- [PARTIAL] Handle deleted files (anchor to context) - `trackSpanForward` returns null for deleted spans; nearest-valid-span logic exists but may need refinement
 
 ### Not Yet Implemented
 - [ ] Persistent comment anchors in SQLite - Currently tracked in-memory only
