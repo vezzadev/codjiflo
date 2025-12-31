@@ -6,7 +6,7 @@ let fileCounter = 0;
 export function createMockFileChange(overrides: Partial<FileChange> = {}): FileChange {
   fileCounter++;
   return {
-    filename: `src/file${String(fileCounter)}.ts`,
+    filename: `src/file${fileCounter}.ts`,
     status: FileChangeStatus.Modified,
     additions: 10,
     deletions: 5,

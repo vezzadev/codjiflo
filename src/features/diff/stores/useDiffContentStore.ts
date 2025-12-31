@@ -132,7 +132,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
         alignedLines = diffLines.map((line, index) => ({
           left: null,
           right: line,
-          key: `add-${String(index)}`,
+          key: `add-${index}`,
         }));
       } else if (baseContent) {
         // Deleted file - all lines are deletions
@@ -145,7 +145,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
         alignedLines = diffLines.map((line, index) => ({
           left: line,
           right: null,
-          key: `del-${String(index)}`,
+          key: `del-${index}`,
         }));
       }
 

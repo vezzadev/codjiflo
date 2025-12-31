@@ -197,7 +197,7 @@ export class ChainedSpanTracker implements ISpanTracker {
       const curr = trackers[i];
       if (prev && curr && prev.rightSnapshotIndex !== curr.leftSnapshotIndex) {
         throw new Error(
-          `Tracker chain broken: ${String(prev.rightSnapshotIndex)} != ${String(curr.leftSnapshotIndex)}`
+          `Tracker chain broken: ${prev.rightSnapshotIndex} != ${curr.leftSnapshotIndex}`
         );
       }
     }

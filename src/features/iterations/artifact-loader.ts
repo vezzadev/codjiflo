@@ -98,7 +98,7 @@ export class ArtifactLoader {
   async findArtifactReference(): Promise<ArtifactReference | null> {
     try {
       const comments = await githubClient.fetch<IssueComment[]>(
-        `/repos/${this.owner}/${this.repo}/issues/${String(this.prNumber)}/comments`
+        `/repos/${this.owner}/${this.repo}/issues/${this.prNumber}/comments`
       );
 
       // Find comment with marker
@@ -169,7 +169,7 @@ export class ArtifactLoader {
       }
 
       // Download the artifact ZIP
-      const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${String(artifact.id)}/zip`;
+      const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${artifact.id}/zip`;
 
       // GitHub Actions artifact download returns a ZIP file
       // We need to use fetch directly with the token because it returns binary data
@@ -315,6 +315,6 @@ export class ArtifactLoader {
    * Generate cache key for this PR.
    */
   private getCacheKey(): string {
-    return `${this.owner}/${this.repo}/${String(this.prNumber)}`;
+    return `${this.owner}/${this.repo}/${this.prNumber}`;
   }
 }

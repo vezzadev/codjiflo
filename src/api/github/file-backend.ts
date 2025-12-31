@@ -13,7 +13,7 @@ const MAX_FILE_SIZE_BYTES = 1024 * 1024;
 export class GitHubFileBackend implements IFileBackend {
   async getFiles(owner: string, repo: string, number: number): Promise<FileChange[]> {
     const data = await githubClient.fetch<GitHubFile[]>(
-      `/repos/${owner}/${repo}/pulls/${String(number)}/files`
+      `/repos/${owner}/${repo}/pulls/${number}/files`
     );
 
     return data.map((file): FileChange => {
@@ -61,7 +61,7 @@ export class GitHubFileBackend implements IFileBackend {
       throw new GitHubAPIError(
         413,
         'Payload Too Large',
-        `File too large (${String(data.size)} bytes). Maximum: ${String(MAX_FILE_SIZE_BYTES)} bytes`
+        `File too large (${data.size} bytes). Maximum: ${MAX_FILE_SIZE_BYTES} bytes`
       );
     }
 

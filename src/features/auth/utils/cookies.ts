@@ -98,7 +98,7 @@ function setCookie(
 
   let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
   cookie += `; path=${path}`;
-  cookie += `; max-age=${String(maxAge)}`;
+  cookie += `; max-age=${maxAge}`;
   cookie += `; samesite=${sameSite}`;
 
   if (secure) {
