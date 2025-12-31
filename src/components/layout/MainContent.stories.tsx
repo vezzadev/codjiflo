@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, within } from 'storybook/test';
 import { MainContent } from './MainContent';
 
 const meta = {
@@ -94,5 +95,72 @@ export const WithToolbarAndNavBar: Story = {
 }`}</pre>
       </div>
     ),
+  },
+};
+
+// Generate diff lines for scroll testing
+const generateDiffLines = (count: number) =>
+  Array.from({ length: count }, (_, i) => {
+    const type = i % 3 === 0 ? 'add' : i % 3 === 1 ? 'remove' : 'context';
+    const prefix = type === 'add' ? '+' : type === 'remove' ? '-' : ' ';
+    const bgColor = type === 'add' ? 'var(--diff-add-bg, #1a4d1a)' : type === 'remove' ? 'var(--diff-remove-bg, #4d1a1a)' : 'transparent';
+    return (
+      <div
+        key={i}
+        data-testid={`diff-line-${String(i)}`}
+        style={{
+          fontFamily: 'monospace',
+          padding: '2px 8px',
+          backgroundColor: bgColor,
+          whiteSpace: 'pre',
+        }}
+      >
+        {prefix} Line {String(i + 1).padStart(3, '0')}: const value{String(i)} = {`"content-${String(i)}"`};
+      </div>
+    );
+  });
+
+export const WithScrollableContent: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ height: '300px', width: '100%' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    toolbar: (
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button className="btn btn-secondary">Unified</button>
+        <button className="btn btn-secondary">Split</button>
+      </div>
+    ),
+    children: (
+      <div data-testid="diff-content">
+        {generateDiffLines(50)}
+      </div>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Find the diff viewer container
+    const diffViewer = canvasElement.querySelector('.diff-viewer');
+    if (!diffViewer) throw new Error('diff-viewer not found');
+
+    // Verify the diff viewer has scrollable content (scrollHeight > clientHeight)
+    await expect(diffViewer.scrollHeight).toBeGreaterThan(diffViewer.clientHeight);
+
+    // Verify first diff line is in the DOM
+    await expect(canvas.getByTestId('diff-line-0')).toBeInTheDocument();
+
+    // Scroll to bottom
+    diffViewer.scrollTop = diffViewer.scrollHeight;
+
+    // Verify scroll position changed
+    await expect(diffViewer.scrollTop).toBeGreaterThan(0);
+
+    // Verify last diff line exists in DOM
+    await expect(canvas.getByTestId('diff-line-49')).toBeInTheDocument();
   },
 };

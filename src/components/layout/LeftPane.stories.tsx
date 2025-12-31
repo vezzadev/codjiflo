@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, within } from 'storybook/test';
 import { LeftPane } from './LeftPane';
 
 const meta = {
@@ -71,5 +72,58 @@ export const WithHeaderAndFooter: Story = {
         </div>
       </div>
     ),
+  },
+};
+
+// Generate many file items for scroll testing
+const generateFileItems = (count: number) =>
+  Array.from({ length: count }, (_, i) => (
+    <div key={i} className="tree-item file" style={{ padding: '8px' }} data-testid={`file-item-${String(i)}`}>
+      📄 file-{String(i + 1).padStart(2, '0')}.tsx
+    </div>
+  ));
+
+export const WithScrollableContent: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ height: '300px', width: '300px' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    header: (
+      <div className="file-explorer-header">
+        <span>Files</span>
+      </div>
+    ),
+    children: (
+      <nav aria-label="Changed files">
+        <div className="file-tree" role="list" data-testid="file-tree">
+          {generateFileItems(30)}
+        </div>
+      </nav>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Find the file tree container
+    const fileTree = canvas.getByTestId('file-tree');
+
+    // Verify the file tree has scrollable content (scrollHeight > clientHeight)
+    await expect(fileTree.scrollHeight).toBeGreaterThan(fileTree.clientHeight);
+
+    // Verify first file is in the DOM
+    await expect(canvas.getByTestId('file-item-0')).toBeInTheDocument();
+
+    // Scroll to bottom
+    fileTree.scrollTop = fileTree.scrollHeight;
+
+    // Verify scroll position changed
+    await expect(fileTree.scrollTop).toBeGreaterThan(0);
+
+    // Verify last file exists in DOM
+    await expect(canvas.getByTestId('file-item-29')).toBeInTheDocument();
   },
 };
