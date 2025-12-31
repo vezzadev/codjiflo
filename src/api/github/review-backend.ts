@@ -10,7 +10,7 @@ import type { GitHubPullRequest } from './types';
 export class GitHubReviewBackend implements IReviewBackend {
   async getReview(owner: string, repo: string, number: number): Promise<Review> {
     const data = await githubClient.fetch<GitHubPullRequest>(
-      `/repos/${owner}/${repo}/pulls/${String(number)}`
+      `/repos/${owner}/${repo}/pulls/${number}`
     );
 
     return {
@@ -20,7 +20,7 @@ export class GitHubReviewBackend implements IReviewBackend {
       description: data.body ?? '',
       state: this.mapState(data.state, data.merged, data.draft),
       author: {
-        id: String(data.user.id),
+        id: data.user.id.toString(),
         displayName: data.user.login,
         avatarUrl: data.user.avatar_url,
       },

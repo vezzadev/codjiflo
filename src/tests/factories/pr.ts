@@ -5,9 +5,9 @@ let idCounter = 0;
 export function createMockAuthor(overrides: Partial<Author> = {}): Author {
   idCounter++;
   return {
-    id: `user-${String(idCounter)}`,
-    displayName: `User ${String(idCounter)}`,
-    avatarUrl: `https://avatars.githubusercontent.com/u/${String(idCounter)}`,
+    id: `user-${idCounter}`,
+    displayName: `User ${idCounter}`,
+    avatarUrl: `https://avatars.githubusercontent.com/u/${idCounter}`,
     ...overrides,
   };
 }
@@ -17,7 +17,7 @@ export function createMockReview(overrides: Partial<Review> = {}): Review {
   return {
     id: idCounter,
     number: idCounter,
-    title: `Test Pull Request #${String(idCounter)}`,
+    title: `Test Pull Request #${idCounter}`,
     description: 'This is a test description for the pull request.',
     state: ReviewState.Open,
     author: createMockAuthor(),
@@ -25,7 +25,7 @@ export function createMockReview(overrides: Partial<Review> = {}): Review {
     targetBranch: 'main',
     baseSha: 'abc123def456',
     headSha: '789ghi012jkl',
-    htmlUrl: `https://github.com/owner/repo/pull/${String(idCounter)}`,
+    htmlUrl: `https://github.com/owner/repo/pull/${idCounter}`,
     createdAt: new Date('2024-01-01T10:00:00Z'),
     updatedAt: new Date('2024-01-02T15:30:00Z'),
     ...overrides,

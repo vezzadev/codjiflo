@@ -222,7 +222,7 @@ describe('useIterationDiff', () => {
             artifactId,
             snapshotIndex,
             content,
-            contentHash: 'hash-' + String(snapshotIndex),
+            contentHash: `hash-${snapshotIndex}`,
             sizeBytes: content.length,
           };
         });

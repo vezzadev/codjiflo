@@ -9,24 +9,24 @@ export function formatTimeAgo(date: Date): string {
 
   const diffMinutes = Math.floor(diffSeconds / 60);
   if (diffMinutes < 60) {
-    return `${String(diffMinutes)} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${String(diffHours)} hour${diffHours === 1 ? '' : 's'} ago`;
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return `${String(diffDays)} day${diffDays === 1 ? '' : 's'} ago`;
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
   }
 
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) {
-    return `${String(diffMonths)} month${diffMonths === 1 ? '' : 's'} ago`;
+    return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
   }
 
   const diffYears = Math.floor(diffMonths / 12);
-  return `${String(diffYears)} year${diffYears === 1 ? '' : 's'} ago`;
+  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
 }

@@ -36,7 +36,7 @@ function createMockFile(
     additions,
     deletions,
     changes: additions + deletions,
-    patch: '@@ -1,' + String(deletions) + ' +1,' + String(additions) + ' @@',
+    patch: `@@ -1,${deletions} +1,${additions} @@`,
   };
 }
 
@@ -53,7 +53,7 @@ function createMockArtifact(
   }
   return {
     id,
-    changeTrackingId: 'sha-' + String(id),
+    changeTrackingId: `sha-${id}`,
     repoPaths,
     firstSnapshotIndex: Math.min(...snapshotIndices),
     lastSnapshotIndex: maxIndex,
@@ -70,7 +70,7 @@ function createMockContent(
     artifactId,
     snapshotIndex,
     content,
-    contentHash: 'hash-' + String(artifactId) + '-' + String(snapshotIndex) + '-' + String(content.length),
+    contentHash: `hash-${artifactId}-${snapshotIndex}-${content.length}`,
     sizeBytes: content.length,
   };
 }
@@ -93,7 +93,7 @@ class MockIterationClient {
   }
 
   setContent(artifactId: number, snapshotIndex: number, content: string | null) {
-    const key = String(artifactId) + '-' + String(snapshotIndex);
+    const key = `${artifactId}-${snapshotIndex}`;
     if (content === null) {
       this.contentMap.delete(key);
     } else {
@@ -110,7 +110,7 @@ class MockIterationClient {
   getFileContent(artifactId: number, snapshotIndex: number): FileContent | undefined {
     // Simulate "at or before" logic like the real client
     for (let i = snapshotIndex; i >= 0; i--) {
-      const key = String(artifactId) + '-' + String(i);
+      const key = `${artifactId}-${i}`;
       const content = this.contentMap.get(key);
       if (content) {
         return { ...content, snapshotIndex: i };
@@ -657,11 +657,11 @@ describe('useIterationAwareFiles - Integration Tests', () => {
     it('should handle many files efficiently', () => {
       const fileCount = 50;
       const files = Array.from({ length: fileCount }, (_, i) =>
-        createMockFile('src/file' + String(i) + '.ts')
+        createMockFile(`src/file${i}.ts`)
       );
 
       const artifacts = files.map((_, i) =>
-        createMockArtifact(i + 1, 'src/file' + String(i) + '.ts', [0, 1, 3, 5, 7, 9, 11])
+        createMockArtifact(i + 1, `src/file${i}.ts`, [0, 1, 3, 5, 7, 9, 11])
       );
 
       setupMocks(files, artifacts, { fromSnapshot: 9, toSnapshot: 11 });
@@ -669,8 +669,8 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       // Half the files changed, half unchanged
       artifacts.forEach((a, i) => {
         const changed = i % 2 === 0;
-        mockClient.setContent(a.id, 9, 'content ' + String(i));
-        mockClient.setContent(a.id, 11, changed ? 'changed content ' + String(i) : 'content ' + String(i));
+        mockClient.setContent(a.id, 9, `content ${i}`);
+        mockClient.setContent(a.id, 11, changed ? `changed content ${i}` : `content ${i}`);
       });
 
       const { result } = renderHook(() => useIterationAwareFiles());

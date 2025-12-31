@@ -40,7 +40,7 @@ const REQUEST_TIMEOUT_MS = 30000;
 /** Generate unique request IDs */
 let requestIdCounter = 0;
 function generateRequestId(): string {
-  return `req-${String(Date.now())}-${String(++requestIdCounter)}`;
+  return `req-${Date.now()}-${++requestIdCounter}`;
 }
 
 /**
@@ -109,7 +109,7 @@ function sendRequest<T>(request: DiffWorkerRequest): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       sharedPendingRequests.delete(request.id);
-      reject(new Error(`Request ${request.id} timed out after ${String(REQUEST_TIMEOUT_MS)}ms`));
+      reject(new Error(`Request ${request.id} timed out after ${REQUEST_TIMEOUT_MS}ms`));
     }, REQUEST_TIMEOUT_MS);
 
     sharedPendingRequests.set(request.id, {

@@ -30,6 +30,17 @@ export default tseslint.config(
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/dot-notation": ["error", { allowIndexSignaturePropertyAccess: false }],
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allow: [{ name: ["Error", "URL", "URLSearchParams"], from: "lib" }],
+          allowAny: true,
+          allowBoolean: true,
+          allowNullish: true,
+          allowNumber: true,
+          allowRegExp: true,
+        },
+      ],
     },
   },
   {

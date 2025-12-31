@@ -170,7 +170,7 @@ export class SpanTrackerService {
   // ============================================================================
 
   private getCacheKey(artifactId: number, left: number, right: number): string {
-    return `${String(artifactId)}:${String(left)}:${String(right)}`;
+    return `${artifactId}:${left}:${right}`;
   }
 
   /**
@@ -202,7 +202,7 @@ export class SpanTrackerService {
     }
 
     // Fallback to identity if not found
-    console.warn(`SpanTracker not found for artifact ${String(artifactId)} (${String(left)}→${String(right)}), using identity`);
+    console.warn(`SpanTracker not found for artifact ${artifactId} (${left}→${right}), using identity`);
     return new IdentitySpanTracker(left, right);
   }
 

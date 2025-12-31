@@ -192,7 +192,7 @@ export function computeAlignment(diffLines: ParsedDiffLine[]): AlignedDiffLine[]
         result.push({
           left: line,
           right: line,
-          key: `header-${String(pairIndex++)}`,
+          key: `header-${pairIndex++}`,
         });
         i++;
         break;
@@ -202,7 +202,7 @@ export function computeAlignment(diffLines: ParsedDiffLine[]): AlignedDiffLine[]
         result.push({
           left: line,
           right: line,
-          key: `ctx-${String(line.oldLineNumber)}-${String(line.newLineNumber)}`,
+          key: `ctx-${line.oldLineNumber}-${line.newLineNumber}`,
         });
         i++;
         break;
@@ -215,7 +215,7 @@ export function computeAlignment(diffLines: ParsedDiffLine[]): AlignedDiffLine[]
           result.push({
             left: line,
             right: nextLine,
-            key: `mod-${String(line.oldLineNumber)}-${String(nextLine.newLineNumber)}`,
+            key: `mod-${line.oldLineNumber}-${nextLine.newLineNumber}`,
           });
           i += 2;
         } else {
@@ -223,7 +223,7 @@ export function computeAlignment(diffLines: ParsedDiffLine[]): AlignedDiffLine[]
           result.push({
             left: line,
             right: null,
-            key: `del-${String(line.oldLineNumber)}`,
+            key: `del-${line.oldLineNumber}`,
           });
           i++;
         }
@@ -235,7 +235,7 @@ export function computeAlignment(diffLines: ParsedDiffLine[]): AlignedDiffLine[]
         result.push({
           left: null,
           right: line,
-          key: `add-${String(line.newLineNumber)}`,
+          key: `add-${line.newLineNumber}`,
         });
         i++;
         break;

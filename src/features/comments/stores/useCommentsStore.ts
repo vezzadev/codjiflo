@@ -52,10 +52,10 @@ const createLocalId = () => {
 };
 
 const mapGitHubComment = (comment: GitHubReviewComment): Comment => ({
-  id: String(comment.id),
+  id: comment.id.toString(),
   body: comment.body,
   author: {
-    id: String(comment.user.id),
+    id: comment.user.id.toString(),
     login: comment.user.login,
     avatarUrl: comment.user.avatar_url,
   },
