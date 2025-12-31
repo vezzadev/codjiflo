@@ -156,6 +156,10 @@ jobs:
               actor => actor.login === 'copilot-swe-agent'
             )?.id;
 
+            if (!botId) {
+              throw new Error('Failed to find copilot-swe-agent bot ID in suggestedActors');
+            }
+
             const task = tasks[taskIndex];
             const today = new Date().toISOString().split('T')[0];
             const title = `[Janitor task #${today}]: ${task.title}`;
@@ -209,7 +213,7 @@ jobs:
                 title: title,
                 body: body,
                 labelIds: janitorLabelId ? [janitorLabelId] : [],
-                assigneeIds: botId ? [botId] : []
+                assigneeIds: [botId]
               }
             });
 
