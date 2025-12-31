@@ -2,7 +2,110 @@
 
 ---
 
-## 1. File Explorer
+## 1. Theme System
+
+CSS custom properties-based theme system supporting multiple visual styles.
+
+### Available Themes
+
+```typescript
+type Theme = 'dark' | 'light' | 'black' | 'highcontrast';
+```
+
+| Theme | Description |
+|-------|-------------|
+| `dark` | Default theme, dark gray backgrounds |
+| `light` | Light backgrounds, dark text |
+| `black` | Pure black backgrounds for OLED |
+| `highcontrast` | High contrast for accessibility |
+
+### Theme Store
+
+```typescript
+interface ThemeState {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
+```
+
+Theme selection persists to localStorage under key `codjiflo-theme`.
+
+### CSS Custom Properties
+
+Themes are implemented via CSS custom properties (170+ variables) in `src/styles/themes/variables.css`. Key categories:
+
+- **Main colors**: `--main-bg`, `--main-fg`, `--default-bg`, `--error-fg`
+- **Controls**: `--control-bg`, `--control-fg`, `--control-disabled`
+- **Buttons**: `--btn-hover`, `--btn-press`, `--btn-disabled`
+- **Diff colors**: `--diff-add-line`, `--diff-delete-line`, `--diff-add-word`, `--diff-delete-word`
+- **File explorer**: `--file-explorer-bg`, `--file-explorer-header`
+- **Window chrome**: `--window-bg`, `--titlebar-text`, `--sidebar-bg`
+
+---
+
+## 2. Layout Components
+
+Desktop-style window layout with resizable panels.
+
+### Component Hierarchy
+
+```
+AppShell
+├── Titlebar
+└── content-wrapper
+    ├── LeftPane (resizable)
+    │   └── ResizeHandle
+    ├── MainContent
+    └── BottomPane (resizable)
+        └── ResizeHandle
+```
+
+### Layout Store
+
+```typescript
+interface LayoutState {
+  leftPaneWidth: number;        // Default: 330px, Range: 200-600px
+  bottomPaneHeight: number;     // Default: 200px, Range: 100-500px
+  setLeftPaneWidth: (width: number) => void;
+  setBottomPaneHeight: (height: number) => void;
+  resizeLeftPane: (delta: number) => void;
+  resizeBottomPane: (delta: number) => void;
+}
+```
+
+Layout dimensions persist to localStorage under key `codjiflo-layout`.
+
+### Component Interfaces
+
+```typescript
+interface TitlebarProps {
+  title?: string;
+  leftContent?: ReactNode;
+  rightContent?: ReactNode;
+}
+
+interface LeftPaneProps {
+  children: ReactNode;
+}
+
+interface MainContentProps {
+  children: ReactNode;
+}
+
+interface BottomPaneProps {
+  children: ReactNode;
+  visible?: boolean;
+}
+
+interface ResizeHandleProps {
+  direction: 'horizontal' | 'vertical';
+  onResize: (delta: number) => void;
+}
+```
+
+---
+
+## 3. File Explorer
 
 Hierarchical tree view of files with change indicators.
 
@@ -114,7 +217,7 @@ interface FileExplorerNavigation {
 
 ---
 
-## 3. Review Properties
+## 4. Review Properties
 
 Display dynamic review and iteration metadata.
 
@@ -180,14 +283,28 @@ interface ReviewPropertiesPane {
 
 ---
 
-### Persisted per-user:
-- Dashboard: account, filters, group expansion
-- File Explorer: column widths, show/hide options
-- Window: size, position, layout
+## 5. Persistence
+
+User preferences stored in localStorage.
+
+### Storage Keys
+
+| Key | Content |
+|-----|---------|
+| `codjiflo-theme` | Theme selection (`dark`, `light`, `black`, `highcontrast`) |
+| `codjiflo-layout` | Panel dimensions (`leftPaneWidth`, `bottomPaneHeight`) |
+| `codjiflo-auth` | Authentication state |
+
+### Persisted Settings by Feature
+
+- **Theme**: Current theme selection
+- **Layout**: Left pane width, bottom pane height
+- **File Explorer**: Column widths, show/hide options (future)
+- **Dashboard**: Account, filters, group expansion (future)
 
 ---
 
-## Keyboard Shortcuts
+## 6. Keyboard Shortcuts
 
 ### Dashboard
 
