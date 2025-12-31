@@ -283,8 +283,9 @@ footer`;
     });
 
     it('matches GitHub counts for real-world example', () => {
-      // Simulates the PR#55 case - comparing base vs head content
-      // GitHub reports: +149/-25 (net +124)
+      // Simulates the PR#55 case - comparing base vs head content.
+      // In that PR, GitHub reported +149/-25 (net +124), but this test only
+      // verifies that the net line count change (+124) matches.
       const base = Array.from({ length: 536 }, (_, i) => `base line ${i + 1}`).join('\n');
       const head = Array.from({ length: 660 }, (_, i) => `head line ${i + 1}`).join('\n');
 
