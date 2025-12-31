@@ -120,6 +120,8 @@ jobs:
       - name: Calculate and create task
         uses: actions/github-script@v8
         with:
+          # Requires user PAT from *user* with Copilot entitlement (license check) and read and write access to
+          # actions, contents, issues, and pull requests, and has permission to assign issues to the target repository.
           github-token: ${{ secrets.CODJIFLO_JANITOR_TOKEN }}
           script: |
             const yaml = require('yaml');
@@ -176,6 +178,7 @@ jobs:
               "",
               "**Important notes:**",
               "",
+              "- Add janitor label to your PR",
               `- If you find something during your work that doesn't make sense, add your questions to \`spec/questions/${today}.md\` and they will be clarified during review.`,
               "- It is perfectly fine to not have anything to change.",
               "- You should only create a pull request if you believe you found something that will significantly improve the maintainability, ease of understanding, or performance of the code."
