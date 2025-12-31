@@ -139,7 +139,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       );
     } else {
       // Real mode: verify structure exists (content will vary)
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30000 });
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(page.getByRole("link", { name: /View on GitHub/i })).toBeVisible();
     }
   });
@@ -152,11 +152,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     // PR Description should be the first entry in the file list
-    const prDescButton = fileNav.getByRole("button", { name: /Pull Request Description/i });
-    await expect(prDescButton).toBeVisible({ timeout: 10000 });
+    const prDescButton = fileNav.getByRole("listitem", { name: /Pull Request Description/i });
+    await expect(prDescButton).toBeVisible();
 
     // PR Description should be selected by default
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
@@ -168,7 +168,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
     } else {
       // Real mode: verify PR title heading exists
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30000 });
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     }
   });
 
@@ -180,10 +180,10 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.waitForLoadState("networkidle");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     // Verify PR Description is selected initially
-    const prDescButton = fileNav.getByRole("button", { name: /Pull Request Description/i });
+    const prDescButton = fileNav.getByRole("listitem", { name: /Pull Request Description/i });
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
 
     if (isMockMode()) {
@@ -197,7 +197,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
     } else {
       // Real mode: click first actual file
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
@@ -220,12 +220,12 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       await fileNav.getByText("src/components/Button.tsx").click();
 
       // Wait for specific mock file header
-      await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible({ timeout: 20000 });
+      await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
 
       // [S-1.3] Wait for files to load
-      await expect(fileNav.getByText("src/components/Button.tsx")).toBeVisible({ timeout: 10000 });
-      await expect(fileNav.getByText("src/index.ts")).toBeVisible({ timeout: 5000 });
-      await expect(fileNav.getByText("src/old-file.ts")).toBeVisible({ timeout: 5000 });
+      await expect(fileNav.getByText("src/components/Button.tsx")).toBeVisible();
+      await expect(fileNav.getByText("src/index.ts")).toBeVisible();
+      await expect(fileNav.getByText("src/old-file.ts")).toBeVisible();
 
       // [AC-1.3.3] Stats are displayed
       await expect(page.getByText("+50")).toBeVisible();
@@ -233,7 +233,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     } else {
       // Real mode: verify file nav structure exists
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible({ timeout: 30000 });
+      await expect(fileNav).toBeVisible();
     }
   });
 
@@ -246,7 +246,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // PR Description is now the default selection, so click a file first
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
       // Click on a file to show diff
@@ -254,7 +254,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
       // [S-1.4] Diff region should be visible
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible({ timeout: 30000 });
+      await expect(diffRegion).toBeVisible();
 
       // Wait for content to load - check the diff view heading
       await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
@@ -263,12 +263,12 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       await expect(page.getByText(/import React from/)).toBeVisible();
     } else {
       // Real mode: click first actual file
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible({ timeout: 30000 });
+        await expect(diffRegion).toBeVisible();
       }
     }
   });
@@ -288,11 +288,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Wait for the file navigation to be fully loaded
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible({ timeout: 30000 });
+    await expect(fileNav).toBeVisible();
 
     // Wait for at least 2 buttons to be visible (PR description + at least 1 file)
-    const fileButtons = fileNav.getByRole("button");
-    await expect(fileButtons.first()).toBeVisible({ timeout: 15000 });
+    const fileButtons = fileNav.getByRole("listitem");
+    await expect(fileButtons.first()).toBeVisible();
 
     // Get all file buttons and verify we have at least 2 (PR description + 1 file)
     const allButtons = await fileButtons.all();
@@ -303,7 +303,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // PR Description (first button) should be selected by default
     const prDescButton = fileButtons.first();
-    await expect(prDescButton).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    await expect(prDescButton).toHaveAttribute("aria-current", "location", );
 
     // Focus on the page body to ensure keyboard events work
     await page.locator("body").click();
@@ -315,12 +315,12 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // First file (second button) should be selected
     const firstFile = fileButtons.nth(1);
-    await expect(firstFile).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    await expect(firstFile).toHaveAttribute("aria-current", "location", );
 
     // [AC-1.5.1] Press k to go back to PR Description
     await page.keyboard.press("k");
     await page.waitForTimeout(200); // Small delay for state update
-    await expect(prDescButton).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+    await expect(prDescButton).toHaveAttribute("aria-current", "location", );
   });
 
   test("Shortcuts modal opens with ? button", async ({ page }) => {
@@ -332,7 +332,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Wait for the shortcuts button to be visible and stable
     const shortcutsButton = page.getByRole("button", { name: /Show keyboard shortcuts/i });
-    await expect(shortcutsButton).toBeVisible({ timeout: 30000 });
+    await expect(shortcutsButton).toBeVisible();
 
     // Wait a moment for any re-renders to complete
     await page.waitForTimeout(500);
@@ -341,13 +341,13 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await shortcutsButton.click({ force: true });
 
     // Modal should be visible
-    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible();
     await expect(page.getByText("Next file")).toBeVisible();
 
     // Close modal by clicking the Close button
     await page.getByRole("button", { name: /Close/i }).click();
-    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
   test("Error handling for invalid PR URL", async ({ page }) => {
@@ -355,7 +355,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto("/dashboard");
 
     // Wait for page to be fully loaded
-    await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
 
     // Wait for hydration
     await page.waitForTimeout(1000);
@@ -372,7 +372,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await submitButton.click({ force: true });
 
     // Should show error message
-    await expect(page.getByText(/Invalid GitHub PR URL/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Invalid GitHub PR URL/i)).toBeVisible();
   });
 
   test("Error handling for 404 PR", async ({ page }) => {
@@ -388,6 +388,6 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     }
 
     // Should show error message (use first() since error may appear in multiple places)
-    await expect(page.getByText(/Pull request not found/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Pull request not found/i).first()).toBeVisible();
   });
 });

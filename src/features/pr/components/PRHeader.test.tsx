@@ -36,7 +36,7 @@ describe('PRHeader', () => {
     render(<PRHeader />);
 
     // Check for skeleton elements
-    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
+    expect(document.querySelector('.skeleton')).toBeInTheDocument();
   });
 
   it('shows loading state when PR is null', () => {
@@ -49,7 +49,7 @@ describe('PRHeader', () => {
     render(<PRHeader />);
 
     // Should show loading skeleton when no PR
-    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
+    expect(document.querySelector('.skeleton')).toBeInTheDocument();
   });
 
   it('renders PR metadata and description when loaded', () => {

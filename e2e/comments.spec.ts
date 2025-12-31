@@ -101,40 +101,41 @@ test.describe("Inline comments flow (S-2.x)", () => {
     if (isMockMode()) {
       // Wait for the file navigation to be fully loaded
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible({ timeout: 10000 });
-      await expect(fileNav.getByText("src/example.ts")).toBeVisible({ timeout: 10000 });
+      await expect(fileNav).toBeVisible();
+      await expect(fileNav.getByText("src/example.ts")).toBeVisible();
 
       // PR Description is selected by default, click on the file to show diff
       await fileNav.getByText("src/example.ts").click();
 
       // Wait for page to load - check the diff heading as a stable indicator
-      await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible({ timeout: 30000 });
+      await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
 
       // Wait for the file list item to be visible and selected
-      const fileListItem = page.getByRole("button", { name: /src\/example\.ts/ });
-      await expect(fileListItem).toBeVisible({ timeout: 10000 });
-      await expect(fileListItem).toHaveAttribute("aria-current", "location", { timeout: 15000 });
+      const fileListItem = page.getByRole("listitem", { name: /src\/example\.ts/ });
+      await expect(fileListItem).toBeVisible();
+      await expect(fileListItem).toHaveAttribute("aria-current", "location", );
 
       // The diff content should be rendered in a table
       const diffTable = page.locator('table');
-      await expect(diffTable).toBeVisible({ timeout: 15000 });
+      await expect(diffTable).toBeVisible();
 
       // Verify the existing comment is displayed (comments load async)
-      await expect(page.getByText("Please add a quick note about this flag.")).toBeVisible({ timeout: 20000 });
+      const threadRegion = page.getByRole('region', { name: 'Thread on line 2 (added line)' });
+      await expect(threadRegion.getByText('Please add a quick note about this flag.', { exact: true })).toBeVisible();
     } else {
       // Real mode: just verify structure loads
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible({ timeout: 30000 });
+      await expect(fileNav).toBeVisible();
 
       // Click first file to show diff (PR description is default)
-      const fileButtons = fileNav.getByRole("button");
+      const fileButtons = fileNav.getByRole("listitem");
       const allButtons = await fileButtons.all();
       if (allButtons.length > 1) {
         await allButtons[1]?.click();
       }
 
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible({ timeout: 30000 });
+      await expect(diffRegion).toBeVisible();
     }
   });
 });

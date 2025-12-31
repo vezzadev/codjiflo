@@ -5,7 +5,6 @@
 
 import { useEffect, useCallback } from 'react';
 import { Columns2, FileText, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import { useDiffStore } from '../stores';
 import type { DiffViewMode, ContentFilter } from '../types';
 
@@ -19,6 +18,8 @@ interface ToggleButtonProps {
 }
 
 function ToggleButton({ isActive, onClick, icon, label, shortcut, ariaLabel }: ToggleButtonProps) {
+  const classes = ['btn-toggle', isActive ? 'active' : ''].filter(Boolean).join(' ');
+
   return (
     <button
       type="button"
@@ -26,16 +27,10 @@ function ToggleButton({ isActive, onClick, icon, label, shortcut, ariaLabel }: T
       aria-pressed={isActive}
       aria-label={ariaLabel}
       title={shortcut ? `${ariaLabel} (${shortcut})` : ariaLabel}
-      className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500',
-        isActive
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      )}
+      className={classes}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span className="btn-label">{label}</span>
     </button>
   );
 }
@@ -54,37 +49,25 @@ function ToggleGroup<T extends string>({
   ariaLabel,
 }: ToggleGroupProps<T>) {
   return (
-    <div
-      role="group"
-      aria-label={ariaLabel}
-      className="inline-flex rounded-md shadow-sm"
-    >
-      {options.map((option, index) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          aria-pressed={value === option.value}
-          title={option.shortcut ? `${option.label} (${option.shortcut})` : option.label}
-          className={cn(
-            'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 focus:z-10',
-            // Border radius
-            index === 0 && 'rounded-l-md',
-            index === options.length - 1 && 'rounded-r-md',
-            // Border
-            'border',
-            index > 0 && '-ml-px',
-            // Colors
-            value === option.value
-              ? 'bg-blue-600 text-white border-blue-600 z-10'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-          )}
-        >
-          {option.icon}
-          <span className="hidden sm:inline">{option.label}</span>
-        </button>
-      ))}
+    <div role="group" aria-label={ariaLabel} className="btn-group">
+      {options.map((option) => {
+        const isActive = value === option.value;
+        const classes = ['btn-toggle', isActive ? 'active' : ''].filter(Boolean).join(' ');
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            aria-pressed={isActive}
+            title={option.shortcut ? `${option.label} (${option.shortcut})` : option.label}
+            className={classes}
+          >
+            {option.icon}
+            <span className="btn-label">{option.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -167,11 +150,7 @@ export function DiffToolbar() {
   ];
 
   return (
-    <div
-      className="flex items-center gap-4 flex-wrap"
-      role="toolbar"
-      aria-label="Diff view controls"
-    >
+    <div className="toolbar-right" role="toolbar" aria-label="Diff view controls">
       {/* View Mode Toggle (AC-3.3.1-4) */}
       <ToggleGroup
         options={viewModeOptions}

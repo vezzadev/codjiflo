@@ -1,5 +1,4 @@
 import { forwardRef, TextareaHTMLAttributes, useId } from 'react';
-import { cn } from '@/utils/cn';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -12,28 +11,22 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const generatedId = useId();
     const textareaId = id ?? generatedId;
 
+    const textareaClasses = ["textbox", "textarea", error ? "textbox-error" : "", className]
+      .filter(Boolean)
+      .join(" ");
+
     return (
-      <div className="w-full">
+      <div className="form-group">
         {label && (
-          <label
-            htmlFor={textareaId}
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor={textareaId} className="label">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
           id={textareaId}
-          className={cn(
-            'w-full px-3 py-2 border rounded-md shadow-sm transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-            'disabled:bg-gray-100 disabled:cursor-not-allowed',
-            error
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300',
-            className
-          )}
+          className={textareaClasses}
+          style={{ width: "100%" }}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={
             error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
@@ -43,7 +36,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {error && (
           <p
             id={`${textareaId}-error`}
-            className="mt-1 text-sm text-red-600"
+            style={{ marginTop: "4px", fontSize: "12px", color: "var(--error-fg)" }}
             role="alert"
             aria-live="polite"
           >
@@ -51,7 +44,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </p>
         )}
         {!error && helperText && (
-          <p id={`${textareaId}-helper`} className="mt-1 text-sm text-gray-500">
+          <p
+            id={`${textareaId}-helper`}
+            style={{ marginTop: "4px", fontSize: "12px", color: "var(--control-disabled-fg)" }}
+          >
             {helperText}
           </p>
         )}

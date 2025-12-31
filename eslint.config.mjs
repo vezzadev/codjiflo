@@ -44,5 +44,18 @@ export default tseslint.config(
     files: ["*.config.ts", "*.config.js", "*.config.mjs", "playwright.config.ts"],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  {
+    // E2E tests: prevent custom timeouts (use global config instead)
+    files: ["e2e/**/*.spec.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ObjectExpression > Property[key.name='timeout']",
+          message: "Use global Playwright timeout config instead of custom timeouts in E2E tests",
+        },
+      ],
+    },
+  },
   ...storybook.configs["flat/recommended"]
 );

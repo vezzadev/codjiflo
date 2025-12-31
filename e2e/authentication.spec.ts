@@ -104,7 +104,7 @@ test.describe("Authentication Flow (S-1.1)", () => {
     // Should show authentication failed error
     await expect(
       page.getByText(/Authentication failed. Please check your token./i)
-    ).toBeVisible({ timeout: 15000 });
+    ).toBeVisible();
 
     // [AC-1.1.10] Input should remain accessible for correction
     await expect(input).toBeVisible();
