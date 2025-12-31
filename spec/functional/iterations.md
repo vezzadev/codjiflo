@@ -58,6 +58,8 @@ Iteration 3:  Snapshot 4 (left)  ↔  Snapshot 5 (right)
 - **Iteration → Left Snapshot:** `(iteration - 1) * 2`
 - **Iteration → Right Snapshot:** `(iteration - 1) * 2 + 1`
 
+**Implementation Note:** As of the current implementation, only `iterationToRightSnapshot()` is exported in `src/features/iterations/types.ts`. The left snapshot conversion is typically not needed since most operations work with base (snapshot 0) or right snapshots. The snapshot-to-iteration conversion can be computed inline when needed.
+
 **Examples:**
 | Iteration | Index | Left Snapshot | Right Snapshot |
 |-----------|-------|---------------|----------------|
@@ -289,6 +291,12 @@ CodjiFlo uses a **GitHub Action + Artifact** approach to store iteration data. N
 ### SQLite Schema
 
 ```sql
+-- Schema metadata table (for migration compatibility)
+CREATE TABLE schema_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 -- Iteration snapshots
 CREATE TABLE iterations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -326,30 +334,38 @@ CREATE TABLE artifact_snapshots (
   UNIQUE(artifact_id, snapshot_index)
 );
 
--- Comment anchors (character-level precision)
-CREATE TABLE comment_anchors (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  artifact_id INTEGER REFERENCES file_artifacts(id),
-  left_snapshot_index INTEGER NOT NULL,
-  right_snapshot_index INTEGER NOT NULL,
-  line_start INTEGER NOT NULL,
-  line_end INTEGER NOT NULL,
-  column_start INTEGER,                -- Character-level (optional)
-  column_end INTEGER,
-  github_comment_id INTEGER,
-  created_at TEXT NOT NULL
-);
-
 -- Precomputed SpanTrackers (adjacent pairs + base→latest)
 CREATE TABLE span_trackers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   artifact_id INTEGER REFERENCES file_artifacts(id),
   left_snapshot_index INTEGER NOT NULL,
   right_snapshot_index INTEGER NOT NULL,
-  span_data BLOB NOT NULL,             -- Serialized SpanTracker data
   UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)
 );
+
+-- Span mappings (normalized line-by-line mappings)
+-- Stores the actual line mapping data for each SpanTracker
+CREATE TABLE span_mappings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tracker_id INTEGER REFERENCES span_trackers(id),
+  left_line_start INTEGER,             -- NULL for added lines
+  left_line_end INTEGER,
+  right_line_start INTEGER,            -- NULL for deleted lines
+  right_line_end INTEGER,
+  mapping_type TEXT NOT NULL CHECK(mapping_type IN ('unchanged', 'modified', 'deleted', 'added'))
+);
+
+-- Performance indexes
+CREATE INDEX idx_artifact_snapshots_artifact ON artifact_snapshots(artifact_id);
+CREATE INDEX idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);
+CREATE INDEX idx_span_trackers_artifact ON span_trackers(artifact_id);
+CREATE INDEX idx_span_mappings_tracker ON span_mappings(tracker_id);
 ```
+
+**Implementation Notes:**
+- The `comment_anchors` table shown in earlier spec versions is not yet implemented. Comment position tracking is currently handled in-memory using the SpanTracker system.
+- The span tracker data is stored in a normalized `span_mappings` table rather than as a BLOB. This provides better queryability and debuggability at the cost of slightly larger storage footprint.
+- The `schema_meta` table enables database versioning for future migrations (currently at version 2).
 
 **Content Deduplication:**
 - `content_blobs` stores each unique file content exactly once, keyed by SHA-1 hash
@@ -362,6 +378,7 @@ CREATE TABLE span_trackers (
 - Adjacent pairs: 0→1, 2→3, 4→5 (each iteration's before/after)
 - Base→latest: 0→(latest right snapshot) for quick "full diff" view
 - Cross-iteration: computed client-side by chaining adjacent trackers
+- Line mappings stored in normalized `span_mappings` table with explicit mapping types (unchanged, modified, deleted, added)
 
 ### Trade-offs
 
@@ -526,11 +543,72 @@ interface CommentThread {
 
 ## Behavioral Requirements Checklist
 
-- [ ] Compare any two iterations (not just adjacent)
-- [ ] Comments track forward as code changes
-- [ ] Comments track backward for historical comparison
-- [ ] Handle file renames (artifact ID persists)
-- [ ] Handle deleted files (anchor to context)
-- [ ] Cache span trackers for performance
-- [ ] Platform abstraction (AzDO, GitHub, GitLab)
-- [ ] Graceful degradation for less-capable platforms
+### Core Functionality (Implemented)
+- [x] Compare any two iterations (not just adjacent) - via `SpanTrackerService.buildChainedTracker()`
+- [x] Comments track forward as code changes - via `ISpanTracker.trackSpanForward()`
+- [x] Comments track backward for historical comparison - via `ISpanTracker.trackSpanBackward()`
+- [x] Handle file renames (artifact ID persists) - `ReviewFileArtifact.changeTrackingId` tracks files across renames
+- [x] Cache span trackers for performance - `SpanTrackerService` maintains in-memory cache
+- [x] Platform abstraction (GitHub ready) - Backend interfaces in `src/api/types.ts`
+- [x] Graceful degradation for repos without workflow - `isDegraded` flag and fallback to GitHub commits
+
+### Partially Implemented
+- [~] Handle deleted files (anchor to context) - `trackSpanForward` returns null for deleted spans; nearest-valid-span logic exists but may need refinement
+
+### Not Yet Implemented
+- [ ] Persistent comment anchors in SQLite - Currently tracked in-memory only
+- [ ] Azure DevOps backend - Only GitHub implemented
+- [ ] GitLab backend - Only GitHub implemented
+
+---
+
+## Acceptance Criteria
+
+### AC-1: Cross-Iteration Comparison
+**Given** a PR with 3 iterations  
+**When** user selects "Compare iteration 1 → iteration 3"  
+**Then** the system chains trackers (0→1, 2→3, 4→5) and displays correct diff
+
+**Test:** Verify `SpanTrackerService.buildChainedTracker()` produces correct results
+
+### AC-2: Force-Push Resilience  
+**Given** a PR where commits are force-pushed  
+**When** the workflow captures `before_sha` from the event  
+**Then** iterations remain stable and comments don't get orphaned
+
+**Test:** Check `iterations.before_sha` is populated correctly
+
+### AC-3: Content Deduplication
+**Given** a file that reverts to a previous state  
+**When** the file content is identical to an earlier iteration  
+**Then** the same `content_hash` is reused (no duplicate storage)
+
+**Test:** Verify `content_blobs` table doesn't contain duplicate content
+
+### AC-4: Graceful Degradation
+**Given** a repository without the CodjiFlo workflow installed  
+**When** user opens a PR in CodjiFlo  
+**Then** the app displays a banner and falls back to GitHub commits API
+
+**Test:** `useIterationStore.isDegraded === true` when no artifact comment found
+
+### AC-5: SpanTracker Caching
+**Given** multiple calls to get the same tracker  
+**When** `getTracker(artifactId, left, right)` is called repeatedly  
+**Then** only the first call queries the database; subsequent calls use cache
+
+**Test:** Monitor SQLite queries with same parameters
+
+### AC-6: Identity Optimization
+**Given** a file that hasn't changed between snapshots  
+**When** requesting a tracker for that file  
+**Then** an `IdentitySpanTracker` is returned (no database lookup needed)
+
+**Test:** Verify `areFilesIdentical()` is called and returns true
+
+### AC-7: File Rename Tracking
+**Given** a file is renamed from `old.ts` to `new.ts`  
+**When** querying artifact snapshots  
+**Then** the same `artifact_id` has different `file_path` values at different snapshots
+
+**Test:** `ReviewFileArtifact.repoPaths` contains both old and new paths
