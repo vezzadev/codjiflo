@@ -58,3 +58,4 @@ CodjiFlo is a corrupted version (pt: [Corruptela](https://dicionario.priberam.or
 
 ## Note
 This project is not associated or endorsed by Microsoft Corp. The [CodjiFlo specification](./spec/functional/index.md) was produced following a clean-room approach: the desired behavior was codified from research articles, interviews published by Microsoft, blog posts, linked in the spec, and the author's memory of how CodeFlow works.
+
