@@ -92,13 +92,27 @@ export function useIterationDiff(): IterationDiffResult {
       let bestDistance = Infinity;
 
       for (const artifact of artifactsForPath) {
-        // Check if file actually exists at the requested snapshot
-        // If the file was deleted, repoPaths[snapshotIndex] will be null/undefined
-        const pathAtSnapshot = artifact.repoPaths[snapshotIndex];
-        if (pathAtSnapshot !== path) {
-          // File doesn't exist at this snapshot in this artifact
+        // Check if file exists at the requested snapshot using the artifact's range.
+        // The repoPaths array may not have an entry at every index (delta storage),
+        // so we use firstSnapshotIndex/lastSnapshotIndex to determine existence.
+        const existsAtSnapshot =
+          snapshotIndex >= artifact.firstSnapshotIndex &&
+          snapshotIndex <= artifact.lastSnapshotIndex;
+
+        if (!existsAtSnapshot) {
+          // File doesn't exist at this snapshot (added later or deleted earlier)
           continue;
         }
+
+        // Get the path at this snapshot. If the exact index isn't recorded,
+        // check if the file still has the same path (using the last known path).
+        const pathAtSnapshot = artifact.repoPaths[snapshotIndex];
+        if (pathAtSnapshot !== undefined && pathAtSnapshot !== path) {
+          // File exists but has a different path (renamed) - skip this artifact
+          continue;
+        }
+        // If pathAtSnapshot is undefined, the file still exists (per lastSnapshotIndex)
+        // but no explicit row was recorded - assume path unchanged from earlier snapshot
 
         const content = client.getFileContent(artifact.id, snapshotIndex);
         if (content?.content) {
