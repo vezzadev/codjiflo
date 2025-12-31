@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GitHubFileBackend } from './file-backend';
-import { githubClient, GitHubAPIError } from './github-client';
+import { GitHubFileBackend, MAX_FILE_SIZE_BYTES } from './file-backend';
+import { githubClient } from './github-client';
 import { FileChangeStatus } from '../types';
 
 vi.mock('./github-client', () => ({
@@ -203,7 +203,7 @@ describe('GitHubFileBackend', () => {
         type: 'file',
         path: 'large.bin',
         sha: 'pqr678',
-        size: 2 * 1024 * 1024, // 2MB, exceeds 1MB limit
+        size: MAX_FILE_SIZE_BYTES + 1, // Just over the limit
         content: btoa('large content'),
         encoding: 'base64',
       };

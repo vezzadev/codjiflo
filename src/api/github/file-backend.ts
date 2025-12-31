@@ -4,7 +4,7 @@ import { FileChangeStatus } from '../types';
 import type { GitHubFile, GitHubContentsResponse } from './types';
 
 /** Maximum file size for content fetching (1MB) */
-const MAX_FILE_SIZE_BYTES = 1024 * 1024;
+export const MAX_FILE_SIZE_BYTES = 1024 * 1024;
 
 /**
  * GitHub implementation of IFileBackend
