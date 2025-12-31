@@ -247,6 +247,164 @@ describe('useIterationDiff', () => {
         expect(diff).not.toBeNull();
         expect(diff?.diffLines.length).toBe(0);
       });
+
+      describe('delta storage (sparse repoPaths)', () => {
+        it('should find content when repoPaths array is shorter than snapshotIndex', () => {
+          // Scenario: artifact_snapshots only has entry for snapshot 0
+          // but file exists through snapshot 1 (lastSnapshotIndex: 1)
+          // repoPaths array has only 1 entry due to delta storage
+          const sparseArtifact = {
+            id: 10,
+            changeTrackingId: 'sparse-file',
+            repoPaths: ['src/sparse.ts'], // Only index 0, but file exists at both snapshots
+            firstSnapshotIndex: 0,
+            lastSnapshotIndex: 1, // File exists through snapshot 1
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+            isDegraded: false,
+            artifacts: [sparseArtifact],
+          } as unknown);
+
+          // getFileContent returns content at or before requested snapshot
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            // Content stored only at snapshot 0, but valid for snapshot 1 too
+            return {
+              artifactId,
+              snapshotIndex: 0, // Returns snapshot 0 content for both queries
+              content: snapshotIndex === 0 ? 'base content' : 'head content',
+              contentHash: `hash-${snapshotIndex}`,
+              sizeBytes: 12,
+            };
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('src/sparse.ts');
+
+          // Should find content for both base and head despite sparse repoPaths
+          expect(diff).not.toBeNull();
+          expect(diff?.base).not.toBeNull();
+          expect(diff?.head).not.toBeNull();
+        });
+
+        it('should not find content when snapshotIndex exceeds lastSnapshotIndex', () => {
+          // File was deleted after snapshot 0 (lastSnapshotIndex: 0)
+          const deletedArtifact = {
+            id: 11,
+            changeTrackingId: 'deleted-early',
+            repoPaths: ['src/deleted-early.ts'],
+            firstSnapshotIndex: 0,
+            lastSnapshotIndex: 0, // File only exists at snapshot 0
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+            isDegraded: false,
+            artifacts: [deletedArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            if (snapshotIndex <= 0) {
+              return {
+                artifactId,
+                snapshotIndex: 0,
+                content: 'old content',
+                contentHash: 'hash-0',
+                sizeBytes: 11,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('src/deleted-early.ts');
+
+          // Base exists, head doesn't (file was deleted)
+          expect(diff).not.toBeNull();
+          expect(diff?.base).not.toBeNull();
+          expect(diff?.head).toBeNull();
+          expect(diff?.diffLines.every(l => l.type === 'deletion')).toBe(true);
+        });
+
+        it('should not find content when snapshotIndex is before firstSnapshotIndex', () => {
+          // File was added in snapshot 1 (firstSnapshotIndex: 1)
+          const addedLateArtifact = {
+            id: 12,
+            changeTrackingId: 'added-late',
+            repoPaths: [null, 'src/added-late.ts'], // null at 0, path at 1
+            firstSnapshotIndex: 1,
+            lastSnapshotIndex: 1,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+            isDegraded: false,
+            artifacts: [addedLateArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            if (snapshotIndex >= 1) {
+              return {
+                artifactId,
+                snapshotIndex: 1,
+                content: 'new content',
+                contentHash: 'hash-1',
+                sizeBytes: 11,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('src/added-late.ts');
+
+          // Base doesn't exist, head exists (file was added)
+          expect(diff).not.toBeNull();
+          expect(diff?.base).toBeNull();
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.diffLines.every(l => l.type === 'addition')).toBe(true);
+        });
+
+        it('should handle renamed file with path change at snapshot', () => {
+          // File renamed: old-name.ts -> new-name.ts
+          const renamedArtifact = {
+            id: 13,
+            changeTrackingId: 'renamed-file',
+            repoPaths: ['src/old-name.ts', 'src/new-name.ts'],
+            firstSnapshotIndex: 0,
+            lastSnapshotIndex: 1,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+            isDegraded: false,
+            artifacts: [renamedArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => ({
+            artifactId,
+            snapshotIndex,
+            content: snapshotIndex === 0 ? 'old content' : 'new content',
+            contentHash: `hash-${snapshotIndex}`,
+            sizeBytes: 11,
+          }));
+
+          const { result } = renderHook(() => useIterationDiff());
+
+          // Looking up by new name should find the artifact
+          const diffByNewName = result.current.getFileDiffByPath('src/new-name.ts');
+          expect(diffByNewName).not.toBeNull();
+
+          // Looking up by old name should also find the artifact
+          const diffByOldName = result.current.getFileDiffByPath('src/old-name.ts');
+          expect(diffByOldName).not.toBeNull();
+        });
+      });
     });
   });
 });
