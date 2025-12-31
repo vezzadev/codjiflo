@@ -120,6 +120,7 @@ jobs:
       - name: Calculate and create task
         uses: actions/github-script@v8
         with:
+          github-token: ${{ secrets.CODJIFLO_JANITOR_TOKEN }}
           script: |
             const yaml = require('yaml');
             const tasksYaml = `${{ env.TASKS }}`;
