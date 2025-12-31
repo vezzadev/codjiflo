@@ -776,3 +776,153 @@ When adding social features:
 1. **Extend Comment**: Add optional `likes[]` and `feedbacks[]` fields
 2. **Update CommentThread**: Replace `isResolved` with `status: CommentThreadStatus`
 3. **Backend support**: Implement storage for likes/feedback in GitHub Discussions or separate DB
+
+---
+
+## Acceptance Tests & Behavioral Specifications
+
+This section documents key behaviors that should be tested. See `src/features/comments/stores/useCommentsStore.test.ts` for actual test implementations.
+
+### Comment Threading Behavior
+
+**AC-1: Creating a new thread**
+- Given: No existing thread at file:line:side
+- When: User adds a comment on that location
+- Then: A new thread is created with one comment
+- And: `announcement` is set to "Comment posted."
+
+**AC-2: Appending to existing thread**
+- Given: A thread exists at file:line:side
+- When: User adds a comment on the same location
+- Then: Comment is appended to the existing thread
+- And: Thread count remains the same
+- And: `announcement` is set to "Comment posted."
+
+**AC-3: Reply to comment**
+- Given: A thread with existing comments
+- When: User calls `addReply(threadId, body)`
+- Then: New comment is added with `inReplyTo` pointing to the last comment
+- And: `announcement` is set to "Reply posted."
+
+**AC-4: Edit comment**
+- Given: An existing comment
+- When: User calls `editComment(commentId, newBody)`
+- Then: Comment body is updated
+- And: `updatedAt` is set to current time
+- And: `announcement` is set to "Comment updated."
+
+**AC-5: Delete comment**
+- Given: A thread with multiple comments
+- When: User deletes one comment
+- Then: Comment is removed from thread
+- And: Thread remains if other comments exist
+- And: `announcement` is set to "Comment deleted."
+
+**AC-6: Delete last comment in thread**
+- Given: A thread with only one comment
+- When: User deletes that comment
+- Then: The entire thread is removed
+- And: Thread count decreases by 1
+
+**AC-7: Toggle thread resolution**
+- Given: A thread with `isResolved: false`
+- When: User calls `toggleResolved(threadId)`
+- Then: Thread's `isResolved` becomes `true`
+- And: Vice versa when called again
+
+### Iteration Tracking Behavior
+
+**AC-8: Snapshot index calculation**
+- Given: An iteration with revision N
+- When: Calculating right snapshot index
+- Then: Result is `(N - 1) * 2 + 1`
+- Example: Iteration 1 → Snapshot 1, Iteration 3 → Snapshot 5
+
+**AC-9: File artifact path tracking**
+- Given: A file that was renamed in iteration 2
+- When: Accessing `ReviewFileArtifact.repoPaths[]`
+- Then: Index 0-1 contains original path, index 2+ contains new path
+
+**AC-10: File deletion handling**
+- Given: A file deleted in iteration 3
+- When: Checking `repoPaths[6]` (iteration 4's left snapshot)
+- Then: Value is `null` indicating file doesn't exist
+
+### Review Loading Behavior
+
+**AC-11: Load GitHub PR**
+- Given: Valid owner/repo/number
+- When: `loadPR()` is called
+- Then: `Review` is populated with PR metadata
+- And: `state` is mapped from GitHub's `state` + `merged` flag
+- And: Timestamps are parsed from ISO strings to Date objects
+
+**AC-12: Handle PR not found**
+- Given: Invalid PR number
+- When: `loadPR()` is called
+- Then: `error` is set with descriptive message
+- And: `currentPR` remains `null`
+- And: `isLoading` is set to `false`
+
+**AC-13: File change status mapping**
+- Given: GitHub file with `status: "renamed"`
+- When: Mapping to `FileChange`
+- Then: `status` is `FileChangeStatus.Renamed`
+- And: `previousFilename` is populated
+- And: `patch` contains the unified diff
+
+### Backend Abstraction Behavior
+
+**AC-14: GitHub API error handling**
+- Given: GitHub API returns 404
+- When: Backend method is called
+- Then: `GitHubAPIError` is thrown with status 404
+- And: Error message includes endpoint details
+
+**AC-15: File content decoding**
+- Given: GitHub Contents API returns base64-encoded content
+- When: `getFileContent()` is called
+- Then: Content is decoded to UTF-8 string
+- And: `encoding` field reflects actual encoding
+
+**AC-16: Platform-agnostic mapping**
+- Given: GitHub PR with `user.login`
+- When: Mapped to `Review`
+- Then: `author.displayName` uses `user.login`
+- And: Platform-specific fields are abstracted away
+
+### Validation & Constraints
+
+**AC-17: Iteration revision ordering**
+- Given: Multiple iterations loaded
+- When: Checking `Iteration[]` array
+- Then: Revisions are in ascending order (1, 2, 3, ...)
+- And: No gaps in revision numbers
+
+**AC-18: Comment ID uniqueness**
+- Given: Multiple comments in a review
+- When: Checking comment IDs
+- Then: All IDs are unique (either GitHub IDs or local UUIDs)
+- And: Local IDs use `crypto.randomUUID()` when available
+
+**AC-19: Thread location uniqueness**
+- Given: All threads in a review
+- When: Checking thread locations
+- Then: Each (path, line, side) combination appears at most once
+- Note: Multiple comments on same location share the same thread
+
+---
+
+## Test Coverage Requirements
+
+| Component | Unit Tests | Integration Tests | E2E Tests |
+|-----------|-----------|-------------------|-----------|
+| Comment Store | ✅ `useCommentsStore.test.ts` | ✅ Comment UI components | ✅ `comments.spec.ts` |
+| PR Store | ✅ `usePRStore.test.ts` | ✅ PR loading flow | ✅ `pr-navigation.spec.ts` |
+| Iteration Store | ✅ `useIterationStore.test.ts` | 🟡 Artifact loading | 🟡 Iteration selector |
+| Diff Store | ✅ `useDiffStore.test.ts` | ✅ Side-by-side rendering | ✅ `diff-navigation.spec.ts` |
+| GitHub Backend | 🟡 Needs factory tests | ✅ API integration | ✅ Real API validation |
+
+**Legend**: ✅ Implemented | 🟡 Partial | ❌ Missing
+
+See [README.md](../../README.md#testing-exit-criteria) for full testing strategy.
