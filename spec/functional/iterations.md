@@ -612,3 +612,49 @@ interface CommentThread {
 **Then** the same `artifact_id` has different `file_path` values at different snapshots
 
 **Test:** `ReviewFileArtifact.repoPaths` contains both old and new paths
+
+---
+
+## UI Integration
+
+### Components (Implemented)
+
+**IterationSelector** (`src/features/iterations/components/IterationSelector.tsx`)
+- Provides preset buttons: "Full", "Latest", "Last Review"
+- Dropdown selectors for custom snapshot ranges
+- Uses `iterationToRightSnapshot()` to convert iteration numbers to snapshot indices
+- Integrates with `useIterationStore.selectRange()` and `selectPreset()`
+
+**DegradedModeBanner** (`src/features/iterations/components/DegradedModeBanner.tsx`)
+- Displays when `useIterationStore.isDegraded === true`
+- Informs users that iteration tracking is unavailable
+- Provides link to workflow installation instructions
+- Hidden during loading or when artifact is available
+
+### State Management
+
+**useIterationStore** (`src/features/iterations/stores/useIterationStore.ts`)
+- Zustand store with persistence (only `selectedRange` is persisted)
+- Manages iteration data, artifacts, and SpanTracker service
+- Handles loading from artifact and graceful degradation
+- Provides actions: `loadIterations()`, `selectRange()`, `selectPreset()`, `reset()`
+
+### Service Layer
+
+**SpanTrackerService** (`src/features/iterations/application/span-tracker-service.ts`)
+- Orchestrates loading and caching of SpanTrackers
+- Provides `getTracker()` for arbitrary snapshot ranges
+- Supports `trackCommentForward()` and `trackCommentBackward()` for comment tracking
+- Preloading capability for performance optimization
+
+### Integration Points
+
+The iteration system integrates with:
+- **Diff View**: Uses `selectedRange` to determine which snapshots to compare
+- **Comment System**: Uses SpanTracker to reposition comments across iterations (future)
+- **File List**: Filters files based on iteration range (future)
+
+**Current Limitations:**
+- Comment position tracking is implemented in domain layer but not yet integrated with UI
+- File filtering by iteration range is planned but not implemented
+- Review history tracking ("Last Review" preset) uses fallback logic
