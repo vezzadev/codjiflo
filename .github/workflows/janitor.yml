@@ -118,7 +118,7 @@ jobs:
       - name: Calculate and create task
         uses: actions/github-script@v7
         with:
-          script: >
+          script: |
             const yaml = require('yaml');
             const tasksYaml = `${{ env.TASKS }}`;
             const tasks = yaml.parse(tasksYaml);
@@ -126,10 +126,10 @@ jobs:
             let taskIndex = parseInt('${{ github.event.inputs.task_index }}', 10);
             if (Number.isNaN(taskIndex) || taskIndex < 0 || taskIndex >= tasks.length) {
               const now = new Date();
-              const start = new Date(now.getFullYear(), 0, 0);
+              const start = new Date(now.getFullYear(), 0, 1);
               const diff = now - start;
               const oneDay = 1000 * 60 * 60 * 24;
-              const dayOfYear = Math.floor(diff / oneDay);
+              const dayOfYear = Math.floor(diff / oneDay) + 1;
 
               taskIndex = (dayOfYear - 1) % tasks.length;
             }
