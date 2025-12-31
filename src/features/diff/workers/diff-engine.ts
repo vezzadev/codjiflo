@@ -42,7 +42,9 @@ export function computeLineDiff(
   const lineArray = dmp.diff_linesToChars_(oldNormalized, newNormalized);
   const diffs = dmp.diff_main(lineArray.chars1, lineArray.chars2, false);
   dmp.diff_charsToLines_(diffs, lineArray.lineArray);
-  dmp.diff_cleanupSemantic(diffs);
+  // Note: We intentionally skip diff_cleanupSemantic for line-level diffs
+  // to match GitHub's line counting behavior. Semantic cleanup regroups
+  // changes in ways that inflate addition/deletion counts.
 
   const result: ParsedDiffLine[] = [];
   let oldLineNum = 1;
