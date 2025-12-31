@@ -1,0 +1,125 @@
+name: janitor
+
+on:
+  schedule:
+    - cron: '0 14 * * *' # 6am Pacific = 2pm UTC
+
+  workflow_dispatch:
+    inputs:
+      task_index:
+        description: 'Zero-based task index to create. Leave empty for automatic calculation.'
+        required: false
+        type: string
+
+env:
+  TASKS: |
+    - title: Improve test coverage
+      description: |-
+        Identify modules with low test coverage and add unit or integration tests to improve coverage towards the 70% minimum.
+
+    - title: Update dependencies
+      description: |-
+        Run dependency audits, update outdated packages, and address any reported security vulnerabilities.
+
+    - title: Refactor duplicated code
+      description: |-
+        Find duplicated code patterns and extract them into reusable utility functions or components.
+
+    - title: Improve error handling
+      description: |-
+        Review error handling logic and add edge case handling where it's missing or incomplete.
+
+    - title: Update documentation
+      description: |-
+        Improve code documentation, add missing comments for complex logic, and update outdated documentation.
+
+    - title: Remove dead code
+      description: |-
+        Identify and remove unused functions, variables, exports, and dead code branches.
+
+    - title: Optimize performance
+      description: |-
+        Profile the application, identify performance issues, and implement optimizations.
+
+    - title: Review folder structure
+      description: |-
+        Pick a random folder in the codebase, inspect its contents and reflect if this is intuitive to a junior engineer who has access to the README.md, AGENTS.md, and docs/. Suggest improvements if needed.
+
+    - title: Strengthen existing tests
+      description: |-
+        Pick a random test file and inspect the assertions it is performing. Reflect if they are actually testing behavior or just making weak assertions that won't fail most of the time. Look at the code under test for important business logic that should be well covered. Add any assertions or extra tests you think are beneficial.
+
+    - title: Streamline e2e tests
+      description: |-
+        E2E tests are meant to cover the end-to-end user journey when using a feature, both on the happy and important unhappy paths. Pick a random e2e test file and look for tests that only cover a slice of a feature. Those tests should be converted into functional tests.
+
+    - title: Review spec/functional
+      description: |-
+        Pick a random file in spec/functional and compare it with the source code. Look for important behaviors in the code that don't match the spec. Update the spec with more details or acceptance tests to make it clearer and more comprehensive.
+
+    - title: Review spec/milestones
+      description: |-
+        Pick a random file in the codebase and look for a user story that covers that part of the codebase. Update spec/milestones if you can't find one or you found important code behaviors that are not enumerated in any user story.
+
+    - title: Add/update folder readme
+      description: |-
+        Pick a random folder in the codebase and see if it represents a well defined piece of the product or code architecture. If so, that folder should have a readme. Create or update a readme file that describes at a high level what this folder contains and what it is meant to do. Don't dwell on minutiae, point to important files with entry points or relevant algorithms.
+
+jobs:
+  create-janitor-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Calculate and create task
+        uses: actions/github-script@v7
+        with:
+          script: >
+            const yaml = require('yaml');
+            const tasksYaml = `${{ env.TASKS }}`;
+            const tasks = yaml.parse(tasksYaml);
+
+            let taskIndex = parseInt('${{ github.event.inputs.task_index }}', 10);
+            if (Number.isNaN(taskIndex) || taskIndex < 0 || taskIndex >= tasks.length) {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), 0, 0);
+              const diff = now - start;
+              const oneDay = 1000 * 60 * 60 * 24;
+              const dayOfYear = Math.floor(diff / oneDay);
+
+              taskIndex = (dayOfYear - 1) % tasks.length;
+            }
+
+            const task = tasks[taskIndex];
+            const title = `[Janitor Task #${taskIndex + 1}] ${task.title}`;
+            const today = new Date().toISOString().split('T')[0];
+            const bodyLines = [
+              "This is a janitor task. The goal is to make improvements to the codebase without affecting behavior.",
+              "",
+              "**Today's task is:**",
+              "",
+              task.title,
+              "",
+              "**Description:**",
+              "",
+              task.description,
+              "",
+              "**Important notes:**",
+              "",
+              `- If you find something during your work that doesn't make sense, add your questions to \`spec/questions/${today}.md\` and they will be clarified during review.`,
+              "- It is perfectly fine to not have anything to change.",
+              "- You should only create a pull request if you believe you found something that will significantly improve the maintainability, ease of understanding, or performance of the code.",
+              "",
+              "Please complete this task and open a PR when ready."
+            ];
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: bodyLines.join("\n"),
+              labels: ['janitor'],
+              assignees: ['copilot-swe-agent']
+            });
+
+            core.info(`Created issue #${issue.data.number}: ${title}`);
