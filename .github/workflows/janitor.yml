@@ -200,24 +200,34 @@ jobs:
 
             const janitorLabelId = createIssueQuery.repository.labels.nodes[0]?.id;
 
-            const issueResult = await github.graphql(`
-              mutation CreateIssue($input: CreateIssueInput!) {
-                createIssue(input: $input) {
-                  issue {
-                    number
-                    url
-                    title
-                  }
+            const response = await github.request('POST /graphql', {
+              query: undefined,
+              persistedQueryName: 'createIssueMutation',
+              variables: {
+                fetchParent: false,
+                input: {
+                  repositoryId: repositoryId,
+                  title: title,
+                  body: body,
+                  assigneeIds: [botId],
+                  copilotAssignment: {
+                    baseRef: "main",
+                    customInstructions: "",
+                    model: "claude-opus-4.5",
+                    targetRepositoryId: repositoryId
+                  },
+                  isDuplicated: false,
+                  issueFields: null,
+                  issueTypeId: null,
+                  parentIssueId: null
                 }
               }
-            `, {
-              input: {
-                repositoryId: repositoryId,
-                title: title,
-                body: body,
-                labelIds: janitorLabelId ? [janitorLabelId] : [],
-                assigneeIds: [botId]
-              }
             });
+
+            if (response.data?.errors) {
+              throw new Error(`GraphQL errors: ${JSON.stringify(response.data.errors)}`);
+            }
+
+            const issueResult = response.data?.data;
 
             core.info(`Created issue #${issueResult.createIssue.issue.number}: ${title}`);
