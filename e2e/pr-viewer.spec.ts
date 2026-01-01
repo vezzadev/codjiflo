@@ -195,6 +195,22 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
       // PR Description should no longer be selected
       await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+
+      // Autoscroll: first changed line should be visible in viewport (unified mode)
+      const firstChangedLine = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
+      await expect(firstChangedLine).toBeInViewport();
+
+      // Switch to side-by-side mode and verify autoscroll still works
+      await page.keyboard.press("s");
+      await expect(page.getByRole("region", { name: "Side-by-side diff view" })).toBeVisible();
+
+      // Click another file to trigger autoscroll in side-by-side mode
+      await fileNav.getByText("src/index.ts").click();
+      await expect(page.getByRole("heading", { name: "src/index.ts" })).toBeVisible();
+
+      // Autoscroll: first changed line should be visible in viewport (side-by-side mode)
+      const firstChangedLineSxS = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
+      await expect(firstChangedLineSxS).toBeInViewport();
     } else {
       // Real mode: click first actual file
       const fileButtons = fileNav.getByRole("listitem");
@@ -203,6 +219,10 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
         await allButtons[1]?.click();
         // PR Description should no longer be selected
         await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+
+        // Autoscroll: first changed line should be visible in viewport
+        const firstChangedLine = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
+        await expect(firstChangedLine).toBeInViewport();
       }
     }
   });

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Keyboard } from 'lucide-react';
-import { usePRStore } from '@/features/pr';
+import { usePRStore, useDocumentTitle } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
@@ -81,6 +81,8 @@ function PullRequestContent({ params }: PRPageProps) {
       resetIterations();
     };
   }, [owner, repo, number, loadPR, loadFiles, loadThreads, loadIterations, resetPR, resetDiff, resetComments, resetIterations]);
+
+  useDocumentTitle({ currentPR, owner, repo, number });
 
   const handleBackToDashboard = useCallback(() => {
     router.push('/dashboard');
