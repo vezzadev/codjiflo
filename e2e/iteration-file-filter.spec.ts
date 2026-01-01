@@ -16,7 +16,7 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
 
   test('Latest preset hides unchanged files', async ({ page }) => {
     // Navigate to PR 28
-    await page.goto('/pr/pedropaulovc/codjiflo/28');
+    await page.goto('/pedropaulovc/codjiflo/28');
 
     // Wait for iterations to load
     await expect(page.getByRole('toolbar', { name: 'Iteration range selector' })).toBeVisible();
