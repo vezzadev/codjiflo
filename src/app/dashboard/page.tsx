@@ -27,7 +27,7 @@ export default function DashboardPage() {
       return;
     }
 
-    router.push(`/pr/${parsed.owner}/${parsed.repo}/${String(parsed.number)}`);
+    router.push(`/${parsed.owner}/${parsed.repo}/${String(parsed.number)}`);
   };
 
   const handleLogout = () => {

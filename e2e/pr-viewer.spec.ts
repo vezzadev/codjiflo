@@ -71,7 +71,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
         repo: "repo",
         prNumber: 123,
         prUrl: "https://github.com/test/repo/pull/123",
-        pageUrl: "/pr/test/repo/123",
+        pageUrl: "/test/repo/123",
       };
     }
     // Prod mode uses a known public PR
@@ -81,7 +81,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       repo,
       prNumber,
       prUrl: `https://github.com/${owner}/${repo}/pull/${String(prNumber)}`,
-      pageUrl: `/pr/${owner}/${repo}/${String(prNumber)}`,
+      pageUrl: `/${owner}/${repo}/${String(prNumber)}`,
     };
   };
 
@@ -276,11 +276,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
   test("Keyboard navigation works", async ({ page }) => {
     // Navigate to appropriate PR based on mode
     if (isMockMode()) {
-      await page.goto("/pr/test/repo/123");
+      await page.goto("/test/repo/123");
     } else {
       // Prod mode: use PR #6 which has multiple files
       const { owner, repo, prNumber } = prodModeConfig.keyboardNavPR;
-      await page.goto(`/pr/${owner}/${repo}/${String(prNumber)}`);
+      await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
     }
 
     // Wait for page to fully stabilize
@@ -380,11 +380,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       // Mock 404 response
       await setupPRMock(page, "test", "repo", 999, { failWith: 404 });
       await setupFilesMock(page, "test", "repo", 999, { failWith: 404 });
-      await page.goto("/pr/test/repo/999");
+      await page.goto("/test/repo/999");
     } else {
       // Prod mode: use non-existent PR #0
       const { owner, repo, prNumber } = prodModeConfig.notFoundPR;
-      await page.goto(`/pr/${owner}/${repo}/${String(prNumber)}`);
+      await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
     }
 
     // Should show error message (use first() since error may appear in multiple places)

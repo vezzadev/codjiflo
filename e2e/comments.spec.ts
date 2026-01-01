@@ -65,7 +65,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
         owner: "test",
         repo: "repo",
         prNumber: 123,
-        pageUrl: "/pr/test/repo/123",
+        pageUrl: "/test/repo/123",
       };
     }
     // Prod mode uses a known public PR
@@ -74,7 +74,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
       owner,
       repo,
       prNumber,
-      pageUrl: `/pr/${owner}/${repo}/${String(prNumber)}`,
+      pageUrl: `/${owner}/${repo}/${String(prNumber)}`,
     };
   };
 
