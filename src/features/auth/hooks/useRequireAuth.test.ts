@@ -5,11 +5,16 @@ import { useAuthStore } from '../stores/useAuthStore';
 
 // Mock Next.js router
 const mockReplace = vi.fn();
+const mockPathname = '/test/path';
+const mockSearchParams = new URLSearchParams();
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockReplace,
     push: vi.fn(),
   }),
+  usePathname: () => mockPathname,
+  useSearchParams: () => mockSearchParams,
 }));
 
 // Mock the auth store
@@ -30,12 +35,13 @@ describe('useRequireAuth', () => {
     vi.clearAllMocks();
   });
 
-  it('should redirect to login when not authenticated', () => {
+  it('should redirect to login with returnPath when not authenticated', () => {
     mockAuthStore({ isAuthenticated: false });
 
     renderHook(() => useRequireAuth());
 
-    expect(mockReplace).toHaveBeenCalledWith('/login');
+    // Should include the current path as returnPath query parameter
+    expect(mockReplace).toHaveBeenCalledWith('/login?returnPath=%2Ftest%2Fpath');
   });
 
   it('should not redirect when authenticated', () => {

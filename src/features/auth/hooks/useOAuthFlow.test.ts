@@ -9,6 +9,7 @@ vi.mock('../utils/pkce', () => ({
   generateState: vi.fn(() => 'test-state'),
   storeOAuthState: vi.fn(),
   storeReturnOrigin: vi.fn(),
+  storeReturnPath: vi.fn(),
 }));
 
 // Mock config
@@ -26,7 +27,7 @@ describe('useOAuthFlow', () => {
     vi.clearAllMocks();
     // Mock window.location
     Object.defineProperty(window, 'location', {
-      value: { href: '', origin: 'http://localhost:3000' },
+      value: { href: '', origin: 'http://localhost:3000', pathname: '/pr/owner/repo/1', search: '' },
       writable: true,
     });
   });
@@ -48,8 +49,14 @@ describe('useOAuthFlow', () => {
   });
 
   it('should initiate OAuth flow and redirect', async () => {
-    const { generateCodeVerifier, generateCodeChallenge, generateState, storeOAuthState } =
-      await import('../utils/pkce');
+    const {
+      generateCodeVerifier,
+      generateCodeChallenge,
+      generateState,
+      storeOAuthState,
+      storeReturnOrigin,
+      storeReturnPath,
+    } = await import('../utils/pkce');
     const { buildAuthorizationUrl } = await import('../config');
 
     const { result } = renderHook(() => useOAuthFlow());
@@ -63,6 +70,8 @@ describe('useOAuthFlow', () => {
       expect(generateCodeChallenge).toHaveBeenCalledWith('test-code-verifier');
       expect(generateState).toHaveBeenCalled();
       expect(storeOAuthState).toHaveBeenCalledWith('test-code-verifier', 'test-state');
+      expect(storeReturnOrigin).toHaveBeenCalledWith('http://localhost:3000');
+      expect(storeReturnPath).toHaveBeenCalledWith('/pr/owner/repo/1');
       expect(buildAuthorizationUrl).toHaveBeenCalledWith('test-state', 'test-code-challenge');
       expect(window.location.href).toBe(
         'https://github.com/login/oauth/authorize?state=test-state&code_challenge=test-code-challenge'

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, FormEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useOAuthFlow, useRedirectIfAuthenticated } from '@/features/auth/hooks';
@@ -9,11 +9,13 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { AppShell } from '@/components/layout';
 
-export default function LoginPage() {
+function LoginContent() {
   const [tokenInput, setTokenInput] = useState('');
   const [showPATSection, setShowPATSection] = useState(false);
   const { validateToken, error, isValidating, clearError } = useAuthStore();
-  const { initiateOAuth, isInitiating } = useOAuthFlow();
+  const searchParams = useSearchParams();
+  const returnPath = searchParams.get('returnPath');
+  const { initiateOAuth, isInitiating } = useOAuthFlow(returnPath);
   const { isAuthenticated } = useRedirectIfAuthenticated();
   const router = useRouter();
 
@@ -26,7 +28,9 @@ export default function LoginPage() {
     void (async () => {
       const success = await validateToken(tokenInput);
       if (success) {
-        router.replace('/dashboard');
+        // Redirect to the original page the user was trying to access, or dashboard
+        const redirectTo = returnPath ?? '/dashboard';
+        router.replace(redirectTo);
       }
     })();
   };
@@ -121,5 +125,35 @@ export default function LoginPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <AppShell>
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="logo">
+              <Image
+                src="/icons/codjiflo.svg"
+                alt="CodjiFlo"
+                width={48}
+                height={48}
+              />
+            </div>
+            <h1 className="login-title">Loading...</h1>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }

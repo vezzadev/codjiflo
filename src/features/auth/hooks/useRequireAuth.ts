@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '../stores/useAuthStore';
 
 /**
@@ -23,15 +23,23 @@ import { useAuthStore } from '../stores/useAuthStore';
  */
 export function useRequireAuth() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     // Only redirect after hydration is complete
     if (hasHydrated && !isAuthenticated) {
-      router.replace('/login');
+      // Build the return path including current pathname and search params
+      const currentSearch = searchParams.toString();
+      const returnPath = currentSearch ? `${pathname}?${currentSearch}` : pathname;
+
+      // Redirect to login with returnPath so user can return after authentication
+      const loginUrl = `/login?returnPath=${encodeURIComponent(returnPath)}`;
+      router.replace(loginUrl);
     }
-  }, [isAuthenticated, hasHydrated, router]);
+  }, [isAuthenticated, hasHydrated, router, pathname, searchParams]);
 
   return {
     isAuthenticated,

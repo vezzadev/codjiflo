@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import {
   retrieveOAuthState,
   retrieveReturnOrigin,
+  retrieveReturnPath,
   storeTokenTransfer,
   isValidReturnOrigin,
 } from '@/features/auth/utils/pkce';
@@ -62,6 +63,7 @@ function OAuthCallbackContent() {
 
       // Check if we need to redirect to a different origin (PR preview subdomain)
       const returnOrigin = retrieveReturnOrigin();
+      const returnPath = retrieveReturnPath();
       const currentOrigin = window.location.origin;
       const needsCrossOriginRedirect = returnOrigin && returnOrigin !== currentOrigin;
 
@@ -121,13 +123,19 @@ function OAuthCallbackContent() {
             expiresAt,
           });
 
-          // Redirect to return origin's landing page
-          window.location.href = `${returnOrigin}/auth/landing`;
+          // Redirect to return origin's landing page with the return path
+          const landingUrl = new URL('/auth/landing', returnOrigin);
+          if (returnPath) {
+            landingUrl.searchParams.set('returnPath', returnPath);
+          }
+          window.location.href = landingUrl.toString();
         } else {
           // Same-origin flow: use existing store method
           const success = await handleOAuthCallback(code, storedState.codeVerifier);
           if (success) {
-            router.replace('/dashboard');
+            // Redirect to the original page the user was trying to access, or dashboard
+            const redirectTo = returnPath ?? '/dashboard';
+            router.replace(redirectTo);
           } else {
             setError('Failed to complete authentication');
             setIsProcessing(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { Input } from '@/components/Input';
@@ -10,7 +10,7 @@ import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useRequireAuth } from '@/features/auth/hooks';
 import { AppShell, Titlebar } from '@/components/layout';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
@@ -91,5 +91,25 @@ export default function DashboardPage() {
         </p>
       </div>
     </AppShell>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <AppShell>
+      <div className="dashboard-content">
+        <div className="dashboard-card">
+          <h2 className="dashboard-title">Loading...</h2>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
