@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useOAuthFlow, useRedirectIfAuthenticated } from '@/features/auth/hooks';
+import { isValidReturnPath } from '@/features/auth/utils/pkce';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { AppShell } from '@/components/layout';
@@ -14,7 +15,9 @@ function LoginContent() {
   const [showPATSection, setShowPATSection] = useState(false);
   const { validateToken, error, isValidating, clearError } = useAuthStore();
   const searchParams = useSearchParams();
-  const returnPath = searchParams.get('returnPath');
+  const rawReturnPath = searchParams.get('returnPath');
+  // Validate returnPath to prevent open redirect attacks
+  const returnPath = rawReturnPath && isValidReturnPath(rawReturnPath) ? rawReturnPath : null;
   const { initiateOAuth, isInitiating } = useOAuthFlow(returnPath);
   const { isAuthenticated } = useRedirectIfAuthenticated();
   const router = useRouter();
@@ -29,7 +32,8 @@ function LoginContent() {
       const success = await validateToken(tokenInput);
       if (success) {
         // Redirect to the original page the user was trying to access, or dashboard
-        const redirectTo = returnPath ?? '/dashboard';
+        // Validate returnPath to prevent open redirect attacks
+        const redirectTo = returnPath && isValidReturnPath(returnPath) ? returnPath : '/dashboard';
         router.replace(redirectTo);
       }
     })();

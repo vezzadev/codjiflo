@@ -70,5 +70,6 @@ export {
   storeTokenTransfer,
   retrieveTokenTransfer,
   isValidReturnOrigin,
+  isValidReturnPath,
   type TokenTransferData,
 } from './cookies';

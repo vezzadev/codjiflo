@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
-import { retrieveTokenTransfer } from '@/features/auth/utils/pkce';
+import { retrieveTokenTransfer, isValidReturnPath } from '@/features/auth/utils/pkce';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/Button';
 
@@ -48,9 +48,9 @@ function AuthLandingContent() {
         });
 
         // Redirect to the original page the user was trying to access, or dashboard
-        const returnPath = searchParams.get('returnPath') ?? '/dashboard';
-        console.log('[Auth Landing] searchParams:', searchParams.toString());
-        console.log('[Auth Landing] returnPath:', returnPath);
+        // Validate returnPath to prevent open redirect attacks
+        const rawReturnPath = searchParams.get('returnPath');
+        const returnPath = rawReturnPath && isValidReturnPath(rawReturnPath) ? rawReturnPath : '/dashboard';
         router.replace(returnPath);
       } catch (err) {
         console.error('Failed to complete authentication landing flow:', err);

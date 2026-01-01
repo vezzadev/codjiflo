@@ -3,6 +3,7 @@ import {
   KNOWN_BASE_DOMAIN,
   getBaseDomain,
   isValidReturnOrigin,
+  isValidReturnPath,
 } from './cookies';
 
 describe('Cookie utilities', () => {
@@ -104,6 +105,53 @@ describe('Cookie utilities', () => {
 
     it('returns false for javascript: protocol', () => {
       expect(isValidReturnOrigin('javascript:alert(1)')).toBe(false);
+    });
+  });
+
+  describe('isValidReturnPath', () => {
+    it('returns true for simple paths', () => {
+      expect(isValidReturnPath('/dashboard')).toBe(true);
+    });
+
+    it('returns true for paths with segments', () => {
+      expect(isValidReturnPath('/owner/repo/123')).toBe(true);
+    });
+
+    it('returns true for paths with query strings', () => {
+      expect(isValidReturnPath('/owner/repo/123?file=test.ts')).toBe(true);
+    });
+
+    it('returns true for paths with hash', () => {
+      expect(isValidReturnPath('/dashboard#section')).toBe(true);
+    });
+
+    it('returns false for empty string', () => {
+      expect(isValidReturnPath('')).toBe(false);
+    });
+
+    it('returns false for null/undefined', () => {
+      expect(isValidReturnPath(null as unknown as string)).toBe(false);
+      expect(isValidReturnPath(undefined as unknown as string)).toBe(false);
+    });
+
+    it('returns false for protocol-relative URLs', () => {
+      expect(isValidReturnPath('//evil.com/path')).toBe(false);
+    });
+
+    it('returns false for absolute URLs with protocol', () => {
+      expect(isValidReturnPath('https://evil.com/path')).toBe(false);
+    });
+
+    it('returns false for paths containing protocol schemes', () => {
+      expect(isValidReturnPath('/redirect?url=https://evil.com')).toBe(false);
+    });
+
+    it('returns false for javascript: protocol', () => {
+      expect(isValidReturnPath('javascript:alert(1)')).toBe(false);
+    });
+
+    it('returns false for relative paths without leading slash', () => {
+      expect(isValidReturnPath('dashboard')).toBe(false);
     });
   });
 });

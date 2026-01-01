@@ -39,8 +39,10 @@ export function useOAuthFlow(overrideReturnPath?: string | null) {
 
       // Store return path to redirect back to the original page after login
       // Use overrideReturnPath if provided (from login page query param), else use current location
-      const returnPath =
-        overrideReturnPath ?? window.location.pathname + window.location.search;
+      // Avoid storing /login as the return path - user should go to dashboard after login
+      const currentPath = window.location.pathname + window.location.search;
+      const isOnLoginPage = window.location.pathname === '/login';
+      const returnPath = overrideReturnPath ?? (isOnLoginPage ? '/dashboard' : currentPath);
       storeReturnPath(returnPath);
 
       // Build authorization URL and redirect
