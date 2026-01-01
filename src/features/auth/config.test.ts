@@ -26,15 +26,13 @@ describe('oauthConfig', () => {
     it('returns callback URL with /auth/callback suffix', async () => {
       // Re-import to get fresh module with new env
       const { oauthConfig: freshConfig } = await import('./config');
-      expect(freshConfig.redirectUri).toMatch(/\/auth\/callback$/);
       expect(freshConfig.redirectUri).toBe('https://test.example.com/auth/callback');
     });
 
     it('throws error when NEXT_PUBLIC_APP_URL is not set and not in development', async () => {
       delete process.env.NEXT_PUBLIC_APP_URL;
       // Set to production to avoid development fallback
-      // @ts-expect-error - NODE_ENV is readonly but we need to override for testing
-      process.env.NODE_ENV = 'production';
+      vi.stubEnv('NODE_ENV', 'production');
       
       const { oauthConfig: freshConfig } = await import('./config');
       
