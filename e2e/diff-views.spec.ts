@@ -389,6 +389,62 @@ const baz = 'qux';
     }
   });
 
+  test("Side-by-side view renders panes horizontally (S-3.2)", async ({
+    page,
+  }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("networkidle");
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    if (isMockMode()) {
+      await fileNav.getByText("src/example.ts").click();
+      await expect(
+        page.getByRole("heading", { name: "src/example.ts" })
+      ).toBeVisible();
+
+      // Switch to Split view
+      const viewModeGroup = page.getByRole("group", { name: "View mode" });
+      await expect(viewModeGroup).toBeVisible();
+      await viewModeGroup.getByRole("button", { name: /Split/i }).click();
+
+      // Get the side-by-side container and panes
+      const sideBySideContainer = page.getByRole("region", {
+        name: "Side-by-side diff view",
+      });
+      await expect(sideBySideContainer).toBeVisible();
+
+      const leftPane = page.getByRole("region", { name: "Original version" });
+      const rightPane = page.getByRole("region", { name: "Modified version" });
+
+      await expect(leftPane).toBeVisible();
+      await expect(rightPane).toBeVisible();
+
+      // Get bounding boxes to verify horizontal layout
+      const leftBox = await leftPane.boundingBox();
+      const rightBox = await rightPane.boundingBox();
+
+      // Fail fast if bounding boxes are null
+      if (!leftBox || !rightBox) {
+        throw new Error("Failed to get bounding boxes for panes");
+      }
+
+      // Verify panes are side-by-side: same Y position, left pane ends where right begins
+      // Allow small tolerance for borders
+      expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThan(5);
+      expect(rightBox.x).toBeGreaterThan(leftBox.x);
+      expect(rightBox.x).toBeLessThanOrEqual(leftBox.x + leftBox.width + 5);
+
+      // Each pane should have reasonable width (not collapsed)
+      expect(leftBox.width).toBeGreaterThan(100);
+      expect(rightBox.width).toBeGreaterThan(100);
+    } else {
+      test.skip(true, "Layout test runs in mock mode only");
+    }
+  });
+
   test("Side-by-side view accessibility (S-3.2)", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);

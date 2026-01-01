@@ -395,3 +395,50 @@
   border-top: 1px solid var(--combobox-border);
   margin-top: 16px;
 }
+
+/* ============================================
+   SIDE-BY-SIDE DIFF VIEW
+   ============================================ */
+.side-by-side-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  background-color: var(--main-bg);
+}
+
+.side-by-side-pane {
+  flex: 1;
+  overflow: auto;
+  min-width: 0;
+  background-color: var(--main-bg);
+}
+
+.side-by-side-pane-left {
+  border-right: 1px solid var(--combobox-border);
+}
+
+.side-by-side-pane table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+/* Constrain gutter and marker widths in side-by-side mode */
+.side-by-side-pane .diff-gutter {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+}
+
+.side-by-side-pane .diff-marker {
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+}
+
+/* Content cell takes remaining space */
+.side-by-side-pane .diff-content {
+  width: auto;
+}
