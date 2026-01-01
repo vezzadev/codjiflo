@@ -73,7 +73,7 @@ export class ArtifactLoader {
 
     // 2. Check IndexedDB cache
     const cached = await this.getCached();
-    if (cached && cached.timestamp === reference.timestamp) {
+    if (cached?.timestamp === reference.timestamp) {
       const db = await SQLiteDatabase.fromArrayBuffer(cached.data);
       return { db, reference };
     }

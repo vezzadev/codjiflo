@@ -56,6 +56,12 @@ async function validateGitHubToken(token: string): Promise<boolean> {
     }
 }
 
+/**
+ * Module-level variable to deduplicate concurrent refresh calls.
+ * When a refresh is in-flight, subsequent callers await the same promise.
+ */
+let pendingRefreshPromise: Promise<boolean> | null = null;
+
 export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
@@ -183,40 +189,53 @@ export const useAuthStore = create<AuthState>()(
                     return false;
                 }
 
-                try {
-                    const response = await fetch('/api/auth/refresh', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            refresh_token: refreshToken,
-                        }),
-                    });
+                // If a refresh is already in-flight, return the same promise
+                // to avoid concurrent refresh API calls
+                if (pendingRefreshPromise) {
+                    return pendingRefreshPromise;
+                }
 
-                    const data = await response.json() as TokenResponse;
+                const doRefresh = async (): Promise<boolean> => {
+                    try {
+                        const response = await fetch('/api/auth/refresh', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                refresh_token: refreshToken,
+                            }),
+                        });
 
-                    if (data.error || !data.access_token) {
-                        // Refresh failed, user needs to re-authenticate
+                        const data = await response.json() as TokenResponse;
+
+                        if (data.error || !data.access_token) {
+                            // Refresh failed, user needs to re-authenticate
+                            get().logout();
+                            return false;
+                        }
+
+                        const expiresIn = data.expires_in ?? oauthConfig.defaultTokenExpirySeconds;
+                        const tokenExpiresAt = Date.now() + expiresIn * 1000;
+
+                        set({
+                            token: data.access_token,
+                            refreshToken: data.refresh_token ?? refreshToken,
+                            tokenExpiresAt,
+                        });
+
+                        return true;
+                    } catch (err) {
+                        console.error('Token refresh error:', err);
                         get().logout();
                         return false;
+                    } finally {
+                        pendingRefreshPromise = null;
                     }
+                };
 
-                    const expiresIn = data.expires_in ?? oauthConfig.defaultTokenExpirySeconds;
-                    const tokenExpiresAt = Date.now() + expiresIn * 1000;
-
-                    set({
-                        token: data.access_token,
-                        refreshToken: data.refresh_token ?? refreshToken,
-                        tokenExpiresAt,
-                    });
-
-                    return true;
-                } catch (err) {
-                    console.error('Token refresh error:', err);
-                    get().logout();
-                    return false;
-                }
+                pendingRefreshPromise = doRefresh();
+                return pendingRefreshPromise;
             },
 
             isTokenExpiringSoon: (): boolean => {

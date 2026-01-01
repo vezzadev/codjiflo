@@ -34,7 +34,7 @@ jobs:
 
       - name: Run linter
         timeout-minutes: 1
-        run: npm run lint
+        run: npm run lint:check
 
   unit-tests:
     runs-on: ubuntu-latest

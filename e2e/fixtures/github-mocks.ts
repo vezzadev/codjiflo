@@ -398,3 +398,89 @@ export async function setupAuthState(page: Page): Promise<void> {
     token ?? ""
   );
 }
+
+/**
+ * Set up OAuth authentication state in localStorage
+ * Used for testing token refresh functionality
+ * @param options.token - Access token
+ * @param options.refreshToken - Refresh token
+ * @param options.expiresIn - Token expiry in ms from now (default: 1 hour)
+ */
+export async function setupOAuthAuthState(
+  page: Page,
+  options?: {
+    token?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+  }
+): Promise<void> {
+  const token = options?.token ?? "gho_oauthtoken123";
+  const refreshToken = options?.refreshToken ?? "ghr_refreshtoken123";
+  const expiresIn = options?.expiresIn ?? 3600000; // 1 hour default
+
+  await page.addInitScript(
+    ({ token, refreshToken, tokenExpiresAt }) => {
+      localStorage.setItem(
+        "auth-storage",
+        JSON.stringify({
+          state: {
+            token,
+            refreshToken,
+            tokenExpiresAt,
+            authMethod: "oauth",
+            isAuthenticated: true,
+          },
+          version: 0,
+        })
+      );
+    },
+    { token, refreshToken, tokenExpiresAt: Date.now() + expiresIn }
+  );
+}
+
+/**
+ * Set up mock for the token refresh endpoint
+ * @param options.success - Whether refresh should succeed
+ * @param options.newToken - New access token on success
+ * @param options.newRefreshToken - New refresh token on success (optional)
+ */
+export async function setupTokenRefreshMock(
+  page: Page,
+  options?: {
+    success?: boolean;
+    newToken?: string;
+    newRefreshToken?: string;
+  }
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  const success = options?.success ?? true;
+  const newToken = options?.newToken ?? "gho_newaccesstoken123";
+  const newRefreshToken = options?.newRefreshToken;
+
+  await page.route("**/api/auth/refresh", async (route) => {
+    if (success) {
+      const responseBody: Record<string, unknown> = {
+        access_token: newToken,
+        expires_in: 28800, // 8 hours
+      };
+      if (newRefreshToken) {
+        responseBody.refresh_token = newRefreshToken;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(responseBody),
+      });
+    } else {
+      await route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "invalid_grant",
+          error_description: "The refresh token is invalid or expired",
+        }),
+      });
+    }
+  });
+}
