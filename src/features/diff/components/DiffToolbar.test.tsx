@@ -10,10 +10,9 @@ import { useDiffStore } from '../stores';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
-  Columns2: () => <span data-testid="icon-columns2" />,
-  FileText: () => <span data-testid="icon-filetext" />,
   Eye: () => <span data-testid="icon-eye" />,
   EyeOff: () => <span data-testid="icon-eyeoff" />,
+  File: () => <span data-testid="icon-file" />,
 }));
 
 describe('DiffToolbar', () => {
@@ -39,18 +38,15 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('toolbar')).toHaveAttribute('aria-label', 'Diff view controls');
     });
 
-    it('renders view mode toggle group', () => {
+    it('renders view mode toggle button showing Inline by default', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('group', { name: 'View mode' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /switch to side-by-side view/i })).toBeInTheDocument();
+      expect(screen.getByText('Inline')).toBeInTheDocument();
     });
 
-    it('renders unified button as active by default', () => {
+    it('renders content filter slider', () => {
       render(<DiffToolbar />);
-      // Get the Unified button by its role within the View mode group
-      const viewModeGroup = screen.getByRole('group', { name: 'View mode' });
-      const unifiedButton = viewModeGroup.querySelector('button[aria-pressed="true"]');
-      expect(unifiedButton).toBeInTheDocument();
-      expect(unifiedButton).toHaveTextContent('Unified');
+      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
     });
 
     it('renders full file toggle button', () => {
@@ -65,17 +61,17 @@ describe('DiffToolbar', () => {
   });
 
   describe('view mode toggle', () => {
-    it('calls setViewMode when clicking split button', async () => {
+    it('toggles to split mode when clicking button in unified mode', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const splitButton = screen.getByText('Split');
-      await user.click(splitButton);
+      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
+      await user.click(toggleButton);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
 
-    it('calls setViewMode when clicking unified button', async () => {
+    it('toggles to unified mode when clicking button in split mode', async () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
@@ -83,42 +79,58 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const unifiedButton = screen.getByText('Unified');
-      await user.click(unifiedButton);
+      const toggleButton = screen.getByRole('button', { name: /switch to unified view/i });
+      await user.click(toggleButton);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
-  });
 
-  describe('content filter toggle', () => {
-    it('shows content filter in unified mode (AC-3.3.11-13)', () => {
-      render(<DiffToolbar />);
-      expect(screen.getByRole('group', { name: 'Content filter' })).toBeInTheDocument();
-    });
-
-    it('shows content filter in split mode (AC-3.3.8-10)', () => {
+    it('shows SxS label when in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
-      expect(screen.getByRole('group', { name: 'Content filter' })).toBeInTheDocument();
+
+      expect(screen.getByText('SxS')).toBeInTheDocument();
+    });
+  });
+
+  describe('content filter slider', () => {
+    it('shows content filter slider in unified mode', () => {
+      render(<DiffToolbar />);
+      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('calls setContentFilter when clicking Left button', async () => {
+    it('shows content filter slider in split mode', () => {
+      useDiffStore.setState({
+        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
+      });
+      render(<DiffToolbar />);
+      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
+    });
+
+    it('has correct aria-valuetext for "both" filter', () => {
+      render(<DiffToolbar />);
+      const slider = screen.getByRole('slider', { name: 'Content filter' });
+      expect(slider).toHaveAttribute('aria-valuetext', 'Show Both');
+    });
+
+    it('changes filter when clicking on slider track', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const leftButton = screen.getByText('Left');
+      // Click the Left Only button
+      const leftButton = screen.getByRole('button', { name: 'Left Only' });
       await user.click(leftButton);
 
       expect(useDiffStore.getState().viewConfig.filter).toBe('left');
     });
 
-    it('calls setContentFilter when clicking Right button', async () => {
+    it('changes filter when clicking Right Only button', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const rightButton = screen.getByText('Right');
+      const rightButton = screen.getByRole('button', { name: 'Right Only' });
       await user.click(rightButton);
 
       expect(useDiffStore.getState().viewConfig.filter).toBe('right');
@@ -143,6 +155,12 @@ describe('DiffToolbar', () => {
       render(<DiffToolbar />);
 
       expect(screen.getByRole('button', { name: /show changes only/i })).toBeInTheDocument();
+      expect(screen.getByText('Full')).toBeInTheDocument();
+    });
+
+    it('shows Changes label when showing changes only', () => {
+      render(<DiffToolbar />);
+      expect(screen.getByText('Changes')).toBeInTheDocument();
     });
   });
 
@@ -157,13 +175,18 @@ describe('DiffToolbar', () => {
       expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
     });
 
-    it('shows correct label when whitespace is shown', () => {
+    it('shows correct aria-label when whitespace is shown', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
       expect(screen.getByRole('button', { name: /hide whitespace characters/i })).toBeInTheDocument();
+    });
+
+    it('shows a · b label', () => {
+      render(<DiffToolbar />);
+      expect(screen.getByText('a · b')).toBeInTheDocument();
     });
 
     it('shows Eye icon when whitespace is shown', () => {
@@ -246,27 +269,28 @@ describe('DiffToolbar', () => {
   });
 
   describe('accessibility', () => {
-    it('toggle buttons have aria-pressed attribute', () => {
+    it('view mode toggle button has aria-pressed attribute', () => {
+      render(<DiffToolbar />);
+
+      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
+      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('view mode toggle stays unpressed when in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
 
-      const splitButton = screen.getByText('Split').closest('button');
-      const unifiedButton = screen.getByText('Unified').closest('button');
-
-      expect(splitButton).toHaveAttribute('aria-pressed', 'true');
-      expect(unifiedButton).toHaveAttribute('aria-pressed', 'false');
+      const toggleButton = screen.getByRole('button', { name: /switch to unified view/i });
+      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('buttons have title with keyboard shortcut', () => {
+    it('toggle button has title with keyboard shortcut', () => {
       render(<DiffToolbar />);
 
-      const unifiedButton = screen.getByText('Unified').closest('button');
-      expect(unifiedButton).toHaveAttribute('title', expect.stringContaining('U'));
-
-      const splitButton = screen.getByText('Split').closest('button');
-      expect(splitButton).toHaveAttribute('title', expect.stringContaining('S'));
+      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
+      expect(toggleButton).toHaveAttribute('title', expect.stringContaining('S'));
     });
   });
 });

@@ -88,6 +88,38 @@
 }
 
 /* ============================================
+   TOOLBAR BUTTON (consistent sizing)
+   ============================================ */
+.btn-toolbar {
+  min-width: 48px;
+  height: 25px;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--main-fg);
+}
+
+.btn-toolbar svg:not(.btn-toolbar-icon) {
+  width: 12px;
+  height: 12px;
+}
+
+.btn-toolbar-icon {
+  flex-shrink: 0;
+}
+
+.btn-toolbar .btn-label {
+  margin-left: 0;
+}
+
+.btn-toolbar-wide {
+  min-width: 75px;
+  justify-content: center;
+}
+
+/* ============================================
    MENU/SIDEBAR BUTTON
    ============================================ */
 .btn-menu {

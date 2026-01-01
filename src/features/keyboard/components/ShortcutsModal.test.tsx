@@ -20,12 +20,27 @@ describe('ShortcutsModal', () => {
   it('displays all shortcuts', () => {
     render(<ShortcutsModal isOpen={true} onClose={vi.fn()} />);
 
+    // Navigation shortcuts
     expect(screen.getByText('j')).toBeInTheDocument();
     expect(screen.getByText('Next file')).toBeInTheDocument();
     expect(screen.getByText('k')).toBeInTheDocument();
     expect(screen.getByText('Previous file')).toBeInTheDocument();
     expect(screen.getByText('Space')).toBeInTheDocument();
     expect(screen.getByText('Scroll down in diff view')).toBeInTheDocument();
+
+    // View mode shortcuts
+    expect(screen.getByText('u')).toBeInTheDocument();
+    expect(screen.getByText('Unified (inline) view')).toBeInTheDocument();
+    expect(screen.getByText('s')).toBeInTheDocument();
+    expect(screen.getByText('Side-by-side view')).toBeInTheDocument();
+
+    // Content filter shortcuts
+    expect(screen.getByText('l')).toBeInTheDocument();
+    expect(screen.getByText('Left only (deletions)')).toBeInTheDocument();
+    expect(screen.getByText('b')).toBeInTheDocument();
+    expect(screen.getByText('Show both sides')).toBeInTheDocument();
+    expect(screen.getByText('r')).toBeInTheDocument();
+    expect(screen.getByText('Right only (additions)')).toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', async () => {
