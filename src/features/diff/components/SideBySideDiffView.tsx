@@ -39,6 +39,8 @@ interface SideBySideDiffViewProps {
   onSubmitDraft: () => void;
   /** Show whitespace characters visibly */
   showWhitespace?: boolean;
+  /** Ref for the container element (used for autoscroll) */
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 /**
@@ -64,6 +66,7 @@ export function SideBySideDiffView({
   onChangeDraftBody,
   onSubmitDraft,
   showWhitespace = false,
+  containerRef,
 }: SideBySideDiffViewProps) {
   const leftPaneRef = useRef<HTMLDivElement>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -123,6 +126,7 @@ export function SideBySideDiffView({
 
   return (
     <div
+      ref={containerRef}
       className="flex overflow-hidden h-full"
       role="region"
       aria-label="Side-by-side diff view"
