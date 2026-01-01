@@ -65,6 +65,8 @@ export {
   retrieveOAuthStateCookie as retrieveOAuthState,
   storeReturnOrigin,
   retrieveReturnOrigin,
+  storeReturnPath,
+  retrieveReturnPath,
   storeTokenTransfer,
   retrieveTokenTransfer,
   isValidReturnOrigin,

@@ -16,6 +16,7 @@ export const OAUTH_COOKIE_KEYS = {
   CODE_VERIFIER: 'oauth_code_verifier',
   STATE: 'oauth_state',
   RETURN_ORIGIN: 'oauth_return_origin',
+  RETURN_PATH: 'oauth_return_path',
   TOKEN_TRANSFER: 'oauth_token_transfer',
 } as const;
 
@@ -164,6 +165,13 @@ export function storeReturnOrigin(origin: string): void {
 }
 
 /**
+ * Stores the return path for post-auth redirect (e.g., /pr/owner/repo/123)
+ */
+export function storeReturnPath(path: string): void {
+  setCookie(OAUTH_COOKIE_KEYS.RETURN_PATH, path);
+}
+
+/**
  * Retrieves and clears OAuth state from cookies
  */
 export function retrieveOAuthStateCookie(): { codeVerifier: string; state: string } | null {
@@ -192,6 +200,19 @@ export function retrieveReturnOrigin(): string | null {
   }
 
   return origin;
+}
+
+/**
+ * Retrieves and clears the return path
+ */
+export function retrieveReturnPath(): string | null {
+  const path = getCookie(OAUTH_COOKIE_KEYS.RETURN_PATH);
+
+  if (path) {
+    deleteCookie(OAUTH_COOKIE_KEYS.RETURN_PATH);
+  }
+
+  return path;
 }
 
 /**

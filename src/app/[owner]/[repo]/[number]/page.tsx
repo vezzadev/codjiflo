@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Keyboard } from 'lucide-react';
 import { usePRStore } from '@/features/pr';
@@ -31,7 +31,7 @@ interface PRPageProps {
   }>;
 }
 
-export default function PullRequestPage({ params }: PRPageProps) {
+function PullRequestContent({ params }: PRPageProps) {
   const { owner, repo, number } = use(params);
   const router = useRouter();
   const { isAuthenticated, isLoading } = useRequireAuth();
@@ -213,5 +213,23 @@ export default function PullRequestPage({ params }: PRPageProps) {
         onClose={() => setShowShortcuts(false)}
       />
     </AppShell>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <AppShell>
+      <div className="diff-placeholder">
+        <p>Loading...</p>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function PullRequestPage({ params }: PRPageProps) {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <PullRequestContent params={params} />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { retrieveTokenTransfer } from '@/features/auth/utils/pkce';
 import { AppShell } from '@/components/layout';
@@ -17,10 +17,11 @@ import { Button } from '@/components/Button';
  * 1. User on pr-123.codjiflo.vza.net clicks login
  * 2. OAuth redirects to codjiflo.vza.net/auth/callback
  * 3. Callback page sets token in cookie, redirects to pr-123.codjiflo.vza.net/auth/landing
- * 4. This page reads the token from cookie, stores in auth store, redirects to dashboard
+ * 4. This page reads the token from cookie, stores in auth store, redirects to original page
  */
-export default function AuthLandingPage() {
+function AuthLandingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
@@ -46,8 +47,9 @@ export default function AuthLandingPage() {
           isValidating: false,
         });
 
-        // Redirect to dashboard
-        router.replace('/dashboard');
+        // Redirect to the original page the user was trying to access, or dashboard
+        const returnPath = searchParams.get('returnPath') ?? '/dashboard';
+        router.replace(returnPath);
       } catch (err) {
         console.error('Failed to complete authentication landing flow:', err);
         setError('An unexpected error occurred. Please try logging in again.');
@@ -56,7 +58,7 @@ export default function AuthLandingPage() {
     };
 
     hydrateToken();
-  }, [router]);
+  }, [router, searchParams]);
 
   if (isProcessing && !error) {
     return (
@@ -89,4 +91,25 @@ export default function AuthLandingPage() {
   }
 
   return null;
+}
+
+function LoadingFallback() {
+  return (
+    <AppShell>
+      <div className="auth-status-container">
+        <div className="auth-status-card">
+          <div className="spinner" />
+          <p className="auth-status-text">Loading...</p>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function AuthLandingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AuthLandingContent />
+    </Suspense>
+  );
 }
