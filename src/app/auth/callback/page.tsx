@@ -9,6 +9,7 @@ import {
   retrieveReturnPath,
   storeTokenTransfer,
   isValidReturnOrigin,
+  isValidReturnPath,
 } from '@/features/auth/utils/pkce';
 import { oauthConfig } from '@/features/auth/config';
 import { AppShell } from '@/components/layout';
@@ -63,15 +64,11 @@ function OAuthCallbackContent() {
 
       // Check if we need to redirect to a different origin (PR preview subdomain)
       const returnOrigin = retrieveReturnOrigin();
-      const returnPath = retrieveReturnPath();
+      const rawReturnPath = retrieveReturnPath();
+      // Validate returnPath to prevent open redirect attacks
+      const returnPath = rawReturnPath && isValidReturnPath(rawReturnPath) ? rawReturnPath : null;
       const currentOrigin = window.location.origin;
       const needsCrossOriginRedirect = returnOrigin && returnOrigin !== currentOrigin;
-
-      // Debug logging for redirect flow
-      console.log('[OAuth Callback] returnOrigin:', returnOrigin);
-      console.log('[OAuth Callback] returnPath:', returnPath);
-      console.log('[OAuth Callback] currentOrigin:', currentOrigin);
-      console.log('[OAuth Callback] needsCrossOriginRedirect:', needsCrossOriginRedirect);
 
       // Validate return origin to prevent open redirect attacks
       if (needsCrossOriginRedirect && !isValidReturnOrigin(returnOrigin)) {

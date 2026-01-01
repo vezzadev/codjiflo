@@ -216,6 +216,31 @@ export function retrieveReturnPath(): string | null {
 }
 
 /**
+ * Validates that a return path is safe to redirect to.
+ * Prevents open redirect vulnerabilities by ensuring the path:
+ * - Starts with a single forward slash (relative path)
+ * - Does not contain protocol schemes (://)
+ * - Does not start with // (protocol-relative URLs)
+ */
+export function isValidReturnPath(path: string): boolean {
+  if (!path || typeof path !== 'string') {
+    return false;
+  }
+
+  // Must start with exactly one forward slash (relative path)
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    return false;
+  }
+
+  // Must not contain protocol schemes
+  if (path.includes('://')) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Token transfer data structure for cross-subdomain token passing
  */
 export interface TokenTransferData {
