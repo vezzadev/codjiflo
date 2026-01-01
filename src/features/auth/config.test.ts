@@ -33,6 +33,8 @@ describe('oauthConfig', () => {
       delete process.env.NEXT_PUBLIC_APP_URL;
       // Set to production to avoid development fallback
       vi.stubEnv('NODE_ENV', 'production');
+      // Reset modules so ./config is re-evaluated with the updated environment
+      vi.resetModules();
       
       const { oauthConfig: freshConfig } = await import('./config');
       

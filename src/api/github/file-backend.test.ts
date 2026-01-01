@@ -123,7 +123,8 @@ describe('GitHubFileBackend', () => {
 
     it('handles base64 content with line breaks', async () => {
       // GitHub API sometimes returns base64 with newlines
-      const base64WithNewlines = btoa('hello world').slice(0, 5) + '\n' + btoa('hello world').slice(5);
+      const base64 = btoa('hello world');
+      const base64WithNewlines = base64.match(/.{1,4}/g)?.join('\n') ?? base64;
       const mockResponse = {
         path: 'test.txt',
         sha: 'def456',
