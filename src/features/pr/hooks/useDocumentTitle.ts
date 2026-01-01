@@ -14,11 +14,15 @@ export function useDocumentTitle({
   repo,
   number,
 }: UseDocumentTitleParams): void {
+  const prTitle = currentPR?.title;
+  const prAuthor = currentPR?.author.displayName;
+  const prNumber = currentPR?.number;
+
   useEffect(() => {
-    if (currentPR) {
-      document.title = `${currentPR.title} by ${currentPR.author.displayName} · PR #${currentPR.number} · ${owner}/${repo}`;
+    if (prTitle && prAuthor && prNumber !== undefined) {
+      document.title = `${prTitle} by ${prAuthor} · PR #${prNumber} · ${owner}/${repo}`;
     } else {
       document.title = `PR #${number} · ${owner}/${repo}`;
     }
-  }, [currentPR, owner, repo, number]);
+  }, [prTitle, prAuthor, prNumber, owner, repo, number]);
 }
