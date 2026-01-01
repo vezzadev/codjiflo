@@ -19,6 +19,7 @@ import {
   LeftPane,
   MainContent,
   BottomPane,
+  ResizeHandle,
 } from '@/components/layout';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 
@@ -39,7 +40,7 @@ export default function PullRequestPage({ params }: PRPageProps) {
   const { loadFiles, reset: resetDiff } = useDiffStore();
   const { threads, loadThreads, reset: resetComments } = useCommentsStore();
   const { loadIterations, reset: resetIterations } = useIterationStore();
-  const { leftPaneWidth } = useLayoutStore();
+  const { leftPaneWidth, resizeLeftPane, bottomPaneHeight, resizeBottomPane } = useLayoutStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts();
@@ -194,6 +195,7 @@ export default function PullRequestPage({ params }: PRPageProps) {
             <IterationSelector className="" />
           </div>
           <FileList />
+          <ResizeHandle direction="horizontal" onResize={resizeLeftPane} />
         </LeftPane>
 
         <MainContent>
@@ -201,7 +203,10 @@ export default function PullRequestPage({ params }: PRPageProps) {
         </MainContent>
       </div>
 
-      <BottomPane tabs={bottomPaneTabs} defaultTab="comments" />
+      <>
+        <ResizeHandle direction="vertical" onResize={resizeBottomPane} />
+        <BottomPane tabs={bottomPaneTabs} defaultTab="comments" height={bottomPaneHeight} />
+      </>
 
       <ShortcutsModal
         isOpen={showShortcuts}

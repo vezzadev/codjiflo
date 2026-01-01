@@ -11,12 +11,13 @@ interface TabConfig {
 interface BottomPaneProps {
   tabs: TabConfig[];
   defaultTab?: string;
+  height?: number;
 }
 
 /**
  * Bottom pane with tabbed content (Comments, Activity, Search Results)
  */
-export function BottomPane({ tabs, defaultTab }: BottomPaneProps) {
+export function BottomPane({ tabs, defaultTab, height }: BottomPaneProps) {
   const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '');
 
   if (tabs.length === 0) {
@@ -26,7 +27,7 @@ export function BottomPane({ tabs, defaultTab }: BottomPaneProps) {
   const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
 
   return (
-    <div className="bottom-pane" id="bottomPane">
+    <div className="bottom-pane" id="bottomPane" style={height ? { height } : undefined}>
       <div className="tabs">
         <div className="tab-list" role="tablist">
           {tabs.map((tab) => (
