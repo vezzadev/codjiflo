@@ -65,5 +65,8 @@ export function getShortcutsList(): { key: string; description: string }[] {
     { key: 'l', description: 'Left only (deletions)' },
     { key: 'b', description: 'Show both sides' },
     { key: 'r', description: 'Right only (additions)' },
+    { key: 'f', description: 'Show full file' },
+    { key: 'c', description: 'Show changes only' },
+    { key: 'w', description: 'Toggle whitespace visibility' },
   ];
 }

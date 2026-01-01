@@ -41,6 +41,14 @@ describe('ShortcutsModal', () => {
     expect(screen.getByText('Show both sides')).toBeInTheDocument();
     expect(screen.getByText('r')).toBeInTheDocument();
     expect(screen.getByText('Right only (additions)')).toBeInTheDocument();
+
+    // Display mode shortcuts
+    expect(screen.getByText('f')).toBeInTheDocument();
+    expect(screen.getByText('Show full file')).toBeInTheDocument();
+    expect(screen.getByText('c')).toBeInTheDocument();
+    expect(screen.getByText('Show changes only')).toBeInTheDocument();
+    expect(screen.getByText('w')).toBeInTheDocument();
+    expect(screen.getByText('Toggle whitespace visibility')).toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', async () => {
