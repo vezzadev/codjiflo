@@ -462,4 +462,185 @@ describe('DiffLine', () => {
       expect(screen.queryByRole('button', { name: 'Add comment' })).not.toBeInTheDocument();
     });
   });
+
+  // Visible whitespace tests (S-3.5)
+  describe('visible whitespace', () => {
+    it('renders spaces as visible dots when showWhitespace is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'hello world',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Spaces should be replaced with visible dots
+      expect(container.querySelector('.whitespace-visible')).toBeInTheDocument();
+      expect(container.querySelector('.whitespace-visible')?.textContent).toBe('·');
+    });
+
+    it('renders tabs as visible arrows when showWhitespace is true', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: '\thello',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Tab should be replaced with visible arrow
+      const whitespaceSpan = container.querySelector('.whitespace-visible');
+      expect(whitespaceSpan).toBeInTheDocument();
+      expect(whitespaceSpan?.textContent).toContain('→');
+    });
+
+    it('does not show visible whitespace when showWhitespace is false', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'hello world',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace={false} />
+          </tbody>
+        </table>
+      );
+
+      expect(container.querySelector('.whitespace-visible')).not.toBeInTheDocument();
+    });
+
+    it('handles multiple spaces in content', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'foo  bar',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      const whitespaceSpans = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceSpans).toHaveLength(2);
+    });
+
+    it('handles mixed spaces and tabs', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: '\t x',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      const whitespaceSpans = container.querySelectorAll('.whitespace-visible');
+      expect(whitespaceSpans.length).toBeGreaterThan(0);
+    });
+
+    it('renders visible whitespace with word diff segments', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      expect(container.querySelector('.whitespace-visible')).toBeInTheDocument();
+    });
+
+    it('preserves non-whitespace text correctly', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'abc def',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      expect(container.textContent).toContain('abc');
+      expect(container.textContent).toContain('def');
+    });
+  });
+
+  // DiffLineSpacer tests
+  describe('DiffLineSpacer', () => {
+    it('renders a spacer row', async () => {
+      const { DiffLineSpacer } = await import('./DiffLine');
+      
+      render(
+        <table>
+          <tbody>
+            <DiffLineSpacer />
+          </tbody>
+        </table>
+      );
+
+      expect(screen.getByTestId('diff-line-spacer')).toBeInTheDocument();
+    });
+
+    it('has correct CSS classes', async () => {
+      const { DiffLineSpacer } = await import('./DiffLine');
+      
+      render(
+        <table>
+          <tbody>
+            <DiffLineSpacer />
+          </tbody>
+        </table>
+      );
+
+      const spacer = screen.getByTestId('diff-line-spacer');
+      expect(spacer).toHaveClass('diff-line');
+      expect(spacer).toHaveClass('diff-line-spacer');
+    });
+  });
 });
