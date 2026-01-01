@@ -60,5 +60,10 @@ export function getShortcutsList(): { key: string; description: string }[] {
     { key: 'j', description: 'Next file' },
     { key: 'k', description: 'Previous file' },
     { key: 'Space', description: 'Scroll down in diff view' },
+    { key: 'u', description: 'Unified (inline) view' },
+    { key: 's', description: 'Side-by-side view' },
+    { key: 'l', description: 'Left only (deletions)' },
+    { key: 'b', description: 'Show both sides' },
+    { key: 'r', description: 'Right only (additions)' },
   ];
 }

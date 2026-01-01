@@ -186,6 +186,119 @@
 }
 
 /* ============================================
+   DIFF HEADER (Sticky)
+   ============================================ */
+.diff-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--listview-header);
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.diff-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.diff-filename {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--main-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* ============================================
+   CONTENT FILTER SLIDER (3-stop)
+   ============================================ */
+.content-filter-slider {
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+.content-filter-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 90px;
+  height: 12px;
+  background-color: var(--control-bg);
+  cursor: pointer;
+}
+
+.content-filter-indicator {
+  flex: 1;
+  height: 100%;
+}
+
+.content-filter-indicator-left {
+  background-color: var(--diff-add-word);
+}
+
+.content-filter-indicator-both {
+  display: none;
+}
+
+.content-filter-indicator-right {
+  background-color: var(--diff-delete-word);
+}
+
+.content-filter-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 24px;
+  background-color: var(--main-bg);
+  border: 1px solid var(--combobox-border);
+  transition: left 0.15s ease;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content-filter-thumb:active {
+  cursor: grabbing;
+}
+
+.content-filter-thumb-label {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--main-fg);
+}
+
+.content-filter-thumb-left {
+  left: 0;
+}
+
+.content-filter-thumb-both {
+  left: 10px;
+}
+
+.content-filter-thumb-right {
+  left: 20px;
+}
+
+.content-filter-labels {
+  display: none;
+}
+
+.content-filter-label {
+  display: none;
+}
+
+/* ============================================
    ITERATION SELECTOR (Tab-based)
    ============================================ */
 
