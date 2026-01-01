@@ -181,7 +181,7 @@
 .theme-light {
   --main-bg: #F0F0F0;
   --main-fg: #1E1E1E;
-  --default-bg: #202020;
+  --default-bg: #E8E8E8;
   --error-fg: #C40000;
   --selected-fg: #1E1E1E;
 
@@ -284,16 +284,16 @@
   --waiting-yellow: #FFC90E;
   --grid-splitter: #404040;
 
-  --file-explorer-bg: #303030;
-  --file-explorer-header: #444444;
-  --file-explorer-header-hover: rgba(255, 255, 255, 0.2);
-  --file-explorer-header-hover-fg: #DDDDDD;
-  --file-explorer-change-underlay: rgba(102, 102, 102, 0.13);
-  --file-explorer-file-fg: #DDDDDD;
-  --file-explorer-folder-fg: #DDDDDD;
-  --file-explorer-filter-bg: #2F2F33;
-  --file-explorer-filter-fg: #AAAAAA;
-  --file-explorer-filter-placeholder: #969696;
+  --file-explorer-bg: #E0E0E0;
+  --file-explorer-header: #D0D0D0;
+  --file-explorer-header-hover: rgba(0, 0, 0, 0.1);
+  --file-explorer-header-hover-fg: #1E1E1E;
+  --file-explorer-change-underlay: rgba(0, 0, 0, 0.05);
+  --file-explorer-file-fg: #1E1E1E;
+  --file-explorer-folder-fg: #1E1E1E;
+  --file-explorer-filter-bg: #FFFFFF;
+  --file-explorer-filter-fg: #1E1E1E;
+  --file-explorer-filter-placeholder: #808080;
 
   --accent: #59822D;
   --accent-control: #59822D;
