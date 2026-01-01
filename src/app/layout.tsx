@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/features/theme';
+import { AuthProvider } from '@/features/auth';
 
 export const metadata: Metadata = {
   title: 'CodjiFlo',
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ThemeProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
