@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --fix",
+    "lint:check": "eslint .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "typecheck": "tsc --project tsconfig.json --noEmit",
