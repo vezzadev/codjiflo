@@ -3,21 +3,15 @@ import { GitHubFileBackend } from './file-backend';
 import { githubClient } from './github-client';
 import { FileChangeStatus } from '../types';
 
-vi.mock('./github-client', () => ({
-  githubClient: {
-    fetch: vi.fn(),
-  },
-  GitHubAPIError: class GitHubAPIError extends Error {
-    constructor(
-      public status: number,
-      public statusText: string,
-      message: string,
-    ) {
-      super(message);
-      this.name = 'GitHubAPIError';
-    }
-  },
-}));
+vi.mock('./github-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./github-client')>();
+  return {
+    ...actual,
+    githubClient: {
+      fetch: vi.fn(),
+    },
+  };
+});
 
 describe('GitHubFileBackend', () => {
   let backend: GitHubFileBackend;
