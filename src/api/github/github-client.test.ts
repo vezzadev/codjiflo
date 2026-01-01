@@ -91,6 +91,82 @@ describe('GitHubClient', () => {
       }
     });
   });
+
+  describe('401 token refresh', () => {
+    it('retries request after successful OAuth token refresh on 401', async () => {
+      const mockRefreshAccessToken = vi.fn().mockResolvedValue(true);
+      let callCount = 0;
+
+      vi.mocked(useAuthStore.getState).mockImplementation(() => ({
+        token: callCount === 0 ? 'expired_token' : 'new_token',
+        authMethod: 'oauth',
+        refreshAccessToken: mockRefreshAccessToken,
+      }) as never);
+
+      const mockResponse = { login: 'testuser' };
+      global.fetch = vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            statusText: 'Unauthorized',
+            json: () => Promise.resolve({ message: 'Bad credentials' }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockResponse),
+        });
+      });
+
+      const result = await client.fetch('/user');
+
+      expect(result).toEqual(mockResponse);
+      expect(mockRefreshAccessToken).toHaveBeenCalledOnce();
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws error when OAuth token refresh fails on 401', async () => {
+      const mockRefreshAccessToken = vi.fn().mockResolvedValue(false);
+
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: 'expired_token',
+        authMethod: 'oauth',
+        refreshAccessToken: mockRefreshAccessToken,
+      } as never);
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ message: 'Bad credentials' }),
+      });
+
+      await expect(client.fetch('/user')).rejects.toThrow('Session expired. Please log in again.');
+      expect(mockRefreshAccessToken).toHaveBeenCalledOnce();
+    });
+
+    it('does not attempt refresh for PAT auth on 401', async () => {
+      const mockRefreshAccessToken = vi.fn();
+
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: 'ghp_test123',
+        authMethod: 'pat',
+        refreshAccessToken: mockRefreshAccessToken,
+      } as never);
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ message: 'Bad credentials' }),
+      });
+
+      await expect(client.fetch('/user')).rejects.toThrow('Bad credentials');
+      expect(mockRefreshAccessToken).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('GitHubAPIError', () => {

@@ -17,6 +17,7 @@ export class GitHubAPIError extends Error {
 /**
  * GitHub REST API client
  * Injects auth token from useAuthStore
+ * Handles 401 errors by attempting token refresh before failing
  */
 export class GitHubClient {
   private baseURL = 'https://api.github.com';
@@ -27,9 +28,10 @@ export class GitHubClient {
 
   async request<T>(
     endpoint: string,
-    options?: { method?: string; body?: unknown }
+    options?: { method?: string; body?: unknown },
+    isRetry = false
   ): Promise<T> {
-    const token = useAuthStore.getState().token;
+    const { token, authMethod, refreshAccessToken } = useAuthStore.getState();
     if (!token) {
       throw new GitHubAPIError(401, 'Unauthorized', 'Not authenticated');
     }
@@ -50,6 +52,17 @@ export class GitHubClient {
     const response = await fetch(`${this.baseURL}${endpoint}`, requestInit);
 
     if (!response.ok) {
+      // Handle 401 by attempting token refresh (OAuth only, and only on first attempt)
+      if (response.status === 401 && authMethod === 'oauth' && !isRetry) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          // Token refreshed successfully, retry the request
+          return this.request<T>(endpoint, options, true);
+        }
+        // Refresh failed - refreshAccessToken already called logout()
+        throw new GitHubAPIError(401, 'Unauthorized', 'Session expired. Please log in again.');
+      }
+
       let errorMessage = response.statusText;
       try {
         const errorData = await response.json() as { message?: string };
