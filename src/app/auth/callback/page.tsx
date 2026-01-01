@@ -67,6 +67,12 @@ function OAuthCallbackContent() {
       const currentOrigin = window.location.origin;
       const needsCrossOriginRedirect = returnOrigin && returnOrigin !== currentOrigin;
 
+      // Debug logging for redirect flow
+      console.log('[OAuth Callback] returnOrigin:', returnOrigin);
+      console.log('[OAuth Callback] returnPath:', returnPath);
+      console.log('[OAuth Callback] currentOrigin:', currentOrigin);
+      console.log('[OAuth Callback] needsCrossOriginRedirect:', needsCrossOriginRedirect);
+
       // Validate return origin to prevent open redirect attacks
       if (needsCrossOriginRedirect && !isValidReturnOrigin(returnOrigin)) {
         console.error('Invalid return origin:', returnOrigin);
