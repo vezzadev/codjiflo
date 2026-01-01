@@ -166,6 +166,29 @@ describe('GitHubClient', () => {
       await expect(client.fetch('/user')).rejects.toThrow('Bad credentials');
       expect(mockRefreshAccessToken).not.toHaveBeenCalled();
     });
+
+    it('does not retry infinitely when retry also returns 401', async () => {
+      const mockRefreshAccessToken = vi.fn().mockResolvedValue(true);
+
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: 'still_invalid_token',
+        authMethod: 'oauth',
+        refreshAccessToken: mockRefreshAccessToken,
+      } as never);
+
+      // Both initial and retry requests return 401
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ message: 'Bad credentials' }),
+      });
+
+      await expect(client.fetch('/user')).rejects.toThrow('Bad credentials');
+      // Refresh called once, but no infinite loop - only 2 fetch calls (initial + retry)
+      expect(mockRefreshAccessToken).toHaveBeenCalledOnce();
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
   });
 });
 
