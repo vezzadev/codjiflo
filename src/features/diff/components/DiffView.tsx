@@ -174,22 +174,23 @@ export function DiffView() {
 
   // Autoscroll to first changed line when switching files
   useEffect(() => {
-    if (isShowingDescription || !scrollContainerRef.current) return;
+    if (isShowingDescription) return;
 
     // Use requestAnimationFrame to ensure DOM has rendered
-    requestAnimationFrame(() => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
+    const frameId = requestAnimationFrame(() => {
+      const root: ParentNode = scrollContainerRef.current ?? document;
 
-      const firstChangedLine = container.querySelector(
+      const firstChangedLine = root.querySelector(
         '[data-line-type="addition"], [data-line-type="deletion"]'
       );
 
-      if (firstChangedLine && typeof firstChangedLine.scrollIntoView === 'function') {
-        firstChangedLine.scrollIntoView({ block: 'start', behavior: 'instant' });
+      if (firstChangedLine && typeof (firstChangedLine as HTMLElement).scrollIntoView === 'function') {
+        (firstChangedLine as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
       }
     });
-  }, [selectedFileIndex, isShowingDescription]);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [selectedFileIndex, isShowingDescription, viewConfig.mode]);
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {
