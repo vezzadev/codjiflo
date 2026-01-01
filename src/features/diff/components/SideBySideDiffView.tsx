@@ -127,7 +127,7 @@ export function SideBySideDiffView({
   return (
     <div
       ref={containerRef}
-      className="flex overflow-hidden h-full"
+      className="side-by-side-container"
       role="region"
       aria-label="Side-by-side diff view"
     >
@@ -135,7 +135,7 @@ export function SideBySideDiffView({
       {contentFilter !== 'right' && (
         <div
           ref={leftPaneRef}
-          className="flex-1 overflow-auto border-r border-gray-300"
+          className="side-by-side-pane side-by-side-pane-left"
           aria-label="Original version"
           role="region"
           tabIndex={0}
@@ -210,7 +210,7 @@ export function SideBySideDiffView({
       {contentFilter !== 'left' && (
         <div
           ref={rightPaneRef}
-          className="flex-1 overflow-auto"
+          className="side-by-side-pane"
           aria-label="Modified version"
           role="region"
           tabIndex={0}
