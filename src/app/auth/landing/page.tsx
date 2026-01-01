@@ -49,6 +49,8 @@ function AuthLandingContent() {
 
         // Redirect to the original page the user was trying to access, or dashboard
         const returnPath = searchParams.get('returnPath') ?? '/dashboard';
+        console.log('[Auth Landing] searchParams:', searchParams.toString());
+        console.log('[Auth Landing] returnPath:', returnPath);
         router.replace(returnPath);
       } catch (err) {
         console.error('Failed to complete authentication landing flow:', err);
