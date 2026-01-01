@@ -1,109 +1,76 @@
 /**
  * Iteration Selector Component (S-4.7)
  *
- * Dropdowns for selecting iteration range with preset options.
+ * Tab-based iteration selector with drag-to-select range functionality.
+ * - Click single tab: diff from base to that iteration
+ * - Click and drag from tab A to B: diff between iterations A and B
  */
 
-import { useCallback, useMemo } from 'react';
-import { ChevronDown, GitCommit, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useIterationStore } from '../stores';
-import type { Iteration, IterationPreset } from '../types';
+import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
 
 // ============================================================================
-// Preset Button Component
+// Types
 // ============================================================================
 
-interface PresetButtonProps {
-  preset: IterationPreset;
-  label: string;
-  description: string;
-  isActive: boolean;
-  onClick: () => void;
+interface DragState {
+  isDragging: boolean;
+  startRevision: number | null;
+  currentRevision: number | null;
 }
 
-function PresetButton({ label, description, isActive, onClick }: PresetButtonProps) {
-  const classes = ['btn-toggle', isActive ? 'active' : ''].filter(Boolean).join(' ');
+// ============================================================================
+// Iteration Tab Component
+// ============================================================================
+
+interface IterationTabProps {
+  iteration: Iteration;
+  isSelected: boolean;
+  isInRange: boolean;
+  isRangeStart: boolean;
+  isRangeEnd: boolean;
+  onMouseDown: (revision: number) => void;
+  onMouseEnter: (revision: number) => void;
+}
+
+function IterationTab({
+  iteration,
+  isSelected,
+  isInRange,
+  isRangeStart,
+  isRangeEnd,
+  onMouseDown,
+  onMouseEnter,
+}: IterationTabProps) {
+  const classes = [
+    'iteration-tab',
+    isSelected && 'selected',
+    isInRange && 'in-range',
+    isRangeStart && 'range-start',
+    isRangeEnd && 'range-end',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const date = iteration.createdAt.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-pressed={isActive}
-      title={description}
       className={classes}
+      onMouseDown={() => onMouseDown(iteration.revision)}
+      onMouseEnter={() => onMouseEnter(iteration.revision)}
+      title={`Iteration ${iteration.revision} (${date})`}
+      aria-pressed={isSelected || isInRange}
+      data-testid={`iteration-tab-${iteration.revision}`}
     >
-      {label}
+      <span className="iteration-tab-number">{iteration.revision}</span>
     </button>
-  );
-}
-
-// ============================================================================
-// Snapshot Dropdown Component
-// ============================================================================
-
-interface SnapshotDropdownProps {
-  label: string;
-  value: number;
-  iterations: Iteration[];
-  onChange: (snapshotIndex: number) => void;
-  includeBase?: boolean;
-}
-
-function SnapshotDropdown({
-  label,
-  value,
-  iterations,
-  onChange,
-  includeBase = false,
-}: SnapshotDropdownProps) {
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onChange(parseInt(e.target.value, 10));
-    },
-    [onChange]
-  );
-
-  // Build options: base (0) + each iteration's right snapshot
-  const options: { value: number; label: string }[] = [];
-
-  if (includeBase) {
-    options.push({ value: 0, label: 'Base' });
-  }
-
-  for (const iteration of iterations) {
-    const rightSnapshot = iterationToRightSnapshot(iteration.revision);
-    const date = iteration.createdAt.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-    options.push({
-      value: rightSnapshot,
-      label: `v${String(iteration.revision)} (${date})`,
-    });
-  }
-
-  return (
-    <div className="iteration-dropdown-wrapper">
-      <label className="iteration-dropdown-label">{label}</label>
-      <div className="iteration-dropdown-container">
-        <select
-          value={value}
-          onChange={handleChange}
-          className="select"
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          className="iteration-dropdown-chevron"
-          aria-hidden
-        />
-      </div>
-    </div>
   );
 }
 
@@ -116,133 +83,187 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectedRange, selectRange, selectPreset, isLoading, isDegraded } =
-    useIterationStore();
+  const { iterations, selectedRange, selectRange, isLoading, isDegraded } = useIterationStore();
 
-  // All hooks must be called before any conditional returns
-  const handleFromChange = useCallback(
-    (fromSnapshot: number) => {
-      if (selectedRange) {
-        selectRange(fromSnapshot, selectedRange.toSnapshot);
-      }
-    },
-    [selectedRange, selectRange]
-  );
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    startRevision: null,
+    currentRevision: null,
+  });
 
-  const handleToChange = useCallback(
-    (toSnapshot: number) => {
-      if (selectedRange) {
-        selectRange(selectedRange.fromSnapshot, toSnapshot);
-      }
-    },
-    [selectedRange, selectRange]
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Determine active preset using useMemo for consistency
-  const activePreset = useMemo((): IterationPreset | null => {
-    if (!selectedRange || iterations.length === 0) return null;
-
-    const latestIteration = iterations[iterations.length - 1];
-    if (!latestIteration) return null;
-
-    const latestRightSnapshot = iterationToRightSnapshot(latestIteration.revision);
-
-    // Full: base (0) to latest
-    if (selectedRange.fromSnapshot === 0 && selectedRange.toSnapshot === latestRightSnapshot) {
-      return 'full';
+  // Calculate which iterations are currently selected based on selectedRange
+  const { selectedRevisions, rangeStart, rangeEnd } = useMemo(() => {
+    if (!selectedRange || iterations.length === 0) {
+      return { selectedRevisions: new Set<number>(), rangeStart: null, rangeEnd: null };
     }
 
-    // Latest: previous iteration to latest
-    if (iterations.length > 1) {
-      const prevIteration = iterations[iterations.length - 2];
-      if (prevIteration) {
-        const prevRightSnapshot = iterationToRightSnapshot(prevIteration.revision);
-        if (
-          selectedRange.fromSnapshot === prevRightSnapshot &&
-          selectedRange.toSnapshot === latestRightSnapshot
-        ) {
-          return 'latest';
-        }
+    const revisions = new Set<number>();
+    let start: number | null = null;
+    let end: number | null = null;
+
+    // Find which iterations correspond to the selected snapshot range
+    for (const iteration of iterations) {
+      const rightSnapshot = iterationToRightSnapshot(iteration.revision);
+
+      // If fromSnapshot is 0 (base), the range starts before iteration 1
+      // If fromSnapshot matches this iteration's right snapshot, this is the start
+      if (selectedRange.fromSnapshot === rightSnapshot) {
+        start = iteration.revision;
       }
-    } else if (
-      selectedRange.fromSnapshot === 0 &&
-      selectedRange.toSnapshot === latestRightSnapshot
-    ) {
-      // Only one iteration: latest = full
-      return 'latest';
+
+      // If toSnapshot matches this iteration's right snapshot, this is the end
+      if (selectedRange.toSnapshot === rightSnapshot) {
+        end = iteration.revision;
+      }
+
+      // Check if this iteration is within the selected range
+      if (rightSnapshot > selectedRange.fromSnapshot && rightSnapshot <= selectedRange.toSnapshot) {
+        revisions.add(iteration.revision);
+      }
     }
 
-    return null;
+    // If fromSnapshot is 0 (base), no iteration is the "start" - it's before iteration 1
+    // In this case, only the end iteration is highlighted
+    if (selectedRange.fromSnapshot === 0) {
+      start = null;
+    }
+
+    return { selectedRevisions: revisions, rangeStart: start, rangeEnd: end };
   }, [selectedRange, iterations]);
+
+  // Handle mouse down on a tab - start potential drag
+  const handleMouseDown = useCallback((revision: number) => {
+    setDragState({
+      isDragging: true,
+      startRevision: revision,
+      currentRevision: revision,
+    });
+  }, []);
+
+  // Handle mouse enter on a tab during drag
+  const handleMouseEnter = useCallback(
+    (revision: number) => {
+      if (dragState.isDragging) {
+        setDragState((prev) => ({
+          ...prev,
+          currentRevision: revision,
+        }));
+      }
+    },
+    [dragState.isDragging]
+  );
+
+  // Handle mouse up - finalize selection
+  const handleMouseUp = useCallback(() => {
+    if (!dragState.isDragging || dragState.startRevision === null) {
+      setDragState({ isDragging: false, startRevision: null, currentRevision: null });
+      return;
+    }
+
+    const startRev = dragState.startRevision;
+    const endRev = dragState.currentRevision ?? startRev;
+
+    // Determine the range (ensure start <= end)
+    const minRev = Math.min(startRev, endRev);
+    const maxRev = Math.max(startRev, endRev);
+
+    if (minRev === maxRev) {
+      // Single iteration clicked: diff from base to this iteration
+      const toSnapshot = iterationToRightSnapshot(maxRev);
+      selectRange(0, toSnapshot);
+    } else {
+      // Range selected: diff between iterations
+      const fromSnapshot = iterationToRightSnapshot(minRev);
+      const toSnapshot = iterationToRightSnapshot(maxRev);
+      selectRange(fromSnapshot, toSnapshot);
+    }
+
+    setDragState({ isDragging: false, startRevision: null, currentRevision: null });
+  }, [dragState, selectRange]);
+
+  // Handle mouse leave from container - cancel drag if mouse leaves
+  const handleMouseLeave = useCallback(() => {
+    if (dragState.isDragging) {
+      // Keep the drag state but don't cancel - user might come back
+    }
+  }, [dragState.isDragging]);
+
+  // Calculate preview range during drag
+  const previewRange = useMemo(() => {
+    if (!dragState.isDragging || dragState.startRevision === null) {
+      return null;
+    }
+
+    const startRev = dragState.startRevision;
+    const endRev = dragState.currentRevision ?? startRev;
+    const minRev = Math.min(startRev, endRev);
+    const maxRev = Math.max(startRev, endRev);
+
+    return { start: minRev, end: maxRev };
+  }, [dragState]);
 
   // Don't render if degraded mode or no iterations
   if (isDegraded || iterations.length === 0) {
     return null;
   }
 
-  const classes = ['iteration-selector', className].filter(Boolean).join(' ');
+  const classes = ['iteration-tabs-container', className].filter(Boolean).join(' ');
 
   return (
     <div
+      ref={containerRef}
       data-testid="iteration-selector"
       className={classes}
       role="toolbar"
       aria-label="Iteration range selector"
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Iteration icon */}
-      <div className="iteration-count">
-        <GitCommit size={20} aria-hidden />
-        <span>
-          {iterations.length} iteration{iterations.length !== 1 ? 's' : ''}
-        </span>
+      <div className="iteration-tabs" role="tablist">
+        {iterations.map((iteration) => {
+          // During drag, show preview highlighting
+          const inPreviewRange =
+            previewRange !== null &&
+            iteration.revision >= previewRange.start &&
+            iteration.revision <= previewRange.end;
+
+          // When not dragging, show actual selection
+          const isInRange = dragState.isDragging
+            ? inPreviewRange
+            : selectedRevisions.has(iteration.revision);
+
+          const isRangeStartTab = dragState.isDragging
+            ? previewRange?.start === iteration.revision
+            : rangeStart === iteration.revision;
+
+          const isRangeEndTab = dragState.isDragging
+            ? previewRange?.end === iteration.revision
+            : rangeEnd === iteration.revision;
+
+          // "Selected" means it's at a boundary of the range
+          const isSelected = isRangeStartTab || isRangeEndTab;
+
+          return (
+            <IterationTab
+              key={iteration.id}
+              iteration={iteration}
+              isSelected={isSelected}
+              isInRange={isInRange}
+              isRangeStart={isRangeStartTab}
+              isRangeEnd={isRangeEndTab}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
+            />
+          );
+        })}
       </div>
-
-      {/* Preset buttons */}
-      <div className="btn-group" role="group" aria-label="Quick select presets">
-        <PresetButton
-          preset="full"
-          label="Full diff"
-          description="Compare base to latest"
-          isActive={activePreset === 'full'}
-          onClick={() => selectPreset('full')}
-        />
-        <PresetButton
-          preset="latest"
-          label="Latest"
-          description="Compare previous to latest iteration"
-          isActive={activePreset === 'latest'}
-          onClick={() => selectPreset('latest')}
-        />
-      </div>
-
-      {/* Separator */}
-      <div className="iteration-separator" aria-hidden />
-
-      {/* Custom range dropdowns */}
-      {selectedRange && (
-        <div className="iteration-range-dropdowns">
-          <SnapshotDropdown
-            label="From:"
-            value={selectedRange.fromSnapshot}
-            iterations={iterations}
-            onChange={handleFromChange}
-            includeBase
-          />
-          <RefreshCw size={16} className="iteration-range-icon" aria-hidden />
-          <SnapshotDropdown
-            label="To:"
-            value={selectedRange.toSnapshot}
-            iterations={iterations}
-            onChange={handleToChange}
-          />
-        </div>
-      )}
 
       {/* Loading indicator */}
       {isLoading && (
         <div className="iteration-loading">
           <div className="spinner-small" />
-          <span>Loading...</span>
         </div>
       )}
     </div>

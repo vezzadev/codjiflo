@@ -186,8 +186,119 @@
 }
 
 /* ============================================
-   ITERATION SELECTOR
+   ITERATION SELECTOR (Tab-based)
    ============================================ */
+
+/* Container for iteration selector in diff header */
+.diff-header-iterations {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  background-color: var(--listview-header);
+}
+
+/* Hide when empty (no iterations available) */
+.diff-header-iterations:empty {
+  display: none;
+}
+
+.iteration-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.iteration-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: transparent;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.iteration-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 64px;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  background-color: var(--tab-inactive);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  color: var(--main-fg);
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+  position: relative;
+}
+
+.iteration-tab:hover {
+  background-color: var(--btn-hover);
+  color: var(--main-fg);
+}
+
+.iteration-tab:active {
+  background-color: var(--btn-press);
+}
+
+/* Selected tab (boundary of range) */
+.iteration-tab.selected {
+  background-color: var(--treeview-selected);
+  color: var(--selected-fg);
+}
+
+.iteration-tab.selected:hover {
+  background-color: var(--treeview-selected);
+  filter: brightness(1.1);
+}
+
+/* In range but not boundary - same as unselected */
+.iteration-tab.in-range:not(.selected) {
+  background-color: var(--tab-inactive);
+  color: var(--main-fg);
+}
+
+/* Tab number */
+.iteration-tab-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+
+/* Range start/end visual indicators */
+.iteration-tab.range-start {
+  border-radius: 0;
+}
+
+.iteration-tab.range-end {
+  border-radius: 0;
+}
+
+/* Loading indicator */
+.iteration-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--control-disabled-fg);
+  font-size: 14px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--combobox-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Legacy styles - keep for backwards compatibility */
 .iteration-selector {
   display: flex;
   align-items: center;
@@ -249,23 +360,6 @@
 
 .iteration-range-icon {
   color: var(--control-disabled-fg);
-}
-
-.iteration-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--control-disabled-fg);
-  font-size: 14px;
-}
-
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--combobox-border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 /* ============================================

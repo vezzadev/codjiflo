@@ -16,6 +16,7 @@ import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comme
 import type { ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
+import { IterationSelector } from '@/features/iterations';
 import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
 
 /** Duration in milliseconds for screen reader announcements */
@@ -287,6 +288,10 @@ export function DiffView() {
   if (isShowingDescription) {
     return (
       <div className="h-full flex flex-col overflow-auto">
+        {/* Iteration tabs above PR description */}
+        <div className="diff-header-iterations">
+          <IterationSelector />
+        </div>
         {currentPR ? (
           <>
             <PRMetadata pr={currentPR} />
@@ -325,8 +330,13 @@ export function DiffView() {
       </div>
 
       {/* Sticky file header with toolbar (S-3.3) */}
-      <div className="sticky top-0 bg-gray-100 px-4 py-2 border-b z-10">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="sticky top-0 bg-gray-100 border-b z-10">
+        {/* Iteration tabs above filename */}
+        <div className="diff-header-iterations">
+          <IterationSelector />
+        </div>
+        {/* Filename and toolbar */}
+        <div className="px-4 py-2 flex items-center justify-between gap-4 flex-wrap">
           <h2 className="font-mono text-sm font-semibold truncate" title={selectedFile.filename}>
             {selectedFile.filename}
           </h2>
