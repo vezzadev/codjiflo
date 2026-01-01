@@ -84,4 +84,67 @@ describe('FileListItem', () => {
       screen.getByRole('listitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
     ).toBeInTheDocument();
   });
+
+  describe('keyboard navigation', () => {
+    it('calls onClick when Enter key is pressed', async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      const file = createMockFileChange();
+
+      render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
+
+      const item = screen.getByRole('listitem');
+      item.focus();
+      await user.keyboard('{Enter}');
+
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onClick when Space key is pressed', async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      const file = createMockFileChange();
+
+      render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
+
+      const item = screen.getByRole('listitem');
+      item.focus();
+      await user.keyboard(' ');
+
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call onClick for other keys', async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      const file = createMockFileChange();
+
+      render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
+
+      const item = screen.getByRole('listitem');
+      item.focus();
+      await user.keyboard('a');
+
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('is focusable with tabIndex 0', () => {
+      const file = createMockFileChange();
+
+      render(<FileListItem file={file} isSelected={false} onClick={noop} />);
+
+      const item = screen.getByRole('listitem');
+      expect(item).toHaveAttribute('tabindex', '0');
+    });
+  });
+
+  describe('change type icons', () => {
+    it('displays correct icon for renamed files', () => {
+      const file = createMockFileChange({ status: FileChangeStatus.Renamed });
+
+      render(<FileListItem file={file} isSelected={false} onClick={noop} />);
+
+      expect(screen.getByText('R')).toBeInTheDocument();
+    });
+  });
 });
