@@ -16,7 +16,7 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
 
   return (
     <article
-      className="flex gap-3"
+      className="comment-item"
       aria-label={`Comment by ${comment.author.login}, ${timeAgo}`}
     >
       <Image
@@ -24,19 +24,19 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
         alt={`${comment.author.login} avatar`}
         width={32}
         height={32}
-        className="rounded-full border border-gray-200"
+        className="comment-avatar"
       />
-      <div className="flex-1 space-y-2">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-          <span className="font-semibold text-gray-900">{comment.author.login}</span>
+      <div className="comment-body">
+        <div className="comment-meta">
+          <span className="comment-author">{comment.author.login}</span>
           <time dateTime={comment.createdAt.toISOString()}>{timeAgo}</time>
           {comment.isPending && (
-            <span className="rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs text-yellow-800">
+            <span className="badge badge-warning">
               Pending
             </span>
           )}
         </div>
-        <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-gray-50">
+        <div className="comment-content">
           <Markdown
             components={{
               a: ({ children, href, ...props }) => {
@@ -48,14 +48,14 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
                     href={href}
                     target={isExternal ? '_blank' : undefined}
                     rel={isExternal ? 'noopener noreferrer' : undefined}
-                    className="text-blue-600 hover:underline"
+                    className="link"
                   >
                     {children}
                     {isExternal && (
                       <>
                         <span
                           aria-hidden="true"
-                          className="ml-1 inline-block align-baseline"
+                          className="external-link-icon"
                         >
                           ↗
                         </span>
@@ -71,19 +71,17 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
           </Markdown>
         </div>
         {isCurrentUser && (
-          <div className="flex gap-2">
+          <div className="comment-actions">
             <Button
               label="Edit"
               variant="secondary"
               size="sm"
-              className="bg-transparent text-blue-600 hover:bg-blue-50"
               onClick={onEdit}
             />
             <Button
               label="Delete"
               variant="secondary"
               size="sm"
-              className="bg-transparent text-red-600 hover:bg-red-50"
               onClick={onDelete}
             />
           </div>

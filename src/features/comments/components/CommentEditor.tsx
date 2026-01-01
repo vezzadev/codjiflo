@@ -35,7 +35,7 @@ export function CommentEditor({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="comment-editor">
       <Textarea
         label={label}
         value={value}
@@ -44,7 +44,7 @@ export function CommentEditor({
         placeholder="Leave a comment"
         onKeyDown={handleKeyDown}
       />
-      <div className="flex items-center gap-2">
+      <div className="comment-editor-actions">
         <Button
           label={isSubmitting ? `${submitLabel}...` : submitLabel}
           onClick={onSubmit}
@@ -60,7 +60,7 @@ export function CommentEditor({
         )}
         {isSubmitting && (
           <span
-            className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent"
+            className="spinner-small"
             aria-label="Submitting comment"
           />
         )}

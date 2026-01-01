@@ -34,14 +34,14 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="shortcuts-title"
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="modal-backdrop"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -50,28 +50,28 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+        className="modal-content"
       >
-        <h2 id="shortcuts-title" className="text-xl font-bold mb-4">
+        <h2 id="shortcuts-title" className="modal-title">
           Keyboard Shortcuts
         </h2>
 
-        <table className="w-full">
+        <table className="shortcuts-table">
           <thead>
-            <tr className="border-b">
-              <th className="text-left py-2 font-medium">Key</th>
-              <th className="text-left py-2 font-medium">Action</th>
+            <tr>
+              <th>Key</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {shortcuts.map(({ key, description }) => (
-              <tr key={key} className="border-b last:border-0">
-                <td className="py-2">
-                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+              <tr key={key}>
+                <td>
+                  <kbd className="kbd">
                     {key}
                   </kbd>
                 </td>
-                <td className="py-2 text-gray-700">{description}</td>
+                <td>{description}</td>
               </tr>
             ))}
           </tbody>
@@ -79,7 +79,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
 
         <button
           onClick={onClose}
-          className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="btn-colorful modal-close-btn"
         >
           Close
         </button>

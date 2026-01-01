@@ -297,9 +297,9 @@ export function DiffView() {
   const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff;
   if (isLoading || (isShowingDescription && isPRLoading) || isLoadingFullFile) {
     return (
-      <div className="p-4 space-y-2" role="status" aria-label="Loading diff">
+      <div className="diff-loading" role="status" aria-label="Loading diff">
         {Array.from({ length: 20 }).map((_, i) => (
-          <Skeleton key={i} className="h-5 w-full" />
+          <Skeleton key={i} className="skeleton-line" />
         ))}
       </div>
     );
@@ -308,7 +308,7 @@ export function DiffView() {
   // Show PR metadata and description when selected
   if (isShowingDescription) {
     return (
-      <div className="h-full flex flex-col overflow-auto">
+      <div className="diff-description-view">
         {/* Iteration tabs above PR description */}
         <div className="diff-header-iterations">
           <IterationSelector />
@@ -316,12 +316,12 @@ export function DiffView() {
         {currentPR ? (
           <>
             <PRMetadata pr={currentPR} />
-            <div className="border-t">
+            <div className="diff-description-separator">
               <PRDescription description={currentPR.description} />
             </div>
           </>
         ) : (
-          <div className="px-6 py-6 text-gray-500">No PR data available</div>
+          <div className="diff-empty-state">No PR data available</div>
         )}
       </div>
     );
@@ -329,7 +329,7 @@ export function DiffView() {
 
   if (!selectedFile) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500 p-8">
+      <div className="diff-empty-state">
         Select a file to view diff
       </div>
     );
@@ -337,28 +337,28 @@ export function DiffView() {
 
   if (!selectedFile.patch) {
     return (
-      <div className="p-8 text-center text-gray-500">
+      <div className="diff-empty-state">
         <p>No diff available</p>
-        <p className="text-sm mt-1">(binary file or too large)</p>
+        <p className="diff-empty-subtext">(binary file or too large)</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="diff-view-container">
       <div className="sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
 
       {/* Sticky file header with toolbar (S-3.3) */}
-      <div className="sticky top-0 bg-gray-100 border-b z-10">
+      <div className="diff-header">
         {/* Iteration tabs above filename */}
         <div className="diff-header-iterations">
           <IterationSelector />
         </div>
         {/* Filename and toolbar */}
-        <div className="px-4 py-2 flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="font-mono text-sm font-semibold truncate" title={selectedFile.filename}>
+        <div className="diff-header-toolbar">
+          <h2 className="diff-filename" title={selectedFile.filename}>
             {selectedFile.filename}
           </h2>
           <DiffToolbar />
@@ -367,17 +367,17 @@ export function DiffView() {
 
       {/* Error and loading states */}
       {(fullFileError ?? contentError) && (
-        <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
+        <div className="diff-error-banner">
           {fullFileError ?? contentError}
         </div>
       )}
       {commentsError && (
-        <div className="px-4 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100">
+        <div className="diff-error-banner">
           {commentsError}
         </div>
       )}
       {isLoadingComments && (
-        <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100">
+        <div className="diff-loading-banner">
           Loading comments...
         </div>
       )}
@@ -386,7 +386,7 @@ export function DiffView() {
       {viewConfig.mode === 'unified' ? (
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-auto"
+          className="diff-content-area"
           role="region"
           aria-label={`Diff content for ${selectedFile.filename}`}
           tabIndex={0}
@@ -525,7 +525,7 @@ function UnifiedDiffTable({
   const lineNumberMode = contentFilter === 'left' ? 'left' : contentFilter === 'right' ? 'right' : 'both';
 
   return (
-    <table className="w-full border-collapse text-sm">
+    <table className="diff-table">
       <tbody>
         {filteredLines.map((line, index) => {
           const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
@@ -557,9 +557,9 @@ function UnifiedDiffTable({
               />
               {draftLineIndex === index && (
                 <tr>
-                  <td colSpan={colSpan} className="bg-gray-50 px-8 py-4">
+                  <td colSpan={colSpan} className="diff-comment-cell">
                     {submitError && (
-                      <div className="mb-2 text-sm text-red-600">{submitError}</div>
+                      <div className="diff-comment-error">{submitError}</div>
                     )}
                     <CommentEditor
                       value={draftBody}
@@ -574,7 +574,7 @@ function UnifiedDiffTable({
               )}
               {lineThreads.map((thread) => (
                 <tr key={`thread-${thread.id}`}>
-                  <td colSpan={colSpan} className="bg-gray-50 px-8 py-4">
+                  <td colSpan={colSpan} className="diff-comment-cell">
                     <CommentThread
                       thread={thread}
                       currentUserLogin={currentUserLogin}

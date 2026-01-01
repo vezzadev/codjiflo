@@ -12,35 +12,35 @@ interface PRMetadataProps {
  */
 export function PRMetadata({ pr }: PRMetadataProps) {
   return (
-    <div className="p-6 bg-white">
+    <div className="pr-metadata">
       {/* Title - H1 per AC-1.2.8 */}
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">
+      <h1 className="pr-title">
         {pr.title}
       </h1>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="pr-meta-row">
         {/* Author avatar and name - AC-1.2.3 */}
-        <div className="flex items-center gap-2">
+        <div className="pr-author">
           <Image
             src={pr.author.avatarUrl}
             alt={`${pr.author.displayName}'s avatar`}
             width={32}
             height={32}
-            className="rounded-full"
+            className="pr-author-avatar"
           />
-          <span className="font-medium text-gray-900">{pr.author.displayName}</span>
+          <span className="pr-author-name">{pr.author.displayName}</span>
         </div>
 
         {/* State badge - AC-1.2.4 */}
         <Badge state={pr.state} />
 
         {/* Branches - AC-1.2.5 */}
-        <span className="text-gray-600 text-sm">
-          <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+        <span className="pr-branches">
+          <code className="branch-name">
             {pr.sourceBranch}
           </code>
-          <span className="mx-2">into</span>
-          <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+          <span className="branch-separator">into</span>
+          <code className="branch-name">
             {pr.targetBranch}
           </code>
         </span>
@@ -50,7 +50,7 @@ export function PRMetadata({ pr }: PRMetadataProps) {
           href={pr.htmlUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-auto text-blue-600 hover:text-blue-800 hover:underline text-sm"
+          className="pr-github-link"
         >
           View on GitHub
         </a>

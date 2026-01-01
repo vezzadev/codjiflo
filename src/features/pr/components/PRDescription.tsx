@@ -11,15 +11,15 @@ interface PRDescriptionProps {
 export function PRDescription({ description }: PRDescriptionProps) {
   if (!description.trim()) {
     return (
-      <div className="px-6 pb-6 text-gray-500 italic">
+      <div className="pr-description pr-description-empty">
         No description provided.
       </div>
     );
   }
 
   return (
-    <div className="px-6 pb-6">
-      <div className="prose prose-sm max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-li:my-0">
+    <div className="pr-description">
+      <div className="pr-description-content">
         <Markdown
           components={{
             // Open links in new tab
@@ -28,7 +28,7 @@ export function PRDescription({ description }: PRDescriptionProps) {
                 {...props}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                className="link"
               >
                 {children}
               </a>

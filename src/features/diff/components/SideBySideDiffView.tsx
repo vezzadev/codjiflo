@@ -140,7 +140,7 @@ export function SideBySideDiffView({
           role="region"
           tabIndex={0}
         >
-          <table className="w-full border-collapse text-sm">
+          <table className="diff-table">
             <tbody>
               {filteredLines.map((pair, index) => {
                 const leftLine = pair.left;
@@ -168,9 +168,9 @@ export function SideBySideDiffView({
                     {/* Draft comment editor */}
                     {showDraftHere && (
                       <tr>
-                        <td colSpan={3} className="bg-gray-50 px-4 py-2">
+                        <td colSpan={3} className="diff-comment-cell">
                           {submitError && (
-                            <div className="mb-2 text-sm text-red-600">{submitError}</div>
+                            <div className="diff-comment-error">{submitError}</div>
                           )}
                           <CommentEditor
                             value={draftBody}
@@ -186,7 +186,7 @@ export function SideBySideDiffView({
                     {/* Existing comment threads */}
                     {leftThreads.map((thread) => (
                       <tr key={`thread-left-${thread.id}`}>
-                        <td colSpan={3} className="bg-gray-50 px-4 py-2">
+                        <td colSpan={3} className="diff-comment-cell">
                           <CommentThread
                             thread={thread}
                             currentUserLogin={currentUserLogin}
@@ -215,7 +215,7 @@ export function SideBySideDiffView({
           role="region"
           tabIndex={0}
         >
-          <table className="w-full border-collapse text-sm">
+          <table className="diff-table">
             <tbody>
               {filteredLines.map((pair, index) => {
                 const rightLine = pair.right;
@@ -243,9 +243,9 @@ export function SideBySideDiffView({
                     {/* Draft comment editor */}
                     {showDraftHere && (
                       <tr>
-                        <td colSpan={3} className="bg-gray-50 px-4 py-2">
+                        <td colSpan={3} className="diff-comment-cell">
                           {submitError && (
-                            <div className="mb-2 text-sm text-red-600">{submitError}</div>
+                            <div className="diff-comment-error">{submitError}</div>
                           )}
                           <CommentEditor
                             value={draftBody}
@@ -261,7 +261,7 @@ export function SideBySideDiffView({
                     {/* Existing comment threads */}
                     {rightThreads.map((thread) => (
                       <tr key={`thread-right-${thread.id}`}>
-                        <td colSpan={3} className="bg-gray-50 px-4 py-2">
+                        <td colSpan={3} className="diff-comment-cell">
                           <CommentThread
                             thread={thread}
                             currentUserLogin={currentUserLogin}

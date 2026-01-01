@@ -53,7 +53,7 @@ E2E tests support two modes:
 
 ## Tech Stack
 
-Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS 4, Zustand, Vitest, Playwright, Storybook
+Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict), Custom CSS with CSS Variables, Zustand, Vitest, Playwright, Storybook
 
 ---
 
@@ -96,10 +96,14 @@ src/
 2.  **Persistence**: configuration and auth tokens use `persist` middleware. UI state (scroll position) should generally be transient unless specified.
 3.  **Actions**: Stores must contain actions (business logic) within them, or calls to API services. Components should call `store.login()` rather than calling `api.login()` and then `store.setToken()`.
 
-### 1.3 Styling (TailwindCSS)
-1.  **Utility-First**: Use Tailwind classes directly in JSX.
-2.  **No Magic Numbers**: Use standard Tailwind spacing/colors. If a custom value is needed, add it to `tailwind.config.js`.
-3.  **Encapsulation**: If a component's class string exceeds 80 chars, consider using `class-variance-authority` (CVA) or extracting parts to a variable, but generally inline is preferred for velocity.
+### 1.3 Styling (Custom CSS)
+1.  **Custom Classes**: Use custom CSS classes defined in `src/styles/`. Do NOT use Tailwind utility classes.
+2.  **CSS Variables**: Use CSS custom properties from `src/styles/themes/variables.css` for theming (dark/light/black/high-contrast).
+3.  **Class Locations**:
+    - `src/styles/shared/buttons.css` - Button styles (`.btn`, `.btn-colorful`, etc.)
+    - `src/styles/shared/controls.css` - Form controls (`.textbox`, `.select`, `.checkbox`, etc.)
+    - `src/styles/shared/features.css` - Feature-specific styles (`.diff-*`, `.comment-*`, etc.)
+    - `src/styles/shell/mainwindow.css` - Layout styles (`.window`, `.sidebar`, etc.)
 
 ### 1.4 Testing Strategy
 1.  **Unit Tests (Vitest)**: Focus on logic in `utils/` and `stores/`. Code coverage goal: 70%.

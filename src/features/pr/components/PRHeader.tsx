@@ -11,29 +11,29 @@ export function PRHeader() {
 
   if (error) {
     return (
-      <div className="p-6 bg-white border-b" role="alert" aria-live="polite">
-        <p className="text-red-600">{error}</p>
+      <div className="pr-header pr-header-error" role="alert" aria-live="polite">
+        <p className="error-text">{error}</p>
       </div>
     );
   }
 
   if (isLoading || !currentPR) {
     return (
-      <div className="p-6 bg-white border-b">
+      <div className="pr-header">
         {/* Title skeleton */}
-        <Skeleton className="h-9 w-3/4 mb-4" />
+        <Skeleton className="skeleton-title" />
         {/* Metadata skeleton */}
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-6 w-16 rounded-full" />
+        <div className="pr-header-skeleton-meta">
+          <Skeleton className="skeleton-avatar" />
+          <Skeleton className="skeleton-text-short" />
+          <Skeleton className="skeleton-badge" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="border-b">
+    <div className="pr-header-wrapper">
       <PRMetadata pr={currentPR} />
     </div>
   );
