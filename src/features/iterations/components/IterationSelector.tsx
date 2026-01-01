@@ -6,7 +6,7 @@
  * - Click and drag from tab A to B: diff between iterations A and B
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useIterationStore } from '../stores';
 import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
@@ -33,6 +33,7 @@ interface IterationTabProps {
   isRangeEnd: boolean;
   onMouseDown: (revision: number) => void;
   onMouseEnter: (revision: number) => void;
+  onSelect: (revision: number) => void;
 }
 
 function IterationTab({
@@ -43,6 +44,7 @@ function IterationTab({
   isRangeEnd,
   onMouseDown,
   onMouseEnter,
+  onSelect,
 }: IterationTabProps) {
   const classes = [
     'iteration-tab',
@@ -59,12 +61,20 @@ function IterationTab({
     day: 'numeric',
   });
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(iteration.revision);
+    }
+  };
+
   return (
     <button
       type="button"
       className={classes}
       onMouseDown={() => onMouseDown(iteration.revision)}
       onMouseEnter={() => onMouseEnter(iteration.revision)}
+      onKeyDown={handleKeyDown}
       title={`Iteration ${iteration.revision} (${date})`}
       aria-pressed={isSelected || isInRange}
       data-testid={`iteration-tab-${iteration.revision}`}
@@ -90,8 +100,6 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     startRevision: null,
     currentRevision: null,
   });
-
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate which iterations are currently selected based on selectedRange
   const { selectedRevisions, rangeStart, rangeEnd } = useMemo(() => {
@@ -124,8 +132,11 @@ export function IterationSelector({ className }: IterationSelectorProps) {
       }
     }
 
-    // If fromSnapshot is 0 (base), no iteration is the "start" - it's before iteration 1
-    // In this case, only the end iteration is highlighted
+    // INTENTIONAL: When fromSnapshot is 0 (base), no iteration tab is the "start"
+    // because the range starts before iteration 1 (at the base commit).
+    // In this case, only the end iteration is highlighted as "selected".
+    // This is correct UX: clicking iteration N shows "base → N" diff, so only
+    // iteration N should be highlighted, not iteration 1.
     if (selectedRange.fromSnapshot === 0) {
       start = null;
     }
@@ -183,12 +194,15 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     setDragState({ isDragging: false, startRevision: null, currentRevision: null });
   }, [dragState, selectRange]);
 
-  // Handle mouse leave from container - cancel drag if mouse leaves
-  const handleMouseLeave = useCallback(() => {
-    if (dragState.isDragging) {
-      // Keep the drag state but don't cancel - user might come back
-    }
-  }, [dragState.isDragging]);
+  // Handle keyboard selection (Enter/Space on a tab)
+  const handleKeyboardSelect = useCallback(
+    (revision: number) => {
+      // Keyboard selection always selects from base to iteration
+      const toSnapshot = iterationToRightSnapshot(revision);
+      selectRange(0, toSnapshot);
+    },
+    [selectRange]
+  );
 
   // Calculate preview range during drag
   const previewRange = useMemo(() => {
@@ -213,15 +227,13 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
   return (
     <div
-      ref={containerRef}
       data-testid="iteration-selector"
       className={classes}
       role="toolbar"
       aria-label="Iteration range selector"
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
     >
-      <div className="iteration-tabs" role="tablist">
+      <div className="iteration-tabs" role="group">
         {iterations.map((iteration) => {
           // During drag, show preview highlighting
           const inPreviewRange =
@@ -255,6 +267,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               isRangeEnd={isRangeEndTab}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
+              onSelect={handleKeyboardSelect}
             />
           );
         })}
@@ -262,8 +275,9 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="iteration-loading">
-          <div className="spinner-small" />
+        <div className="iteration-loading" role="status" aria-live="polite">
+          <div className="spinner-small" aria-hidden="true" />
+          <span>Loading...</span>
         </div>
       )}
     </div>

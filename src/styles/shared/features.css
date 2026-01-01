@@ -270,16 +270,6 @@
   font-weight: 700;
 }
 
-
-/* Range start/end visual indicators */
-.iteration-tab.range-start {
-  border-radius: 0;
-}
-
-.iteration-tab.range-end {
-  border-radius: 0;
-}
-
 /* Loading indicator */
 .iteration-loading {
   display: flex;
