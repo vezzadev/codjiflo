@@ -10,7 +10,6 @@ import { useCommentsStore } from '@/features/comments';
 import { useRequireAuth } from '@/features/auth/hooks';
 import {
   useIterationStore,
-  IterationSelector,
   DegradedModeBanner,
 } from '@/features/iterations';
 import {
@@ -191,9 +190,6 @@ function PullRequestContent({ params }: PRPageProps) {
             </div>
           }
         >
-          <div className="file-explorer-filter">
-            <IterationSelector className="" />
-          </div>
           <FileList />
           <ResizeHandle direction="horizontal" onResize={resizeLeftPane} />
         </LeftPane>
