@@ -172,7 +172,7 @@ export function DiffLine({
   const gutterClasses = ['diff-gutter', GUTTER_TYPE_CLASSES[line.type]].filter(Boolean).join(' ');
 
   return (
-    <tr className={rowClasses} data-testid="diff-line">
+    <tr className={rowClasses} data-testid="diff-line" data-line-type={line.type}>
       {/* Line numbers - show one or two columns based on mode */}
       {singleLineNumber ? (
         <td className={gutterClasses}>

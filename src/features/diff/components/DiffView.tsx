@@ -65,6 +65,7 @@ export function DiffView() {
   const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
@@ -170,6 +171,25 @@ export function DiffView() {
     setDraftBody('');
     setSubmitError(null);
   }, [selectedFileIndex]);
+
+  // Autoscroll to first changed line when switching files
+  useEffect(() => {
+    if (isShowingDescription || !scrollContainerRef.current) return;
+
+    // Use requestAnimationFrame to ensure DOM has rendered
+    requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const firstChangedLine = container.querySelector(
+        '[data-line-type="addition"], [data-line-type="deletion"]'
+      );
+
+      if (firstChangedLine && typeof firstChangedLine.scrollIntoView === 'function') {
+        firstChangedLine.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+    });
+  }, [selectedFileIndex, isShowingDescription]);
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {
@@ -364,6 +384,7 @@ export function DiffView() {
       {/* Diff content - conditional rendering based on view mode */}
       {viewConfig.mode === 'unified' ? (
         <div
+          ref={scrollContainerRef}
           className="flex-1 overflow-auto"
           role="region"
           aria-label={`Diff content for ${selectedFile.filename}`}
@@ -400,6 +421,7 @@ export function DiffView() {
         </div>
       ) : (
         <SideBySideDiffView
+          containerRef={scrollContainerRef}
           alignedLines={alignedLines}
           language={language}
           threadsByLineAndSide={threadsByLineAndSide}
