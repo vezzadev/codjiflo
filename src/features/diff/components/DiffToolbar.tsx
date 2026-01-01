@@ -269,9 +269,24 @@ export function DiffToolbar() {
             setViewMode('split');
           }
           break;
+        case 'f':
+          // Show full file
+          if (!viewConfig.showFullFile) {
+            toggleFullFile();
+          }
+          break;
+        case 'c':
+          // Show changes only
+          if (viewConfig.showFullFile) {
+            toggleFullFile();
+          }
+          break;
+        case 'w':
+          toggleWhitespace();
+          break;
       }
     },
-    [setViewMode, viewConfig.mode]
+    [setViewMode, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace]
   );
 
   useEffect(() => {
