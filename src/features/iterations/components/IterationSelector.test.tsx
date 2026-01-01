@@ -14,10 +14,11 @@ const mockUseIterationStore = vi.mocked(useIterationStore);
 // Helper to create mock iterations
 function createMockIteration(revision: number): Iteration {
   return {
-    id: `iteration-${revision}`,
+    id: revision,
     revision,
     baseSha: `base-sha-${revision}`,
     headSha: `head-sha-${revision}`,
+    beforeSha: null,
     author: 'testuser',
     createdAt: new Date('2024-01-15'),
   };
@@ -86,8 +87,10 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       expect(screen.getByTestId('iteration-selector')).toBeInTheDocument();
-      // Loading spinner should be present
-      expect(document.querySelector('.iteration-loading')).toBeInTheDocument();
+      // Loading indicator should be present with text
+      const loadingIndicator = document.querySelector('.iteration-loading');
+      expect(loadingIndicator).toBeInTheDocument();
+      expect(loadingIndicator).toHaveTextContent('Loading...');
     });
   });
 
@@ -265,7 +268,28 @@ describe('IterationSelector', () => {
       expect(mockSelectRange).not.toHaveBeenCalled();
     });
 
-    it('handles mouseLeave during drag', () => {
+  });
+
+  describe('keyboard interactions', () => {
+    it('selects iteration on Enter key', () => {
+      mockUseIterationStore.mockReturnValue({
+        iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
+        selectRange: mockSelectRange,
+        isLoading: false,
+        isDegraded: false,
+      } as ReturnType<typeof useIterationStore>);
+
+      render(<IterationSelector />);
+
+      const tab2 = screen.getByTestId('iteration-tab-2');
+      fireEvent.keyDown(tab2, { key: 'Enter' });
+
+      // Should select from base (0) to iteration 2's right snapshot (3)
+      expect(mockSelectRange).toHaveBeenCalledWith(0, 3);
+    });
+
+    it('selects iteration on Space key', () => {
       mockUseIterationStore.mockReturnValue({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
@@ -277,15 +301,27 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       const tab1 = screen.getByTestId('iteration-tab-1');
-      const container = screen.getByTestId('iteration-selector');
+      fireEvent.keyDown(tab1, { key: ' ' });
 
-      // Start drag
-      fireEvent.mouseDown(tab1);
+      // Should select from base (0) to iteration 1's right snapshot (1)
+      expect(mockSelectRange).toHaveBeenCalledWith(0, 1);
+    });
 
-      // Leave container
-      fireEvent.mouseLeave(container);
+    it('ignores other keys', () => {
+      mockUseIterationStore.mockReturnValue({
+        iterations: [createMockIteration(1)],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+        selectRange: mockSelectRange,
+        isLoading: false,
+        isDegraded: false,
+      } as ReturnType<typeof useIterationStore>);
 
-      // Drag state should be preserved (no selection made yet)
+      render(<IterationSelector />);
+
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      fireEvent.keyDown(tab1, { key: 'Tab' });
+      fireEvent.keyDown(tab1, { key: 'a' });
+
       expect(mockSelectRange).not.toHaveBeenCalled();
     });
   });
@@ -336,8 +372,8 @@ describe('IterationSelector', () => {
       expect(container).toHaveAttribute('role', 'toolbar');
       expect(container).toHaveAttribute('aria-label', 'Iteration range selector');
 
-      const tablist = container.querySelector('[role="tablist"]');
-      expect(tablist).toBeInTheDocument();
+      const group = container.querySelector('[role="group"]');
+      expect(group).toBeInTheDocument();
     });
 
     it('tabs have aria-pressed attribute', () => {
