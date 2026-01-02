@@ -85,7 +85,7 @@ const baz = 'qux';
     });
   });
 
-  test("View mode toggles between Unified and Split (S-3.3)", async ({
+  test("View mode toggles between Inline and Split (S-3.3)", async ({
     page,
   }) => {
     const config = getTestConfig();
@@ -102,7 +102,7 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // [AC-3.3.1] Unified mode should be default - single toggle button shows "Inline"
+      // [AC-3.3.1] Inline mode should be default - single toggle button shows "Inline"
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
       await expect(toolbar).toBeVisible();
 
@@ -115,12 +115,12 @@ const baz = 'qux';
       // [AC-3.2.1] Switch to Split view by clicking the toggle
       await viewModeButton.click();
 
-      // Now button should show SxS and offer to switch to unified
-      const unifiedButton = toolbar.getByRole("button", {
-        name: /switch to unified view/i,
+      // Now button should show SxS and offer to switch to inline
+      const inlineButton = toolbar.getByRole("button", {
+        name: /switch to inline view/i,
       });
-      await expect(unifiedButton).toBeVisible();
-      await expect(unifiedButton).toContainText("SxS");
+      await expect(inlineButton).toBeVisible();
+      await expect(inlineButton).toContainText("SxS");
 
       // [AC-3.2.8-9] Split view should have accessible labels
       await expect(
@@ -133,8 +133,8 @@ const baz = 'qux';
         page.getByRole("region", { name: "Modified version" })
       ).toBeVisible();
 
-      // Switch back to Unified
-      await unifiedButton.click();
+      // Switch back to Inline
+      await inlineButton.click();
       await expect(
         toolbar.getByRole("button", { name: /switch to side-by-side view/i })
       ).toContainText("Inline");
@@ -173,11 +173,11 @@ const baz = 'qux';
       // [AC-3.3.4] Press 's' for Split - button should now show SxS
       await page.keyboard.press("s");
       await expect(
-        toolbar.getByRole("button", { name: /switch to unified view/i })
+        toolbar.getByRole("button", { name: /switch to inline view/i })
       ).toContainText("SxS");
 
-      // [AC-3.3.4] Press 'u' for Unified - button should now show Inline
-      await page.keyboard.press("u");
+      // [AC-3.3.4] Press 'i' for Inline - button should now show Inline
+      await page.keyboard.press("i");
       await expect(
         toolbar.getByRole("button", { name: /switch to side-by-side view/i })
       ).toContainText("Inline");

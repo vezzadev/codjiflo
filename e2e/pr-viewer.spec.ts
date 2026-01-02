@@ -196,7 +196,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       // PR Description should no longer be selected
       await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
 
-      // Autoscroll: first changed line should be visible in viewport (unified mode)
+      // Autoscroll: first changed line should be visible in viewport (inline mode)
       const firstChangedLine = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
       await expect(firstChangedLine).toBeInViewport();
 

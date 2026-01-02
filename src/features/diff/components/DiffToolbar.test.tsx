@@ -71,7 +71,7 @@ describe('DiffToolbar', () => {
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
 
-    it('toggles to unified mode when clicking button in split mode', async () => {
+    it('toggles to inline mode when clicking button in split mode', async () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
@@ -79,7 +79,7 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to unified view/i });
+      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
       await user.click(toggleButton);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
@@ -206,13 +206,13 @@ describe('DiffToolbar', () => {
   });
 
   describe('keyboard shortcuts', () => {
-    it('pressing U switches to unified mode', () => {
+    it('pressing I switches to inline mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
 
-      fireEvent.keyDown(window, { key: 'u' });
+      fireEvent.keyDown(window, { key: 'i' });
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
@@ -283,7 +283,7 @@ describe('DiffToolbar', () => {
       });
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to unified view/i });
+      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
       expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
     });
 

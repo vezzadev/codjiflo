@@ -29,8 +29,8 @@ describe('ShortcutsModal', () => {
     expect(screen.getByText('Scroll down in diff view')).toBeInTheDocument();
 
     // View mode shortcuts
-    expect(screen.getByText('u')).toBeInTheDocument();
-    expect(screen.getByText('Unified (inline) view')).toBeInTheDocument();
+    expect(screen.getByText('i')).toBeInTheDocument();
+    expect(screen.getByText('Inline view')).toBeInTheDocument();
     expect(screen.getByText('s')).toBeInTheDocument();
     expect(screen.getByText('Side-by-side view')).toBeInTheDocument();
 

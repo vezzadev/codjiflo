@@ -37,7 +37,7 @@ const SXS_RIGHT_ROWS = [
   ICON_COLORS.w, ICON_COLORS.w,
 ];
 
-/** Inline view icon - unified diff pattern */
+/** Inline view icon - inline diff pattern */
 function InlineIcon() {
   return (
     <svg width="12" height="16" viewBox="0 0 12 16" aria-hidden className="btn-toolbar-icon">
@@ -258,7 +258,7 @@ export function DiffToolbar() {
 
       switch (event.key.toLowerCase()) {
         // View mode shortcuts
-        case 'u':
+        case 'i':
           event.preventDefault();
           setViewMode('unified');
           break;
@@ -330,8 +330,8 @@ export function DiffToolbar() {
         onClick={handleViewModeToggle}
         icon={viewConfig.mode === 'split' ? <SxSIcon /> : <InlineIcon />}
         label={viewConfig.mode === 'split' ? 'SxS' : 'Inline'}
-        shortcut={viewConfig.mode === 'split' ? 'U' : 'S'}
-        ariaLabel={viewConfig.mode === 'split' ? 'Switch to unified view' : 'Switch to side-by-side view'}
+        shortcut={viewConfig.mode === 'split' ? 'I' : 'S'}
+        ariaLabel={viewConfig.mode === 'split' ? 'Switch to inline view' : 'Switch to side-by-side view'}
         className="btn-toolbar-wide"
       />
 
