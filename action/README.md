@@ -67,17 +67,40 @@ The action is pre-bundled with [@vercel/ncc](https://github.com/vercel/ncc) and 
 
 The `dist/` directory contains:
 - `index.js` - All TypeScript compiled and dependencies inlined (~1.5MB)
-- `build/Release/better_sqlite3.node` - Linux x64 native SQLite binding (~2MB)
+- `build/Release/better_sqlite3.node` - Linux x64 native SQLite binding for Node 20 (~2MB)
 
 **Important:** When modifying action source code, you must rebuild before committing:
 
 ```bash
 cd action
+
+# Download Linux binary for Node 20 (ABI 115) used by GitHub Actions runners
+curl -L -o linux-binary.tar.gz "https://github.com/WiseLibs/better-sqlite3/releases/download/v12.5.0/better-sqlite3-v12.5.0-node-v115-linux-x64.tar.gz"
+tar -xzf linux-binary.tar.gz
+cp build/Release/better_sqlite3.node node_modules/better-sqlite3/build/Release/
+
+# Rebuild bundle
 npm run build
+rm -rf build linux-binary.tar.gz
+
 git add dist/
 ```
 
-The Linux binary is obtained from [better-sqlite3 releases](https://github.com/WiseLibs/better-sqlite3/releases) matching the Node.js version used in GitHub Actions runners.
+### When GitHub Updates Node
+
+If GitHub Actions runners update to a new Node.js version, the action will fail with:
+```
+was compiled against a different Node.js version using NODE_MODULE_VERSION X
+```
+
+To fix: Download the binary matching the new Node ABI version from [better-sqlite3 releases](https://github.com/WiseLibs/better-sqlite3/releases) and rebuild.
+
+| Node Version | ABI |
+|--------------|-----|
+| Node 18 | 108 |
+| Node 20 | 115 |
+| Node 22 | 127 |
+| Node 24 | 137 |
 
 ## Development
 
