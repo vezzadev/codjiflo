@@ -208,24 +208,19 @@ const baz = 'qux';
       await page.locator("body").click();
       await page.keyboard.press("s");
 
-      // [AC-3.3.5-7] Content filter slider should be visible
-      const contentFilterSlider = toolbar.getByRole("slider", {
+      // [AC-3.3.5-7] Content filter radiogroup should be visible
+      const contentFilter = toolbar.getByRole("radiogroup", {
         name: "Content filter",
       });
-      await expect(contentFilterSlider).toBeVisible();
+      await expect(contentFilter).toBeVisible();
 
-      // [AC-3.3.7] Both is default
-      await expect(contentFilterSlider).toHaveAttribute(
-        "aria-valuetext",
-        "Show Both"
-      );
+      // [AC-3.3.7] Both is default - check the radio label
+      const currentRadio = contentFilter.getByRole("radio");
+      await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
 
       // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
       await page.keyboard.press("l");
-      await expect(contentFilterSlider).toHaveAttribute(
-        "aria-valuetext",
-        "Left Only"
-      );
+      await expect(currentRadio).toHaveAttribute("aria-label", "Left Only");
       await expect(
         page.getByRole("region", { name: "Original version" })
       ).toBeVisible();
@@ -235,10 +230,7 @@ const baz = 'qux';
 
       // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
       await page.keyboard.press("r");
-      await expect(contentFilterSlider).toHaveAttribute(
-        "aria-valuetext",
-        "Right Only"
-      );
+      await expect(currentRadio).toHaveAttribute("aria-label", "Right Only");
       await expect(
         page.getByRole("region", { name: "Modified version" })
       ).toBeVisible();
@@ -248,10 +240,7 @@ const baz = 'qux';
 
       // Back to Both - use keyboard shortcut 'b'
       await page.keyboard.press("b");
-      await expect(contentFilterSlider).toHaveAttribute(
-        "aria-valuetext",
-        "Show Both"
-      );
+      await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
       await expect(
         page.getByRole("region", { name: "Original version" })
       ).toBeVisible();
