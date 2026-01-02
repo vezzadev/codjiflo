@@ -66,38 +66,36 @@ The action is pre-bundled with [@vercel/ncc](https://github.com/vercel/ncc) and 
 ### Build Process
 
 The `dist/` directory contains:
+- `bootstrap.js` - Loader that selects the correct native binary at runtime
 - `index.js` - All TypeScript compiled and dependencies inlined (~1.5MB)
-- `build/Release/better_sqlite3.node` - Linux x64 native SQLite binding for Node 20 (~2MB)
+- `prebuilds/` - Native SQLite binaries for multiple Node.js versions (~2MB each)
 
-**Important:** When modifying action source code, you must rebuild before committing:
+**Multi-version support:** The action includes pre-built binaries for Node 20, 22, and 24. At runtime, `bootstrap.js` detects the Node.js version and loads the correct binary.
+
+**Rebuilding after code changes:**
 
 ```bash
 cd action
-
-# Download Linux binary for Node 20 (ABI 115) used by GitHub Actions runners
-curl -L -o linux-binary.tar.gz "https://github.com/WiseLibs/better-sqlite3/releases/download/v12.5.0/better-sqlite3-v12.5.0-node-v115-linux-x64.tar.gz"
-tar -xzf linux-binary.tar.gz
-cp build/Release/better_sqlite3.node node_modules/better-sqlite3/build/Release/
-
-# Rebuild bundle
 npm run build
-rm -rf build linux-binary.tar.gz
-
+rm -rf dist/build  # Remove ncc-generated binary (bootstrap.js handles this)
 git add dist/
 ```
 
-### When GitHub Updates Node
+### Adding Support for New Node Versions
 
-If GitHub Actions runners update to a new Node.js version, the action will fail with:
-```
-was compiled against a different Node.js version using NODE_MODULE_VERSION X
-```
+When a new Node.js version is released:
 
-To fix: Download the binary matching the new Node ABI version from [better-sqlite3 releases](https://github.com/WiseLibs/better-sqlite3/releases) and rebuild.
+1. Find the ABI version: `node -p process.versions.modules`
+2. Download the binary from [better-sqlite3 releases](https://github.com/WiseLibs/better-sqlite3/releases):
+   ```bash
+   curl -L -o dist/prebuilds/better_sqlite3-{ABI}.node \
+     "https://github.com/WiseLibs/better-sqlite3/releases/download/v12.5.0/better-sqlite3-v12.5.0-node-v{ABI}-linux-x64.tar.gz"
+   # Extract and rename the .node file
+   ```
+3. Update `dist/bootstrap.js` to include the new ABI in `SUPPORTED_ABIS`
 
 | Node Version | ABI |
 |--------------|-----|
-| Node 18 | 108 |
 | Node 20 | 115 |
 | Node 22 | 127 |
 | Node 24 | 137 |
