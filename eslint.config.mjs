@@ -1,5 +1,6 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
 import storybook from "eslint-plugin-storybook";
+import playwright from "eslint-plugin-playwright";
 
 import js from "@eslint/js";
 import globals from "globals";
@@ -56,8 +57,9 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
   },
   {
-    // E2E tests: prevent custom timeouts (use global config instead)
+    // E2E tests: Playwright recommended rules + prevent custom timeouts
     files: ["e2e/**/*.spec.ts"],
+    extends: [playwright.configs["flat/recommended"]],
     rules: {
       "no-restricted-syntax": [
         "error",

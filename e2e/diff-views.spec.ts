@@ -90,7 +90,7 @@ const baz = 'qux';
   }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Click on a file to show diff (PR description is default)
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -153,7 +153,7 @@ const baz = 'qux';
   test("Keyboard shortcuts for view modes (S-3.3)", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -190,7 +190,7 @@ const baz = 'qux';
   test("Content filter toggles (Left/Both/Right) (S-3.3)", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -226,7 +226,7 @@ const baz = 'qux';
       ).toBeVisible();
       await expect(
         page.getByRole("region", { name: "Modified version" })
-      ).not.toBeVisible();
+      ).toBeHidden();
 
       // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
       await page.keyboard.press("r");
@@ -236,7 +236,7 @@ const baz = 'qux';
       ).toBeVisible();
       await expect(
         page.getByRole("region", { name: "Original version" })
-      ).not.toBeVisible();
+      ).toBeHidden();
 
       // Back to Both - use keyboard shortcut 'b'
       await page.keyboard.press("b");
@@ -264,7 +264,7 @@ const baz = 'qux';
   }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -312,7 +312,7 @@ const baz = 'qux';
   }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -379,7 +379,7 @@ const baz = 'qux';
   }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -432,7 +432,7 @@ const baz = 'qux';
   test("Side-by-side view accessibility (S-3.2)", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();

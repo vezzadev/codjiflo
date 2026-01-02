@@ -72,7 +72,7 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     const config = getTestConfig();
 
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Verify basic page structure is intact
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -90,7 +90,7 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     const config = getTestConfig();
 
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for the page to stabilize
     await page.waitForTimeout(1000);
@@ -108,14 +108,14 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     const config = getTestConfig();
 
     await page.goto(config.pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for the page to stabilize and iteration loading to complete
     await page.waitForTimeout(2000);
 
     // Iteration selector should NOT be visible when in degraded mode
     const selector = page.getByTestId("iteration-selector");
-    await expect(selector).not.toBeVisible();
+    await expect(selector).toBeHidden();
   });
 });
 
@@ -138,7 +138,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
     await page.goto(pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for iterations to load (may take a while to download artifacts)
     const selector = page.getByTestId("iteration-selector");
@@ -156,8 +156,8 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     // Each tab should display a number
     for (let i = 0; i < tabCount; i++) {
       const tab = tabs.nth(i);
-      const tabNumber = await tab.locator(".iteration-tab-number").textContent();
-      expect(tabNumber).toBe(String(i + 1));
+      const tabNumber = tab.locator(".iteration-tab-number");
+      await expect(tabNumber).toHaveText(String(i + 1));
     }
   });
 
@@ -166,7 +166,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
     await page.goto(pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for iterations to load
     const selector = page.getByTestId("iteration-selector");
@@ -190,7 +190,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
     await page.goto(pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for iterations to load
     const selector = page.getByTestId("iteration-selector");
@@ -211,7 +211,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
     await page.goto(pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for iterations to load
     const selector = page.getByTestId("iteration-selector");
@@ -254,7 +254,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
     await page.goto(pageUrl);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Click on a file to show the diff view (PR description is shown by default)
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
@@ -327,7 +327,7 @@ test.describe("Iteration File Status (Prod Mode)", () => {
     await expect(iteration1Tab).toHaveClass(/selected/);
 
     // action.yml should not be visible (wasn't modified in iteration 1)
-    await expect(actionYmlItem).not.toBeVisible();
+    await expect(actionYmlItem).toBeHidden();
 
     // --- Iteration 2: action.yml should appear as "M" (modified) ---
     const iteration2Tab = page.getByTestId("iteration-tab-2");

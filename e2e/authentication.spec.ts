@@ -91,7 +91,7 @@ test.describe("Authentication Flow (S-1.1)", () => {
     // Clear error when user starts typing again
     await input.clear();
     await input.fill("ghp_");
-    await expect(formatError).not.toBeVisible();
+    await expect(formatError).toBeHidden();
 
     // [AC-1.1.7] Network/API error handling
     if (isMockMode()) {

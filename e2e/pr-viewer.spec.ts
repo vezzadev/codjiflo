@@ -149,7 +149,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -177,7 +177,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
@@ -232,7 +232,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     if (isMockMode()) {
       // Click on a file first to show the diff (PR description is default)
@@ -262,7 +262,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // PR Description is now the default selection, so click a file first
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -304,7 +304,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     }
 
     // Wait for page to fully stabilize
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for the file navigation to be fully loaded
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -348,7 +348,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to fully stabilize
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Wait for the shortcuts button to be visible and stable
     const shortcutsButton = page.getByRole("button", { name: /Show keyboard shortcuts/i });
@@ -367,7 +367,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Close modal by clicking the Close button
     await page.getByRole("button", { name: /Close/i }).click();
-    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page.getByRole("dialog")).toBeHidden();
   });
 
   test("Error handling for invalid PR URL", async ({ page }) => {
