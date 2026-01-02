@@ -52,7 +52,7 @@ function setupNativeBinary() {
   }
 
   fs.copyFileSync(sourcePath, targetPath);
-  console.log(`Loaded native module for ${SUPPORTED_ABIS[currentAbi]} (ABI ${currentAbi})`);
+  console.log(`::debug::Loaded native module for ${SUPPORTED_ABIS[currentAbi]} (ABI ${currentAbi})`);
 }
 
 // Set up the binary before loading the main bundle
