@@ -283,20 +283,13 @@
 }
 
 .content-filter-thumb-both {
-  left: 10px;
+  left: calc(50% - 35px); /* Center: 50% minus half thumb width (70px/2) */
 }
 
 .content-filter-thumb-right {
-  left: 20px;
+  left: calc(100% - 70px); /* Right edge minus thumb width */
 }
 
-.content-filter-labels {
-  display: none;
-}
-
-.content-filter-label {
-  display: none;
-}
 
 /* ============================================
    ITERATION SELECTOR (Tab-based)
