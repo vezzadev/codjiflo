@@ -90,6 +90,27 @@ To compare "after iteration 1" to "after iteration 3", use the right snapshots: 
 
 A comparison is "cross-iteration" when not comparing adjacent left/right snapshots of the same iteration. The UI may display this differently (e.g., showing combined changes).
 
+### Base Equivalence Principle
+
+All **left (even) snapshots** are fetched from the PR's `baseSha`, meaning they contain equivalent content:
+
+```
+Snapshot 0 content = Snapshot 2 content = Snapshot 4 content = ... = PR base
+```
+
+This has important implications for file status determination:
+
+1. **Files first modified in later iterations**: A file that existed in the PR base but wasn't modified until iteration 2+ should show as "Modified" (not "Added") when viewing that iteration.
+
+2. **Content lookup optimization**: When looking for file content at any snapshot before the file's first modification, use the content from the first left snapshot where it appears.
+
+3. **Range overlap requirement**: Base equivalence only applies when the file's artifact overlaps with the selected iteration range. This prevents files from appearing in ranges where they weren't actually modified.
+
+**Example**: `action.yml` exists in PR base, unchanged in iteration 1, first modified in iteration 2:
+- Iteration 1 only: `action.yml` should NOT appear (no changes)
+- Iteration 2 only: `action.yml` shows as "M" (modified) because base content exists
+- Iteration 1→2 range: `action.yml` shows as "M" (modified)
+
 ### File Matching Algorithm
 
 Files are matched by artifact ID using a two-pointer merge:

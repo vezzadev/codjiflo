@@ -271,6 +271,11 @@ Compute diffs client-side using file contents from the SQLite artifact. Support 
     - [ ] [AC-4.8.13] Lines removed counter (`-M`) reflects actual deletions in iteration diff, not GitHub patch.
     - [ ] [AC-4.8.14] File status badge (Added/Modified/Deleted/Renamed) computed from iteration range.
     - [ ] [AC-4.8.15] When switching iteration range, file list immediately updates to show only affected files.
+5.  **Base Equivalence (Files First Modified in Later Iterations)**:
+    - [ ] [AC-4.8.16] Files existing in PR base but first modified in iteration N show as "Modified" (not "Added") when viewing iteration N.
+    - [ ] [AC-4.8.17] Files not modified in selected iteration range do not appear in file list.
+    - [ ] [AC-4.8.18] When comparing iteration ranges (e.g., 1→2), files first modified in later iteration of range show as "Modified".
+    - [ ] [AC-4.8.19] Base equivalence only applies when artifact overlaps with selected range (prevents phantom files).
 
 ---
 
