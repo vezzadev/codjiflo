@@ -5,6 +5,7 @@
    ============================================ */
 .diff-line {
   transition: filter 0.1s ease;
+  scroll-margin-top: var(--diff-header-total-height); /* Account for sticky .diff-header */
 }
 
 .diff-line:hover {
@@ -188,12 +189,33 @@
 /* ============================================
    DIFF HEADER (Sticky)
    ============================================ */
+
+/* Header dimension variables for scroll-margin calculations */
+.diff-view-container {
+  --diff-header-toolbar-height: 33px;
+  --diff-header-iterations-height: 0px; /* Only present when iterations exist */
+  --diff-header-border: 1px;
+  --diff-line-height: 23px;
+  --diff-scroll-context-lines: 3;
+  --diff-header-total-height: calc(
+    var(--diff-header-toolbar-height) +
+    var(--diff-header-iterations-height) +
+    var(--diff-header-border) +
+    (var(--diff-line-height) * var(--diff-scroll-context-lines))
+  );
+}
+
+/* When iterations are visible, include their height */
+.diff-view-container:has(.diff-header-iterations:not(:empty)) {
+  --diff-header-iterations-height: 36px;
+}
+
 .diff-header {
   position: sticky;
   top: 0;
   z-index: 10;
   background-color: var(--listview-header);
-  border-bottom: 1px solid var(--combobox-border);
+  border-bottom: var(--diff-header-border) solid var(--combobox-border);
 }
 
 .diff-header-toolbar {
