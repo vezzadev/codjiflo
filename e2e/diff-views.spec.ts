@@ -102,24 +102,25 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // [AC-3.3.1] Unified mode should be default - find buttons in view mode group
-      const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible();
+      // [AC-3.3.1] Unified mode should be default - single toggle button shows "Inline"
+      const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+      await expect(toolbar).toBeVisible();
 
-      const unifiedButton = viewModeGroup.getByRole("button", {
-        name: /Unified/i,
+      const viewModeButton = toolbar.getByRole("button", {
+        name: /switch to side-by-side view/i,
       });
-      const splitButton = viewModeGroup.getByRole("button", { name: /Split/i });
+      await expect(viewModeButton).toBeVisible();
+      await expect(viewModeButton).toContainText("Inline");
 
+      // [AC-3.2.1] Switch to Split view by clicking the toggle
+      await viewModeButton.click();
+
+      // Now button should show SxS and offer to switch to unified
+      const unifiedButton = toolbar.getByRole("button", {
+        name: /switch to unified view/i,
+      });
       await expect(unifiedButton).toBeVisible();
-      await expect(splitButton).toBeVisible();
-
-      // [AC-3.3.2] Active mode should be visually highlighted
-      await expect(unifiedButton).toHaveAttribute("aria-pressed", "true");
-
-      // [AC-3.2.1] Switch to Split view
-      await splitButton.click();
-      await expect(splitButton).toHaveAttribute("aria-pressed", "true");
+      await expect(unifiedButton).toContainText("SxS");
 
       // [AC-3.2.8-9] Split view should have accessible labels
       await expect(
@@ -134,7 +135,9 @@ const baz = 'qux';
 
       // Switch back to Unified
       await unifiedButton.click();
-      await expect(unifiedButton).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        toolbar.getByRole("button", { name: /switch to side-by-side view/i })
+      ).toContainText("Inline");
     } else {
       // Prod mode: verify structure
       const fileButtons = fileNav.getByRole("listitem");
@@ -161,27 +164,26 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible();
-
-      const unifiedButton = viewModeGroup.getByRole("button", {
-        name: /Unified/i,
-      });
-      const splitButton = viewModeGroup.getByRole("button", { name: /Split/i });
+      const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+      await expect(toolbar).toBeVisible();
 
       // Focus on page body
       await page.locator("body").click();
       await page.waitForTimeout(300);
 
-      // [AC-3.3.4] Press 's' for Split
+      // [AC-3.3.4] Press 's' for Split - button should now show SxS
       await page.keyboard.press("s");
       await page.waitForTimeout(200);
-      await expect(splitButton).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        toolbar.getByRole("button", { name: /switch to unified view/i })
+      ).toContainText("SxS");
 
-      // [AC-3.3.4] Press 'u' for Unified
+      // [AC-3.3.4] Press 'u' for Unified - button should now show Inline
       await page.keyboard.press("u");
       await page.waitForTimeout(200);
-      await expect(unifiedButton).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        toolbar.getByRole("button", { name: /switch to side-by-side view/i })
+      ).toContainText("Inline");
     } else {
       // Prod mode: skip keyboard shortcuts test (real PR may have modal conflicts)
       test.skip(true, "Keyboard shortcuts tested in mock mode only");
@@ -202,35 +204,33 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // Switch to Split for content filter to be visible
-      const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible();
-      const splitButton = viewModeGroup.getByRole("button", { name: /Split/i });
-      await splitButton.click();
-      await expect(splitButton).toHaveAttribute("aria-pressed", "true");
+      const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+      await expect(toolbar).toBeVisible();
 
-      // [AC-3.3.5-7] Content filter buttons (only visible in split mode)
-      const contentFilterGroup = page.getByRole("group", {
+      // Switch to Split view using keyboard shortcut
+      await page.locator("body").click();
+      await page.keyboard.press("s");
+      await page.waitForTimeout(200);
+
+      // [AC-3.3.5-7] Content filter slider should be visible
+      const contentFilterSlider = toolbar.getByRole("slider", {
         name: "Content filter",
       });
-      await expect(contentFilterGroup).toBeVisible();
-
-      const leftButton = contentFilterGroup.getByRole("button", {
-        name: /Left/i,
-      });
-      const bothButton = contentFilterGroup.getByRole("button", {
-        name: /Both/i,
-      });
-      const rightButton = contentFilterGroup.getByRole("button", {
-        name: /Right/i,
-      });
+      await expect(contentFilterSlider).toBeVisible();
 
       // [AC-3.3.7] Both is default
-      await expect(bothButton).toHaveAttribute("aria-pressed", "true");
+      await expect(contentFilterSlider).toHaveAttribute(
+        "aria-valuetext",
+        "Show Both"
+      );
 
-      // [AC-3.3.6] Left Only - hides right pane
-      await leftButton.click();
-      await expect(leftButton).toHaveAttribute("aria-pressed", "true");
+      // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
+      await page.keyboard.press("l");
+      await page.waitForTimeout(200);
+      await expect(contentFilterSlider).toHaveAttribute(
+        "aria-valuetext",
+        "Left Only"
+      );
       await expect(
         page.getByRole("region", { name: "Original version" })
       ).toBeVisible();
@@ -238,9 +238,13 @@ const baz = 'qux';
         page.getByRole("region", { name: "Modified version" })
       ).not.toBeVisible();
 
-      // [AC-3.3.8] Right Only - hides left pane
-      await rightButton.click();
-      await expect(rightButton).toHaveAttribute("aria-pressed", "true");
+      // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
+      await page.keyboard.press("r");
+      await page.waitForTimeout(200);
+      await expect(contentFilterSlider).toHaveAttribute(
+        "aria-valuetext",
+        "Right Only"
+      );
       await expect(
         page.getByRole("region", { name: "Modified version" })
       ).toBeVisible();
@@ -248,8 +252,13 @@ const baz = 'qux';
         page.getByRole("region", { name: "Original version" })
       ).not.toBeVisible();
 
-      // Back to Both
-      await bothButton.click();
+      // Back to Both - use keyboard shortcut 'b'
+      await page.keyboard.press("b");
+      await page.waitForTimeout(200);
+      await expect(contentFilterSlider).toHaveAttribute(
+        "aria-valuetext",
+        "Show Both"
+      );
       await expect(
         page.getByRole("region", { name: "Original version" })
       ).toBeVisible();
@@ -337,13 +346,12 @@ const baz = 'qux';
 
       // Find the full file toggle button
       const fullFileButton = toolbar.getByRole("button", {
-        name: /full file|changes only/i,
+        name: /show full file|show changes only/i,
       });
       await expect(fullFileButton).toBeVisible();
 
-      // [AC-3.1.1] Default should be "Changes only" (not pressed)
-      await expect(fullFileButton).toHaveAttribute("aria-pressed", "false");
-      await expect(fullFileButton).toContainText("Changes only");
+      // [AC-3.1.1] Default should be "Changes" (showing changes only)
+      await expect(fullFileButton).toContainText("Changes");
 
       // Verify we see the hunk header (changes only mode)
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
@@ -352,8 +360,7 @@ const baz = 'qux';
 
       // [AC-3.1.2] Toggle to full file mode
       await fullFileButton.click();
-      await expect(fullFileButton).toHaveAttribute("aria-pressed", "true");
-      await expect(fullFileButton).toContainText("Full file");
+      await expect(fullFileButton).toContainText("Full");
 
       // [AC-3.1.3-6] Full file mode should show more lines
       // Wait for content to load
@@ -365,8 +372,7 @@ const baz = 'qux';
 
       // [AC-3.1.7] Toggle back to changes only
       await fullFileButton.click();
-      await expect(fullFileButton).toHaveAttribute("aria-pressed", "false");
-      await expect(fullFileButton).toContainText("Changes only");
+      await expect(fullFileButton).toContainText("Changes");
 
       // Should be back to showing only the hunk
       await expect(diffRegion.getByText("@@")).toBeVisible();
@@ -382,7 +388,7 @@ const baz = 'qux';
         // Verify full file toggle exists
         const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
         const fullFileButton = toolbar.getByRole("button", {
-          name: /full file|changes only/i,
+          name: /show full file|show changes only/i,
         });
         await expect(fullFileButton).toBeVisible();
       }
@@ -405,10 +411,10 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // Switch to Split view
-      const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible();
-      await viewModeGroup.getByRole("button", { name: /Split/i }).click();
+      // Switch to Split view using keyboard shortcut
+      await page.locator("body").click();
+      await page.keyboard.press("s");
+      await page.waitForTimeout(200);
 
       // Get the side-by-side container and panes
       const sideBySideContainer = page.getByRole("region", {
@@ -459,10 +465,10 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // Switch to Split view
-      const viewModeGroup = page.getByRole("group", { name: "View mode" });
-      await expect(viewModeGroup).toBeVisible();
-      await viewModeGroup.getByRole("button", { name: /Split/i }).click();
+      // Switch to Split view using keyboard shortcut
+      await page.locator("body").click();
+      await page.keyboard.press("s");
+      await page.waitForTimeout(200);
 
       // [AC-3.2.8] Screen reader can move between panes
       const leftPane = page.getByRole("region", { name: "Original version" });
