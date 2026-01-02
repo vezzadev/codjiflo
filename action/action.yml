@@ -29,22 +29,28 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        echo "::notice::Starting iteration capture for PR #${{ github.event.pull_request.number }}"
+        echo "::debug::Action path: ${{ github.action_path }}"
+        echo "::debug::Workspace: ${GITHUB_WORKSPACE}"
+        echo "::debug::PR number: ${{ github.event.pull_request.number }}"
+        echo "::debug::Run ID: ${{ github.run_id }}"
+        echo "Starting iteration capture for PR #${{ github.event.pull_request.number }}"
         node ${{ github.action_path }}/dist/bootstrap.js
+        echo "Iteration captured successfully"
 
         # Export outputs for subsequent steps
         echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}" >> $GITHUB_OUTPUT
-        echo "::notice::Iteration captured successfully"
 
     - name: Verify database
       shell: bash
       run: |
         CODJIFLO_DIR="${GITHUB_WORKSPACE}/codjiflo-data"
+        echo "::debug::Checking directory: ${CODJIFLO_DIR}"
         echo "::group::Database verification"
         ls -la "${CODJIFLO_DIR}/" 2>/dev/null || echo "::warning::Directory not found"
         if [ -f "${CODJIFLO_DIR}/iterations.db" ]; then
           DB_SIZE=$(stat -c%s "${CODJIFLO_DIR}/iterations.db")
-          echo "::notice::Database verified: ${DB_SIZE} bytes"
+          echo "::debug::Database path: ${CODJIFLO_DIR}/iterations.db"
+          echo "::debug::Database verified: ${DB_SIZE} bytes"
         else
           echo "::error::Database file not found!"
           exit 1
