@@ -190,12 +190,13 @@
    DIFF HEADER (Sticky)
    ============================================ */
 
-/* Header dimension variables for scroll-margin calculations */
+/* Header dimension variables for scroll-margin calculations (measured via Playwright getBoundingClientRect) */
 .diff-view-container {
   --diff-header-toolbar-height: 33px;
   --diff-header-iterations-height: 0px; /* Only present when iterations exist */
   --diff-header-border: 1px;
-  --diff-line-height: 23px;
+  --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
+  /* Show 3 lines of context above the first change for better orientation (UX decision) */
   --diff-scroll-context-lines: 3;
   --diff-header-total-height: calc(
     var(--diff-header-toolbar-height) +
