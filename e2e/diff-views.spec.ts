@@ -169,18 +169,15 @@ const baz = 'qux';
 
       // Focus on page body
       await page.locator("body").click();
-      await page.waitForTimeout(300);
 
       // [AC-3.3.4] Press 's' for Split - button should now show SxS
       await page.keyboard.press("s");
-      await page.waitForTimeout(200);
       await expect(
         toolbar.getByRole("button", { name: /switch to unified view/i })
       ).toContainText("SxS");
 
       // [AC-3.3.4] Press 'u' for Unified - button should now show Inline
       await page.keyboard.press("u");
-      await page.waitForTimeout(200);
       await expect(
         toolbar.getByRole("button", { name: /switch to side-by-side view/i })
       ).toContainText("Inline");
@@ -210,7 +207,6 @@ const baz = 'qux';
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
       await page.keyboard.press("s");
-      await page.waitForTimeout(200);
 
       // [AC-3.3.5-7] Content filter slider should be visible
       const contentFilterSlider = toolbar.getByRole("slider", {
@@ -226,7 +222,6 @@ const baz = 'qux';
 
       // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
       await page.keyboard.press("l");
-      await page.waitForTimeout(200);
       await expect(contentFilterSlider).toHaveAttribute(
         "aria-valuetext",
         "Left Only"
@@ -240,7 +235,6 @@ const baz = 'qux';
 
       // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
       await page.keyboard.press("r");
-      await page.waitForTimeout(200);
       await expect(contentFilterSlider).toHaveAttribute(
         "aria-valuetext",
         "Right Only"
@@ -254,7 +248,6 @@ const baz = 'qux';
 
       // Back to Both - use keyboard shortcut 'b'
       await page.keyboard.press("b");
-      await page.waitForTimeout(200);
       await expect(contentFilterSlider).toHaveAttribute(
         "aria-valuetext",
         "Show Both"
@@ -363,9 +356,6 @@ const baz = 'qux';
       await expect(fullFileButton).toContainText("Full");
 
       // [AC-3.1.3-6] Full file mode should show more lines
-      // Wait for content to load
-      await page.waitForTimeout(500);
-
       // Should now see content from the full file (line numbers starting from 1)
       // In full file mode, we should see lines that weren't in the patch
       await expect(diffRegion.getByText("End of file")).toBeVisible();
@@ -414,7 +404,6 @@ const baz = 'qux';
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
       await page.keyboard.press("s");
-      await page.waitForTimeout(200);
 
       // Get the side-by-side container and panes
       const sideBySideContainer = page.getByRole("region", {
@@ -468,7 +457,6 @@ const baz = 'qux';
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
       await page.keyboard.press("s");
-      await page.waitForTimeout(200);
 
       // [AC-3.2.8] Screen reader can move between panes
       const leftPane = page.getByRole("region", { name: "Original version" });
