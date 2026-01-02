@@ -174,8 +174,8 @@ export function prepareSpanTrackerInputs(
   const inputs: SpanTrackerInput[] = [];
 
   for (const artifactId of artifactIds) {
-    const leftContent = db.getFileContent(artifactId, leftSnapshotIndex);
-    const rightContent = db.getFileContent(artifactId, rightSnapshotIndex);
+    const leftContent = db.getArtifactSnapshot(artifactId, leftSnapshotIndex);
+    const rightContent = db.getArtifactSnapshot(artifactId, rightSnapshotIndex);
 
     inputs.push({
       artifactId,
