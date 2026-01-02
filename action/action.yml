@@ -29,8 +29,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        cd ${{ github.action_path }}
-        npx tsx src/index.ts
+        node ${{ github.action_path }}/dist/index.js
 
         # Export outputs for subsequent steps
         echo "artifact-name=codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}" >> $GITHUB_OUTPUT
