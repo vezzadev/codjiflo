@@ -182,7 +182,7 @@ jobs:
 
   # Capture iteration data for CodjiFlo iteration tracking
   capture-iteration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
