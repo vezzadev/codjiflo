@@ -166,6 +166,10 @@
   --imgdiff-bg: #313131;
   --findinfiles-bg: #313131;
 
+  /* Diff layout constants (not theme-dependent) */
+  --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
+  --diff-scroll-context-lines: 3; /* Lines shown above first change on autoscroll */
+
   /* Window chrome */
   --window-bg: #2D2D30;
   --titlebar-text: #CECECE;
