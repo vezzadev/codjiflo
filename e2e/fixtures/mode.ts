@@ -53,6 +53,35 @@ export function getE2EGitHubToken(): string | undefined {
 }
 
 /**
+ * Get the test token for authentication.
+ * Returns mock token in mock mode, real token in prod mode.
+ */
+export function getTestToken(): string {
+  return isMockMode()
+    ? "ghp_validtoken123456789"
+    : (process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "");
+}
+
+/**
+ * Get the invalid test token for testing auth errors.
+ */
+export function getInvalidTestToken(): string {
+  return isMockMode()
+    ? "ghp_invalidtoken123456789"
+    : prodModeConfig.invalidToken;
+}
+
+/**
+ * Get test PR parameters based on mode.
+ * Returns mock data in mock mode, real repo data in prod mode.
+ */
+export function getTestPR(): { owner: string; repo: string; prNumber: number } {
+  return isMockMode()
+    ? { owner: "test", repo: "repo", prNumber: 123 }
+    : { owner: prodModeConfig.testRepo.owner, repo: prodModeConfig.testRepo.repo, prNumber: prodModeConfig.testRepo.prNumber };
+}
+
+/**
  * Configuration for prod mode E2E tests
  * Uses the CodjiFlo repository for testing
  */

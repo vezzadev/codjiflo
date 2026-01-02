@@ -8,6 +8,10 @@ import {
   type MockComment,
 } from "./fixtures/github-mocks";
 
+// Conditional test runners for mode-specific tests
+const testMockOnly = isMockMode() ? test : test.skip.bind(test);
+const testProdOnly = isMockMode() ? test.skip.bind(test) : test;
+
 test.describe("Inline comments flow (S-2.x)", () => {
   const mockPR: MockPR = {
     id: 1,
@@ -91,51 +95,56 @@ test.describe("Inline comments flow (S-2.x)", () => {
     });
   });
 
-  test("shows existing threads and allows adding a comment", async ({ page }) => {
+  testMockOnly("shows existing threads and comment content (mock mode)", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
 
     // Wait for page to fully stabilize
     await page.waitForLoadState("load");
 
-    if (isMockMode()) {
-      // Wait for the file navigation to be fully loaded
-      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible();
-      await expect(fileNav.getByText("src/example.ts")).toBeVisible();
+    // Wait for the file navigation to be fully loaded
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await expect(fileNav.getByText("src/example.ts")).toBeVisible();
 
-      // PR Description is selected by default, click on the file to show diff
-      await fileNav.getByText("src/example.ts").click();
+    // PR Description is selected by default, click on the file to show diff
+    await fileNav.getByText("src/example.ts").click();
 
-      // Wait for page to load - check the diff heading as a stable indicator
-      await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
+    // Wait for page to load - check the diff heading as a stable indicator
+    await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
 
-      // Wait for the file list item to be visible and selected
-      const fileListItem = page.getByRole("listitem", { name: /src\/example\.ts/ });
-      await expect(fileListItem).toBeVisible();
-      await expect(fileListItem).toHaveAttribute("aria-current", "location", );
+    // Wait for the file list item to be visible and selected
+    const fileListItem = page.getByRole("listitem", { name: /src\/example\.ts/ });
+    await expect(fileListItem).toBeVisible();
+    await expect(fileListItem).toHaveAttribute("aria-current", "location", );
 
-      // The diff content should be rendered in a table
-      const diffTable = page.locator('table');
-      await expect(diffTable).toBeVisible();
+    // The diff content should be rendered in a table
+    const diffTable = page.locator('table');
+    await expect(diffTable).toBeVisible();
 
-      // Verify the existing comment is displayed (comments load async)
-      const threadRegion = page.getByRole('region', { name: 'Thread on line 2 (added line)' });
-      await expect(threadRegion.getByText('Please add a quick note about this flag.', { exact: true })).toBeVisible();
-    } else {
-      // Real mode: just verify structure loads
-      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible();
+    // Verify the existing comment is displayed (comments load async)
+    const threadRegion = page.getByRole('region', { name: 'Thread on line 2 (added line)' });
+    await expect(threadRegion.getByText('Please add a quick note about this flag.', { exact: true })).toBeVisible();
+  });
 
-      // Click first file to show diff (PR description is default)
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
-      }
+  testProdOnly("shows file navigation and diff structure (prod mode)", async ({ page }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
 
-      const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible();
-    }
+    // Wait for page to fully stabilize
+    await page.waitForLoadState("load");
+
+    // Real mode: verify structure loads
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    // Click first file to show diff (PR description is default)
+    const fileButtons = fileNav.getByRole("listitem");
+    const allButtons = await fileButtons.all();
+    // In prod mode, there should be files available
+    await allButtons[1]?.click();
+
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
   });
 });

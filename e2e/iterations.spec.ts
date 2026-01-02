@@ -7,6 +7,10 @@ import {
   type MockFile,
 } from "./fixtures/github-mocks";
 
+// Conditional test runners for mode-specific tests
+const testMockOnly = isMockMode() ? test : test.skip.bind(test);
+const testProdOnly = isProdMode() ? test : test.skip.bind(test);
+
 test.describe("Iteration Management (S-4 Milestone)", () => {
   // Mock PR data for iteration tests
   const mockPR: MockPR = {
@@ -83,17 +87,11 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     await expect(nav).toBeVisible();
   });
 
-  test("Degraded mode banner shows when no artifact is available", async ({ page }) => {
-    // This test only runs in mock mode since we control the responses
-    test.skip(!isMockMode(), "Only runs in mock mode");
-
+  testMockOnly("Degraded mode banner shows when no artifact is available", async ({ page }) => {
     const config = getTestConfig();
 
     await page.goto(config.pageUrl);
     await page.waitForLoadState("load");
-
-    // Wait for the page to stabilize
-    await page.waitForTimeout(1000);
 
     // Look for the degraded mode banner (rendered as a status element)
     const banner = page.getByRole("status");
@@ -101,17 +99,11 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     await expect(banner).toContainText(/iteration tracking/i);
   });
 
-  test("Iteration selector is hidden when no artifact is available", async ({ page }) => {
-    // This test only runs in mock mode since we control the responses
-    test.skip(!isMockMode(), "Only runs in mock mode");
-
+  testMockOnly("Iteration selector is hidden when no artifact is available", async ({ page }) => {
     const config = getTestConfig();
 
     await page.goto(config.pageUrl);
     await page.waitForLoadState("load");
-
-    // Wait for the page to stabilize and iteration loading to complete
-    await page.waitForTimeout(2000);
 
     // Iteration selector should NOT be visible when in degraded mode
     const selector = page.getByTestId("iteration-selector");
@@ -119,9 +111,9 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
   });
 });
 
+// Iteration Tabs UI tests require real iteration artifacts, so they only run in prod mode
+// Uses PR #75 which has CodjiFlo iteration artifacts installed
 test.describe("Iteration Tabs UI (Prod Mode)", () => {
-  // These tests require real iteration artifacts, so they only run in prod mode
-  // Uses PR #75 which has CodjiFlo iteration artifacts installed
   const iterationTestPR = {
     owner: "pedropaulovc",
     repo: "codjiflo",
@@ -129,11 +121,10 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!isProdMode(), "Requires real iteration artifacts - prod mode only");
     await setupAuthState(page);
   });
 
-  test("Iteration tabs display correct number of iterations", async ({ page }) => {
+  testProdOnly("Iteration tabs display correct number of iterations", async ({ page }) => {
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -161,7 +152,7 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     }
   });
 
-  test("Clicking a single tab selects that iteration", async ({ page }) => {
+  testProdOnly("Clicking a single tab selects that iteration", async ({ page }) => {
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -173,19 +164,17 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selector).toBeVisible();
 
     const tabs = selector.locator(".iteration-tab");
-    const tabCount = await tabs.count();
+    await expect(tabs.first()).toBeVisible();
 
-    if (tabCount >= 1) {
-      // Click the first tab
-      const firstTab = tabs.nth(0);
-      await firstTab.click();
+    // Click the first tab
+    const firstTab = tabs.nth(0);
+    await firstTab.click();
 
-      // First tab should now have the 'selected' class
-      await expect(firstTab).toHaveClass(/selected/);
-    }
+    // First tab should now have the 'selected' class
+    await expect(firstTab).toHaveClass(/selected/);
   });
 
-  test("Last iteration is selected by default", async ({ page }) => {
+  testProdOnly("Last iteration is selected by default", async ({ page }) => {
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -197,16 +186,16 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selector).toBeVisible();
 
     const tabs = selector.locator(".iteration-tab");
+    await expect(tabs.first()).toBeVisible();
+
     const tabCount = await tabs.count();
 
-    if (tabCount >= 1) {
-      // The last tab should be selected by default
-      const lastTab = tabs.nth(tabCount - 1);
-      await expect(lastTab).toHaveClass(/selected/);
-    }
+    // The last tab should be selected by default
+    const lastTab = tabs.nth(tabCount - 1);
+    await expect(lastTab).toHaveClass(/selected/);
   });
 
-  test("Dragging across tabs selects a range", async ({ page }) => {
+  testProdOnly("Dragging across tabs selects a range", async ({ page }) => {
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -218,38 +207,34 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selector).toBeVisible();
 
     const tabs = selector.locator(".iteration-tab");
-    const tabCount = await tabs.count();
+    await expect(tabs.first()).toBeVisible();
+    await expect(tabs.nth(1)).toBeVisible();
 
-    // Need at least 2 tabs to test range selection
-    if (tabCount >= 2) {
-      const firstTab = tabs.nth(0);
-      const secondTab = tabs.nth(1);
+    const firstTab = tabs.nth(0);
+    const secondTab = tabs.nth(1);
 
-      // Get bounding boxes for drag operation
-      const firstBox = await firstTab.boundingBox();
-      const secondBox = await secondTab.boundingBox();
+    // Get bounding boxes for drag operation
+    const firstBox = await firstTab.boundingBox();
+    const secondBox = await secondTab.boundingBox();
+    expect(firstBox).not.toBeNull();
+    expect(secondBox).not.toBeNull();
 
-      if (firstBox && secondBox) {
-        // Perform drag from first to second tab
-        await page.mouse.move(
-          firstBox.x + firstBox.width / 2,
-          firstBox.y + firstBox.height / 2
-        );
-        await page.mouse.down();
-        await page.mouse.move(
-          secondBox.x + secondBox.width / 2,
-          secondBox.y + secondBox.height / 2
-        );
-        await page.mouse.up();
+    // Type narrowing
+    const box1 = firstBox!;
+    const box2 = secondBox!;
 
-        // Both tabs should be selected (first as range-start, second as range-end)
-        await expect(firstTab).toHaveClass(/selected/);
-        await expect(secondTab).toHaveClass(/selected/);
-      }
-    }
+    // Perform drag from first to second tab
+    await page.mouse.move(box1.x + box1.width / 2, box1.y + box1.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
+    await page.mouse.up();
+
+    // Both tabs should be selected (first as range-start, second as range-end)
+    await expect(firstTab).toHaveClass(/selected/);
+    await expect(secondTab).toHaveClass(/selected/);
   });
 
-  test("Iteration tabs appear above filename in diff view", async ({ page }) => {
+  testProdOnly("Iteration tabs appear above filename in diff view", async ({ page }) => {
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -262,11 +247,8 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
 
     // Click on the first actual file (not PR description)
     const fileItems = fileList.locator(".tree-item.file");
-    const fileCount = await fileItems.count();
-    if (fileCount > 0) {
-      await fileItems.first().click();
-      await page.waitForTimeout(500);
-    }
+    await expect(fileItems.first()).toBeVisible();
+    await fileItems.first().click();
 
     // Wait for iterations to load
     const selector = page.getByTestId("iteration-selector");
@@ -282,9 +264,9 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
   });
 });
 
+// Iteration File Status tests for bug fix: files first modified in later iterations should show as "modified" not "added"
+// Uses PR #97 which has action.yml first modified in iteration 2
 test.describe("Iteration File Status (Prod Mode)", () => {
-  // Test for bug fix: files first modified in later iterations should show as "modified" not "added"
-  // Uses PR #97 which has action.yml first modified in iteration 2
   const fileStatusTestPR = {
     owner: "pedropaulovc",
     repo: "codjiflo",
@@ -292,11 +274,10 @@ test.describe("Iteration File Status (Prod Mode)", () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!isProdMode(), "Requires real iteration artifacts - prod mode only");
     await setupAuthState(page);
   });
 
-  test("File first modified in later iteration shows as modified, not added", async ({
+  testProdOnly("File first modified in later iteration shows as modified, not added", async ({
     page,
   }) => {
     // This test verifies the "base equivalence" fix:
@@ -347,7 +328,7 @@ test.describe("Iteration File Status (Prod Mode)", () => {
     expect(ariaLabel).not.toContain("added");
   });
 
-  test("Dragging between iterations shows file as modified, not added", async ({
+  testProdOnly("Dragging between iterations shows file as modified, not added", async ({
     page,
   }) => {
     // When comparing iteration 1 to iteration 2 via drag selection,
@@ -366,15 +347,22 @@ test.describe("Iteration File Status (Prod Mode)", () => {
     const tab1 = page.getByTestId("iteration-tab-1");
     const tab2 = page.getByTestId("iteration-tab-2");
 
+    await expect(tab1).toBeVisible();
+    await expect(tab2).toBeVisible();
+
     const box1 = await tab1.boundingBox();
     const box2 = await tab2.boundingBox();
+    expect(box1).not.toBeNull();
+    expect(box2).not.toBeNull();
 
-    if (box1 && box2) {
-      await page.mouse.move(box1.x + box1.width / 2, box1.y + box1.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
-      await page.mouse.up();
-    }
+    // Type narrowing
+    const b1 = box1!;
+    const b2 = box2!;
+
+    await page.mouse.move(b1.x + b1.width / 2, b1.y + b1.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2);
+    await page.mouse.up();
 
     // Both tabs should be selected (range selection)
     await expect(tab1).toHaveClass(/selected/);

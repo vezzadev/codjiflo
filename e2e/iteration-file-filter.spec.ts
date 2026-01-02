@@ -5,31 +5,34 @@
  *
  * NOTE: This test only runs in PROD mode because it requires real iteration data
  * from the GitHub artifact. Mock mode doesn't include iteration data.
+ *
+ * TEMPORARILY DISABLED: PR #28 iteration data may be stale/expired.
+ * TODO: Re-enable with a stable test PR that has fresh iteration artifacts.
  */
+
+/* eslint-disable playwright/no-skipped-test, playwright/no-conditional-in-test */
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Iteration-aware File List (AC-4.8.11)', () => {
-  // Skip in both modes for now - PR #28 iteration data may be stale/expired
-  // TODO: Re-enable with a stable test PR that has fresh iteration artifacts
-  test.skip(() => true, 'Temporarily disabled - iteration artifacts may have expired');
-
+// Entire describe block is skipped until iteration artifacts are refreshed
+test.describe.skip('Iteration-aware File List (AC-4.8.11)', () => {
   test('Latest preset hides unchanged files', async ({ page }) => {
     // Navigate to PR 28
     await page.goto('/pedropaulovc/codjiflo/28');
 
     // Wait for iterations to load
-    await expect(page.getByRole('toolbar', { name: 'Iteration range selector' })).toBeVisible();
+    const iterationToolbar = page.getByRole('toolbar', { name: 'Iteration range selector' });
+    await expect(iterationToolbar).toBeVisible();
 
     // Click "Latest" to compare v5 → v6
     await page.getByRole('button', { name: 'Latest' }).click();
 
-    // Wait for file list to update
-    await page.waitForTimeout(1000);
-
     // Get all file list items
     const fileList = page.getByRole('navigation', { name: 'Changed files' });
     const fileButtons = fileList.getByRole('button').filter({ hasNotText: 'Pull Request Description' });
+
+    // Wait for file list to have content
+    await expect(fileButtons.first()).toBeVisible();
 
     // Count files shown in Latest view
     const latestFileCount = await fileButtons.count();
@@ -39,22 +42,18 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
     // (It was added in an earlier iteration)
     const ciCdFile = fileList.getByRole('button', { name: /ci-cd-pr\.yml/ });
 
-    // Check if ci-cd-pr.yml is visible - if it is, check it's not marked as "added"
-    if (await ciCdFile.isVisible()) {
-      // If visible, it should be because it actually changed, not because of a bug
-      const ariaLabel = await ciCdFile.getAttribute('aria-label');
-      console.log('ci-cd-pr.yml is visible with label: ' + (ariaLabel ?? ''));
-
-      // The file should show as modified, not added (if it actually changed)
-      // If it shows as "added" with 206 additions, that's the bug we fixed
-      expect(ariaLabel).not.toContain('206 additions');
-    } else {
-      console.log('ci-cd-pr.yml is correctly hidden (no changes in v5→v6)');
-    }
+    // Check visibility and validate if visible (file might or might not be visible based on changes)
+    const isCiCdVisible = await ciCdFile.isVisible();
+    console.log('ci-cd-pr.yml visible: ' + String(isCiCdVisible));
+    // If visible, verify it doesn't show the old "206 additions" bug
+    const ciCdLabel = isCiCdVisible ? await ciCdFile.getAttribute('aria-label') : null;
+    expect(ciCdLabel ?? '').not.toContain('206 additions');
 
     // Now switch to Full diff and verify more files appear
     await page.getByRole('button', { name: 'Full diff' }).click();
-    await page.waitForTimeout(1000);
+
+    // Wait for file count to update
+    await expect(fileButtons.first()).toBeVisible();
 
     const fullDiffFileCount = await fileButtons.count();
     console.log('Full diff view shows ' + String(fullDiffFileCount) + ' files');
@@ -68,7 +67,9 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
 
     // Switch back to Latest - eslint.config.mjs should be hidden
     await page.getByRole('button', { name: 'Latest' }).click();
-    await page.waitForTimeout(1000);
+
+    // Wait for file list to update
+    await expect(fileButtons.first()).toBeVisible();
 
     // eslint.config.mjs should NOT be visible in Latest if it wasn't changed in v5→v6
     const eslintInLatest = fileList.getByRole('button', { name: /eslint\.config\.mjs/ });

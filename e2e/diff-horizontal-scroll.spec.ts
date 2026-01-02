@@ -8,6 +8,9 @@ import {
   type MockFile,
 } from "./fixtures/github-mocks";
 
+// Conditional test runner for mock-only tests
+const testMockOnly = isMockMode() ? test : test.skip.bind(test);
+
 test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
   // Create a file with very long lines to trigger horizontal scrolling
   const longLine =
@@ -90,37 +93,32 @@ test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
       files: mockFiles,
     });
 
-    // Mock iteration artifact comment for iteration selector to appear
-    if (isMockMode()) {
-      await page.route(
-        `**/repos/${config.owner}/${config.repo}/issues/${String(config.prNumber)}/comments*`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([
-              {
-                id: 1,
-                body: `<!-- codjiflo-data -->
+    // Mock iteration artifact comment for iteration selector to appear (only in mock mode)
+    await page.route(
+      `**/repos/${config.owner}/${config.repo}/issues/${String(config.prNumber)}/comments*`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: 1,
+              body: `<!-- codjiflo-data -->
 Artifact ID: 12345
 Run ID: 67890
 Iterations: 2`,
-                user: { login: "github-actions[bot]" },
-                created_at: "2024-01-01T10:00:00Z",
-              },
-            ]),
-          });
-        }
-      );
-    }
+              user: { login: "github-actions[bot]" },
+              created_at: "2024-01-01T10:00:00Z",
+            },
+          ]),
+        });
+      }
+    );
   });
 
-  test("Iteration selector and toolbar stay fixed when scrolling horizontally", async ({
+  testMockOnly("Iteration selector and toolbar stay fixed when scrolling horizontally", async ({
     page,
   }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Horizontal scroll test runs in mock mode only");
-
     const config = getTestConfig();
     await page.goto(config.pageUrl);
     await page.waitForLoadState("domcontentloaded");
@@ -141,9 +139,8 @@ Iterations: 2`,
 
     // Record initial toolbar position
     const toolbarBoxBefore = await diffToolbar.boundingBox();
-    if (!toolbarBoxBefore) {
-      throw new Error("Failed to get toolbar bounding box");
-    }
+    expect(toolbarBoxBefore).not.toBeNull();
+    const initialX = (toolbarBoxBefore!).x;
 
     // Find which element allows horizontal scrolling and scroll it
     // This tests the BUG: with wrong implementation, .diff-viewer scrolls
@@ -151,11 +148,15 @@ Iterations: 2`,
     const scrollResult = await page.evaluate(() => {
       // Try .diff-content-area first (correct implementation)
       const contentArea = document.querySelector(".diff-content-area");
-      if (contentArea && contentArea.scrollWidth > contentArea.clientWidth) {
-        const style = window.getComputedStyle(contentArea);
-        if (style.overflowX === "auto" || style.overflowX === "scroll") {
-          contentArea.scrollLeft = 300;
-          return { element: ".diff-content-area", scrolled: contentArea.scrollLeft > 0 };
+      // TypeScript: use Element type narrowing
+      const element = contentArea as HTMLElement | null;
+      if (element && element.scrollWidth > element.clientWidth) {
+        const style = window.getComputedStyle(element);
+        const overflowX = style.overflowX;
+        const hasHorizontalScroll = overflowX === "auto" || overflowX === "scroll";
+        if (hasHorizontalScroll) {
+          element.scrollLeft = 300;
+          return { element: ".diff-content-area", scrolled: element.scrollLeft > 0 };
         }
       }
 
@@ -173,27 +174,20 @@ Iterations: 2`,
     // ASSERTION: Some element must be horizontally scrollable (content is wider than viewport)
     expect(scrollResult.scrolled).toBe(true);
 
-    // Wait for scroll to settle
-    await page.waitForTimeout(100);
-
     // Get toolbar position after scroll
     const toolbarBoxAfter = await diffToolbar.boundingBox();
-    if (!toolbarBoxAfter) {
-      throw new Error("Failed to get toolbar bounding box after scroll");
-    }
+    expect(toolbarBoxAfter).not.toBeNull();
+    const afterX = (toolbarBoxAfter!).x;
 
     // ASSERTION: Toolbar should NOT have moved horizontally
     // If the scroll happened on .diff-viewer (bug), toolbar moves with it
     // If the scroll happened on .diff-content-area (correct), toolbar stays fixed
-    expect(toolbarBoxAfter.x).toBe(toolbarBoxBefore.x);
+    expect(afterX).toBe(initialX);
   });
 
-  test("Autoscroll shows 3 context lines above first change", async ({
+  testMockOnly("Autoscroll shows 3 context lines above first change", async ({
     page,
   }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Context lines test runs in mock mode only");
-
     const config = getTestConfig();
     await page.goto(config.pageUrl);
     await page.waitForLoadState("domcontentloaded");
@@ -208,55 +202,49 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Wait for autoscroll to complete
-    await page.waitForTimeout(200);
-
-    // Get the header position (context lines should appear below it)
-    const headerBox = await page.locator(".diff-header").boundingBox();
-    if (!headerBox) {
-      throw new Error("Failed to get header bounding box");
-    }
-    const contentStartY = headerBox.y + headerBox.height;
-
     // Find context line 1 - the first of 3 context lines above the change
     const contextLine1Row = page.locator("tr").filter({
       hasText: "Context line 1",
     });
     await expect(contextLine1Row).toBeVisible();
 
+    // Get the header position (context lines should appear below it)
+    const diffHeader = page.locator(".diff-header");
+    await expect(diffHeader).toBeVisible();
+    const headerBox = await diffHeader.boundingBox();
+    expect(headerBox).not.toBeNull();
+    const contentStartY = (headerBox!).y + (headerBox!).height;
+
     const contextLine1Box = await contextLine1Row.boundingBox();
-    if (!contextLine1Box) {
-      throw new Error("Failed to get context line 1 bounding box");
-    }
+    expect(contextLine1Box).not.toBeNull();
 
     // Find the first changed line (addition)
     const firstChangedLine = page.locator('[data-line-type="addition"]').first();
     await expect(firstChangedLine).toBeVisible();
     const firstChangeBox = await firstChangedLine.boundingBox();
-    if (!firstChangeBox) {
-      throw new Error("Failed to get first change bounding box");
-    }
+    expect(firstChangeBox).not.toBeNull();
+
+    // Type narrowing after null checks
+    const ctx1Y = (contextLine1Box!).y;
+    const changeY = (firstChangeBox!).y;
 
     // ASSERTION 1: Context line 1 should be visible BELOW the header
     // With proper autoscroll, context line 1 should be at the top of the content area
     // With buggy scrollIntoView, the first change would be at the top and context lines hidden
     const tolerance = 10;
-    expect(contextLine1Box.y).toBeGreaterThanOrEqual(contentStartY - tolerance);
+    expect(ctx1Y).toBeGreaterThanOrEqual(contentStartY - tolerance);
 
     // ASSERTION 2: Context line 1 should be near the TOP of content area
     // (within ~100px of where content starts - accounting for 3 context lines ~69px + some margin)
     // If scrollIntoView puts first change at top, context line 1 would be scrolled above header
     const maxDistanceFromTop = 120; // ~3 lines * 23px + some margin
-    expect(contextLine1Box.y - contentStartY).toBeLessThan(maxDistanceFromTop);
+    expect(ctx1Y - contentStartY).toBeLessThan(maxDistanceFromTop);
 
     // ASSERTION 3: Context line should be above the first change
-    expect(contextLine1Box.y).toBeLessThan(firstChangeBox.y);
+    expect(ctx1Y).toBeLessThan(changeY);
   });
 
-  test("Horizontal scrollbar is visible and functional", async ({ page }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Scrollbar test runs in mock mode only");
-
+  testMockOnly("Horizontal scrollbar is visible and functional", async ({ page }) => {
     const config = getTestConfig();
     await page.goto(config.pageUrl);
     await page.waitForLoadState("domcontentloaded");

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
+import { isMockMode, getTestToken, getInvalidTestToken, getTestPR } from "./fixtures/mode";
 import {
   setupAuthMock,
   setupFullPRMocks,
@@ -7,6 +7,9 @@ import {
   setupOAuthAuthState,
   setupTokenRefreshMock,
 } from "./fixtures/github-mocks";
+
+// Conditional test runner for mock-only tests
+const testMockOnly = isMockMode() ? test : test.skip.bind(test);
 
 test.describe("Authentication Flow (S-1.1)", () => {
   test.beforeEach(async ({ page }) => {
@@ -43,13 +46,8 @@ test.describe("Authentication Flow (S-1.1)", () => {
     // Set up auth mock (only applies in mock mode)
     await setupAuthMock(page);
 
-    // Use appropriate token based on mode
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
-
     // Enter valid token and submit
-    await input.fill(token);
+    await input.fill(getTestToken());
     const button = page.getByRole("button", { name: /Connect with PAT/i });
     await button.click();
 
@@ -94,17 +92,11 @@ test.describe("Authentication Flow (S-1.1)", () => {
     await expect(formatError).toBeHidden();
 
     // [AC-1.1.7] Network/API error handling
-    if (isMockMode()) {
-      // Mock mode: use route interception
-      await setupAuthMock(page, { failWith: 401 });
-    }
+    // In mock mode, set up route interception for 401
+    await setupAuthMock(page, { failWith: 401 });
 
     // Use invalid token - in prod mode this hits GitHub and gets 401
-    const invalidToken = isMockMode()
-      ? "ghp_invalidtoken123456789"
-      : prodModeConfig.invalidToken;
-
-    await input.fill(invalidToken);
+    await input.fill(getInvalidTestToken());
     await button.click();
 
     // Should show authentication failed error
@@ -128,10 +120,8 @@ test.describe("Redirect After Login", () => {
   test("should redirect to original PR page after PAT login", async ({
     page,
   }) => {
-    // Mock data for the test
-    const owner = isMockMode() ? "test" : prodModeConfig.testRepo.owner;
-    const repo = isMockMode() ? "repo" : prodModeConfig.testRepo.repo;
-    const prNumber = isMockMode() ? 123 : prodModeConfig.testRepo.prNumber;
+    // Get test PR params based on mode
+    const { owner, repo, prNumber } = getTestPR();
 
     // Set up mocks before navigation
     await setupAuthMock(page);
@@ -166,11 +156,7 @@ test.describe("Redirect After Login", () => {
     await page.getByText(/Use Personal Access Token/i).click();
     const input = page.getByLabel(/Personal Access Token/i);
 
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
-
-    await input.fill(token);
+    await input.fill(getTestToken());
     await page.getByRole("button", { name: /Connect with PAT/i }).click();
 
     // Should be redirected back to the original PR page
@@ -183,12 +169,9 @@ test.describe("Redirect After Login", () => {
     await expect(page.getByText("Files")).toBeVisible();
   });
 
-  test("should preserve query params in redirect after login", async ({
+  testMockOnly("should preserve query params in redirect after login", async ({
     page,
   }) => {
-    // This test is mock-only since it needs controlled query params
-    test.skip(!isMockMode(), "Query param test only runs in mock mode");
-
     const owner = "test";
     const repo = "repo";
     const prNumber = 123;
@@ -240,11 +223,7 @@ test.describe("Redirect After Login", () => {
     await page.getByText(/Use Personal Access Token/i).click();
     const input = page.getByLabel(/Personal Access Token/i);
 
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
-
-    await input.fill(token);
+    await input.fill(getTestToken());
     await page.getByRole("button", { name: /Connect with PAT/i }).click();
 
     // Should redirect to dashboard (default when no returnPath)
@@ -252,15 +231,14 @@ test.describe("Redirect After Login", () => {
   });
 });
 
+// Token refresh tests are mock-only since they require precise control over API responses
 test.describe("Token Refresh Flow", () => {
-  // Token refresh tests are mock-only since they require precise control over API responses
   test.beforeEach(async ({ page }) => {
-    test.skip(!isMockMode(), "Token refresh tests only run in mock mode");
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
   });
 
-  test("should refresh token and retry request on 401 for OAuth users", async ({
+  testMockOnly("should refresh token and retry request on 401 for OAuth users", async ({
     page,
   }) => {
     const owner = "test";
@@ -371,7 +349,7 @@ test.describe("Token Refresh Flow", () => {
     expect(prApiCallCount).toBeGreaterThanOrEqual(2);
   });
 
-  test("should redirect to login when token refresh fails", async ({
+  testMockOnly("should redirect to login when token refresh fails", async ({
     page,
   }) => {
     const owner = "test";
@@ -408,7 +386,7 @@ test.describe("Token Refresh Flow", () => {
     ).toBeVisible();
   });
 
-  test("should preserve return path when redirecting to login after refresh failure", async ({
+  testMockOnly("should preserve return path when redirecting to login after refresh failure", async ({
     page,
   }) => {
     const owner = "test";

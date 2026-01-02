@@ -68,6 +68,10 @@ export default tseslint.config(
           message: "Use global Playwright timeout config instead of custom timeouts in E2E tests",
         },
       ],
+      // Allow non-null assertions after explicit visibility/null checks in E2E tests
+      "@typescript-eslint/no-non-null-assertion": "off",
+      // Allow assigning test.skip to a const for conditional test runners
+      "@typescript-eslint/unbound-method": "off",
     },
   },
   ...storybook.configs["flat/recommended"]

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode } from "./fixtures/mode";
+import { getTestToken } from "./fixtures/mode";
 import { setupAuthMock } from "./fixtures/github-mocks";
 
 test.describe("CodjiFlo App", () => {
@@ -22,12 +22,7 @@ test.describe("CodjiFlo App", () => {
     const input = page.getByLabel(/Personal Access Token/i);
     const button = page.getByRole("button", { name: /Connect with PAT/i });
 
-    // Use appropriate token based on mode
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
-
-    await input.fill(token);
+    await input.fill(getTestToken());
     await button.click();
 
     // Should be on dashboard with PR URL input
