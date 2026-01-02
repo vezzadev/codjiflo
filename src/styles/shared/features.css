@@ -4,7 +4,8 @@
    DIFF TABLE (Unified/Inline mode)
    ============================================ */
 .diff-table {
-  width: 100%;
+  min-width: 100%;
+  width: max-content; /* Allow table to expand for long lines */
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -213,19 +214,21 @@
    ============================================ */
 
 /* Header dimension variables for scroll-margin calculations (measured via Playwright getBoundingClientRect) */
+/* Note: --diff-line-height and --diff-scroll-context-lines are defined in :root (variables.css) */
 .diff-view-container {
   --diff-header-toolbar-height: 33px;
   --diff-header-iterations-height: 0px; /* Only present when iterations exist */
   --diff-header-border: 1px;
-  --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
-  /* Show 3 lines of context above the first change for better orientation (UX decision) */
-  --diff-scroll-context-lines: 3;
   --diff-header-total-height: calc(
     var(--diff-header-toolbar-height) +
     var(--diff-header-iterations-height) +
     var(--diff-header-border) +
     (var(--diff-line-height) * var(--diff-scroll-context-lines))
   );
+  /* Flex layout to keep header fixed and content scrollable */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* When iterations are visible, include their height */
@@ -234,8 +237,7 @@
 }
 
 .diff-header {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0; /* Don't shrink header */
   z-index: 10;
   background-color: var(--listview-header);
   border-bottom: var(--diff-header-border) solid var(--combobox-border);
@@ -248,6 +250,12 @@
   padding: 4px 8px;
   gap: 8px;
   min-height: 32px;
+}
+
+.diff-content-area {
+  flex: 1;
+  min-height: 0; /* Allow flex child to shrink for scrolling */
+  overflow: auto; /* Both horizontal and vertical scroll */
 }
 
 .diff-filename {

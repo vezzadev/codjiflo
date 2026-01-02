@@ -494,7 +494,7 @@
 .diff-viewer {
   flex: 1;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden; /* Scroll handled by .diff-content-area */
   background-color: var(--main-bg);
 }
 

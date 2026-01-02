@@ -178,14 +178,27 @@ export function DiffView() {
 
     // Use requestAnimationFrame to ensure DOM has rendered
     const frameId = requestAnimationFrame(() => {
-      const root: ParentNode = scrollContainerRef.current ?? document;
+      const scrollContainer = scrollContainerRef.current;
+      if (!scrollContainer) return;
 
-      const firstChangedLine = root.querySelector(
+      const firstChangedLine = scrollContainer.querySelector(
         '[data-line-type="addition"], [data-line-type="deletion"]'
       );
 
-      if (firstChangedLine && typeof (firstChangedLine as HTMLElement).scrollIntoView === 'function') {
-        (firstChangedLine as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
+      if (firstChangedLine) {
+        // Manually scroll the content area instead of using scrollIntoView
+        // to avoid scrolling ancestor containers (which would hide the header)
+        // Read scroll context settings from CSS variables (defined in :root)
+        const rootStyles = getComputedStyle(document.documentElement);
+        const lineHeight = parseFloat(rootStyles.getPropertyValue('--diff-line-height')) || 23;
+        const contextLines = parseFloat(rootStyles.getPropertyValue('--diff-scroll-context-lines')) || 3;
+        const contextOffset = contextLines * lineHeight;
+
+        const lineRect = firstChangedLine.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const scrollOffset = lineRect.top - containerRect.top + scrollContainer.scrollTop - contextOffset;
+        scrollContainer.scrollTop = Math.max(0, scrollOffset);
+        scrollContainer.scrollLeft = 0;
       }
     });
 
