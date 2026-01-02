@@ -96,7 +96,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
     await page.goto(config.pageUrl);
 
     // Wait for page to fully stabilize
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     if (isMockMode()) {
       // Wait for the file navigation to be fully loaded

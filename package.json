@@ -69,6 +69,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9.32.0",
     "eslint-config-next": "^16.1.1",
+    "eslint-plugin-playwright": "^2.4.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "eslint-plugin-storybook": "^10.1.11",
     "globals": "^16.5.0",
