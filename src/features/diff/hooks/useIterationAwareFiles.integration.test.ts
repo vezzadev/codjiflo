@@ -629,6 +629,116 @@ describe('useIterationAwareFiles - Integration Tests', () => {
     });
   });
 
+  describe('Base Equivalence - Files First Modified in Later Iterations (AC-4.8.14)', () => {
+    // These tests cover the "base equivalence" fix where files that existed in the
+    // PR base but weren't modified until a later iteration should show correct status.
+    // The artifact only starts at the iteration where the file was first modified,
+    // but the file's content at earlier snapshots equals the PR base.
+
+    it('should show file as Modified when first modified in iteration 2, viewing base→iter2', () => {
+      // File existed in PR base, not modified in iteration 1, modified in iteration 2
+      // Artifact only starts at snapshot 2 (left snapshot of iteration 2)
+      // When viewing base (0) to iteration 2 (3), file should show as Modified, not Added
+      const files = [createMockFile('action.yml', FileChangeStatus.Modified, 10, 2)];
+      const artifact = createMockArtifact(1, 'action.yml', [2, 3]); // Only captured in iter 2
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 3 });
+
+      // Content at snapshot 2 = PR base content (left snapshot)
+      // Content at snapshot 3 = modified content
+      mockClient.setContent(1, 2, 'original base content');
+      mockClient.setContent(1, 3, 'modified in iteration 2');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+      expect(result.current.files[0]?.filename).toBe('action.yml');
+    });
+
+    it('should NOT show file when viewing iteration 1 if first modified in iteration 2', () => {
+      // File existed in PR base, not modified until iteration 2
+      // When viewing just iteration 1 (0→1), file should NOT appear
+      const files = [createMockFile('action.yml', FileChangeStatus.Modified)];
+      const artifact = createMockArtifact(1, 'action.yml', [2, 3]); // Only in iter 2
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 2, 'base content');
+      mockClient.setContent(1, 3, 'modified content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      // File should be filtered out - no artifact coverage for iteration 1
+      expect(result.current.files).toHaveLength(0);
+    });
+
+    it('should show file as Modified when comparing iteration 1→2 (drag selection)', () => {
+      // File existed in PR base, not modified in iteration 1, modified in iteration 2
+      // When comparing iteration 1 end (1) to iteration 2 end (3), should show as Modified
+      const files = [createMockFile('action.yml', FileChangeStatus.Modified)];
+      const artifact = createMockArtifact(1, 'action.yml', [2, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 1, toSnapshot: 3 });
+
+      mockClient.setContent(1, 2, 'base content'); // Same as content at snapshot 1
+      mockClient.setContent(1, 3, 'modified in iteration 2');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+    });
+
+    it('should show file as Added when truly added in later iteration', () => {
+      // File was actually ADDED in iteration 2 (didn't exist in base)
+      // firstSnapshotIndex = 3 (odd = right snapshot = file was added, not modified)
+      const files = [createMockFile('new-file.ts', FileChangeStatus.Added)];
+      const artifact = createMockArtifact(1, 'new-file.ts', [3]); // First seen at right snapshot
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 3 });
+
+      mockClient.setContent(1, 3, 'brand new file content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Added);
+    });
+
+    it('should handle multiple files with different first-modification iterations', () => {
+      // file1: modified in iteration 1
+      // file2: first modified in iteration 2 (base equivalence applies)
+      // file3: first modified in iteration 3 (base equivalence applies)
+      // Viewing base→iteration 3 should show all as Modified
+      const files = [
+        createMockFile('file1.ts', FileChangeStatus.Modified),
+        createMockFile('file2.ts', FileChangeStatus.Modified),
+        createMockFile('file3.ts', FileChangeStatus.Modified),
+      ];
+
+      const artifacts = [
+        createMockArtifact(1, 'file1.ts', [0, 1, 2, 3, 4, 5]), // Modified from start
+        createMockArtifact(2, 'file2.ts', [2, 3, 4, 5]),       // First modified iter 2
+        createMockArtifact(3, 'file3.ts', [4, 5]),             // First modified iter 3
+      ];
+
+      setupMocks(files, artifacts, { fromSnapshot: 0, toSnapshot: 5 });
+
+      mockClient.setContent(1, 0, 'file1 base');
+      mockClient.setContent(1, 5, 'file1 modified');
+      mockClient.setContent(2, 2, 'file2 base');
+      mockClient.setContent(2, 5, 'file2 modified');
+      mockClient.setContent(3, 4, 'file3 base');
+      mockClient.setContent(3, 5, 'file3 modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(3);
+      expect(result.current.files.every(f => f.status === FileChangeStatus.Modified)).toBe(true);
+    });
+  });
+
   describe('Regression Tests', () => {
     it('should not return stale content from wrong artifact (multi-artifact bug)', () => {
       // This tests the bug where artifact 1 would return content from snapshot 9

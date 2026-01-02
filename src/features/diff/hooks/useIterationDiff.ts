@@ -80,9 +80,17 @@ export function useIterationDiff(): IterationDiffResult {
    *
    * IMPORTANT: Only returns content if the file actually EXISTS at the requested snapshot.
    * This ensures deleted files return undefined at the deletion snapshot.
+   *
+   * SPECIAL CASE: For snapshot 0 (PR base), if the artifact was first captured in a later
+   * iteration (firstSnapshotIndex > 0), we can still use that content IF the first capture
+   * was a left (even) snapshot. Left snapshots are always fetched from the PR base, so
+   * content at snapshot 2, 4, etc. equals content at snapshot 0 for unchanged files.
+   *
+   * @param rangeEnd - The toSnapshot of the selected range. Used to determine if base
+   *                   equivalence should apply (only if artifact overlaps with range).
    */
   const getContentFromAnyArtifact = useCallback(
-    (path: string, snapshotIndex: number): IterationFileContent | undefined => {
+    (path: string, snapshotIndex: number, rangeEnd: number): IterationFileContent | undefined => {
       if (!client) return undefined;
 
       const artifactsForPath = pathToArtifacts.get(path) ?? [];
@@ -99,14 +107,29 @@ export function useIterationDiff(): IterationDiffResult {
           snapshotIndex >= artifact.firstSnapshotIndex &&
           snapshotIndex <= artifact.lastSnapshotIndex;
 
-        if (!existsAtSnapshot) {
+        // Special case: any snapshot BEFORE the artifact's first modification can use the
+        // artifact's left (even) snapshot content, since all pre-modification content equals PR base.
+        // Example: comparing [1,3] for a file first modified in iteration 2 (artifact [2,3]):
+        //   - Snapshot 1 content = snapshot 0 content = snapshot 2 content = PR base
+        // IMPORTANT: Only apply if artifact overlaps with the selected range (firstSnapshotIndex <= rangeEnd).
+        // Otherwise, files not modified in the selected range would incorrectly appear.
+        const useBaseEquivalence =
+          !existsAtSnapshot &&
+          snapshotIndex < artifact.firstSnapshotIndex && // Looking before artifact starts
+          artifact.firstSnapshotIndex % 2 === 0 && // First snapshot is a left snapshot (has base content)
+          artifact.firstSnapshotIndex <= rangeEnd; // Artifact overlaps with selected range
+
+        if (!existsAtSnapshot && !useBaseEquivalence) {
           // File doesn't exist at this snapshot (added later or deleted earlier)
           continue;
         }
 
+        // Determine which snapshot to actually use for path/content lookup
+        const effectiveSnapshot = useBaseEquivalence ? artifact.firstSnapshotIndex : snapshotIndex;
+
         // Get the path at this snapshot. If the exact index isn't recorded,
         // check if the file still has the same path (using the last known path).
-        const pathAtSnapshot = artifact.repoPaths[snapshotIndex];
+        const pathAtSnapshot = artifact.repoPaths[effectiveSnapshot];
         if (pathAtSnapshot !== undefined && pathAtSnapshot !== path) {
           // File exists but has a different path (renamed) - skip this artifact
           continue;
@@ -114,11 +137,11 @@ export function useIterationDiff(): IterationDiffResult {
         // If pathAtSnapshot is undefined, the file still exists (per lastSnapshotIndex)
         // but no explicit row was recorded - assume path unchanged from earlier snapshot
 
-        const content = client.getFileContent(artifact.id, snapshotIndex);
+        const content = client.getFileContent(artifact.id, effectiveSnapshot);
         if (content?.content) {
-          // getFileContent returns content at or before snapshotIndex
+          // getFileContent returns content at or before effectiveSnapshot
           // Calculate how far this content is from the requested snapshot
-          const distance = snapshotIndex - content.snapshotIndex;
+          const distance = effectiveSnapshot - content.snapshotIndex;
           if (distance < bestDistance) {
             bestContent = content;
             bestDistance = distance;
@@ -145,8 +168,8 @@ export function useIterationDiff(): IterationDiffResult {
 
       // Try to get content from ANY artifact with this path
       // This handles the case where different file versions have different artifacts
-      const leftContent = getContentFromAnyArtifact(path, selectedRange.fromSnapshot);
-      const rightContent = getContentFromAnyArtifact(path, selectedRange.toSnapshot);
+      const leftContent = getContentFromAnyArtifact(path, selectedRange.fromSnapshot, selectedRange.toSnapshot);
+      const rightContent = getContentFromAnyArtifact(path, selectedRange.toSnapshot, selectedRange.toSnapshot);
 
       // Convert to FileContent format
       const baseContent = iterationToFileContent(leftContent, path, `snapshot-${selectedRange.fromSnapshot}`);

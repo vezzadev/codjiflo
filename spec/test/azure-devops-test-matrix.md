@@ -83,6 +83,9 @@ Thread 18:
 | fileC.txt | Unchanged | Unchanged | Modified | Unchanged |
 | fileD.txt | - | - | Added | Modified |
 | fileE.txt | Unchanged (comment) | Unchanged | **DELETED** (orphan) | - |
+| fileF.txt | Unchanged | Modified | Unchanged | Unchanged |
+
+**Note on fileF.txt**: This file exists in the PR base but is NOT modified until iteration 2. Tests IT-11 through IT-13 validate that iteration-aware file status correctly shows "Modified" (not "Added") when the artifact only starts at the iteration where the file was first changed.
 
 ### Test Cases
 
@@ -95,9 +98,12 @@ Thread 18:
 | IT-05 | Force-push: comment survives SHA change | 2 → 3 | Comment persists via iteration ID | S-4.2 |
 | IT-06 | Compare iteration 1 vs iteration 3 | 1 → 3 | Skip iteration 2 in comparison | S-4.8 |
 | IT-07 | Force-push deletes file with comment | 2 → 3 on fileE | Orphaned comment on deleted file | S-4.9 |
-| IT-08 | Diff 1→2 file delta | 1 → 2 | A=modified, B=added, C=unchanged | S-4.8 |
-| IT-09 | Diff 2→3 file delta | 2 → 3 | A=unchanged, B=deleted, C=modified, D=added, E=deleted | S-4.8 |
-| IT-10 | Diff 1→3 cumulative delta | 1 → 3 | A=modified, B=no-op, C=modified, D=added, E=deleted | S-4.8 |
+| IT-08 | Diff 1→2 file delta | 1 → 2 | A=modified, B=added, C=unchanged, F=modified | S-4.8 |
+| IT-09 | Diff 2→3 file delta | 2 → 3 | A=unchanged, B=deleted, C=modified, D=added, E=deleted, F=unchanged | S-4.8 |
+| IT-10 | Diff 1→3 cumulative delta | 1 → 3 | A=modified, B=no-op, C=modified, D=added, E=deleted, F=modified | S-4.8 |
+| IT-11 | Late-modified file status (base→iter2) | base → 2 | F=**Modified** (not Added), base equivalence applies | S-4.8, AC-4.8.14 |
+| IT-12 | Late-modified file hidden in earlier iteration | base → 1 | F=**not shown** (no changes in iteration 1) | S-4.8, AC-4.8.11 |
+| IT-13 | Drag selection iter1→iter2 status | 1 → 2 | F=**Modified** (not Added), base equivalence for non-zero snapshots | S-4.8, AC-4.8.14 |
 
 ### Iteration Context API
 
@@ -349,7 +355,7 @@ interface ThreadContext {
 | #2 | Comment Positioning | CP-01 to CP-06 | `test/comment-positioning` |
 | #3 | Threading & States | CT-01 to CT-08 | `test/comment-threading` |
 | #4 | File Operations | FO-01 to FO-05 | `test/file-operations` |
-| #5 | Iteration Tracking | IT-01 to IT-10 | `test/iteration-tracking` |
+| #5 | Iteration Tracking | IT-01 to IT-13 | `test/iteration-tracking` |
 | #6 | Code Suggestions | CS-01 to CS-04 | `test/code-suggestions` |
 | #7 | Top-Level Comments | TL-01 to TL-06 | `test/top-level-comments` |
 | #8 | PR State Transitions | PS-01 to PS-03 | `test/pr-states` |
@@ -361,7 +367,7 @@ interface ThreadContext {
 | #15 | Multi-Commit Push | MC-01 to MC-03 | `test/multi-commit-push` |
 | #16 | Completed (Merged) PR | PS-04 | `test/completed-pr` |
 
-**Total: 59 test cases across 14 PRs**
+**Total: 62 test cases across 14 PRs**
 
 ---
 
