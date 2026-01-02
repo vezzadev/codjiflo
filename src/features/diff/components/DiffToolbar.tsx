@@ -8,47 +8,59 @@ import { Eye, EyeOff, File } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
+// Icon color constants (defined outside components to avoid recreation on each render)
+const ICON_COLORS = {
+  w: 'var(--main-bg)',
+  r: 'var(--diff-delete-word)',
+  g: 'var(--diff-add-word)',
+  border: 'var(--combobox-border)',
+} as const;
+
+// Pattern: white, red, red, green, green, green, white, red, red, red, white, white, white, white
+const INLINE_ROWS = [
+  ICON_COLORS.w, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.g, ICON_COLORS.g, ICON_COLORS.g,
+  ICON_COLORS.w, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.w, ICON_COLORS.w,
+  ICON_COLORS.w, ICON_COLORS.w,
+];
+
+// Left: white, red, red, white, white, white, white, red, red, red, white, white, white, white
+const SXS_LEFT_ROWS = [
+  ICON_COLORS.w, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w,
+  ICON_COLORS.w, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.r, ICON_COLORS.w, ICON_COLORS.w,
+  ICON_COLORS.w, ICON_COLORS.w,
+];
+
+// Right: white, white, white, green, green, green, white, white, white, white, white, white, white, white
+const SXS_RIGHT_ROWS = [
+  ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.g, ICON_COLORS.g, ICON_COLORS.g,
+  ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w, ICON_COLORS.w,
+  ICON_COLORS.w, ICON_COLORS.w,
+];
+
 /** Inline view icon - unified diff pattern */
 function InlineIcon() {
-  // Pattern: white, red, red, green, green, green, white, red, red, red, white, white, white, white
-  const w = 'var(--main-bg)';
-  const r = 'var(--diff-delete-word)';
-  const g = 'var(--diff-add-word)';
-  const rows = [w, r, r, g, g, g, w, r, r, r, w, w, w, w];
-
   return (
     <svg width="12" height="16" viewBox="0 0 12 16" aria-hidden className="btn-toolbar-icon">
-      {rows.map((color, i) => (
+      {INLINE_ROWS.map((color, i) => (
         <rect key={i} x="1" y={1 + i} width="10" height="1" fill={color} />
       ))}
-      <rect x="0.5" y="0.5" width="11" height="15" fill="none" stroke="var(--combobox-border)" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="11" height="15" fill="none" stroke={ICON_COLORS.border} strokeWidth="1" />
     </svg>
   );
 }
 
 /** Side-by-side view icon - split diff pattern */
 function SxSIcon() {
-  // Left side shows deletions (red) where inline has red
-  // Right side shows additions (green) where inline has green
-  const w = 'var(--main-bg)';
-  const r = 'var(--diff-delete-word)';
-  const g = 'var(--diff-add-word)';
-  // Inline: white, red, red, green, green, green, white, red, red, red, white, white, white, white
-  // Left:   white, red, red, white, white, white, white, red, red, red, white, white, white, white
-  const leftRows = [w, r, r, w, w, w, w, r, r, r, w, w, w, w];
-  // Right:  white, white, white, green, green, green, white, white, white, white, white, white, white, white
-  const rightRows = [w, w, w, g, g, g, w, w, w, w, w, w, w, w];
-
   return (
     <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden className="btn-toolbar-icon">
-      {leftRows.map((color, i) => (
+      {SXS_LEFT_ROWS.map((color, i) => (
         <rect key={`l${i}`} x="1" y={1 + i} width="10" height="1" fill={color} />
       ))}
-      {rightRows.map((color, i) => (
+      {SXS_RIGHT_ROWS.map((color, i) => (
         <rect key={`r${i}`} x="13" y={1 + i} width="10" height="1" fill={color} />
       ))}
-      <rect x="0.5" y="0.5" width="23" height="15" fill="none" stroke="var(--combobox-border)" strokeWidth="1" />
-      <line x1="12" y1="1" x2="12" y2="15" stroke="var(--combobox-border)" strokeWidth="1" />
+      <rect x="0.5" y="0.5" width="23" height="15" fill="none" stroke={ICON_COLORS.border} strokeWidth="1" />
+      <line x1="12" y1="1" x2="12" y2="15" stroke={ICON_COLORS.border} strokeWidth="1" />
     </svg>
   );
 }
@@ -81,7 +93,15 @@ function ToggleButton({ isActive, onClick, icon, label, shortcut, ariaLabel, cla
   );
 }
 
-/** Three-stop slider for content filter (left/both/right) */
+// Content filter constants (defined outside component to avoid recreation on each render)
+const FILTER_POSITIONS: ContentFilter[] = ['left', 'both', 'right'];
+const FILTER_LABELS: Record<ContentFilter, string> = {
+  left: 'Left Only',
+  both: 'Show Both',
+  right: 'Right Only',
+};
+
+/** Three-stop radiogroup for content filter (left/both/right) */
 interface ContentFilterSliderProps {
   value: ContentFilter;
   onChange: (value: ContentFilter) => void;
@@ -91,14 +111,6 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const positions: ContentFilter[] = ['left', 'both', 'right'];
-
-  const labels: Record<ContentFilter, string> = {
-    left: 'Left Only',
-    both: 'Show Both',
-    right: 'Right Only',
-  };
-
   // Dynamic tooltip hints based on current position
   const dragHints: Record<ContentFilter, string> = {
     left: 'Drag for Both (B) or Right Only (R)',
@@ -106,42 +118,39 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
     right: 'Drag for Left Only (L) or Both (B)',
   };
 
-  // Keyboard shortcuts for content filter
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore if typing in an input
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
-      ) {
+  // Keyboard navigation for the radiogroup
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    const currentIndex = FILTER_POSITIONS.indexOf(value);
+    let newIndex = currentIndex;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        newIndex = Math.max(0, currentIndex - 1);
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        newIndex = Math.min(FILTER_POSITIONS.length - 1, currentIndex + 1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        newIndex = FILTER_POSITIONS.length - 1;
+        break;
+      default:
         return;
-      }
+    }
 
-      // Ignore if modifier keys are pressed
-      if (event.ctrlKey || event.metaKey || event.altKey) {
-        return;
-      }
-
-      switch (event.key.toLowerCase()) {
-        case 'l':
-          onChange('left');
-          break;
-        case 'b':
-          onChange('both');
-          break;
-        case 'r':
-          onChange('right');
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onChange]);
-
-  const handleClick = (filter: ContentFilter) => {
-    onChange(filter);
-  };
+    const newPosition = FILTER_POSITIONS[newIndex];
+    if (newIndex !== currentIndex && newPosition) {
+      onChange(newPosition);
+    }
+  }, [value, onChange]);
 
   const updatePositionFromMouse = useCallback((clientX: number) => {
     if (!trackRef.current) return;
@@ -189,12 +198,10 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
   return (
     <div
       className="content-filter-slider"
-      role="slider"
+      role="radiogroup"
       aria-label="Content filter"
-      aria-valuemin={0}
-      aria-valuemax={2}
-      aria-valuenow={positions.indexOf(value)}
-      aria-valuetext={labels[value]}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       title={dragHints[value]}
     >
       <div
@@ -209,24 +216,14 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
         {/* Thumb with label */}
         <div
           className={`content-filter-thumb content-filter-thumb-${value}`}
+          role="radio"
+          aria-checked={true}
+          aria-label={FILTER_LABELS[value]}
         >
-          <span className="content-filter-thumb-label">{labels[value]}</span>
+          <span className="content-filter-thumb-label">{FILTER_LABELS[value]}</span>
         </div>
       </div>
 
-      {/* Clickable labels */}
-      <div className="content-filter-labels">
-        {positions.map((pos) => (
-          <button
-            key={pos}
-            type="button"
-            className={`content-filter-label ${value === pos ? 'active' : ''}`}
-            onClick={() => handleClick(pos)}
-          >
-            {labels[pos]}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -243,7 +240,7 @@ export function DiffToolbar() {
     toggleWhitespace,
   } = useDiffStore();
 
-  // Keyboard shortcuts (AC-3.3.4)
+  // Keyboard shortcuts (AC-3.3.4) - consolidated handler for all toolbar shortcuts
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       // Ignore if typing in an input
@@ -260,33 +257,53 @@ export function DiffToolbar() {
       }
 
       switch (event.key.toLowerCase()) {
+        // View mode shortcuts
         case 'u':
+          event.preventDefault();
           setViewMode('unified');
           break;
         case 's':
           // Only switch if not already in split to avoid conflicts
           if (viewConfig.mode !== 'split') {
+            event.preventDefault();
             setViewMode('split');
           }
           break;
+        // Content filter shortcuts
+        case 'l':
+          event.preventDefault();
+          setContentFilter('left');
+          break;
+        case 'b':
+          event.preventDefault();
+          setContentFilter('both');
+          break;
+        case 'r':
+          event.preventDefault();
+          setContentFilter('right');
+          break;
+        // Display mode shortcuts
         case 'f':
           // Show full file
           if (!viewConfig.showFullFile) {
+            event.preventDefault();
             toggleFullFile();
           }
           break;
         case 'c':
           // Show changes only
           if (viewConfig.showFullFile) {
+            event.preventDefault();
             toggleFullFile();
           }
           break;
         case 'w':
+          event.preventDefault();
           toggleWhitespace();
           break;
       }
     },
-    [setViewMode, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace]
+    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace]
   );
 
   useEffect(() => {

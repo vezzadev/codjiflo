@@ -44,9 +44,9 @@ describe('DiffToolbar', () => {
       expect(screen.getByText('Inline')).toBeInTheDocument();
     });
 
-    it('renders content filter slider', () => {
+    it('renders content filter radiogroup', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
+      expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
     it('renders full file toggle button', () => {
@@ -95,44 +95,45 @@ describe('DiffToolbar', () => {
     });
   });
 
-  describe('content filter slider', () => {
-    it('shows content filter slider in unified mode', () => {
+  describe('content filter radiogroup', () => {
+    it('shows content filter in unified mode', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
+      expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('shows content filter slider in split mode', () => {
+    it('shows content filter in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
-      expect(screen.getByRole('slider', { name: 'Content filter' })).toBeInTheDocument();
+      expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('has correct aria-valuetext for "both" filter', () => {
+    it('has radio with correct label for current filter', () => {
       render(<DiffToolbar />);
-      const slider = screen.getByRole('slider', { name: 'Content filter' });
-      expect(slider).toHaveAttribute('aria-valuetext', 'Show Both');
+      const radio = screen.getByRole('radio', { name: 'Show Both' });
+      expect(radio).toHaveAttribute('aria-checked', 'true');
     });
 
-    it('changes filter when clicking on slider track', async () => {
-      const user = userEvent.setup();
+    it('changes filter with L keyboard shortcut', () => {
       render(<DiffToolbar />);
-
-      // Click the Left Only button
-      const leftButton = screen.getByRole('button', { name: 'Left Only' });
-      await user.click(leftButton);
-
+      fireEvent.keyDown(window, { key: 'l' });
       expect(useDiffStore.getState().viewConfig.filter).toBe('left');
     });
 
-    it('changes filter when clicking Right Only button', async () => {
-      const user = userEvent.setup();
+    it('changes filter with R keyboard shortcut', () => {
       render(<DiffToolbar />);
+      fireEvent.keyDown(window, { key: 'r' });
+      expect(useDiffStore.getState().viewConfig.filter).toBe('right');
+    });
 
-      const rightButton = screen.getByRole('button', { name: 'Right Only' });
-      await user.click(rightButton);
+    it('supports arrow key navigation when focused', () => {
+      render(<DiffToolbar />);
+      const radiogroup = screen.getByRole('radiogroup', { name: 'Content filter' });
+      radiogroup.focus();
 
+      // Arrow right from 'both' should go to 'right'
+      fireEvent.keyDown(radiogroup, { key: 'ArrowRight' });
       expect(useDiffStore.getState().viewConfig.filter).toBe('right');
     });
   });
