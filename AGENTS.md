@@ -51,6 +51,22 @@ E2E tests support two modes:
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
 - `e2e/fixtures/github-mocks.ts` - Centralized mock handlers
 
+### E2E Test Debugging
+
+**When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue.** Always inspect the trace first:
+
+1. Read the `error-context.md` file in the test-results folder - it shows the page snapshot at failure time
+2. Run `npx playwright show-trace <trace.zip>` if deeper investigation needed
+3. Look for actual failures: missing elements, wrong content, API errors, auth issues
+
+**Do NOT:**
+- Add `waitForTimeout()` calls
+- Increase timeouts
+- Add retry logic
+- Skip/disable the test
+
+The default 5s timeout is sufficient for properly working code. If a test times out, the product or test code is broken - fix the root cause.
+
 ## Tech Stack
 
 Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict), Custom CSS with CSS Variables, Zustand, Vitest, Playwright, Storybook

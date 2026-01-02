@@ -404,6 +404,206 @@ describe('useIterationDiff', () => {
           const diffByOldName = result.current.getFileDiffByPath('src/old-name.ts');
           expect(diffByOldName).not.toBeNull();
         });
+
+        it('should find base content for file first modified in later iteration (base equivalence, snapshot 0)', () => {
+          // Scenario: file existed in PR base, wasn't modified in iteration 1,
+          // but was modified in iteration 2.
+          // - Artifact firstSnapshotIndex = 2 (left snapshot of iteration 2)
+          // - repoPaths = [null, null, 'action.yml', 'action.yml']
+          // - Viewing from base (snapshot 0) to iteration 2 (snapshot 3)
+          // - Should find base content via "base equivalence" (left snapshots all equal base)
+          const lateModifiedArtifact = {
+            id: 14,
+            changeTrackingId: 'late-modified-file',
+            repoPaths: [null, null, 'action.yml', 'action.yml'],
+            firstSnapshotIndex: 2, // First captured in iteration 2
+            lastSnapshotIndex: 3,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 3 }, // Base to iteration 2
+            isDegraded: false,
+            artifacts: [lateModifiedArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            // Content only stored at snapshots 2 and 3
+            if (snapshotIndex === 2) {
+              return {
+                artifactId,
+                snapshotIndex: 2,
+                content: 'base content', // Left snapshot = PR base content
+                contentHash: 'hash-base',
+                sizeBytes: 12,
+              };
+            }
+            if (snapshotIndex === 3) {
+              return {
+                artifactId,
+                snapshotIndex: 3,
+                content: 'modified content',
+                contentHash: 'hash-modified',
+                sizeBytes: 16,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('action.yml');
+
+          // Should find both base and head content
+          // This previously failed because lookup at snapshot 0 didn't find the artifact
+          // Now uses "base equivalence" to find content from snapshot 2 (left snapshot)
+          expect(diff).not.toBeNull();
+          expect(diff?.base).not.toBeNull();
+          expect(diff?.base?.content).toBe('base content');
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.head?.content).toBe('modified content');
+          // Should show as modified (both exist), not added (only head exists)
+          expect(diff?.diffLines.some(l => l.type === 'deletion' || l.type === 'context')).toBe(true);
+        });
+
+        it('should find base content when comparing iteration ranges (base equivalence, snapshot 1)', () => {
+          // Scenario: comparing iteration 1 to iteration 2 [1, 3]
+          // File was first modified in iteration 2, so artifact starts at snapshot 2
+          // Snapshot 1 content should equal snapshot 2 content (both are PR base)
+          const lateModifiedArtifact = {
+            id: 17,
+            changeTrackingId: 'late-modified-range',
+            repoPaths: [null, null, 'action.yml', 'action.yml'],
+            firstSnapshotIndex: 2,
+            lastSnapshotIndex: 3,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 1, toSnapshot: 3 }, // Iteration 1 to iteration 2
+            isDegraded: false,
+            artifacts: [lateModifiedArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            if (snapshotIndex === 2) {
+              return {
+                artifactId,
+                snapshotIndex: 2,
+                content: 'base content',
+                contentHash: 'hash-base',
+                sizeBytes: 12,
+              };
+            }
+            if (snapshotIndex === 3) {
+              return {
+                artifactId,
+                snapshotIndex: 3,
+                content: 'modified content',
+                contentHash: 'hash-modified',
+                sizeBytes: 16,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('action.yml');
+
+          // Should find both base (from snapshot 2 via equivalence) and head (snapshot 3)
+          expect(diff).not.toBeNull();
+          expect(diff?.base).not.toBeNull();
+          expect(diff?.base?.content).toBe('base content');
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.head?.content).toBe('modified content');
+          // Should show as modified, not added
+          expect(diff?.diffLines.some(l => l.type === 'deletion' || l.type === 'context')).toBe(true);
+        });
+
+        it('should NOT use base equivalence for files added in later iteration', () => {
+          // File was actually added in iteration 2 (firstSnapshotIndex = 3, odd = right snapshot)
+          // Should NOT apply base equivalence
+          const addedInIteration2 = {
+            id: 15,
+            changeTrackingId: 'new-in-iter2',
+            repoPaths: [null, null, null, 'new-file.ts'],
+            firstSnapshotIndex: 3, // First seen at right snapshot of iteration 2
+            lastSnapshotIndex: 3,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
+            isDegraded: false,
+            artifacts: [addedInIteration2],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            if (snapshotIndex === 3) {
+              return {
+                artifactId,
+                snapshotIndex: 3,
+                content: 'new file content',
+                contentHash: 'hash-new',
+                sizeBytes: 16,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('new-file.ts');
+
+          // Base should be null (file didn't exist at base)
+          // Head should have content
+          expect(diff).not.toBeNull();
+          expect(diff?.base).toBeNull();
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.diffLines.every(l => l.type === 'addition')).toBe(true);
+        });
+
+        it('should NOT show file when viewing iteration before file was first modified', () => {
+          // File existed in PR base, first modified in iteration 2
+          // When viewing iteration 1 [0,1], file should NOT appear at all
+          // (Previously this incorrectly showed as "deleted")
+          const lateModifiedArtifact = {
+            id: 16,
+            changeTrackingId: 'late-modified',
+            repoPaths: [null, null, 'action.yml', 'action.yml'],
+            firstSnapshotIndex: 2, // First captured in iteration 2
+            lastSnapshotIndex: 3,
+          };
+
+          vi.mocked(useIterationStore).mockReturnValue({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 1 }, // Viewing iteration 1
+            isDegraded: false,
+            artifacts: [lateModifiedArtifact],
+          } as unknown);
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            // Content only exists at snapshots 2 and 3
+            if (snapshotIndex === 2 || snapshotIndex === 3) {
+              return {
+                artifactId,
+                snapshotIndex,
+                content: 'file content',
+                contentHash: 'hash',
+                sizeBytes: 12,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('action.yml');
+
+          // Both base and head should be null - file wasn't modified in iteration 1
+          // Base equivalence should NOT apply because artifact doesn't overlap with range [0,1]
+          expect(diff).not.toBeNull();
+          expect(diff?.base).toBeNull();
+          expect(diff?.head).toBeNull();
+          expect(diff?.diffLines.length).toBe(0);
+        });
       });
     });
   });

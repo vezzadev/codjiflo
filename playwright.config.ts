@@ -21,9 +21,15 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
 }
 
 // URLs for different modes
-const baseURL = isProdMode
+// - mock mode: always localhost
+// - prod mode in CI: production site (codjiflo.vza.net)
+// - prod mode locally: localhost dev server (for faster iteration)
+const baseURL = isProdMode && isCI
   ? 'https://codjiflo.vza.net'
   : 'http://localhost:3000';
+
+// Need web server for mock mode OR prod mode running locally
+const needsWebServer = !isProdMode || !isCI;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -48,13 +54,14 @@ export default defineConfig({
       },
     },
   ],
-  // Only start server in mock mode (production build to avoid Fast Refresh)
-  ...(isProdMode ? {} : {
+  // Start web server when needed (mock mode or prod mode running locally)
+  // In CI prod mode, we hit the production site directly
+  ...(needsWebServer ? {
     webServer: {
       command: "npm run build && npm run start",
       url: "http://localhost:3000",
       reuseExistingServer: !isCI,
       timeout: 180_000,
     },
-  }),
+  } : {}),
 });
