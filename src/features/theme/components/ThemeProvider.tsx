@@ -9,6 +9,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const theme = useThemeStore((state) => state.theme);
+  const diffColorScheme = useThemeStore((state) => state.diffColorScheme);
 
   useEffect(() => {
     // Apply theme class to document on mount and when theme changes
@@ -24,6 +25,23 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
     // 'dark' is default, no class needed
   }, [theme]);
+
+  useEffect(() => {
+    // Apply diff color scheme class to document
+    const html = document.documentElement;
+    html.classList.remove(
+      'diff-scheme-classic',
+      'diff-scheme-light',
+      'diff-scheme-protanopia',
+      'diff-scheme-deuteranopia',
+      'diff-scheme-tritanopia'
+    );
+
+    if (diffColorScheme !== 'dark') {
+      html.classList.add(`diff-scheme-${diffColorScheme}`);
+    }
+    // 'dark' is default, no class needed
+  }, [diffColorScheme]);
 
   return <>{children}</>;
 }

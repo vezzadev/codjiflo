@@ -653,3 +653,69 @@ a {
 a:hover {
   text-decoration: none;
 }
+
+/* ============================================
+   DIFF COLOR SCHEMES
+   ============================================ */
+
+/* Dark scheme is the default (defined in :root) */
+
+/* Classic scheme - GitHub-like yellow/salmon */
+.diff-scheme-classic {
+  --diff-add-line: #FFFFBB;
+  --diff-add-gutter: #E8E8A0;
+  --diff-add-word: #FFFF80;
+  --diff-add-fg: #6B6B00;
+  --diff-delete-line: #FFA8A8;
+  --diff-delete-gutter: #E09090;
+  --diff-delete-word: #FF7777;
+  --diff-delete-fg: #8B0000;
+}
+
+/* Light scheme - pastel green/red for light backgrounds */
+.diff-scheme-light {
+  --diff-add-line: #E6FFEC;
+  --diff-add-gutter: #CCFFD8;
+  --diff-add-word: #ACFFC0;
+  --diff-add-fg: #1A7F37;
+  --diff-delete-line: #FFEBE9;
+  --diff-delete-gutter: #FFD7D5;
+  --diff-delete-word: #FFC0C0;
+  --diff-delete-fg: #CF222E;
+}
+
+/* Protanopia scheme - blue/yellow for red-green colorblindness (protanopia) */
+.diff-scheme-protanopia {
+  --diff-add-line: #D4EDFF;
+  --diff-add-gutter: #B8DFFF;
+  --diff-add-word: #A8DBFF;
+  --diff-add-fg: #0550AE;
+  --diff-delete-line: #FFF4CC;
+  --diff-delete-gutter: #FFEBB3;
+  --diff-delete-word: #FFEB99;
+  --diff-delete-fg: #9A6700;
+}
+
+/* Deuteranopia scheme - blue/yellow for red-green colorblindness (deuteranopia) */
+.diff-scheme-deuteranopia {
+  --diff-add-line: #D4EDFF;
+  --diff-add-gutter: #B8DFFF;
+  --diff-add-word: #A8DBFF;
+  --diff-add-fg: #0550AE;
+  --diff-delete-line: #FFF4CC;
+  --diff-delete-gutter: #FFEBB3;
+  --diff-delete-word: #FFEB99;
+  --diff-delete-fg: #9A6700;
+}
+
+/* Tritanopia scheme - pink/cyan for blue-yellow colorblindness */
+.diff-scheme-tritanopia {
+  --diff-add-line: #FFE0E0;
+  --diff-add-gutter: #FFD0D0;
+  --diff-add-word: #FFC0C0;
+  --diff-add-fg: #A01010;
+  --diff-delete-line: #E0FFFF;
+  --diff-delete-gutter: #C0FFFF;
+  --diff-delete-word: #A0FFFF;
+  --diff-delete-fg: #007070;
+}
