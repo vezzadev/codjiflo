@@ -6,6 +6,8 @@ import {
   detectLanguage,
   getDiffLinePosition,
   alignDiffLines,
+  collapseToChangesOnly,
+  collapseAlignedToChangesOnly,
 } from '../utils';
 import { useIterationDiff } from '../hooks';
 import { DiffLine } from './DiffLine';
@@ -88,8 +90,12 @@ export function DiffView() {
   const { diffLines, language } = useMemo(() => {
     // Priority 1: Use iteration diff when in iteration mode (S-4.8)
     if (isIterationMode && iterationDiff) {
+      // Apply Changes/Full toggle in iteration mode
+      const lines = viewConfig.showFullFile
+        ? iterationDiff.diffLines
+        : collapseToChangesOnly(iterationDiff.diffLines);
       return {
-        diffLines: iterationDiff.diffLines,
+        diffLines: lines,
         language: detectLanguage(filename ?? ''),
       };
     }
@@ -119,7 +125,10 @@ export function DiffView() {
 
     // Priority 1: Use iteration diff aligned lines
     if (isIterationMode && iterationDiff) {
-      return iterationDiff.alignedLines;
+      // Apply Changes/Full toggle in iteration mode
+      return viewConfig.showFullFile
+        ? iterationDiff.alignedLines
+        : collapseAlignedToChangesOnly(iterationDiff.alignedLines);
     }
 
     // Priority 2: Use full file aligned lines when available (AC-3.1.7-9)

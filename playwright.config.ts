@@ -24,9 +24,11 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
 // - mock mode: always localhost
 // - prod mode in CI: production site (codjiflo.vza.net)
 // - prod mode locally: localhost dev server (for faster iteration)
+// Use DEV_PORT env var to override port (useful when running dev server on different port)
+const localPort = process.env.DEV_PORT ?? '3000';
 const baseURL = isProdMode && isCI
   ? 'https://codjiflo.vza.net'
-  : 'http://localhost:3000';
+  : `http://localhost:${localPort}`;
 
 // Need web server for mock mode OR prod mode running locally
 const needsWebServer = !isProdMode || !isCI;
@@ -56,7 +58,8 @@ export default defineConfig({
   ],
   // Start web server when needed (mock mode or prod mode running locally)
   // In CI prod mode, we hit the production site directly
-  ...(needsWebServer ? {
+  // When DEV_PORT is set, skip starting server (assumes dev server is already running)
+  ...(needsWebServer && !process.env.DEV_PORT ? {
     webServer: {
       command: "npm run build && npm run start",
       url: "http://localhost:3000",
