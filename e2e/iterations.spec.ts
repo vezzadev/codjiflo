@@ -282,6 +282,139 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
   });
 });
 
+test.describe("Iteration Changes/Full Toggle (Prod Mode)", () => {
+  // Tests for the Changes/Full toggle in iteration mode
+  // Uses PR #98 which has iteration data and a good file for testing (playwright.config.ts)
+  const changeToggleTestPR = {
+    owner: "pedropaulovc",
+    repo: "codjiflo",
+    prNumber: 98,
+  };
+
+  test.beforeEach(async ({ page }) => {
+    test.skip(!isProdMode(), "Requires real iteration artifacts - prod mode only");
+    await setupAuthState(page);
+  });
+
+  test("Changes/Full toggle works correctly in iteration mode", async ({
+    page,
+  }) => {
+    // This test verifies the Changes/Full toggle works in both directions
+    // in iteration mode where diffs are computed from artifact data.
+
+    const { owner, repo, prNumber } = changeToggleTestPR;
+    const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
+
+    await page.goto(pageUrl);
+    await page.waitForLoadState("load");
+
+    // Wait for file list to load first (indicates page is ready)
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Wait for iterations to load (artifact download may take time)
+    const selector = page.getByTestId("iteration-selector");
+    await expect(selector).toBeVisible();
+
+    // Click on a file with changes (playwright.config.ts)
+    const playwrightConfigItem = fileList.locator(".tree-item.file").filter({
+      hasText: "playwright.config.ts",
+    });
+    await playwrightConfigItem.click();
+
+    // Wait for diff to load
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
+    // Verify we're in iteration mode (toolbar should be visible)
+    const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
+    await expect(toolbar).toBeVisible();
+
+    // Get the toggle button (could be either state)
+    const showFullFileBtn = page.getByRole("button", { name: /Show full file/i });
+    const showChangesOnlyBtn = page.getByRole("button", { name: /Show changes only/i });
+
+    // First, ensure we're in Full mode to have a known starting point
+    // If "Show changes only" is visible, we're already in Full mode
+    // If "Show full file" is visible, click it to switch to Full mode
+    if (await showFullFileBtn.isVisible()) {
+      await showFullFileBtn.click();
+    }
+
+    // Verify Full mode: should see first line of file (import statement)
+    await expect(diffRegion).toContainText("import { existsSync }");
+    // Full mode should NOT have hunk headers
+    await expect(diffRegion).not.toContainText("@@ -");
+
+    // Now switch to Changes mode
+    await showChangesOnlyBtn.click();
+
+    // Verify Changes mode: should see hunk headers
+    await expect(diffRegion).toContainText("@@ -");
+    // Changes mode should NOT show line 1 (too far from changes at line 24)
+    // Instead verify the hunk header format is correct
+    await expect(diffRegion).toContainText("@@");
+
+    // Switch back to Full mode
+    await showFullFileBtn.click();
+
+    // Verify Full mode again
+    await expect(diffRegion).toContainText("import { existsSync }");
+    await expect(diffRegion).not.toContainText("@@ -");
+  });
+
+  test("Changes/Full toggle persists when switching between inline and split view", async ({
+    page,
+  }) => {
+    const { owner, repo, prNumber } = changeToggleTestPR;
+    const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
+
+    await page.goto(pageUrl);
+    await page.waitForLoadState("load");
+
+    // Wait for file list to load first
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Wait for iterations to load (artifact download may take time)
+    const selector = page.getByTestId("iteration-selector");
+    await expect(selector).toBeVisible();
+
+    // Click on a file
+    const playwrightConfigItem = fileList.locator(".tree-item.file").filter({
+      hasText: "playwright.config.ts",
+    });
+    await playwrightConfigItem.click();
+
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
+    // Ensure we're in Full mode first
+    const showFullFileBtn = page.getByRole("button", { name: /Show full file/i });
+    if (await showFullFileBtn.isVisible()) {
+      await showFullFileBtn.click();
+    }
+
+    // Verify Full mode is active
+    await expect(diffRegion).not.toContainText("@@ -");
+    await expect(diffRegion).toContainText("import { existsSync }");
+
+    // Switch to side-by-side view
+    const splitViewButton = page.getByRole("button", {
+      name: /Switch to side-by-side view/i,
+    });
+    await splitViewButton.click();
+
+    // In side-by-side mode, the region name changes
+    const splitDiffRegion = page.getByRole("region", { name: /Side-by-side diff view/i });
+    await expect(splitDiffRegion).toBeVisible();
+
+    // Full mode should still be active after switching view mode
+    // (line 1 should still be visible)
+    await expect(splitDiffRegion).toContainText("import { existsSync }");
+  });
+});
+
 test.describe("Iteration File Status (Prod Mode)", () => {
   // Test for bug fix: files first modified in later iterations should show as "modified" not "added"
   // Uses PR #97 which has action.yml first modified in iteration 2
