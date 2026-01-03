@@ -680,6 +680,186 @@
   overflow: auto;
 }
 
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
+.modal-title {
+  margin: 0 0 16px 0;
+  padding: 16px 16px 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--main-fg);
+}
+
+.modal-close-btn {
+  margin: 16px;
+}
+
+/* Theme Modal */
+.theme-modal-content {
+  width: 500px;
+  padding-bottom: 0;
+}
+
+.theme-modal-columns {
+  display: flex;
+  gap: 24px;
+  padding: 0 16px;
+}
+
+.theme-modal-section {
+  flex: 1;
+}
+
+.theme-modal-section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--main-fg);
+  border-bottom: 1px solid var(--combobox-border);
+  padding-bottom: 8px;
+}
+
+.theme-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.theme-option input[type="radio"] {
+  margin: 2px 0 0 0;
+  accent-color: var(--accent);
+}
+
+.theme-option-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: var(--main-fg);
+}
+
+.theme-option-description {
+  font-size: 11px;
+  color: var(--control-disabled-fg);
+}
+
+/* Theme Modal Preview */
+.theme-modal-preview {
+  display: flex;
+  gap: 12px;
+  margin: 16px;
+  padding: 12px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+}
+
+.preview-window {
+  flex: 1;
+  background-color: var(--main-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preview-titlebar {
+  background-color: var(--window-bg);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.preview-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.preview-tab {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--titlebar-text-inactive);
+  background-color: var(--tab-inactive);
+}
+
+.preview-tab-active {
+  color: var(--titlebar-text);
+  background-color: var(--main-bg);
+}
+
+.preview-diff {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+}
+
+.preview-diff-line {
+  display: flex;
+  padding: 1px 8px;
+}
+
+.preview-diff-context {
+  background-color: transparent;
+}
+
+.preview-diff-addition {
+  background-color: var(--diff-add-line);
+}
+
+.preview-diff-deletion {
+  background-color: var(--diff-delete-line);
+}
+
+.preview-gutter {
+  width: 16px;
+  color: var(--control-disabled-fg);
+  user-select: none;
+}
+
+.preview-code {
+  flex: 1;
+  color: var(--main-fg);
+}
+
+.preview-word-add {
+  background-color: var(--diff-add-word);
+}
+
+.preview-word-del {
+  background-color: var(--diff-delete-word);
+}
+
+.preview-swatches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.preview-swatch {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--combobox-border);
+}
+
+.preview-swatch-add {
+  background-color: var(--diff-add-word);
+}
+
+.preview-swatch-delete {
+  background-color: var(--diff-delete-word);
+}
+
 /* ============================================
    COLLAPSE BUTTON STATES
    ============================================ */
