@@ -63,7 +63,7 @@ export default defineConfig({
   // In CI prod mode, we hit the production site directly
   ...(needsWebServer ? {
     webServer: {
-      command: `npm run build && npm run start -- --port ${serverPort}`,
+      command: `npm run build && npm run start -- -p ${serverPort}`,
       url: `http://localhost:${serverPort}`,
       reuseExistingServer: !isCI,
       timeout: 180_000,
