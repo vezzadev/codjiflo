@@ -18,7 +18,7 @@ export function findAvailablePortSync(startPort = 3000): number {
       // Bind to 0.0.0.0 to properly detect conflicts
       const result = execSync(
         `node -e "const s=require('net').createServer();s.listen(${port},'0.0.0.0',()=>{console.log('ok');s.close()});s.on('error',()=>process.exit(1))"`,
-        { encoding: "utf-8", timeout: 2000, stdio: ["pipe", "pipe", "pipe"] }
+        { encoding: "utf-8", timeout: 500, stdio: ["pipe", "pipe", "pipe"] }
       );
       if (result.trim() === "ok") {
         // Cache in env var for workers
