@@ -1,6 +1,7 @@
 import { existsSync } from "fs";
 import { defineConfig, devices } from "@playwright/test";
 import { config } from "dotenv";
+import { findAvailablePortSync } from "./e2e/fixtures/find-port";
 
 // Load .env.local for local development (contains CODJIFLO_E2E_GITHUB_TOKEN)
 const envLocalPath = ".env.local";
@@ -20,16 +21,20 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
   );
 }
 
-// URLs for different modes
-// - mock mode: always localhost
-// - prod mode in CI: production site (codjiflo.vza.net)
-// - prod mode locally: localhost dev server (for faster iteration)
-const baseURL = isProdMode && isCI
-  ? 'https://codjiflo.vza.net'
-  : 'http://localhost:3000';
-
 // Need web server for mock mode OR prod mode running locally
 const needsWebServer = !isProdMode || !isCI;
+
+// Find an available port dynamically to avoid conflicts
+// Only needed when we're starting a local web server
+const serverPort = needsWebServer ? findAvailablePortSync(3000) : 3000;
+
+// URLs for different modes
+// - mock mode: always localhost with dynamic port
+// - prod mode in CI: production site (codjiflo.vza.net)
+// - prod mode locally: localhost dev server with dynamic port
+const baseURL = isProdMode && isCI
+  ? 'https://codjiflo.vza.net'
+  : `http://localhost:${serverPort}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -58,8 +63,8 @@ export default defineConfig({
   // In CI prod mode, we hit the production site directly
   ...(needsWebServer ? {
     webServer: {
-      command: "npm run build && npm run start",
-      url: "http://localhost:3000",
+      command: `npm run build && npm run start -- --port ${serverPort}`,
+      url: `http://localhost:${serverPort}`,
       reuseExistingServer: !isCI,
       timeout: 180_000,
     },

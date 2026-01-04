@@ -17,6 +17,8 @@ npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.vza.net)
 npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e2e + storybook)
 ```
 
+**Troubleshooting:** If any `npm run` command fails, the very first thing to try is `npm install`.
+
 ## Testing Exit Criteria
 
 **All changes:** `npm run test:all` must pass
