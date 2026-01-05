@@ -134,11 +134,20 @@
   --diff-add-line: rgba(40, 130, 70, 0.2);
   --diff-add-gutter: rgba(40, 130, 70, 0.3);
   --diff-add-word: rgba(40, 180, 90, 0.5);
+  --diff-add-word-border: transparent;
   --diff-add-fg: #4ADE80;
+  --diff-add-word-fg: #4ADE80;
   --diff-delete-line: rgba(180, 50, 50, 0.2);
   --diff-delete-gutter: rgba(180, 50, 50, 0.3);
   --diff-delete-word: rgba(220, 80, 80, 0.5);
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #F87171;
+  --diff-delete-word-fg: #F87171;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+  --diff-area-bg: var(--main-bg);
 
   /* File explorer */
   --file-explorer-bg: #303030;
@@ -668,44 +677,76 @@ a:hover {
   --diff-add-line: #DAFBE1;
   --diff-add-gutter: #ACEEBB;
   --diff-add-word: #ACEEBB;
+  --diff-add-word-border: transparent;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFEBE9;
   --diff-delete-gutter: #FFCECB;
   --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #DDF4FF;
+  --diff-hunk-gutter: #B6E3FF;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
 }
 
 .diff-github-dark {
   --diff-add-line: rgba(63, 185, 80, 0.1);
   --diff-add-gutter: rgba(63, 185, 80, 0.3);
   --diff-add-word: rgba(63, 185, 80, 0.4);
+  --diff-add-word-border: transparent;
   --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: rgba(248, 81, 73, 0.1);
   --diff-delete-gutter: rgba(248, 81, 73, 0.3);
   --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
 }
 
 .diff-github-light-hc {
   --diff-add-line: #D2FEDB;
   --diff-add-gutter: #82E596;
   --diff-add-word: #055D20;
-  --diff-add-fg: #FFFFFF;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: #FFF0EE;
   --diff-delete-gutter: #FFC1BC;
   --diff-delete-word: #A0111F;
-  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #DFF7FF;
+  --diff-hunk-gutter: #9CD7FF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
 }
 
 .diff-github-dark-hc {
   --diff-add-line: rgba(10, 199, 64, 0.2);
   --diff-add-gutter: rgba(40, 215, 81, 0.3);
   --diff-add-word: #006222;
+  --diff-add-word-border: transparent;
   --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: rgba(255, 128, 128, 0.2);
   --diff-delete-gutter: rgba(255, 128, 128, 0.3);
   --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: rgba(92, 172, 255, 0.2);
+  --diff-hunk-gutter: rgba(92, 172, 255, 0.4);
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
 }
 
 /* ----------------------------------------
@@ -715,44 +756,76 @@ a:hover {
   --diff-add-line: #DDF4FF;
   --diff-add-gutter: rgba(84, 174, 255, 0.4);
   --diff-add-word: rgba(84, 174, 255, 0.4);
+  --diff-add-word-border: transparent;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFF0EE;
   --diff-delete-gutter: #FFCECB;
   --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #FAF0FE;
+  --diff-hunk-gutter: #E2C5F1;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
 }
 
 .diff-github-protanopia-dark {
   --diff-add-line: rgba(88, 166, 255, 0.15);
   --diff-add-gutter: rgba(88, 166, 255, 0.3);
   --diff-add-word: rgba(88, 166, 255, 0.4);
+  --diff-add-word-border: transparent;
   --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: rgba(248, 81, 73, 0.1);
   --diff-delete-gutter: rgba(248, 81, 73, 0.3);
   --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
 }
 
 .diff-github-protanopia-light-hc {
   --diff-add-line: #DFF7FF;
   --diff-add-gutter: #7ADBF7;
   --diff-add-word: #0349B4;
-  --diff-add-fg: #FFFFFF;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: #FFF0EE;
   --diff-delete-gutter: #FFC1BC;
   --diff-delete-word: #873800;
-  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #F8E9FF;
+  --diff-hunk-gutter: #E0B8F7;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
 }
 
 .diff-github-protanopia-dark-hc {
   --diff-add-line: rgba(92, 172, 255, 0.2);
   --diff-add-gutter: rgba(113, 183, 255, 0.3);
   --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
   --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: rgba(255, 128, 128, 0.2);
   --diff-delete-gutter: rgba(244, 139, 37, 0.3);
   --diff-delete-word: rgba(244, 139, 37, 0.4);
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
 }
 
 /* ----------------------------------------
@@ -762,44 +835,76 @@ a:hover {
   --diff-add-line: #DAFBE1;
   --diff-add-gutter: #ACEEBB;
   --diff-add-word: #ACEEBB;
+  --diff-add-word-border: transparent;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFF0EE;
   --diff-delete-gutter: #FFCECB;
   --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #DDF4FF;
+  --diff-hunk-gutter: #B6E3FF;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
 }
 
 .diff-github-tritanopia-dark {
   --diff-add-line: rgba(56, 139, 253, 0.15);
   --diff-add-gutter: rgba(88, 166, 255, 0.3);
   --diff-add-word: rgba(56, 139, 253, 0.4);
+  --diff-add-word-border: transparent;
   --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: rgba(248, 81, 73, 0.1);
   --diff-delete-gutter: rgba(248, 81, 73, 0.3);
   --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
 }
 
 .diff-github-tritanopia-light-hc {
   --diff-add-line: #D2FEDB;
   --diff-add-gutter: #82E596;
   --diff-add-word: #055D20;
-  --diff-add-fg: #FFFFFF;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: #FFF0EE;
   --diff-delete-gutter: #FFC1BC;
   --diff-delete-word: #873800;
-  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #DFF7FF;
+  --diff-hunk-gutter: #9CD7FF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
 }
 
 .diff-github-tritanopia-dark-hc {
   --diff-add-line: rgba(92, 172, 255, 0.2);
   --diff-add-gutter: rgba(113, 183, 255, 0.3);
   --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
   --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
   --diff-delete-line: rgba(255, 128, 128, 0.2);
   --diff-delete-gutter: rgba(255, 128, 128, 0.3);
   --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
   --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
 }
 
 /* ----------------------------------------
@@ -809,23 +914,58 @@ a:hover {
   --diff-add-line: #EBF1DD;
   --diff-add-gutter: #EBF1DD;
   --diff-add-word: #D7E3BC;
+  --diff-add-word-border: #76923C;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFCCCC;
   --diff-delete-gutter: #FFCCCC;
   --diff-delete-word: #FF9999;
+  --diff-delete-word-border: #FF6666;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
 }
 
-.diff-codeflow-vs-dark,
+.diff-codeflow-vs-dark {
+  --diff-add-line: #15352C;
+  --diff-add-gutter: #15352C;
+  --diff-add-word: #265E4D;
+  --diff-add-word-border: #76923C;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #4F0000;
+  --diff-delete-word-border: #FF6666;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
 .diff-codeflow-vs-black {
   --diff-add-line: #15352C;
   --diff-add-gutter: #15352C;
   --diff-add-word: #265E4D;
+  --diff-add-word-border: #76923C;
   --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: #400000;
   --diff-delete-gutter: #400000;
   --diff-delete-word: #4F0000;
+  --diff-delete-word-border: #FF6666;
   --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
 }
 
 /* ----------------------------------------
@@ -835,23 +975,58 @@ a:hover {
   --diff-add-line: #FFFFBB;
   --diff-add-gutter: #FFFFBB;
   --diff-add-word: #FFFF80;
+  --diff-add-word-border: #FFFF00;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFA8A8;
   --diff-delete-gutter: #FFA8A8;
   --diff-delete-word: #FF7777;
+  --diff-delete-word-border: #FF0000;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
 }
 
-.diff-codeflow-classic-dark,
+.diff-codeflow-classic-dark {
+  --diff-add-line: #404019;
+  --diff-add-gutter: #404019;
+  --diff-add-word: #5D5D16;
+  --diff-add-word-border: #8F8F0F;
+  --diff-add-fg: #D1D7E0;
+  --diff-add-word-fg: #D1D7E0;
+  --diff-delete-line: #561717;
+  --diff-delete-gutter: #561717;
+  --diff-delete-word: #6D1414;
+  --diff-delete-word-border: #B00B0B;
+  --diff-delete-fg: #D1D7E0;
+  --diff-delete-word-fg: #D1D7E0;
+  --diff-hunk-line: #262C36;
+  --diff-hunk-gutter: #262C36;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #262C36;
+}
+
 .diff-codeflow-classic-black {
   --diff-add-line: #404019;
   --diff-add-gutter: #404019;
   --diff-add-word: #5D5D16;
-  --diff-add-fg: #D1D7E0;
+  --diff-add-word-border: #8F8F0F;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: #561717;
   --diff-delete-gutter: #561717;
   --diff-delete-word: #6D1414;
-  --diff-delete-fg: #D1D7E0;
+  --diff-delete-word-border: #B00B0B;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
 }
 
 /* ----------------------------------------
@@ -861,21 +1036,182 @@ a:hover {
   --diff-add-line: #A8FFA8;
   --diff-add-gutter: #A8FFA8;
   --diff-add-word: #94E694;
+  --diff-add-word-border: #64C864;
   --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
   --diff-delete-line: #FFBBBB;
   --diff-delete-gutter: #FFBBBB;
   --diff-delete-word: #FFA8A8;
+  --diff-delete-word-border: #FF7878;
   --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
 }
 
-.diff-codeflow-redgreen-dark,
-.diff-codeflow-redgreen-black {
+.diff-codeflow-redgreen-dark {
   --diff-add-line: #003300;
   --diff-add-gutter: #003300;
   --diff-add-word: #004000;
+  --diff-add-word-border: #008000;
   --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
   --diff-delete-line: #4C0000;
   --diff-delete-gutter: #4C0000;
   --diff-delete-word: #500000;
+  --diff-delete-word-border: #900000;
   --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-codeflow-redgreen-black {
+  --diff-add-line: #002800;
+  --diff-add-gutter: #002800;
+  --diff-add-word: #003200;
+  --diff-add-word-border: #008000;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #440000;
+  --diff-delete-word-border: #A01010;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   CodeFlow VS High Contrast
+   ---------------------------------------- */
+.diff-codeflow-vs-light-hc {
+  --diff-add-line: #D6F0D6;
+  --diff-add-gutter: #A8E0A8;
+  --diff-add-word: #0A5F1C;
+  --diff-add-word-border: #055D20;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FFDADA;
+  --diff-delete-gutter: #FFB8B8;
+  --diff-delete-word: #8B0000;
+  --diff-delete-word-border: #A0111F;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-codeflow-vs-dark-hc,
+.diff-codeflow-vs-black-hc {
+  --diff-add-line: #0D4030;
+  --diff-add-gutter: #0D4030;
+  --diff-add-word: #006840;
+  --diff-add-word-border: #00A060;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #4D0000;
+  --diff-delete-gutter: #4D0000;
+  --diff-delete-word: #8B0000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+/* ----------------------------------------
+   CodeFlow Classic High Contrast
+   ---------------------------------------- */
+.diff-codeflow-classic-light-hc {
+  --diff-add-line: #FFFF99;
+  --diff-add-gutter: #FFFF66;
+  --diff-add-word: #665500;
+  --diff-add-word-border: #8B7500;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FF9999;
+  --diff-delete-gutter: #FF7777;
+  --diff-delete-word: #990000;
+  --diff-delete-word-border: #CC0000;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-codeflow-classic-dark-hc,
+.diff-codeflow-classic-black-hc {
+  --diff-add-line: #4D4D00;
+  --diff-add-gutter: #4D4D00;
+  --diff-add-word: #7A7A00;
+  --diff-add-word-border: #AAAA00;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #660000;
+  --diff-delete-gutter: #660000;
+  --diff-delete-word: #990000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+/* ----------------------------------------
+   CodeFlow RedGreen High Contrast
+   ---------------------------------------- */
+.diff-codeflow-redgreen-light-hc {
+  --diff-add-line: #90EE90;
+  --diff-add-gutter: #7CDA7C;
+  --diff-add-word: #055D20;
+  --diff-add-word-border: #008000;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FF9999;
+  --diff-delete-gutter: #FF8080;
+  --diff-delete-word: #A0111F;
+  --diff-delete-word-border: #CC0000;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-codeflow-redgreen-dark-hc,
+.diff-codeflow-redgreen-black-hc {
+  --diff-add-line: #004400;
+  --diff-add-gutter: #004400;
+  --diff-add-word: #006600;
+  --diff-add-word-border: #00AA00;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #5C0000;
+  --diff-delete-gutter: #5C0000;
+  --diff-delete-word: #800000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
 }

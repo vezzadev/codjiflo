@@ -37,14 +37,16 @@
 
 .diff-line-addition {
   background-color: var(--diff-add-line);
+  color: var(--diff-add-fg);
 }
 
 .diff-line-deletion {
   background-color: var(--diff-delete-line);
+  color: var(--diff-delete-fg);
 }
 
 .diff-line-context {
-  background-color: var(--main-bg);
+  background-color: var(--diff-area-bg);
 }
 
 .diff-line-header {
@@ -131,10 +133,16 @@
 /* Word-level diff highlighting */
 .word-diff-added {
   background-color: var(--diff-add-word);
+  color: var(--diff-add-word-fg);
+  border: 1px solid var(--diff-add-word-border);
+  border-radius: 2px;
 }
 
 .word-diff-removed {
   background-color: var(--diff-delete-word);
+  color: var(--diff-delete-word-fg);
+  border: 1px solid var(--diff-delete-word-border);
+  border-radius: 2px;
 }
 
 /* Visible whitespace */
@@ -256,6 +264,7 @@
   flex: 1;
   min-height: 0; /* Allow flex child to shrink for scrolling */
   overflow: auto; /* Both horizontal and vertical scroll */
+  background-color: var(--diff-area-bg);
 }
 
 .diff-filename {
