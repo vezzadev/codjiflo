@@ -16,9 +16,9 @@ const UI_THEMES: { value: Theme; label: string }[] = [
 
 const DIFF_SCHEMES: { value: DiffColorScheme; label: string; description?: string }[] = [
   { value: 'github', label: 'GitHub Default' },
-  { value: 'github-protanopia', label: 'GitHub Protanopia', description: 'Red-green colorblind' },
+  { value: 'github-protanopia', label: 'GitHub Protanopia & Deuteranopia', description: 'Red-green colorblind' },
   { value: 'github-tritanopia', label: 'GitHub Tritanopia', description: 'Blue-yellow colorblind' },
-  { value: 'codeflow-vs', label: 'CodeFlow VS' },
+  { value: 'visual-studio', label: 'Visual Studio' },
   { value: 'codeflow-classic', label: 'CodeFlow Classic' },
   { value: 'codeflow-redgreen', label: 'CodeFlow Red/Green' },
 ];
@@ -49,13 +49,13 @@ const DIFF_COLORS: Record<string, DiffColors> = {
   'github-tritanopia-dark': { addLine: 'rgba(56,139,253,0.15)', addWord: 'rgba(56,139,253,0.4)', addWordFg: '#F0F6FC', delLine: 'rgba(248,81,73,0.1)', delWord: 'rgba(248,81,73,0.4)', delWordFg: '#F0F6FC' },
   'github-tritanopia-light-hc': { addLine: '#D2FEDB', addWord: '#055D20', addWordFg: '#FFFFFF', delLine: '#FFF0EE', delWord: '#873800', delWordFg: '#FFFFFF' },
   'github-tritanopia-dark-hc': { addLine: 'rgba(92,172,255,0.2)', addWord: '#194FB1', addWordFg: '#FFFFFF', delLine: 'rgba(255,128,128,0.2)', delWord: '#AD0116', delWordFg: '#FFFFFF' },
-  // CodeFlow VS
-  'codeflow-vs-light': { addLine: '#EBF1DD', addWord: '#D7E3BC', addWordFg: '#1F2328', delLine: '#FFCCCC', delWord: '#FF9999', delWordFg: '#1F2328' },
-  'codeflow-vs-dark': { addLine: '#15352C', addWord: '#265E4D', addWordFg: '#F0F6FC', delLine: '#400000', delWord: '#4F0000', delWordFg: '#F0F6FC' },
-  'codeflow-vs-black': { addLine: '#15352C', addWord: '#265E4D', addWordFg: '#F0F6FC', delLine: '#400000', delWord: '#4F0000', delWordFg: '#F0F6FC' },
-  'codeflow-vs-light-hc': { addLine: '#D6F0D6', addWord: '#0A5F1C', addWordFg: '#FFFFFF', delLine: '#FFDADA', delWord: '#8B0000', delWordFg: '#FFFFFF' },
-  'codeflow-vs-dark-hc': { addLine: '#0D4030', addWord: '#006840', addWordFg: '#FFFFFF', delLine: '#4D0000', delWord: '#8B0000', delWordFg: '#FFFFFF' },
-  'codeflow-vs-black-hc': { addLine: '#0D4030', addWord: '#006840', addWordFg: '#FFFFFF', delLine: '#4D0000', delWord: '#8B0000', delWordFg: '#FFFFFF' },
+  // Visual Studio
+  'visual-studio-light': { addLine: '#EBF1DD', addWord: '#D7E3BC', addWordFg: '#1F2328', delLine: '#FFCCCC', delWord: '#FF9999', delWordFg: '#1F2328' },
+  'visual-studio-dark': { addLine: '#15352C', addWord: '#265E4D', addWordFg: '#F0F6FC', delLine: '#400000', delWord: '#4F0000', delWordFg: '#F0F6FC' },
+  'visual-studio-black': { addLine: '#15352C', addWord: '#265E4D', addWordFg: '#F0F6FC', delLine: '#400000', delWord: '#4F0000', delWordFg: '#F0F6FC' },
+  'visual-studio-light-hc': { addLine: '#D6F0D6', addWord: '#0A5F1C', addWordFg: '#FFFFFF', delLine: '#FFDADA', delWord: '#8B0000', delWordFg: '#FFFFFF' },
+  'visual-studio-dark-hc': { addLine: '#0D4030', addWord: '#006840', addWordFg: '#FFFFFF', delLine: '#4D0000', delWord: '#8B0000', delWordFg: '#FFFFFF' },
+  'visual-studio-black-hc': { addLine: '#0D4030', addWord: '#006840', addWordFg: '#FFFFFF', delLine: '#4D0000', delWord: '#8B0000', delWordFg: '#FFFFFF' },
   // CodeFlow Classic
   'codeflow-classic-light': { addLine: '#FFFFBB', addWord: '#FFFF80', addWordFg: '#1F2328', delLine: '#FFA8A8', delWord: '#FF7777', delWordFg: '#1F2328' },
   'codeflow-classic-dark': { addLine: '#404019', addWord: '#5D5D16', addWordFg: '#D1D7E0', delLine: '#561717', delWord: '#6D1414', delWordFg: '#D1D7E0' },
@@ -82,8 +82,8 @@ const PREVIEW_BACKGROUNDS: Record<Theme, string> = {
 const DEFAULT_COLORS: DiffColors = { addLine: 'rgba(63,185,80,0.1)', addWord: 'rgba(63,185,80,0.4)', addWordFg: '#F0F6FC', delLine: 'rgba(248,81,73,0.1)', delWord: 'rgba(248,81,73,0.4)', delWordFg: '#F0F6FC' };
 
 function getPreviewColors(scheme: DiffColorScheme, theme: Theme, highContrast: boolean): DiffColors {
-  const isCodeFlow = scheme.startsWith('codeflow-');
-  const brightness = theme === 'black' ? (isCodeFlow ? 'black' : 'dark') : theme;
+  const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
+  const brightness = theme === 'black' ? (hasBlackVariant ? 'black' : 'dark') : theme;
   const hcSuffix = highContrast ? '-hc' : '';
   const key = `${scheme}-${brightness}${hcSuffix}`;
   return DIFF_COLORS[key] ?? DEFAULT_COLORS;
@@ -100,15 +100,17 @@ interface DiffPreviewProps {
 
 function DiffPreview({ colors, background, label, selected, onClick, disabled }: DiffPreviewProps) {
   return (
-    <button
-      type="button"
+    <label
       className={`preview-panel ${selected ? 'preview-panel-selected' : ''} ${disabled ? 'preview-panel-disabled' : ''}`}
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={selected}
     >
       <div className="preview-panel-header">
-        <span className="preview-panel-radio">{selected ? '●' : '○'}</span>
+        <input
+          type="radio"
+          name="contrast-mode"
+          checked={selected}
+          onChange={onClick}
+          disabled={disabled}
+        />
         <span className="preview-panel-label">{label}</span>
       </div>
       <div className="preview-window" style={{ backgroundColor: background }}>
@@ -135,7 +137,7 @@ function DiffPreview({ colors, background, label, selected, onClick, disabled }:
         <div className="preview-swatch" style={{ backgroundColor: colors.addWord }} title="Addition" />
         <div className="preview-swatch" style={{ backgroundColor: colors.delWord }} title="Deletion" />
       </div>
-    </button>
+    </label>
   );
 }
 
@@ -233,6 +235,7 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
         </div>
 
         {/* Preview Section - Two panels */}
+        <h3 className="theme-modal-section-title theme-modal-preview-title">Contrast</h3>
         <div className="theme-modal-previews">
           <DiffPreview
             colors={regularColors}

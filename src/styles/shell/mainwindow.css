@@ -757,6 +757,10 @@
   color: var(--control-disabled-fg);
 }
 
+.theme-modal-preview-title {
+  margin: 0 16px 0;
+}
+
 /* Theme Modal Preview - Dual Panel Layout */
 .theme-modal-previews {
   display: flex;
@@ -777,7 +781,7 @@
   transition: border-color 0.15s ease;
 }
 
-.preview-panel:hover:not(:disabled) {
+.preview-panel:hover:not(.preview-panel-disabled) {
   border-color: var(--accent);
 }
 
@@ -797,9 +801,8 @@
   gap: 6px;
 }
 
-.preview-panel-radio {
-  font-size: 12px;
-  color: var(--accent);
+.preview-panel-header input[type="radio"] {
+  accent-color: var(--accent);
 }
 
 .preview-panel-label {

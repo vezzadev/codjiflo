@@ -134,14 +134,14 @@
 .word-diff-added {
   background-color: var(--diff-add-word);
   color: var(--diff-add-word-fg);
-  border: 1px solid var(--diff-add-word-border);
+  border: 2px solid var(--diff-add-word-border);
   border-radius: 2px;
 }
 
 .word-diff-removed {
   background-color: var(--diff-delete-word);
   color: var(--diff-delete-word-fg);
-  border: 1px solid var(--diff-delete-word-border);
+  border: 2px solid var(--diff-delete-word-border);
   border-radius: 2px;
 }
 

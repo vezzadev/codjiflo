@@ -13,8 +13,8 @@ function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast
   const brightness = theme === 'black' ? 'dark' : theme;
 
   // CodeFlow themes use the exact theme name (including black)
-  const isCodeFlow = scheme.startsWith('codeflow-');
-  const themeSuffix = isCodeFlow ? theme : brightness;
+  const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
+  const themeSuffix = hasBlackVariant ? theme : brightness;
 
   const hcSuffix = useHighContrast ? '-hc' : '';
 
@@ -29,9 +29,9 @@ const ALL_DIFF_CLASSES = [
   'diff-github-protanopia-light', 'diff-github-protanopia-dark', 'diff-github-protanopia-light-hc', 'diff-github-protanopia-dark-hc',
   // GitHub tritanopia
   'diff-github-tritanopia-light', 'diff-github-tritanopia-dark', 'diff-github-tritanopia-light-hc', 'diff-github-tritanopia-dark-hc',
-  // CodeFlow VS
-  'diff-codeflow-vs-light', 'diff-codeflow-vs-dark', 'diff-codeflow-vs-black',
-  'diff-codeflow-vs-light-hc', 'diff-codeflow-vs-dark-hc', 'diff-codeflow-vs-black-hc',
+  // Visual Studio
+  'diff-visual-studio-light', 'diff-visual-studio-dark', 'diff-visual-studio-black',
+  'diff-visual-studio-light-hc', 'diff-visual-studio-dark-hc', 'diff-visual-studio-black-hc',
   // CodeFlow Classic
   'diff-codeflow-classic-light', 'diff-codeflow-classic-dark', 'diff-codeflow-classic-black',
   'diff-codeflow-classic-light-hc', 'diff-codeflow-classic-dark-hc', 'diff-codeflow-classic-black-hc',
