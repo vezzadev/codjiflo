@@ -16,8 +16,7 @@ function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast
   const isCodeFlow = scheme.startsWith('codeflow-');
   const themeSuffix = isCodeFlow ? theme : brightness;
 
-  // CodeFlow doesn't have high contrast variants
-  const hcSuffix = !isCodeFlow && useHighContrast ? '-hc' : '';
+  const hcSuffix = useHighContrast ? '-hc' : '';
 
   return `diff-${scheme}-${themeSuffix}${hcSuffix}`;
 }
@@ -32,10 +31,13 @@ const ALL_DIFF_CLASSES = [
   'diff-github-tritanopia-light', 'diff-github-tritanopia-dark', 'diff-github-tritanopia-light-hc', 'diff-github-tritanopia-dark-hc',
   // CodeFlow VS
   'diff-codeflow-vs-light', 'diff-codeflow-vs-dark', 'diff-codeflow-vs-black',
+  'diff-codeflow-vs-light-hc', 'diff-codeflow-vs-dark-hc', 'diff-codeflow-vs-black-hc',
   // CodeFlow Classic
   'diff-codeflow-classic-light', 'diff-codeflow-classic-dark', 'diff-codeflow-classic-black',
+  'diff-codeflow-classic-light-hc', 'diff-codeflow-classic-dark-hc', 'diff-codeflow-classic-black-hc',
   // CodeFlow RedGreen
   'diff-codeflow-redgreen-light', 'diff-codeflow-redgreen-dark', 'diff-codeflow-redgreen-black',
+  'diff-codeflow-redgreen-light-hc', 'diff-codeflow-redgreen-dark-hc', 'diff-codeflow-redgreen-black-hc',
 ];
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
