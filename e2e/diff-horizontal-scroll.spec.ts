@@ -173,8 +173,15 @@ Iterations: 2`,
     // ASSERTION: Some element must be horizontally scrollable (content is wider than viewport)
     expect(scrollResult.scrolled).toBe(true);
 
-    // Wait for scroll to settle
-    await page.waitForTimeout(100);
+    // Wait for scroll to settle by checking that scrollLeft has reached the expected value
+    await page.waitForFunction(() => {
+      const contentArea = document.querySelector(".diff-content-area");
+      if (contentArea && contentArea.scrollLeft > 0) {
+        return true;
+      }
+      const viewer = document.querySelector(".diff-viewer");
+      return viewer && viewer.scrollLeft > 0;
+    });
 
     // Get toolbar position after scroll
     const toolbarBoxAfter = await diffToolbar.boundingBox();
@@ -208,8 +215,19 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Wait for autoscroll to complete
-    await page.waitForTimeout(200);
+    // Wait for autoscroll to complete by checking that context line is visible and positioned
+    const contextLine1Row = page.locator("tr").filter({
+      hasText: "Context line 1",
+    });
+    await expect(contextLine1Row).toBeVisible();
+    // Wait for scroll position to stabilize by checking bounding box is ready
+    await page.waitForFunction(() => {
+      const rows = Array.from(document.querySelectorAll("tr"));
+      const contextRow = rows.find((row) => row.textContent && row.textContent.includes("Context line 1"));
+      if (!contextRow) return false;
+      const box = contextRow.getBoundingClientRect();
+      return box.y > 0 && box.height > 0;
+    });
 
     // Get the header position (context lines should appear below it)
     const headerBox = await page.locator(".diff-header").boundingBox();
