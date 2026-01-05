@@ -26,9 +26,7 @@ const DIFF_SCHEMES: { value: DiffColorScheme; label: string; description?: strin
 
 // Generate diff class name (same logic as ThemeProvider)
 function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast: boolean): string {
-  const brightness = (theme === 'black' || theme === 'high-contrast') ? 'dark' : theme;
-  const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
-  const themeSuffix = hasBlackVariant ? (theme === 'high-contrast' ? 'dark' : theme) : brightness;
+  const themeSuffix = theme === 'high-contrast' ? 'dark' : theme;
   const hcSuffix = useHighContrast ? '-hc' : '';
   return `diff-${scheme}-${themeSuffix}${hcSuffix}`;
 }
@@ -37,10 +35,10 @@ interface DiffPreviewProps {
   diffClassName: string;
   label: string;
   selected: boolean;
-  onClick: () => void;
+  onSelect: () => void;
 }
 
-function DiffPreview({ diffClassName, label, selected, onClick }: DiffPreviewProps) {
+function DiffPreview({ diffClassName, label, selected, onSelect }: DiffPreviewProps) {
   return (
     <label
       className={`preview-panel ${diffClassName} ${selected ? 'preview-panel-selected' : ''}`}
@@ -50,7 +48,7 @@ function DiffPreview({ diffClassName, label, selected, onClick }: DiffPreviewPro
           type="radio"
           name="contrast-mode"
           checked={selected}
-          onChange={onClick}
+          onChange={onSelect}
         />
         <span className="preview-panel-label">{label}</span>
       </div>
@@ -93,10 +91,11 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
   }, [onClose]);
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      modalRef.current?.focus();
-    }
+    if (!isOpen) return;
+
+    document.addEventListener('keydown', handleKeyDown);
+    modalRef.current?.focus();
+
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleKeyDown]);
 
@@ -181,13 +180,13 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
             diffClassName={regularClassName}
             label="Regular"
             selected={!useHighContrastDiff}
-            onClick={() => setUseHighContrastDiff(false)}
+            onSelect={() => setUseHighContrastDiff(false)}
           />
           <DiffPreview
             diffClassName={hcClassName}
             label="High Contrast"
             selected={useHighContrastDiff}
-            onClick={() => setUseHighContrastDiff(true)}
+            onSelect={() => setUseHighContrastDiff(true)}
           />
         </div>
 

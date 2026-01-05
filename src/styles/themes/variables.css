@@ -749,6 +749,44 @@ a:hover {
   --diff-empty-line: #151B23;
 }
 
+.diff-github-black {
+  --diff-add-line: rgba(63, 185, 80, 0.15);
+  --diff-add-gutter: rgba(63, 185, 80, 0.35);
+  --diff-add-word: rgba(63, 185, 80, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-black-hc {
+  --diff-add-line: rgba(10, 199, 64, 0.25);
+  --diff-add-gutter: rgba(40, 215, 81, 0.35);
+  --diff-add-word: #006222;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.35);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: rgba(92, 172, 255, 0.25);
+  --diff-hunk-gutter: rgba(92, 172, 255, 0.45);
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
+}
+
 /* ----------------------------------------
    GitHub Protanopia (red-green colorblind)
    ---------------------------------------- */
@@ -828,6 +866,44 @@ a:hover {
   --diff-empty-line: #151B23;
 }
 
+.diff-github-protanopia-black {
+  --diff-add-line: rgba(88, 166, 255, 0.2);
+  --diff-add-gutter: rgba(88, 166, 255, 0.35);
+  --diff-add-word: rgba(88, 166, 255, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-protanopia-black-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.25);
+  --diff-add-gutter: rgba(113, 183, 255, 0.35);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(244, 139, 37, 0.35);
+  --diff-delete-word: rgba(244, 139, 37, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
+}
+
 /* ----------------------------------------
    GitHub Tritanopia (blue-yellow colorblind)
    ---------------------------------------- */
@@ -905,6 +981,44 @@ a:hover {
   --diff-hunk-gutter: #2F3742;
   --diff-hunk-fg: #B7BDC8;
   --diff-empty-line: #151B23;
+}
+
+.diff-github-tritanopia-black {
+  --diff-add-line: rgba(56, 139, 253, 0.2);
+  --diff-add-gutter: rgba(88, 166, 255, 0.35);
+  --diff-add-word: rgba(56, 139, 253, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-tritanopia-black-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.25);
+  --diff-add-gutter: rgba(113, 183, 255, 0.35);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.35);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
 }
 
 /* ----------------------------------------
