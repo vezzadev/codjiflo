@@ -1,26 +1,32 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Theme = 'dark' | 'light' | 'black' | 'highcontrast';
-export type DiffColorScheme = 'classic' | 'dark' | 'light' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+export type Theme = 'light' | 'dark' | 'black';
+export type DiffColorScheme = 'github' | 'github-protanopia' | 'github-tritanopia' | 'codeflow-vs' | 'codeflow-classic' | 'codeflow-redgreen';
 
 interface ThemeState {
   theme: Theme;
   diffColorScheme: DiffColorScheme;
+  useHighContrastDiff: boolean;
   setTheme: (theme: Theme) => void;
   setDiffColorScheme: (scheme: DiffColorScheme) => void;
+  setUseHighContrastDiff: (useHighContrast: boolean) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       theme: 'dark',
-      diffColorScheme: 'dark',
+      diffColorScheme: 'github',
+      useHighContrastDiff: false,
       setTheme: (theme: Theme) => {
         set({ theme });
       },
       setDiffColorScheme: (diffColorScheme: DiffColorScheme) => {
         set({ diffColorScheme });
+      },
+      setUseHighContrastDiff: (useHighContrastDiff: boolean) => {
+        set({ useHighContrastDiff });
       },
     }),
     {
