@@ -76,6 +76,12 @@ export function DiffView() {
   const patch = selectedFile?.patch;
   const filename = selectedFile?.filename;
 
+  // Clear full file cache when file changes (but not on toggle)
+  useEffect(() => {
+    setFullFileDiff(null);
+    setFullFileError(null);
+  }, [filename]);
+
   // Get iteration-based diff when in iteration mode
   // selectedRange is accessed via getFileDiffByPath closure, so changes to it will
   // trigger recomputation through the hook's internal memoization
@@ -215,9 +221,9 @@ export function DiffView() {
   }, [selectedFileIndex, isShowingDescription, viewConfig.mode]);
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
+  // Note: We don't clear fullFileDiff when toggling off to avoid flash and enable instant toggle back
   useEffect(() => {
     if (!viewConfig.showFullFile || !filename || !currentPR || !owner || !repo) {
-      setFullFileDiff(null);
       setFullFileError(null);
       return;
     }
@@ -316,7 +322,9 @@ export function DiffView() {
   }, []);
 
   // Loading state (includes full file content loading AC-3.1.13)
-  const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff;
+  // When loading full file content, keep showing the patch-based diff instead of skeleton
+  // Only show loading skeleton if we have no content to display at all
+  const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff && !patch;
   if (isLoading || (isShowingDescription && isPRLoading) || isLoadingFullFile) {
     return (
       <div className="diff-loading" role="status" aria-label="Loading diff">
