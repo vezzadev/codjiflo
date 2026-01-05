@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     /* Next.js */
     "incremental": true,
     "esModuleInterop": true,
@@ -53,7 +53,8 @@
     "*.ts",
     "*.tsx",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
