@@ -30,7 +30,11 @@ interface IterationDiffResult {
  * Returns iteration-based diff data when available, otherwise returns empty results.
  */
 export function useIterationDiff(): IterationDiffResult {
-  const { client, selectedRange, isDegraded, artifacts } = useIterationStore();
+  // Use individual selectors to avoid re-renders from unrelated store updates
+  const client = useIterationStore((state) => state.client);
+  const selectedRange = useIterationStore((state) => state.selectedRange);
+  const isDegraded = useIterationStore((state) => state.isDegraded);
+  const artifacts = useIterationStore((state) => state.artifacts);
 
   const isIterationMode = useMemo(() => {
     return !isDegraded && client !== null && selectedRange !== null;
