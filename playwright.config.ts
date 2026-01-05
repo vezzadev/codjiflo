@@ -61,8 +61,7 @@ export default defineConfig({
   ],
   // Start web server when needed (mock mode or prod mode running locally)
   // In CI prod mode, we hit the production site directly
-  // When DEV_PORT is set, skip starting server (assumes dev server is already running)
-  ...(needsWebServer && !process.env.DEV_PORT ? {
+  ...(needsWebServer ? {
     webServer: {
       command: `npm run build && npm run start -- -p ${serverPort}`,
       url: `http://localhost:${serverPort}`,
