@@ -32,7 +32,7 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
-Tests that never failed once are USELESS. This is applicable to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend to by either following TDD and writing your test code before your product code or writing your changes, writing your test, removing your code changes temporarily, confirming that the test failed as expected and then bringing back the product code changes. You WILL be asked to show a commit where your new test did fail and then a second commit where you include your code fixes and gets the test to pass. Include the test failure validation in the commit message.
+Tests that have never failed even once are far less trustworthy. This applies to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend, either by following TDD and writing your test code before your product code, or by writing your changes, writing your test, temporarily removing your code changes, confirming that the test fails as expected, and then restoring the product code changes. You WILL be asked to demonstrate a commit where your new test fails, followed by a second commit where you include your code fixes that make the test pass. Include the test failure validation in the commit message.
 
 ### E2E Test Modes
 
@@ -62,7 +62,7 @@ E2E tests support two modes:
 Tests in this project are finely tuned to run very fast. Each E2E test case MUST run in 5s or less. This is PLENTY. GitHub APIs, Vercel, CI/CD machines, local dev environment, etc. are all extremely fast. This is applicable to old and new tests. The entire test suite runs in 20s. When running E2E tests, enforce a timeout in the Bash tool call of 1 minute.
 
 #### There are no flaky tests only failing tests
-Leave the tests better than how you found it. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
+Leave the tests better than how you found them. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
 
 #### Don't guess - Use the Playwright test trace to understand what is happening
 When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code.
