@@ -40,17 +40,13 @@ E2E tests support two modes:
 
 | Mode | Command | Target | GitHub API |
 |------|---------|--------|------------|
-| Mock | `npm run test:e2e` | `localhost:3000` | Mocked via Playwright routes |
-| Prod | `npm run test:e2e:prod` | `codjiflo.vza.net` | Real API with PAT |
+| Mock | `npm run test:e2e` | `localhost:<dynamic port>` | Mocked via Playwright routes |
+| Prod | `npm run test:e2e:prod` | `localhost:<dynamic port>` | Real API with PAT |
+
+Both E2E test modes start a test server automatically. It is NOT necessary to start a separate dev server. 
 
 **Environment:**
 - `CODJIFLO_E2E_GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, from secrets in CI)
-
-**CI/CD:**
-- **PR workflows:** `npm run test:e2e` (mock mode, fast)
-- **Main branch:** Deploy → `npm run test:e2e:prod` (validates production)
-
-**Test repository:** Prod mode uses `pedropaulovc/codjiflo` (PR #1 for valid tests, PR #6 for keyboard nav, PR #0 for 404 tests)
 
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
