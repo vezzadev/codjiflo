@@ -853,6 +853,45 @@
   border-radius: 2px;
 }
 
+/* Preview colors using CSS variables (single source of truth) */
+.preview-window {
+  background-color: var(--diff-area-bg);
+}
+
+.preview-context {
+  background-color: var(--diff-area-bg);
+}
+
+.preview-addition {
+  background-color: var(--diff-add-line);
+}
+
+.preview-deletion {
+  background-color: var(--diff-delete-line);
+}
+
+.preview-word-added {
+  background-color: var(--diff-add-word);
+  color: var(--diff-add-word-fg);
+  border: 2px solid var(--diff-add-word-border);
+  border-radius: 2px;
+}
+
+.preview-word-removed {
+  background-color: var(--diff-delete-word);
+  color: var(--diff-delete-word-fg);
+  border: 2px solid var(--diff-delete-word-border);
+  border-radius: 2px;
+}
+
+.preview-swatch-add {
+  background-color: var(--diff-add-word);
+}
+
+.preview-swatch-del {
+  background-color: var(--diff-delete-word);
+}
+
 .theme-modal-note {
   margin: 0 16px 8px;
   font-size: 11px;

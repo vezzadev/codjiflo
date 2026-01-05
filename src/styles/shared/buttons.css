@@ -43,7 +43,7 @@
 .btn-colorful {
   background-color: var(--colorful-btn-bg);
   color: var(--colorful-btn-fg);
-  border: none;
+  border: 1px solid transparent;
   padding: 6px 16px;
   min-width: 80px;
 }
