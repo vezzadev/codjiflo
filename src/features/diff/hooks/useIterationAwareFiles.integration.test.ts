@@ -23,6 +23,30 @@ vi.mock('@/features/iterations/stores', () => ({
   useIterationStore: vi.fn(),
 }));
 
+// Type for mock store state
+interface MockIterationStoreState {
+  client: MockIterationClient | null;
+  selectedRange: { fromSnapshot: number; toSnapshot: number } | null;
+  isDegraded: boolean;
+  artifacts: ReviewFileArtifact[];
+  iterations?: unknown[];
+  isLoading?: boolean;
+  error?: unknown;
+  loadIterations?: () => void;
+  setSelectedRange?: () => void;
+  reset?: () => void;
+}
+
+// Helper to mock useIterationStore with selector support
+function mockIterationStoreState(state: MockIterationStoreState) {
+  vi.mocked(useIterationStore).mockImplementation((selector?: unknown) => {
+    if (typeof selector === 'function') {
+      return (selector as (s: MockIterationStoreState) => unknown)(state);
+    }
+    return state;
+  });
+}
+
 // Helper to create mock file
 function createMockFile(
   filename: string,
@@ -153,7 +177,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       reset: vi.fn(),
     });
 
-    vi.mocked(useIterationStore).mockReturnValue({
+    mockIterationStoreState({
       client: selectedRange ? mockClient : null,
       selectedRange,
       isDegraded: !selectedRange,
@@ -164,7 +188,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       loadIterations: vi.fn(),
       setSelectedRange: vi.fn(),
       reset: vi.fn(),
-    } as ReturnType<typeof useIterationStore>);
+    });
   }
 
   describe('Non-iteration mode (degraded)', () => {
