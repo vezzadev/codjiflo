@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useDiffStore, useDiffContentStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
@@ -521,7 +521,7 @@ interface UnifiedDiffTableProps {
   contentFilter: 'left' | 'both' | 'right';
 }
 
-function UnifiedDiffTable({
+const UnifiedDiffTable = memo(function UnifiedDiffTable({
   diffLines,
   language,
   threadsByLineAndSide,
@@ -632,4 +632,4 @@ function UnifiedDiffTable({
       </tbody>
     </table>
   );
-}
+});
