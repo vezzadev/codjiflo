@@ -321,6 +321,26 @@ export function DiffView() {
     setSubmitError(null);
   }, []);
 
+  // Memoized callbacks for UnifiedDiffTable to prevent re-renders
+  const handleStartCommentRight = useCallback(
+    (index: number) => handleStartComment(index, 'RIGHT'),
+    [handleStartComment]
+  );
+
+  const handleSubmitDraftUnified = useCallback(() => {
+    if (draftLineIndex !== null) {
+      const targetLine = diffLines[draftLineIndex];
+      const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+      void handleSubmitComment(draftLineIndex, side, draftBody);
+    }
+  }, [draftLineIndex, diffLines, draftBody, handleSubmitComment]);
+
+  const handleSubmitDraftSideBySide = useCallback(() => {
+    if (draftLineIndex !== null && draftSide !== null) {
+      void handleSubmitComment(draftLineIndex, draftSide, draftBody);
+    }
+  }, [draftLineIndex, draftSide, draftBody, handleSubmitComment]);
+
   // Loading state (includes full file content loading AC-3.1.13)
   // When loading full file content, keep showing the patch-based diff instead of skeleton
   // Only show loading skeleton if we have no content to display at all
@@ -436,16 +456,10 @@ export function DiffView() {
             draftBody={draftBody}
             isSubmittingDraft={isSubmittingDraft}
             submitError={submitError}
-            onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+            onStartComment={handleStartCommentRight}
             onCancelDraft={handleCancelDraft}
             onChangeDraftBody={setDraftBody}
-            onSubmitDraft={() => {
-              if (draftLineIndex !== null) {
-                const targetLine = diffLines[draftLineIndex];
-                const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                void handleSubmitComment(draftLineIndex, side, draftBody);
-              }
-            }}
+            onSubmitDraft={handleSubmitDraftUnified}
             showWhitespace={viewConfig.showWhitespace}
             contentFilter={viewConfig.filter}
           />
@@ -471,11 +485,7 @@ export function DiffView() {
           onStartComment={handleStartComment}
           onCancelDraft={handleCancelDraft}
           onChangeDraftBody={setDraftBody}
-          onSubmitDraft={() => {
-            if (draftLineIndex !== null && draftSide !== null) {
-              void handleSubmitComment(draftLineIndex, draftSide, draftBody);
-            }
-          }}
+          onSubmitDraft={handleSubmitDraftSideBySide}
           showWhitespace={viewConfig.showWhitespace}
         />
       )}
