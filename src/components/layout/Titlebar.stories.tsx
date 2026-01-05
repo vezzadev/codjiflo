@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Settings, Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeStore, Theme } from '@/features/theme';
 
 // Mock component that mirrors Titlebar but without Next.js Image dependency
@@ -13,7 +13,6 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'black', label: 'Black', icon: Monitor },
-  { value: 'highcontrast', label: 'High Contrast', icon: Settings },
 ];
 
 function TitlebarStory({ title = 'CodjiFlo', leftContent, rightContent }: TitlebarProps) {

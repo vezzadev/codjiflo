@@ -656,66 +656,226 @@ a:hover {
 
 /* ============================================
    DIFF COLOR SCHEMES
+   Based on github-diff-colors-effective.csv
    ============================================ */
 
-/* Dark scheme is the default (defined in :root) */
+/* Default dark scheme (defined in :root) - used as fallback */
 
-/* Classic scheme - GitHub-like yellow/salmon */
-.diff-scheme-classic {
-  --diff-add-line: #FFFFBB;
-  --diff-add-gutter: #E8E8A0;
-  --diff-add-word: #FFFF80;
-  --diff-add-fg: #6B6B00;
-  --diff-delete-line: #FFA8A8;
-  --diff-delete-gutter: #E09090;
-  --diff-delete-word: #FF7777;
-  --diff-delete-fg: #8B0000;
-}
-
-/* Light scheme - pastel green/red for light backgrounds */
-.diff-scheme-light {
-  --diff-add-line: #E6FFEC;
-  --diff-add-gutter: #CCFFD8;
-  --diff-add-word: #ACFFC0;
-  --diff-add-fg: #1A7F37;
+/* ----------------------------------------
+   GitHub Default
+   ---------------------------------------- */
+.diff-github-light {
+  --diff-add-line: #DAFBE1;
+  --diff-add-gutter: #ACEEBB;
+  --diff-add-word: #ACEEBB;
+  --diff-add-fg: #1F2328;
   --diff-delete-line: #FFEBE9;
-  --diff-delete-gutter: #FFD7D5;
-  --diff-delete-word: #FFC0C0;
-  --diff-delete-fg: #CF222E;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-fg: #1F2328;
 }
 
-/* Protanopia scheme - blue/yellow for red-green colorblindness (protanopia) */
-.diff-scheme-protanopia {
-  --diff-add-line: #D4EDFF;
-  --diff-add-gutter: #B8DFFF;
-  --diff-add-word: #A8DBFF;
-  --diff-add-fg: #0550AE;
-  --diff-delete-line: #FFF4CC;
-  --diff-delete-gutter: #FFEBB3;
-  --diff-delete-word: #FFEB99;
-  --diff-delete-fg: #9A6700;
+.diff-github-dark {
+  --diff-add-line: rgba(63, 185, 80, 0.1);
+  --diff-add-gutter: rgba(63, 185, 80, 0.3);
+  --diff-add-word: rgba(63, 185, 80, 0.4);
+  --diff-add-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-fg: #F0F6FC;
 }
 
-/* Deuteranopia scheme - blue/yellow for red-green colorblindness (deuteranopia) */
-.diff-scheme-deuteranopia {
-  --diff-add-line: #D4EDFF;
-  --diff-add-gutter: #B8DFFF;
-  --diff-add-word: #A8DBFF;
-  --diff-add-fg: #0550AE;
-  --diff-delete-line: #FFF4CC;
-  --diff-delete-gutter: #FFEBB3;
-  --diff-delete-word: #FFEB99;
-  --diff-delete-fg: #9A6700;
+.diff-github-light-hc {
+  --diff-add-line: #D2FEDB;
+  --diff-add-gutter: #82E596;
+  --diff-add-word: #055D20;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #A0111F;
+  --diff-delete-fg: #FFFFFF;
 }
 
-/* Tritanopia scheme - pink/cyan for blue-yellow colorblindness */
-.diff-scheme-tritanopia {
-  --diff-add-line: #FFE0E0;
-  --diff-add-gutter: #FFD0D0;
-  --diff-add-word: #FFC0C0;
-  --diff-add-fg: #A01010;
-  --diff-delete-line: #E0FFFF;
-  --diff-delete-gutter: #C0FFFF;
-  --diff-delete-word: #A0FFFF;
-  --diff-delete-fg: #007070;
+.diff-github-dark-hc {
+  --diff-add-line: rgba(10, 199, 64, 0.2);
+  --diff-add-gutter: rgba(40, 215, 81, 0.3);
+  --diff-add-word: #006222;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.3);
+  --diff-delete-word: #AD0116;
+  --diff-delete-fg: #FFFFFF;
+}
+
+/* ----------------------------------------
+   GitHub Protanopia (red-green colorblind)
+   ---------------------------------------- */
+.diff-github-protanopia-light {
+  --diff-add-line: #DDF4FF;
+  --diff-add-gutter: rgba(84, 174, 255, 0.4);
+  --diff-add-word: rgba(84, 174, 255, 0.4);
+  --diff-add-fg: #1F2328;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-fg: #1F2328;
+}
+
+.diff-github-protanopia-dark {
+  --diff-add-line: rgba(88, 166, 255, 0.15);
+  --diff-add-gutter: rgba(88, 166, 255, 0.3);
+  --diff-add-word: rgba(88, 166, 255, 0.4);
+  --diff-add-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-fg: #F0F6FC;
+}
+
+.diff-github-protanopia-light-hc {
+  --diff-add-line: #DFF7FF;
+  --diff-add-gutter: #7ADBF7;
+  --diff-add-word: #0349B4;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #873800;
+  --diff-delete-fg: #FFFFFF;
+}
+
+.diff-github-protanopia-dark-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.2);
+  --diff-add-gutter: rgba(113, 183, 255, 0.3);
+  --diff-add-word: #194FB1;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(244, 139, 37, 0.3);
+  --diff-delete-word: rgba(244, 139, 37, 0.4);
+  --diff-delete-fg: #FFFFFF;
+}
+
+/* ----------------------------------------
+   GitHub Tritanopia (blue-yellow colorblind)
+   ---------------------------------------- */
+.diff-github-tritanopia-light {
+  --diff-add-line: #DAFBE1;
+  --diff-add-gutter: #ACEEBB;
+  --diff-add-word: #ACEEBB;
+  --diff-add-fg: #1F2328;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-fg: #1F2328;
+}
+
+.diff-github-tritanopia-dark {
+  --diff-add-line: rgba(56, 139, 253, 0.15);
+  --diff-add-gutter: rgba(88, 166, 255, 0.3);
+  --diff-add-word: rgba(56, 139, 253, 0.4);
+  --diff-add-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-fg: #F0F6FC;
+}
+
+.diff-github-tritanopia-light-hc {
+  --diff-add-line: #D2FEDB;
+  --diff-add-gutter: #82E596;
+  --diff-add-word: #055D20;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #873800;
+  --diff-delete-fg: #FFFFFF;
+}
+
+.diff-github-tritanopia-dark-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.2);
+  --diff-add-gutter: rgba(113, 183, 255, 0.3);
+  --diff-add-word: #194FB1;
+  --diff-add-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.3);
+  --diff-delete-word: #AD0116;
+  --diff-delete-fg: #FFFFFF;
+}
+
+/* ----------------------------------------
+   CodeFlow VS
+   ---------------------------------------- */
+.diff-codeflow-vs-light {
+  --diff-add-line: #EBF1DD;
+  --diff-add-gutter: #EBF1DD;
+  --diff-add-word: #D7E3BC;
+  --diff-add-fg: #1F2328;
+  --diff-delete-line: #FFCCCC;
+  --diff-delete-gutter: #FFCCCC;
+  --diff-delete-word: #FF9999;
+  --diff-delete-fg: #1F2328;
+}
+
+.diff-codeflow-vs-dark,
+.diff-codeflow-vs-black {
+  --diff-add-line: #15352C;
+  --diff-add-gutter: #15352C;
+  --diff-add-word: #265E4D;
+  --diff-add-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #4F0000;
+  --diff-delete-fg: #F0F6FC;
+}
+
+/* ----------------------------------------
+   CodeFlow Classic
+   ---------------------------------------- */
+.diff-codeflow-classic-light {
+  --diff-add-line: #FFFFBB;
+  --diff-add-gutter: #FFFFBB;
+  --diff-add-word: #FFFF80;
+  --diff-add-fg: #1F2328;
+  --diff-delete-line: #FFA8A8;
+  --diff-delete-gutter: #FFA8A8;
+  --diff-delete-word: #FF7777;
+  --diff-delete-fg: #1F2328;
+}
+
+.diff-codeflow-classic-dark,
+.diff-codeflow-classic-black {
+  --diff-add-line: #404019;
+  --diff-add-gutter: #404019;
+  --diff-add-word: #5D5D16;
+  --diff-add-fg: #D1D7E0;
+  --diff-delete-line: #561717;
+  --diff-delete-gutter: #561717;
+  --diff-delete-word: #6D1414;
+  --diff-delete-fg: #D1D7E0;
+}
+
+/* ----------------------------------------
+   CodeFlow RedGreen
+   ---------------------------------------- */
+.diff-codeflow-redgreen-light {
+  --diff-add-line: #A8FFA8;
+  --diff-add-gutter: #A8FFA8;
+  --diff-add-word: #94E694;
+  --diff-add-fg: #1F2328;
+  --diff-delete-line: #FFBBBB;
+  --diff-delete-gutter: #FFBBBB;
+  --diff-delete-word: #FFA8A8;
+  --diff-delete-fg: #1F2328;
+}
+
+.diff-codeflow-redgreen-dark,
+.diff-codeflow-redgreen-black {
+  --diff-add-line: #003300;
+  --diff-add-gutter: #003300;
+  --diff-add-word: #004000;
+  --diff-add-fg: #F0F6FC;
+  --diff-delete-line: #4C0000;
+  --diff-delete-gutter: #4C0000;
+  --diff-delete-word: #500000;
+  --diff-delete-fg: #F0F6FC;
 }
