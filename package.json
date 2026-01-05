@@ -43,20 +43,6 @@
     "path-to-regexp": "^8.0.0",
     "undici": "^6.0.0"
   },
-  "browserslist": {
-    "production": [
-      "chrome >= 90",
-      "edge >= 90",
-      "firefox >= 88",
-      "safari >= 14",
-      "ios_saf >= 14"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.57.0",
