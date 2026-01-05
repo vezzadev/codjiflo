@@ -9,27 +9,23 @@ interface ThemeProviderProps {
 
 // Build the CSS class for diff colors based on theme, scheme, and HC preference
 function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast: boolean): string {
-  // Map UI theme to diff brightness: black and high-contrast use dark variants for GitHub
-  const brightness = (theme === 'black' || theme === 'high-contrast') ? 'dark' : theme;
-
-  // CodeFlow/Visual Studio themes use the exact theme name (including black)
-  // For high-contrast UI theme, use dark variant
-  const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
-  const themeSuffix = hasBlackVariant ? (theme === 'high-contrast' ? 'dark' : theme) : brightness;
-
+  // All schemes have light/dark/black variants; high-contrast UI uses dark diff variant
+  const themeSuffix = theme === 'high-contrast' ? 'dark' : theme;
   const hcSuffix = useHighContrast ? '-hc' : '';
-
   return `diff-${scheme}-${themeSuffix}${hcSuffix}`;
 }
 
 // All possible diff classes for removal
 const ALL_DIFF_CLASSES = [
   // GitHub default
-  'diff-github-light', 'diff-github-dark', 'diff-github-light-hc', 'diff-github-dark-hc',
+  'diff-github-light', 'diff-github-dark', 'diff-github-black',
+  'diff-github-light-hc', 'diff-github-dark-hc', 'diff-github-black-hc',
   // GitHub protanopia
-  'diff-github-protanopia-light', 'diff-github-protanopia-dark', 'diff-github-protanopia-light-hc', 'diff-github-protanopia-dark-hc',
+  'diff-github-protanopia-light', 'diff-github-protanopia-dark', 'diff-github-protanopia-black',
+  'diff-github-protanopia-light-hc', 'diff-github-protanopia-dark-hc', 'diff-github-protanopia-black-hc',
   // GitHub tritanopia
-  'diff-github-tritanopia-light', 'diff-github-tritanopia-dark', 'diff-github-tritanopia-light-hc', 'diff-github-tritanopia-dark-hc',
+  'diff-github-tritanopia-light', 'diff-github-tritanopia-dark', 'diff-github-tritanopia-black',
+  'diff-github-tritanopia-light-hc', 'diff-github-tritanopia-dark-hc', 'diff-github-tritanopia-black-hc',
   // Visual Studio
   'diff-visual-studio-light', 'diff-visual-studio-dark', 'diff-visual-studio-black',
   'diff-visual-studio-light-hc', 'diff-visual-studio-dark-hc', 'diff-visual-studio-black-hc',
