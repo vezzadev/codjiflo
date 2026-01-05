@@ -31,6 +31,9 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 | E2E | `e2e/**/*.spec.ts` | Playwright. Critical flows only. Supports mock/prod modes |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
+### Show that your tests are working
+Tests that never failed once are USELESS. This is applicable to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend to by either following TDD and writing your test code before your product code or writing your changes, writing your test, removing your code changes temporarily, confirming that the test failed as expected and then bringing back the product code changes. You WILL be asked to show a commit where your new test did fail and then a second commit where you include your code fixes and gets the test to pass. Include the test failure validation in the commit message.
+
 ### E2E Test Modes
 
 E2E tests support two modes:
@@ -55,19 +58,29 @@ E2E tests support two modes:
 
 ### E2E Test Debugging
 
-**When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue.** Always inspect the trace first:
+#### One second is an ETERNITY for a computer
+Tests in this project are finely tuned to run very fast. Each E2E test case MUST run in 5s or less. This is PLENTY. GitHub APIs, Vercel, CI/CD machines, local dev environment, etc. are all extremely fast. This is applicable to old and new tests. The entire test suite runs in 20s. When running E2E tests, enforce a timeout in the Bash tool call of 1 minute.
+
+#### There are no flaky tests only failing tests
+Leave the tests better than how you found it. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
+
+#### Don't guess - Use the Playwright test trace to understand what is happening
+When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code.
 
 1. Read the `error-context.md` file in the test-results folder - it shows the page snapshot at failure time
 2. Run `npx playwright show-trace <trace.zip>` if deeper investigation needed
 3. Look for actual failures: missing elements, wrong content, API errors, auth issues
 
-**Do NOT:**
-- Add `waitForTimeout()` calls
-- Increase timeouts
-- Add retry logic
-- Skip/disable the test
+#### Proper use of waitFor methods
+ * waitForSelector: Best for waiting for elements to appear, disappear, or change state.
+ * waitForFunction: Ideal for complex conditions involving multiple elements or JavaScript state.
+ * waitForLoadState: Good for ensuring the page has reached a certain loading stage.
+ * waitForURL: Perfect for navigation events and redirects.
+ * waitForEvent: Useful for downloads, dialogs, and other events.
+ * waitForTimeout: Banned.
 
-The default 5s timeout is sufficient for properly working code. If a test times out, the product or test code is broken - fix the root cause.
+## Prefer locators to selectors
+Unlike traditional selectors that perform a one-time query, locators are lazy and resilient references to elements that automatically retry until elements become available, wait implicitly for elements to be actionable, and adapt to DOM changes between queries.
 
 ## Tech Stack
 
