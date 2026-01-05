@@ -908,9 +908,9 @@ a:hover {
 }
 
 /* ----------------------------------------
-   CodeFlow VS
+   Visual Studio
    ---------------------------------------- */
-.diff-codeflow-vs-light {
+.diff-visual-studio-light {
   --diff-add-line: #EBF1DD;
   --diff-add-gutter: #EBF1DD;
   --diff-add-word: #D7E3BC;
@@ -930,7 +930,7 @@ a:hover {
   --diff-area-bg: #FFFFFF;
 }
 
-.diff-codeflow-vs-dark {
+.diff-visual-studio-dark {
   --diff-add-line: #15352C;
   --diff-add-gutter: #15352C;
   --diff-add-word: #265E4D;
@@ -949,7 +949,7 @@ a:hover {
   --diff-empty-line: #151B23;
 }
 
-.diff-codeflow-vs-black {
+.diff-visual-studio-black {
   --diff-add-line: #15352C;
   --diff-add-gutter: #15352C;
   --diff-add-word: #265E4D;
@@ -1091,9 +1091,9 @@ a:hover {
 }
 
 /* ----------------------------------------
-   CodeFlow VS High Contrast
+   Visual Studio High Contrast
    ---------------------------------------- */
-.diff-codeflow-vs-light-hc {
+.diff-visual-studio-light-hc {
   --diff-add-line: #D6F0D6;
   --diff-add-gutter: #A8E0A8;
   --diff-add-word: #0A5F1C;
@@ -1112,8 +1112,8 @@ a:hover {
   --diff-empty-line: #E6EAEF;
 }
 
-.diff-codeflow-vs-dark-hc,
-.diff-codeflow-vs-black-hc {
+.diff-visual-studio-dark-hc,
+.diff-visual-studio-black-hc {
   --diff-add-line: #0D4030;
   --diff-add-gutter: #0D4030;
   --diff-add-word: #006840;

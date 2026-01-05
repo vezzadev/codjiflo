@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react';
 import Image from 'next/image';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
-import { Settings } from 'lucide-react';
+import { Paintbrush } from 'lucide-react';
 
 interface TitlebarProps {
   title?: string;
@@ -41,12 +41,12 @@ export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent }: Titl
         {rightContent}
         {/* Theme Settings Button */}
         <button
-          className="btn btn-icon"
+          className="btn-nav"
           onClick={() => setIsThemeModalOpen(true)}
           title="Appearance Settings"
           aria-label="Appearance Settings"
         >
-          <Settings size={16} />
+          <Paintbrush size={16} />
         </button>
       </div>
 

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type Theme = 'light' | 'dark' | 'black';
-export type DiffColorScheme = 'github' | 'github-protanopia' | 'github-tritanopia' | 'codeflow-vs' | 'codeflow-classic' | 'codeflow-redgreen';
+export type DiffColorScheme = 'github' | 'github-protanopia' | 'github-tritanopia' | 'visual-studio' | 'codeflow-classic' | 'codeflow-redgreen';
 
 interface ThemeState {
   theme: Theme;
