@@ -2,6 +2,12 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Configure SWC to target modern browsers (Baseline features)
+  // This reduces unnecessary polyfills and transforms for widely supported features
+  compiler: {
+    // Remove React properties (e.g., data-testid) in production
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
+  },
   images: {
     remotePatterns: [
       {
