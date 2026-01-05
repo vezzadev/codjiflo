@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
@@ -148,8 +149,9 @@ function WordDiffContent({
  * Single line in the diff view
  * S-1.4: AC-1.4.1 through AC-1.4.10
  * S-3.4: AC-3.4.1-6 (word-level diff highlighting)
+ * Memoized to prevent re-renders when parent updates but props unchanged
  */
-export function DiffLine({
+export const DiffLine = memo(function DiffLine({
   line,
   language,
   onStartComment,
@@ -249,12 +251,13 @@ export function DiffLine({
       </td>
     </tr>
   );
-}
+});
 
 /**
  * Spacer row for side-by-side alignment (S-3.2: AC-3.2.5)
+ * Memoized since it has no props and never needs to re-render
  */
-export function DiffLineSpacer() {
+export const DiffLineSpacer = memo(function DiffLineSpacer() {
   return (
     <tr className="diff-line diff-line-spacer" data-testid="diff-line-spacer">
       <td className="diff-gutter diff-gutter-spacer" />
@@ -264,4 +267,4 @@ export function DiffLineSpacer() {
       </td>
     </tr>
   );
-}
+});
