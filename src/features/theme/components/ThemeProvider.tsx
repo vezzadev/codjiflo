@@ -9,12 +9,13 @@ interface ThemeProviderProps {
 
 // Build the CSS class for diff colors based on theme, scheme, and HC preference
 function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast: boolean): string {
-  // For black theme, use dark variants (GitHub doesn't have black-specific colors)
-  const brightness = theme === 'black' ? 'dark' : theme;
+  // Map UI theme to diff brightness: black and high-contrast use dark variants for GitHub
+  const brightness = (theme === 'black' || theme === 'high-contrast') ? 'dark' : theme;
 
-  // CodeFlow themes use the exact theme name (including black)
+  // CodeFlow/Visual Studio themes use the exact theme name (including black)
+  // For high-contrast UI theme, use dark variant
   const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
-  const themeSuffix = hasBlackVariant ? theme : brightness;
+  const themeSuffix = hasBlackVariant ? (theme === 'high-contrast' ? 'dark' : theme) : brightness;
 
   const hcSuffix = useHighContrast ? '-hc' : '';
 
@@ -48,12 +49,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     // Apply theme class to document on mount and when theme changes
     const html = document.documentElement;
-    html.classList.remove('theme-light', 'theme-black');
+    html.classList.remove('theme-light', 'theme-black', 'theme-highcontrast');
 
     if (theme === 'light') {
       html.classList.add('theme-light');
     } else if (theme === 'black') {
       html.classList.add('theme-black');
+    } else if (theme === 'high-contrast') {
+      html.classList.add('theme-highcontrast');
     }
     // 'dark' is default, no class needed
   }, [theme]);

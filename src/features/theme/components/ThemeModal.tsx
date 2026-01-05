@@ -12,6 +12,7 @@ const UI_THEMES: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
   { value: 'black', label: 'Black' },
+  { value: 'high-contrast', label: 'High Contrast' },
 ];
 
 const DIFF_SCHEMES: { value: DiffColorScheme; label: string; description?: string }[] = [
@@ -25,9 +26,9 @@ const DIFF_SCHEMES: { value: DiffColorScheme; label: string; description?: strin
 
 // Generate diff class name (same logic as ThemeProvider)
 function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast: boolean): string {
-  const brightness = theme === 'black' ? 'dark' : theme;
+  const brightness = (theme === 'black' || theme === 'high-contrast') ? 'dark' : theme;
   const hasBlackVariant = scheme.startsWith('codeflow-') || scheme.startsWith('visual-studio');
-  const themeSuffix = hasBlackVariant ? theme : brightness;
+  const themeSuffix = hasBlackVariant ? (theme === 'high-contrast' ? 'dark' : theme) : brightness;
   const hcSuffix = useHighContrast ? '-hc' : '';
   return `diff-${scheme}-${themeSuffix}${hcSuffix}`;
 }
