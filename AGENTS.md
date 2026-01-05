@@ -32,7 +32,7 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
-Tests that have never failed even once are far less trustworthy. This applies to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend, either by following TDD and writing your test code before your product code, or by writing your changes, writing your test, temporarily removing your code changes, confirming that the test fails as expected, and then restoring the product code changes. You WILL be asked to demonstrate a commit where your new test fails, followed by a second commit where you include your code fixes that make the test pass. Include the test failure validation in the commit message.
+Tests that have never failed even once are USELESS. This applies to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend, either by following TDD and writing your test code before your product code, or by writing your changes, writing your test, temporarily removing your code changes, confirming that the test fails as expected, and then restoring the product code changes. You WILL be asked to demonstrate a commit where your new test fails, followed by a second commit where you include your code fixes that make the test pass. Include the test failure validation in the commit message.
 
 ### E2E Test Modes
 
