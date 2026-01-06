@@ -5,4 +5,10 @@
  * Shared between GitHub Action and E2E test fixtures.
  */
 
-export { computeLineDiff, type LineDiff } from "./line-diff.js";
+export {
+  computeLineDiff,
+  lineDiffsToSpanMappings,
+  lineDiffToSpanMapping,
+  type LineDiff,
+  type SpanMapping,
+} from "./line-diff.js";

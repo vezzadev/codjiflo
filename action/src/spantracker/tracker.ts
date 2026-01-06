@@ -4,8 +4,8 @@
  * Computes line mappings between file versions using diff.
  */
 
-import type { IterationDatabase, SpanMappingRow } from '../db/database';
-import { computeLineDiff, LineDiff } from './diff-engine';
+import type { IterationDatabase } from '../db/database';
+import { computeLineDiff, lineDiffToSpanMapping } from '@codjiflo/diff-engine';
 
 // ============================================================================
 // Types
@@ -92,7 +92,7 @@ function computeSingleTracker(
   let rightLine = 1;
 
   for (const diff of diffs) {
-    const mapping = diffToMapping(diff, leftLine, rightLine);
+    const mapping = lineDiffToSpanMapping(diff, leftLine, rightLine);
 
     db.insertSpanMapping(
       trackerId,
@@ -104,61 +104,8 @@ function computeSingleTracker(
     );
 
     // Advance line counters
-    if (diff.type === 'unchanged' || diff.type === 'modified') {
-      leftLine += diff.leftLines;
-      rightLine += diff.rightLines;
-    } else if (diff.type === 'deleted') {
-      leftLine += diff.leftLines;
-    } else if (diff.type === 'added') {
-      rightLine += diff.rightLines;
-    }
-  }
-}
-
-/**
- * Convert a LineDiff to a SpanMappingRow.
- */
-function diffToMapping(
-  diff: LineDiff,
-  leftLine: number,
-  rightLine: number
-): Omit<SpanMappingRow, 'tracker_id'> {
-  switch (diff.type) {
-    case 'unchanged':
-      return {
-        left_line_start: leftLine,
-        left_line_end: leftLine + diff.leftLines - 1,
-        right_line_start: rightLine,
-        right_line_end: rightLine + diff.rightLines - 1,
-        mapping_type: 'unchanged',
-      };
-
-    case 'modified':
-      return {
-        left_line_start: leftLine,
-        left_line_end: leftLine + diff.leftLines - 1,
-        right_line_start: rightLine,
-        right_line_end: rightLine + diff.rightLines - 1,
-        mapping_type: 'modified',
-      };
-
-    case 'deleted':
-      return {
-        left_line_start: leftLine,
-        left_line_end: leftLine + diff.leftLines - 1,
-        right_line_start: null,
-        right_line_end: null,
-        mapping_type: 'deleted',
-      };
-
-    case 'added':
-      return {
-        left_line_start: null,
-        left_line_end: null,
-        right_line_start: rightLine,
-        right_line_end: rightLine + diff.rightLines - 1,
-        mapping_type: 'added',
-      };
+    leftLine += diff.leftLines;
+    rightLine += diff.rightLines;
   }
 }
 
