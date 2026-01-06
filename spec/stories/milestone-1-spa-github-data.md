@@ -157,8 +157,9 @@ Implement global shortcuts for common actions.
 
 ### Acceptance Criteria
 1.  **Shortcuts**:
-    - [ ] [AC-1.5.1] `j` / `k`: Next / Previous file in the file list.
+    - [ ] [AC-1.5.1] `s` / `w`: Next / Previous file in the file list.
     - [ ] [AC-1.5.2] `Space`: Scroll down in diff view.
+    - [ ] [AC-1.5.6] `j` / `k`: Next / Previous change (hunk) within the current file.
 2.  **Focus Management**:
     - [ ] [AC-1.5.3] Shortcuts work when focus is on the `body` or specific containers, but do not trigger if user is in an input field (if any).
 3.  **Documentation**:

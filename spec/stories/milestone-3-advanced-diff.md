@@ -107,7 +107,7 @@ Implement a toolbar with toggle buttons for:
     - [ ] [AC-3.3.1] Segmented button group with "Unified" and "Side-by-Side" options.
     - [ ] [AC-3.3.2] Active mode visually highlighted.
     - [ ] [AC-3.3.3] Switching modes preserves scroll position (map line numbers between modes).
-    - [ ] [AC-3.3.4] Keyboard shortcut `U` for Unified, `S` for Side-by-Side.
+    - [ ] [AC-3.3.4] Keyboard shortcut `I` for Inline (Unified), `X` for Side-by-Side.
 2.  **Content Filter Toggle (Left/Both/Right)**:
     - [ ] [AC-3.3.5] Three-way toggle: "Left", "Both", "Right".
     - [ ] [AC-3.3.6] "Both" shows the standard diff view (default).
