@@ -3,3 +3,4 @@ export { getDiffLinePosition, getDiffLineIndexForPosition } from './comment-posi
 export { computeAlignment, alignDiffLines, applyContentFilter } from './align-diff';
 export { filterWhitespaceChanges, filterAlignedWhitespace } from './filter-whitespace';
 export { filterToChangesOnly, filterAlignedToChangesOnly } from './filter-to-changes';
+export { calculateHunkIndices, calculateAlignedHunkIndices } from './hunk-navigation';

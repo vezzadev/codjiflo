@@ -3,7 +3,7 @@
  * Uses react-window for performant rendering with synchronized scrolling
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
 import type { AlignedDiffLine } from '../types';
@@ -37,6 +37,8 @@ interface VirtualizedSideBySideDiffViewProps {
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
   showWhitespace: boolean;
+  /** Row index to scroll to (for J/K navigation) */
+  scrollToRowIndex?: number | undefined;
 }
 
 interface RowData {
@@ -256,8 +258,19 @@ export function VirtualizedSideBySideDiffView({
   onChangeDraftBody,
   onSubmitDraft,
   showWhitespace,
+  scrollToRowIndex,
 }: VirtualizedSideBySideDiffViewProps) {
   const listRef = useRef<List>(null);
+
+  // Scroll to row when scrollToRowIndex changes (J/K navigation)
+  useEffect(() => {
+    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
+      // Scroll with some offset to show context lines above
+      const contextLines = 3;
+      const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
+      listRef.current.scrollToItem(targetIndex, 'start');
+    }
+  }, [scrollToRowIndex]);
 
   // Filter lines based on content filter
   const filteredLines = useMemo(() => {
