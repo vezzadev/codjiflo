@@ -328,18 +328,18 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Focus on the page body to ensure keyboard events work
     await page.locator("body").click();
     // Wait for focus to settle by ensuring the body is focused
-    await page.waitForFunction(() => document.activeElement === document.body || document.activeElement?.tagName === 'BODY');
+    await page.waitForFunction(() => document.activeElement === document.body);
 
     // [AC-1.5.1] Press j to go to first file
     await page.keyboard.press("j");
     
     // First file (second button) should be selected
     const firstFile = fileButtons.nth(1);
-    await expect(firstFile).toHaveAttribute("aria-current", "location", );
+    await expect(firstFile).toHaveAttribute("aria-current", "location");
 
     // [AC-1.5.1] Press k to go back to PR Description
     await page.keyboard.press("k");
-    await expect(prDescButton).toHaveAttribute("aria-current", "location", );
+    await expect(prDescButton).toHaveAttribute("aria-current", "location");
   });
 
   test("Shortcuts modal opens with ? button", async ({ page }) => {
