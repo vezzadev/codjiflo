@@ -16,7 +16,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'dark',
+      theme: 'light',
       diffColorScheme: 'github',
       useHighContrastDiff: false,
       setTheme: (theme: Theme) => {
