@@ -45,16 +45,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     // Apply theme class to document on mount and when theme changes
     const html = document.documentElement;
-    html.classList.remove('theme-light', 'theme-black', 'theme-highcontrast');
+    html.classList.remove('theme-dark', 'theme-black', 'theme-highcontrast');
 
-    if (theme === 'light') {
-      html.classList.add('theme-light');
+    if (theme === 'dark') {
+      html.classList.add('theme-dark');
     } else if (theme === 'black') {
       html.classList.add('theme-black');
     } else if (theme === 'high-contrast') {
       html.classList.add('theme-highcontrast');
     }
-    // 'dark' is default, no class needed
+    // 'light' is default, no class needed
   }, [theme]);
 
   useEffect(() => {
