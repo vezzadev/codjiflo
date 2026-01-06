@@ -236,12 +236,7 @@ Iterations: 2`,
     }
     const contentStartY = headerBox.y + headerBox.height;
 
-    // Find context line 1 - the first of 3 context lines above the change
-    const contextLine1Row = page.locator("tr").filter({
-      hasText: "Context line 1",
-    });
-    await expect(contextLine1Row).toBeVisible();
-
+    // Context line 1 was already defined earlier, just get its bounding box
     const contextLine1Box = await contextLine1Row.boundingBox();
     if (!contextLine1Box) {
       throw new Error("Failed to get context line 1 bounding box");

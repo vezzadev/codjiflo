@@ -92,9 +92,9 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     await page.goto(config.pageUrl);
     await page.waitForLoadState("load");
 
-    // Wait for the page to stabilize by waiting for the banner to appear
-    // Look for the degraded mode banner (rendered as a status element)
-    const banner = page.getByRole("status");
+    // Wait for the page to stabilize by waiting for the specific degraded mode banner
+    // Look for the degraded mode banner (rendered as a status element with iteration tracking text)
+    const banner = page.getByRole("status").filter({ hasText: /iteration tracking/i });
     await expect(banner).toBeVisible();
     await expect(banner).toContainText(/iteration tracking/i);
   });
