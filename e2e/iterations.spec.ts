@@ -427,10 +427,10 @@ diff --git a/src/app.ts b/src/app.ts
     // Wait for file list and iterations to load
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator(".skeleton")).toHaveCount(0, { timeout: 10000 });
+    await expect(fileList.locator(".skeleton")).toHaveCount(0);
 
     const selector = page.getByTestId("iteration-selector");
-    await expect(selector).toBeVisible({ timeout: 15000 });
+    await expect(selector).toBeVisible();
 
     // Click on the file (second item after PR description)
     const fileItems = fileList.getByRole("listitem");
@@ -438,7 +438,7 @@ diff --git a/src/app.ts b/src/app.ts
 
     // Wait for diff toolbar
     const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
-    await expect(toolbar).toBeVisible({ timeout: 10000 });
+    await expect(toolbar).toBeVisible();
 
     // Get navigation buttons
     const nextChangeBtn = page.getByRole("button", { name: /Next change/i });
@@ -463,11 +463,9 @@ diff --git a/src/app.ts b/src/app.ts
     await firstTab.click();
     await expect(firstTab).toHaveClass(/selected/);
 
-    // Wait for diff to update
-    await page.waitForLoadState("networkidle");
-
     // CRITICAL: After iteration switch, Previous should be DISABLED again
     // because the change index should reset to -1 (start position)
+    // The expect with locator will auto-retry until condition is met
     await expect(prevChangeBtn).toBeDisabled();
   });
 });
