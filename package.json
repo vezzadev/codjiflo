@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
     "dev": "node scripts/ensure-env.js && next dev --turbopack",

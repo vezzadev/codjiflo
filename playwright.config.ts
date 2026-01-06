@@ -22,6 +22,7 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
 
 export default defineConfig({
   testDir: "./e2e",
+  testMatch: "**/*.spec.ts",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: 0,

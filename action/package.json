@@ -11,15 +11,14 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
+    "@codjiflo/diff-engine": "file:../packages/diff-engine",
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^12.5.0",
-    "diff-match-patch": "^1.0.5",
     "pino": "^10.1.0"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/diff-match-patch": "^1.0.36",
     "@types/node": "^20.0.0",
     "@vercel/ncc": "^0.38.0",
     "node-gyp": "^12.1.0",
