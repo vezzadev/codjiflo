@@ -24,9 +24,9 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
 // Need web server for mock mode OR prod mode running locally
 const needsWebServer = !isProdMode || !isCI;
 
-// Find an available port dynamically to avoid conflicts
+// Let OS pick an available port dynamically to avoid conflicts
 // Only needed when we're starting a local web server
-const serverPort = needsWebServer ? findAvailablePortSync(3000) : 3000;
+const serverPort = needsWebServer ? findAvailablePortSync() : -1;
 
 // URLs for different modes
 // - mock mode: always localhost with dynamic port
