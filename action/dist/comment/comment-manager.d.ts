@@ -19,5 +19,10 @@ export declare function updatePRComment(octokit: ReturnType<typeof github.getOct
  * Returns null if no comment exists or artifact name is not found.
  */
 export declare function getArtifactNameFromComment(octokit: ReturnType<typeof github.getOctokit>, owner: string, repo: string, prNumber: number): Promise<string | null>;
+/**
+ * Update PR description to include CodjiFlo review link.
+ * Appends the link if not present, or updates existing link.
+ */
+export declare function updatePRDescription(octokit: ReturnType<typeof github.getOctokit>, owner: string, repo: string, prNumber: number): Promise<void>;
 export {};
 //# sourceMappingURL=comment-manager.d.ts.map

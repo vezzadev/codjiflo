@@ -21,7 +21,7 @@ import AdmZip from 'adm-zip';
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
-import { updatePRComment, getArtifactNameFromComment } from './comment/comment-manager';
+import { updatePRComment, getArtifactNameFromComment, updatePRDescription } from './comment/comment-manager';
 import { downloadArtifactWithFallback } from './artifact/artifact-download';
 
 // ============================================================================
@@ -161,6 +161,11 @@ async function run(): Promise<void> {
         timestamp: new Date().toISOString(),
       });
       core.info('PR comment updated');
+
+      // Update PR description with CodjiFlo link
+      core.info('Updating PR description with CodjiFlo link...');
+      await updatePRDescription(octokit, owner, repo, prNumber);
+      core.info('PR description updated');
 
       core.info('Done! Artifact upload will be handled by action.yml');
     } catch (error) {

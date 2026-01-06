@@ -12,6 +12,7 @@ import * as github from '@actions/github';
 
 const COMMENT_MARKER = '<!-- codjiflo-data -->';
 const ARTIFACT_NAME_PATTERN = /\*\*Artifact\*\*: `([^`]+)`/;
+const PR_DESCRIPTION_MARKER = '<!-- codjiflo-link -->';
 
 // ============================================================================
 // Types
@@ -136,4 +137,49 @@ The artifact referenced above contains iteration data that the CodjiFlo frontend
 
 </details>
 `;
+}
+
+/**
+ * Update PR description to include CodjiFlo review link.
+ * Appends the link if not present, or updates existing link.
+ */
+export async function updatePRDescription(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<void> {
+  // Get current PR data
+  const { data: pr } = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
+
+  const currentBody = pr.body || '';
+  const codjifloLink = `https://codjiflo.vza.net/${owner}/${repo}/${prNumber}`;
+  
+  // Check if CodjiFlo link section already exists
+  // Match from first marker through to second marker (inclusive)
+  const markerRegex = new RegExp(`${PR_DESCRIPTION_MARKER}[\\s\\S]*?${PR_DESCRIPTION_MARKER}`);
+  const linkSection = `${PR_DESCRIPTION_MARKER}\n\n---\n\n🔍 **[Review in CodjiFlo](${codjifloLink})**\n\n${PR_DESCRIPTION_MARKER}`;
+  
+  let newBody: string;
+  if (currentBody.includes(PR_DESCRIPTION_MARKER)) {
+    // Update existing link section
+    newBody = currentBody.replace(markerRegex, linkSection);
+  } else {
+    // Append link section to description
+    newBody = currentBody + (currentBody ? '\n\n' : '') + linkSection;
+  }
+
+  // Only update if the body has changed
+  if (newBody !== currentBody) {
+    await octokit.rest.pulls.update({
+      owner,
+      repo,
+      pull_number: prNumber,
+      body: newBody,
+    });
+  }
 }

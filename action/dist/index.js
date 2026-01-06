@@ -38605,11 +38605,13 @@ function getCaptureContext(octokit) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updatePRComment = updatePRComment;
 exports.getArtifactNameFromComment = getArtifactNameFromComment;
+exports.updatePRDescription = updatePRDescription;
 // ============================================================================
 // Constants
 // ============================================================================
 const COMMENT_MARKER = '<!-- codjiflo-data -->';
 const ARTIFACT_NAME_PATTERN = /\*\*Artifact\*\*: `([^`]+)`/;
+const PR_DESCRIPTION_MARKER = '<!-- codjiflo-link -->';
 // ============================================================================
 // Comment Management
 // ============================================================================
@@ -38695,6 +38697,42 @@ The artifact referenced above contains iteration data that the CodjiFlo frontend
 
 </details>
 `;
+}
+/**
+ * Update PR description to include CodjiFlo review link.
+ * Appends the link if not present, or updates existing link.
+ */
+async function updatePRDescription(octokit, owner, repo, prNumber) {
+    // Get current PR data
+    const { data: pr } = await octokit.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: prNumber,
+    });
+    const currentBody = pr.body || '';
+    const codjifloLink = `https://codjiflo.vza.net/${owner}/${repo}/${prNumber}`;
+    // Check if CodjiFlo link section already exists
+    // Match from first marker through to second marker (inclusive)
+    const markerRegex = new RegExp(`${PR_DESCRIPTION_MARKER}[\\s\\S]*?${PR_DESCRIPTION_MARKER}`);
+    const linkSection = `${PR_DESCRIPTION_MARKER}\n\n---\n\n🔍 **[Review in CodjiFlo](${codjifloLink})**\n\n${PR_DESCRIPTION_MARKER}`;
+    let newBody;
+    if (currentBody.includes(PR_DESCRIPTION_MARKER)) {
+        // Update existing link section
+        newBody = currentBody.replace(markerRegex, linkSection);
+    }
+    else {
+        // Append link section to description
+        newBody = currentBody + (currentBody ? '\n\n' : '') + linkSection;
+    }
+    // Only update if the body has changed
+    if (newBody !== currentBody) {
+        await octokit.rest.pulls.update({
+            owner,
+            repo,
+            pull_number: prNumber,
+            body: newBody,
+        });
+    }
 }
 
 
@@ -39185,6 +39223,10 @@ async function run() {
                 timestamp: new Date().toISOString(),
             });
             core.info('PR comment updated');
+            // Update PR description with CodjiFlo link
+            core.info('Updating PR description with CodjiFlo link...');
+            await (0, comment_manager_1.updatePRDescription)(octokit, owner, repo, prNumber);
+            core.info('PR description updated');
             core.info('Done! Artifact upload will be handled by action.yml');
         }
         catch (error) {
