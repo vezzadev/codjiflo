@@ -223,7 +223,7 @@ Iterations: 2`,
     // Wait for scroll position to stabilize by checking bounding box is ready
     await page.waitForFunction(() => {
       const rows = Array.from(document.querySelectorAll("tr"));
-      const contextRow = rows.find((row) => row.textContent && row.textContent.includes("Context line 1"));
+      const contextRow = rows.find((row) => row.innerText.includes("Context line 1"));
       if (!contextRow) return false;
       const box = contextRow.getBoundingClientRect();
       return box.y > 0 && box.height > 0;
