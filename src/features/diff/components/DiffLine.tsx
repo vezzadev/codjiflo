@@ -117,8 +117,34 @@ function renderVisibleWhitespace(content: string): React.ReactNode {
 }
 
 /**
+ * Recursively process React children to inject whitespace markers
+ * This works with React's reconciliation instead of direct DOM manipulation
+ */
+function processChildrenForWhitespace(children: React.ReactNode): React.ReactNode {
+  return React.Children.map(children, (child) => {
+    // Handle text nodes - inject whitespace markers
+    if (typeof child === 'string') {
+      return renderVisibleWhitespace(child);
+    }
+    
+    // Handle React elements - recursively process their children
+    if (React.isValidElement(child)) {
+      const props = child.props as { children?: React.ReactNode };
+      if (props.children) {
+        return React.cloneElement(child, {
+          ...props,
+          children: processChildrenForWhitespace(props.children),
+        } as Partial<typeof props> & React.Attributes);
+      }
+    }
+    
+    return child;
+  });
+}
+
+/**
  * Component that applies both syntax highlighting and whitespace rendering
- * Uses useEffect to post-process the syntax-highlighted DOM and inject whitespace markers
+ * Uses React element processing instead of DOM manipulation
  */
 function SyntaxHighlighterWithWhitespace({
   content,
@@ -131,78 +157,36 @@ function SyntaxHighlighterWithWhitespace({
   syntaxStyle: Record<string, React.CSSProperties>;
   showWhitespace: boolean;
 }) {
-  const containerRef = React.useRef<HTMLSpanElement>(null);
-  const processedRef = React.useRef(false);
+  // Memoize the syntax-highlighted output
+  const highlightedContent = React.useMemo(() => (
+    <SyntaxHighlighter
+      language={language}
+      style={syntaxStyle}
+      useInlineStyles={true}
+      customStyle={codeStyle}
+      PreTag="span"
+      CodeTag="span"
+    >
+      {content}
+    </SyntaxHighlighter>
+  ), [content, language, syntaxStyle]);
 
-  React.useEffect(() => {
-    if (!showWhitespace || !containerRef.current) {
-      processedRef.current = false;
-      return;
+  // If showWhitespace is enabled, process the highlighted content to add whitespace markers
+  // Use useMemo to avoid re-processing on every render
+  const processedContent = React.useMemo(() => {
+    if (!showWhitespace || !React.isValidElement(highlightedContent)) {
+      return highlightedContent;
     }
+    
+    // Process the children of the highlighted content
+    const props = highlightedContent.props as { children?: React.ReactNode };
+    return React.cloneElement(highlightedContent, {
+      ...props,
+      children: processChildrenForWhitespace(props.children),
+    } as Partial<typeof props> & React.Attributes);
+  }, [highlightedContent, showWhitespace]);
 
-    // Avoid re-processing if already done for this render
-    if (processedRef.current) return;
-
-    // Post-process the rendered content to add whitespace markers
-    const processTextNode = (node: Node) => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
-        const text = node.textContent;
-        if (text.includes(' ') || text.includes('\t')) {
-          // Create a document fragment with whitespace markers
-          const fragment = document.createDocumentFragment();
-          let lastIndex = 0;
-          
-          for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-            if (char === ' ' || char === '\t') {
-              // Add any text before this whitespace
-              if (i > lastIndex) {
-                fragment.appendChild(document.createTextNode(text.slice(lastIndex, i)));
-              }
-              
-              // Add whitespace marker
-              const span = document.createElement('span');
-              span.className = 'whitespace-visible';
-              span.textContent = char === ' ' ? WHITESPACE_CHARS.space : WHITESPACE_CHARS.tab;
-              fragment.appendChild(span);
-              
-              lastIndex = i + 1;
-            }
-          }
-          
-          // Add remaining text
-          if (lastIndex < text.length) {
-            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-          }
-          
-          // Replace the text node with the fragment
-          node.parentNode?.replaceChild(fragment, node);
-        }
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        // Recursively process child nodes
-        // Create array from childNodes to avoid live collection issues
-        Array.from(node.childNodes).forEach(processTextNode);
-      }
-    };
-
-    processTextNode(containerRef.current);
-    processedRef.current = true;
-  }, [showWhitespace, content]); // Re-run when content or showWhitespace changes
-
-  return (
-    <span ref={containerRef}>
-      <SyntaxHighlighter
-        language={language}
-        style={syntaxStyle}
-        useInlineStyles={true}
-        customStyle={codeStyle}
-        PreTag="span"
-        CodeTag="span"
-      >
-        {content}
-      </SyntaxHighlighter>
-    </span>
-  );
+  return <>{processedContent}</>;
 }
 
 // Custom style to match diff view - minimal styling, let parent handle background
