@@ -357,8 +357,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Wait a moment for any re-renders to complete
     await page.waitForTimeout(500);
 
-    // [AC-1.5.4] Click the shortcuts button to open modal (use force for stability)
-    await shortcutsButton.click({ force: true });
+    // [AC-1.5.4] Click the shortcuts button to open modal
+    await shortcutsButton.click();
 
     // Modal should be visible
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -387,9 +387,9 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Wait a moment for form state to update
     await page.waitForTimeout(500);
 
-    // Submit form - use force to avoid element detachment issues
+    // Submit form
     const submitButton = page.getByRole("button", { name: /Load Pull Request/i });
-    await submitButton.click({ force: true });
+    await submitButton.click();
 
     // Should show error message
     await expect(page.getByText(/Invalid GitHub PR URL/i)).toBeVisible();
