@@ -336,6 +336,16 @@
   --window-btn-hover: #C0C0C0;
   --window-btn-focus: #A0A0A0;
   --sidebar-bg: #E0E0E0;
+
+  /* Interactive elements */
+  --focus-border: #005FB8;
+  --menu-hover: rgba(0, 0, 0, 0.06);
+  --menu-focus: rgba(0, 0, 0, 0.12);
+  --close-btn-hover: #C50F1F;
+  --close-btn-border: #CCCCCC;
+  --collapse-hover: #000000;
+  --watermark-text: #A0A0A0;
+  --badge-merged: #6f42c1;
 }
 
 /* ============================================
@@ -476,6 +486,16 @@
   --window-btn-hover: #313131;
   --window-btn-focus: #212121;
   --sidebar-bg: #000000;
+
+  /* Interactive elements */
+  --focus-border: #1AEBFF;
+  --menu-hover: rgba(255, 255, 255, 0.16);
+  --menu-focus: rgba(255, 255, 255, 0.24);
+  --close-btn-hover: #F1707A;
+  --close-btn-border: #CCCCCC;
+  --collapse-hover: #FFFFFF;
+  --watermark-text: #CCCCCC;
+  --badge-merged: #B18AE6;
 }
 
 /* ============================================
@@ -617,6 +637,16 @@
   --window-btn-hover: #1AEBFF;
   --window-btn-focus: #1AEBFF;
   --sidebar-bg: #000000;
+
+  /* Interactive elements */
+  --focus-border: #FFFF00;
+  --menu-hover: #FFFFFF;
+  --menu-focus: #FFFF00;
+  --close-btn-hover: #FF0000;
+  --close-btn-border: #FFFFFF;
+  --collapse-hover: #FFFFFF;
+  --watermark-text: #FFFFFF;
+  --badge-merged: #00FFFF;
 }
 
 /* ============================================
