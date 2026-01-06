@@ -255,6 +255,108 @@ describe('useDiffStore', () => {
     });
   });
 
+  // Change Navigation Tests
+  describe('change navigation', () => {
+    beforeEach(() => {
+      useDiffStore.setState({
+        files: mockFiles,
+        currentChangeIndex: -1,
+        totalChangeCount: 5,
+      });
+    });
+
+    describe('scrollToNextChange', () => {
+      it('advances to the next change', () => {
+        useDiffStore.setState({ currentChangeIndex: 0 });
+
+        useDiffStore.getState().scrollToNextChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+      });
+
+      it('advances from -1 to 0 (first change)', () => {
+        useDiffStore.setState({ currentChangeIndex: -1 });
+
+        useDiffStore.getState().scrollToNextChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+      });
+
+      it('does not advance past the last change', () => {
+        useDiffStore.setState({ currentChangeIndex: 4, totalChangeCount: 5 });
+
+        useDiffStore.getState().scrollToNextChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(4);
+      });
+
+      it('normalizes out-of-range index after view mode change', () => {
+        // Simulate: user navigated to index 5 in unified mode, then switched to split mode with only 3 hunks
+        useDiffStore.setState({ currentChangeIndex: 5, totalChangeCount: 3 });
+
+        useDiffStore.getState().scrollToNextChange();
+
+        // Should normalize to -1 and then advance to 0
+        expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+      });
+    });
+
+    describe('scrollToPreviousChange', () => {
+      it('goes back to the previous change', () => {
+        useDiffStore.setState({ currentChangeIndex: 2 });
+
+        useDiffStore.getState().scrollToPreviousChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+      });
+
+      it('does not go before index 0', () => {
+        useDiffStore.setState({ currentChangeIndex: 0 });
+
+        useDiffStore.getState().scrollToPreviousChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+      });
+
+      it('does nothing when at index -1', () => {
+        useDiffStore.setState({ currentChangeIndex: -1 });
+
+        useDiffStore.getState().scrollToPreviousChange();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
+      });
+
+      it('normalizes out-of-range index after view mode change', () => {
+        // Simulate: user navigated to index 5 in unified mode, then switched to split mode with only 3 hunks
+        useDiffStore.setState({ currentChangeIndex: 5, totalChangeCount: 3 });
+
+        useDiffStore.getState().scrollToPreviousChange();
+
+        // Should normalize to 2 (last valid index) and then go back to 1
+        expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+      });
+    });
+
+    describe('resetChangeIndex', () => {
+      it('resets currentChangeIndex to -1 and totalChangeCount to 0', () => {
+        useDiffStore.setState({ currentChangeIndex: 3, totalChangeCount: 5 });
+
+        useDiffStore.getState().resetChangeIndex();
+
+        expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
+        expect(useDiffStore.getState().totalChangeCount).toBe(0);
+      });
+    });
+
+    describe('setTotalChangeCount', () => {
+      it('sets the total change count', () => {
+        useDiffStore.getState().setTotalChangeCount(10);
+
+        expect(useDiffStore.getState().totalChangeCount).toBe(10);
+      });
+    });
+  });
+
   // View Config Tests (S-3.3)
   describe('viewConfig', () => {
     beforeEach(() => {

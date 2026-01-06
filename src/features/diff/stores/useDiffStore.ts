@@ -107,16 +107,26 @@ export const useDiffStore = create<DiffState>()(
       // Change navigation actions
       scrollToNextChange: () => {
         const { currentChangeIndex, totalChangeCount } = get();
+        // If the current index is out of range (e.g. after a view mode change),
+        // reset it to "before the first hunk" so the next navigation lands on index 0.
+        const normalizedIndex =
+          currentChangeIndex >= totalChangeCount ? -1 : currentChangeIndex;
         // Only advance if there are more hunks
-        if (currentChangeIndex < totalChangeCount - 1) {
-          set({ currentChangeIndex: currentChangeIndex + 1 });
+        if (normalizedIndex < totalChangeCount - 1) {
+          set({ currentChangeIndex: normalizedIndex + 1 });
         }
       },
 
       scrollToPreviousChange: () => {
-        const { currentChangeIndex } = get();
-        if (currentChangeIndex > 0) {
-          set({ currentChangeIndex: currentChangeIndex - 1 });
+        const { currentChangeIndex, totalChangeCount } = get();
+        // If the current index is out of range (e.g. after a view mode change),
+        // clamp it to the last available hunk so previous navigation still works.
+        const normalizedIndex =
+          currentChangeIndex >= totalChangeCount
+            ? totalChangeCount - 1
+            : currentChangeIndex;
+        if (normalizedIndex > 0) {
+          set({ currentChangeIndex: normalizedIndex - 1 });
         }
       },
 

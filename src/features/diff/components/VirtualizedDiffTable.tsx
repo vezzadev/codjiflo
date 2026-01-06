@@ -181,8 +181,14 @@ export function VirtualizedDiffTable({
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
-      // Scroll with some offset to show context lines above
-      const contextLines = 3;
+      // Read context lines from CSS variable for consistency with non-virtualized views
+      let contextLines = 3;
+      const rootStyles = getComputedStyle(document.documentElement);
+      const cssValue = rootStyles.getPropertyValue('--diff-scroll-context-lines');
+      const parsed = parseInt(cssValue, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        contextLines = parsed;
+      }
       const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
       listRef.current.scrollToItem(targetIndex, 'start');
     }

@@ -265,12 +265,62 @@ export function VirtualizedSideBySideDiffView({
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
-      // Scroll with some offset to show context lines above
-      const contextLines = 3;
-      const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
+      let effectiveIndex = scrollToRowIndex;
+
+      // When filtering is active, map the unfiltered index to the corresponding
+      // index in the filtered list (or the nearest visible line).
+      if (contentFilter !== 'both') {
+        let filteredIndex = -1;
+        let lastKeptIndex = -1;
+
+        for (let i = 0; i < alignedLines.length; i++) {
+          const pair = alignedLines[i];
+          if (!pair) continue;
+          const keep =
+            contentFilter === 'left'
+              ? pair.left !== null || pair.right?.type !== 'addition'
+              : pair.right !== null || pair.left?.type !== 'deletion';
+
+          if (keep) {
+            lastKeptIndex++;
+
+            // Exact match: this unfiltered index is visible
+            if (i === scrollToRowIndex) {
+              filteredIndex = lastKeptIndex;
+              break;
+            }
+
+            // If we've passed the target unfiltered index without an exact match,
+            // then the target was filtered out. Scroll to the closest previous
+            // visible line (lastKeptIndex).
+            if (i > scrollToRowIndex && filteredIndex === -1) {
+              filteredIndex = lastKeptIndex;
+              break;
+            }
+          }
+        }
+
+        if (filteredIndex === -1) {
+          // If no kept lines were found at or before the target, fall back to
+          // the last visible line (or 0 if there are no visible lines).
+          filteredIndex = lastKeptIndex === -1 ? 0 : lastKeptIndex;
+        }
+
+        effectiveIndex = filteredIndex;
+      }
+
+      // Read context lines from CSS variable for consistency with non-virtualized views
+      let contextLines = 3;
+      const rootStyles = getComputedStyle(document.documentElement);
+      const cssValue = rootStyles.getPropertyValue('--diff-scroll-context-lines');
+      const parsed = parseInt(cssValue, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        contextLines = parsed;
+      }
+      const targetIndex = Math.max(0, effectiveIndex - contextLines);
       listRef.current.scrollToItem(targetIndex, 'start');
     }
-  }, [scrollToRowIndex]);
+  }, [scrollToRowIndex, alignedLines, contentFilter]);
 
   // Filter lines based on content filter
   const filteredLines = useMemo(() => {
