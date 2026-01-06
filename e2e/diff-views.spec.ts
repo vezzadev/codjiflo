@@ -170,8 +170,8 @@ const baz = 'qux';
       // Focus on page body
       await page.locator("body").click();
 
-      // [AC-3.3.4] Press 's' for Split - button should now show SxS
-      await page.keyboard.press("s");
+      // [AC-3.3.4] Press 'x' for Split - button should now show SxS
+      await page.keyboard.press("x");
       await expect(
         toolbar.getByRole("button", { name: /switch to inline view/i })
       ).toContainText("SxS");
@@ -206,7 +206,7 @@ const baz = 'qux';
 
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
-      await page.keyboard.press("s");
+      await page.keyboard.press("x");
 
       // [AC-3.3.5-7] Content filter radiogroup should be visible
       const contentFilter = toolbar.getByRole("radiogroup", {
@@ -238,8 +238,8 @@ const baz = 'qux';
         page.getByRole("region", { name: "Original version" })
       ).toBeHidden();
 
-      // Back to Both - use keyboard shortcut 'b'
-      await page.keyboard.press("b");
+      // Back to Both - use keyboard shortcut 'o'
+      await page.keyboard.press("o");
       await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
       await expect(
         page.getByRole("region", { name: "Original version" })
@@ -392,7 +392,7 @@ const baz = 'qux';
 
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
-      await page.keyboard.press("s");
+      await page.keyboard.press("x");
 
       // Get the side-by-side container and panes
       const sideBySideContainer = page.getByRole("region", {
@@ -445,7 +445,7 @@ const baz = 'qux';
 
       // Switch to Split view using keyboard shortcut
       await page.locator("body").click();
-      await page.keyboard.press("s");
+      await page.keyboard.press("x");
 
       // [AC-3.2.8] Screen reader can move between panes
       const leftPane = page.getByRole("region", { name: "Original version" });
@@ -470,6 +470,81 @@ const baz = 'qux';
         await allButtons[1]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
+      }
+    }
+  });
+
+  test("Change navigation with J/K keys and toolbar buttons", async ({
+    page,
+  }) => {
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    if (isMockMode()) {
+      await fileNav.getByText("src/example.ts").click();
+      await expect(
+        page.getByRole("heading", { name: "src/example.ts" })
+      ).toBeVisible();
+
+      const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+      await expect(toolbar).toBeVisible();
+
+      // Verify navigation buttons exist with correct labels
+      const prevChangeButton = toolbar.getByRole("button", {
+        name: /Previous change/i,
+      });
+      const nextChangeButton = toolbar.getByRole("button", {
+        name: /Next change/i,
+      });
+      await expect(prevChangeButton).toBeVisible();
+      await expect(nextChangeButton).toBeVisible();
+
+      // Verify buttons show keyboard shortcut hints
+      await expect(prevChangeButton).toContainText("K");
+      await expect(nextChangeButton).toContainText("J");
+
+      // Get diff region
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
+
+      // Wait for hunk count to be calculated (Next button becomes enabled when changes exist)
+      await expect(nextChangeButton).toBeEnabled();
+
+      // At start, Previous button should be disabled (no previous change)
+      await expect(prevChangeButton).toBeDisabled();
+
+      // Focus the diff region for keyboard navigation
+      await diffRegion.click();
+
+      // Press J to navigate to first change
+      // Note: Our mock diff has only 1 hunk, so after pressing J we're at the only change
+      await page.keyboard.press("j");
+
+      // After pressing J, we're at index 0 (the first and only hunk)
+      // Both buttons should be disabled since we're at both the start and end
+      // (there's only 1 hunk group: deletion + additions are consecutive)
+      await expect(prevChangeButton).toBeDisabled();
+      await expect(nextChangeButton).toBeDisabled();
+
+      // Verify the diff content is still visible (no crashes)
+      await expect(diffRegion).toBeVisible();
+    } else {
+      // Prod mode: verify toolbar buttons exist
+      const fileButtons = fileNav.getByRole("listitem");
+      const allButtons = await fileButtons.all();
+      if (allButtons.length > 1) {
+        await allButtons[1]?.click();
+        const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+        await expect(
+          toolbar.getByRole("button", { name: /Previous change/i })
+        ).toBeVisible();
+        await expect(
+          toolbar.getByRole("button", { name: /Next change/i })
+        ).toBeVisible();
       }
     }
   });

@@ -8,6 +8,8 @@ import { useDiffStore } from '@/features/diff';
 export function useKeyboardShortcuts() {
   const selectNextFile = useDiffStore((s) => s.selectNextFile);
   const selectPreviousFile = useDiffStore((s) => s.selectPreviousFile);
+  const scrollToNextChange = useDiffStore((s) => s.scrollToNextChange);
+  const scrollToPreviousChange = useDiffStore((s) => s.scrollToPreviousChange);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // AC-1.5.3: Don't trigger if user is in an input field
@@ -21,14 +23,26 @@ export function useKeyboardShortcuts() {
     }
 
     switch (event.key) {
-      // AC-1.5.1: j = Next file
+      // j = Next change (within file)
       case 'j':
+        event.preventDefault();
+        scrollToNextChange();
+        break;
+
+      // k = Previous change (within file)
+      case 'k':
+        event.preventDefault();
+        scrollToPreviousChange();
+        break;
+
+      // s = Next file
+      case 's':
         event.preventDefault();
         selectNextFile();
         break;
 
-      // AC-1.5.1: k = Previous file
-      case 'k':
+      // w = Previous file
+      case 'w':
         event.preventDefault();
         selectPreviousFile();
         break;
@@ -43,7 +57,7 @@ export function useKeyboardShortcuts() {
         break;
       }
     }
-  }, [selectNextFile, selectPreviousFile]);
+  }, [selectNextFile, selectPreviousFile, scrollToNextChange, scrollToPreviousChange]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -57,16 +71,18 @@ export function useKeyboardShortcuts() {
  */
 export function getShortcutsList(): { key: string; description: string }[] {
   return [
-    { key: 'j', description: 'Next file' },
-    { key: 'k', description: 'Previous file' },
+    { key: 'j', description: 'Next change' },
+    { key: 'k', description: 'Previous change' },
+    { key: 's', description: 'Next file' },
+    { key: 'w', description: 'Previous file' },
     { key: 'Space', description: 'Scroll down in diff view' },
     { key: 'i', description: 'Inline view' },
-    { key: 's', description: 'Side-by-side view' },
+    { key: 'x', description: 'Side-by-side view' },
     { key: 'l', description: 'Left only (deletions)' },
-    { key: 'b', description: 'Show both sides' },
+    { key: 'o', description: 'Show both sides' },
     { key: 'r', description: 'Right only (additions)' },
     { key: 'f', description: 'Show full file' },
     { key: 'c', description: 'Show changes only' },
-    { key: 'w', description: 'Toggle whitespace visibility' },
+    { key: 'b', description: 'Toggle whitespace visibility' },
   ];
 }

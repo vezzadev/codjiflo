@@ -63,6 +63,17 @@ const mockDefaultViewConfig = {
   showWhitespace: false,
 };
 
+// Default diff store state for all tests
+const mockDefaultDiffState = {
+  files: [],
+  selectedFileIndex: 0,
+  isLoading: false,
+  viewConfig: mockDefaultViewConfig,
+  currentChangeIndex: -1,
+  totalChangeCount: 0,
+  setTotalChangeCount: vi.fn(),
+};
+
 describe('DiffView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -75,10 +86,8 @@ describe('DiffView', () => {
 
   it('shows loading state', () => {
     vi.mocked(useDiffStore).mockReturnValue({
-      files: [],
-      selectedFileIndex: 0,
+      ...mockDefaultDiffState,
       isLoading: true,
-      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -88,10 +97,7 @@ describe('DiffView', () => {
 
   it('shows empty state when no file selected', () => {
     vi.mocked(useDiffStore).mockReturnValue({
-      files: [],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
+      ...mockDefaultDiffState,
     });
 
     render(<DiffView />);
@@ -101,6 +107,7 @@ describe('DiffView', () => {
 
   it('shows message when file has no patch', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'binary.png',
@@ -111,9 +118,6 @@ describe('DiffView', () => {
           patch: '',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -124,6 +128,7 @@ describe('DiffView', () => {
 
   it('renders diff content with file header', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -134,9 +139,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -147,6 +149,7 @@ describe('DiffView', () => {
 
   it('displays comment loading state', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -157,9 +160,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -174,6 +174,7 @@ describe('DiffView', () => {
 
   it('displays comment error', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -184,9 +185,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -201,6 +199,7 @@ describe('DiffView', () => {
 
   it('displays announcements in aria-live region', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -211,9 +210,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -228,6 +224,7 @@ describe('DiffView', () => {
 
   it('opens comment editor when clicking add comment button', async () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -238,9 +235,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -263,6 +257,7 @@ describe('DiffView', () => {
   it('submits a comment successfully', async () => {
     const mockAddComment = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -273,9 +268,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -307,6 +299,7 @@ describe('DiffView', () => {
 
   it('cancels comment editing', async () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -317,9 +310,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     render(<DiffView />);
@@ -348,6 +338,7 @@ describe('DiffView', () => {
   it('handles comment submission error', async () => {
     const mockAddComment = vi.fn().mockRejectedValue(new Error('Network error'));
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -358,9 +349,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -392,6 +380,7 @@ describe('DiffView', () => {
 
   it('renders existing comment threads', () => {
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -402,9 +391,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -443,6 +429,7 @@ describe('DiffView', () => {
     const clearAnnouncement = vi.fn();
 
     vi.mocked(useDiffStore).mockReturnValue({
+      ...mockDefaultDiffState,
       files: [
         {
           filename: 'src/index.ts',
@@ -453,9 +440,6 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
-      selectedFileIndex: 0,
-      isLoading: false,
-      viewConfig: mockDefaultViewConfig,
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -474,13 +458,88 @@ describe('DiffView', () => {
     vi.useRealTimers();
   });
 
+  describe('Change navigation disabled for full file changes', () => {
+    it('disables change navigation for added files', async () => {
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/new-file.ts',
+            status: FileChangeStatus.Added,
+            additions: 10,
+            deletions: 0,
+            changes: 10,
+            patch: '@@ -0,0 +1,3 @@\n+line 1\n+line 2\n+line 3',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      render(<DiffView />);
+
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalledWith(0);
+      });
+    });
+
+    it('disables change navigation for deleted files', async () => {
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/old-file.ts',
+            status: FileChangeStatus.Deleted,
+            additions: 0,
+            deletions: 10,
+            changes: 10,
+            patch: '@@ -1,3 +0,0 @@\n-line 1\n-line 2\n-line 3',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      render(<DiffView />);
+
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalledWith(0);
+      });
+    });
+
+    it('enables change navigation for modified files', async () => {
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/index.ts',
+            status: FileChangeStatus.Modified,
+            additions: 1,
+            deletions: 1,
+            changes: 2,
+            patch: '@@ -1,3 +1,3 @@\n context\n-old line\n+new line',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      render(<DiffView />);
+
+      // Should be called with a positive number (the actual hunk count)
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalled();
+        const lastCall = setTotalChangeCount.mock.calls[setTotalChangeCount.mock.calls.length - 1];
+        expect(lastCall?.[0]).toBeGreaterThan(0);
+      });
+    });
+  });
+
   describe('PR Description view', () => {
     it('displays PR metadata and description when PR description is selected', () => {
       vi.mocked(useDiffStore).mockReturnValue({
-        files: [],
+        ...mockDefaultDiffState,
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
-        isLoading: false,
-        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({
@@ -508,10 +567,8 @@ describe('DiffView', () => {
 
     it('shows loading state when PR is loading and description is selected', () => {
       vi.mocked(useDiffStore).mockReturnValue({
-        files: [],
+        ...mockDefaultDiffState,
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
-        isLoading: false,
-        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({
@@ -526,10 +583,8 @@ describe('DiffView', () => {
 
     it('shows fallback message when currentPR is null', () => {
       vi.mocked(useDiffStore).mockReturnValue({
-        files: [],
+        ...mockDefaultDiffState,
         selectedFileIndex: -1, // PR_DESCRIPTION_INDEX
-        isLoading: false,
-        viewConfig: mockDefaultViewConfig,
       });
 
       vi.mocked(usePRStore).mockReturnValue({

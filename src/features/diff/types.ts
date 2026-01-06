@@ -86,6 +86,11 @@ export interface DiffState {
   /** View configuration (S-3.3) - persisted to localStorage */
   viewConfig: DiffViewConfig;
 
+  /** Current hunk index for navigation (-1 = before first, incremented by scrollToNextChange) */
+  currentChangeIndex: number;
+  /** Total number of hunks (change groups) in current file, set by DiffView */
+  totalChangeCount: number;
+
   // File actions
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
   selectFile: (index: number) => void;
@@ -98,6 +103,12 @@ export interface DiffState {
   setContentFilter: (filter: ContentFilter) => void;
   toggleFullFile: () => void;
   toggleWhitespace: () => void;
+
+  // Change navigation actions
+  scrollToNextChange: () => void;
+  scrollToPreviousChange: () => void;
+  resetChangeIndex: () => void;
+  setTotalChangeCount: (count: number) => void;
 }
 
 /**

@@ -22,6 +22,7 @@ import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
 import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
+import { FileChangeStatus } from '@/api/types';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -41,7 +42,7 @@ export function DiffView() {
   const owner = (params as Record<string, string | undefined>).owner ?? '';
   const repo = (params as Record<string, string | undefined>).repo ?? '';
 
-  const { files, selectedFileIndex, isLoading, viewConfig } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, viewConfig, currentChangeIndex, setTotalChangeCount } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
 
@@ -192,38 +193,92 @@ export function DiffView() {
     setSubmitError(null);
   }, [selectedFileIndex]);
 
-  // Autoscroll to first changed line when switching files
-  useEffect(() => {
-    if (isShowingDescription) return;
+  // Calculate hunks (groups of consecutive changes) and set total count
+  // A hunk is a contiguous group of addition/deletion lines
+  const getHunkStartElements = useCallback((container: HTMLElement): Element[] => {
+    const allRows = Array.from(container.querySelectorAll('[data-line-type]'));
+    const hunkStarts: Element[] = [];
+    let inHunk = false;
 
-    // Use requestAnimationFrame to ensure DOM has rendered
+    for (const row of allRows) {
+      const lineType = row.getAttribute('data-line-type');
+      const isChange = lineType === 'addition' || lineType === 'deletion';
+
+      if (isChange && !inHunk) {
+        // Start of a new hunk
+        hunkStarts.push(row);
+        inHunk = true;
+      } else if (!isChange) {
+        // Context or header line - end of hunk
+        inHunk = false;
+      }
+    }
+
+    return hunkStarts;
+  }, []);
+
+  // Update total hunk count when diff content changes
+  // Disable change navigation for fully added/removed files (every line is a change, navigation is meaningless)
+  const isFullFileChange = selectedFile?.status === FileChangeStatus.Added ||
+                           selectedFile?.status === FileChangeStatus.Deleted;
+
+  useEffect(() => {
+    if (isShowingDescription || isFullFileChange) {
+      setTotalChangeCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    // Use double requestAnimationFrame to ensure DOM has updated after React render
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+
+        const scrollContainer = scrollContainerRef.current;
+        if (!scrollContainer) return;
+
+        const hunkStarts = getHunkStartElements(scrollContainer);
+        setTotalChangeCount(hunkStarts.length);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isShowingDescription, isFullFileChange, selectedFileIndex, setTotalChangeCount, getHunkStartElements, viewConfig.showFullFile, diffLines.length]);
+
+  // Scroll to specific hunk when currentChangeIndex changes (navigation via J/K keys)
+  useEffect(() => {
+    if (isShowingDescription || currentChangeIndex < 0) return;
+
     const frameId = requestAnimationFrame(() => {
       const scrollContainer = scrollContainerRef.current;
       if (!scrollContainer) return;
 
-      const firstChangedLine = scrollContainer.querySelector(
-        '[data-line-type="addition"], [data-line-type="deletion"]'
-      );
+      const hunkStarts = getHunkStartElements(scrollContainer);
 
-      if (firstChangedLine) {
-        // Manually scroll the content area instead of using scrollIntoView
-        // to avoid scrolling ancestor containers (which would hide the header)
-        // Read scroll context settings from CSS variables (defined in :root)
+      // If index exceeds available hunks, don't scroll
+      if (currentChangeIndex >= hunkStarts.length) {
+        return;
+      }
+
+      const targetElement = hunkStarts[currentChangeIndex];
+      if (targetElement) {
         const rootStyles = getComputedStyle(document.documentElement);
         const lineHeight = parseFloat(rootStyles.getPropertyValue('--diff-line-height')) || 23;
         const contextLines = parseFloat(rootStyles.getPropertyValue('--diff-scroll-context-lines')) || 3;
         const contextOffset = contextLines * lineHeight;
 
-        const lineRect = firstChangedLine.getBoundingClientRect();
+        const lineRect = targetElement.getBoundingClientRect();
         const containerRect = scrollContainer.getBoundingClientRect();
         const scrollOffset = lineRect.top - containerRect.top + scrollContainer.scrollTop - contextOffset;
         scrollContainer.scrollTop = Math.max(0, scrollOffset);
-        scrollContainer.scrollLeft = 0;
       }
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [selectedFileIndex, isShowingDescription, viewConfig.mode]);
+  }, [currentChangeIndex, isShowingDescription, getHunkStartElements]);
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {

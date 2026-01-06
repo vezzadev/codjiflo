@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, File } from 'lucide-react';
+import { Eye, EyeOff, File, ChevronUp, ChevronDown } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
@@ -113,9 +113,9 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
 
   // Dynamic tooltip hints based on current position
   const dragHints: Record<ContentFilter, string> = {
-    left: 'Drag for Both (B) or Right Only (R)',
+    left: 'Drag for Both (O) or Right Only (R)',
     both: 'Drag for Left Only (L) or Right Only (R)',
-    right: 'Drag for Left Only (L) or Both (B)',
+    right: 'Drag for Left Only (L) or Both (O)',
   };
 
   // Keyboard navigation for the radiogroup
@@ -238,7 +238,15 @@ export function DiffToolbar() {
     setContentFilter,
     toggleFullFile,
     toggleWhitespace,
+    scrollToNextChange,
+    scrollToPreviousChange,
+    currentChangeIndex,
+    totalChangeCount,
   } = useDiffStore();
+
+  // Derived state for button disabled status
+  const canGoPrevious = currentChangeIndex > 0;
+  const canGoNext = totalChangeCount > 0 && currentChangeIndex < totalChangeCount - 1;
 
   // Keyboard shortcuts (AC-3.3.4) - consolidated handler for all toolbar shortcuts
   const handleKeyDown = useCallback(
@@ -262,8 +270,8 @@ export function DiffToolbar() {
           event.preventDefault();
           setViewMode('unified');
           break;
-        case 's':
-          // Only switch if not already in split to avoid conflicts
+        case 'x':
+          // X for "switch" to side-by-side view
           if (viewConfig.mode !== 'split') {
             event.preventDefault();
             setViewMode('split');
@@ -274,7 +282,8 @@ export function DiffToolbar() {
           event.preventDefault();
           setContentFilter('left');
           break;
-        case 'b':
+        case 'o':
+          // O for "bOth" content filter
           event.preventDefault();
           setContentFilter('both');
           break;
@@ -297,7 +306,8 @@ export function DiffToolbar() {
             toggleFullFile();
           }
           break;
-        case 'w':
+        case 'b':
+          // B for whitespace toggle
           event.preventDefault();
           toggleWhitespace();
           break;
@@ -330,7 +340,7 @@ export function DiffToolbar() {
         onClick={handleViewModeToggle}
         icon={viewConfig.mode === 'split' ? <SxSIcon /> : <InlineIcon />}
         label={viewConfig.mode === 'split' ? 'SxS' : 'Inline'}
-        shortcut={viewConfig.mode === 'split' ? 'I' : 'S'}
+        shortcut={viewConfig.mode === 'split' ? 'I' : 'X'}
         ariaLabel={viewConfig.mode === 'split' ? 'Switch to inline view' : 'Switch to side-by-side view'}
         className="btn-toolbar-wide"
       />
@@ -364,6 +374,32 @@ export function DiffToolbar() {
         }
         className="btn-toolbar-wide"
       />
+
+      {/* Change Navigation Buttons */}
+      <div className="btn-group-nav">
+        <button
+          type="button"
+          onClick={scrollToPreviousChange}
+          disabled={!canGoPrevious}
+          aria-label="Previous change (K)"
+          title="Previous change (K)"
+          className="btn-toolbar btn-nav"
+        >
+          <ChevronUp className="w-4 h-4" aria-hidden />
+          <span className="btn-nav-hint">K</span>
+        </button>
+        <button
+          type="button"
+          onClick={scrollToNextChange}
+          disabled={!canGoNext}
+          aria-label="Next change (J)"
+          title="Next change (J)"
+          className="btn-toolbar btn-nav"
+        >
+          <ChevronDown className="w-4 h-4" aria-hidden />
+          <span className="btn-nav-hint">J</span>
+        </button>
+      </div>
     </div>
   );
 }
