@@ -49,6 +49,7 @@
   "include": [
     "src",
     "e2e",
+    "packages",
     ".storybook",
     "*.ts",
     "*.tsx",

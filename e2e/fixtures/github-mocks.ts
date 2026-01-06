@@ -7,7 +7,9 @@
  */
 
 import { Page } from "@playwright/test";
+import JSZip from "jszip";
 import { isMockMode } from "./mode";
+import type { MockIterationDb } from "./iteration-db-builder";
 
 // ============================================================================
 // Mock Data Types
@@ -483,4 +485,94 @@ export async function setupTokenRefreshMock(
       });
     }
   });
+}
+
+/**
+ * Set up mocks for iteration artifact endpoints.
+ * This enables E2E tests to use mock iteration databases instead of real artifacts.
+ *
+ * @param mockDb - The mock iteration database from buildIterationDb()
+ */
+export async function setupIterationArtifactMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  mockDb: MockIterationDb
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  const runId = 12345678;
+  const artifactName = `codjiflo-pr-${String(prNumber)}`;
+
+  // Mock issue comments endpoint to return codjiflo-data marker
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/comments`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: 999999,
+            body: `<!-- codjiflo-data -->
+### CodjiFlo Iteration Tracking
+**Iterations captured**: ${String(mockDb.meta.iterationCount)}
+**Last updated**: ${new Date().toISOString()}
+**Artifact**: \`${artifactName}\`
+**Run ID**: ${String(runId)}`,
+            user: {
+              login: "github-actions[bot]",
+              id: 41898282,
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]),
+      });
+    }
+  );
+
+  // Mock artifacts list endpoint
+  await page.route(
+    new RegExp(`repos/${owner}/${repo}/actions/artifacts`),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          total_count: 1,
+          artifacts: [
+            {
+              id: 987654321,
+              name: artifactName,
+              size_in_bytes: mockDb.buffer.byteLength,
+              created_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+              workflow_run: {
+                id: runId,
+              },
+            },
+          ],
+        }),
+      });
+    }
+  );
+
+  // Create ZIP containing the SQLite database
+  const zip = new JSZip();
+  zip.file("iterations.db", mockDb.buffer);
+  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+
+  // Mock artifact download endpoint
+  await page.route(
+    new RegExp(`actions/artifacts/\\d+/zip`),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/zip",
+        body: zipBuffer,
+      });
+    }
+  );
 }
