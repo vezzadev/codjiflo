@@ -1,25 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useSyntaxTheme } from './useSyntaxTheme';
 import { useThemeStore } from '@/features/theme';
 
 describe('useSyntaxTheme', () => {
   beforeEach(() => {
-    // Reset theme store to default
-    useThemeStore.setState({ theme: 'dark' });
+    act(() => {
+      useThemeStore.setState({ theme: 'dark', diffColorScheme: 'github' });
+    });
   });
 
   it('returns atom-one-dark style for dark theme', () => {
-    useThemeStore.setState({ theme: 'dark' });
     const { result } = renderHook(() => useSyntaxTheme());
 
-    // atom-one-dark has characteristic colors
     expect(result.current.hljs).toBeDefined();
     expect(result.current.hljs?.background).toBe('transparent');
   });
 
   it('returns github style for light theme', () => {
-    useThemeStore.setState({ theme: 'light' });
+    act(() => {
+      useThemeStore.setState({ theme: 'light' });
+    });
     const { result } = renderHook(() => useSyntaxTheme());
 
     expect(result.current.hljs).toBeDefined();
@@ -27,7 +28,9 @@ describe('useSyntaxTheme', () => {
   });
 
   it('returns atom-one-dark style for black theme', () => {
-    useThemeStore.setState({ theme: 'black' });
+    act(() => {
+      useThemeStore.setState({ theme: 'black' });
+    });
     const { result } = renderHook(() => useSyntaxTheme());
 
     expect(result.current.hljs).toBeDefined();
@@ -35,7 +38,9 @@ describe('useSyntaxTheme', () => {
   });
 
   it('returns a11y-dark style for high-contrast theme', () => {
-    useThemeStore.setState({ theme: 'high-contrast' });
+    act(() => {
+      useThemeStore.setState({ theme: 'high-contrast' });
+    });
     const { result } = renderHook(() => useSyntaxTheme());
 
     expect(result.current.hljs).toBeDefined();
@@ -46,7 +51,9 @@ describe('useSyntaxTheme', () => {
     const themes = ['light', 'dark', 'black', 'high-contrast'] as const;
 
     for (const theme of themes) {
-      useThemeStore.setState({ theme });
+      act(() => {
+        useThemeStore.setState({ theme });
+      });
       const { result } = renderHook(() => useSyntaxTheme());
 
       expect(result.current.hljs?.background).toBe('transparent');
@@ -56,17 +63,20 @@ describe('useSyntaxTheme', () => {
   });
 
   it('updates style when theme changes', () => {
-    useThemeStore.setState({ theme: 'light' });
+    act(() => {
+      useThemeStore.setState({ theme: 'light' });
+    });
     const { result, rerender } = renderHook(() => useSyntaxTheme());
 
     const lightStyle = result.current;
 
-    useThemeStore.setState({ theme: 'dark' });
+    act(() => {
+      useThemeStore.setState({ theme: 'dark' });
+    });
     rerender();
 
     const darkStyle = result.current;
 
-    // Styles should be different objects (different themes have different token colors)
     expect(lightStyle).not.toBe(darkStyle);
   });
 
