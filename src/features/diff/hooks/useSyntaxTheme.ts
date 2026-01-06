@@ -55,6 +55,8 @@ export function useSyntaxTheme(): HljsStyle {
         background: 'transparent',
         padding: 0,
         margin: 0,
+        display: 'inline',
+        overflow: 'visible',
       },
     };
   }, [theme, diffColorScheme]);
