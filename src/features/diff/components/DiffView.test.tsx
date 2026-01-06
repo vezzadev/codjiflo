@@ -72,6 +72,7 @@ const mockDefaultDiffState = {
   currentChangeIndex: -1,
   totalChangeCount: 0,
   setTotalChangeCount: vi.fn(),
+  resetChangeIndex: vi.fn(),
 };
 
 describe('DiffView', () => {

@@ -44,12 +44,12 @@ export function DiffView() {
   const owner = (params as Record<string, string | undefined>).owner ?? '';
   const repo = (params as Record<string, string | undefined>).repo ?? '';
 
-  const { files, selectedFileIndex, isLoading, viewConfig, currentChangeIndex, setTotalChangeCount } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, viewConfig, currentChangeIndex, setTotalChangeCount, resetChangeIndex } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
 
   // Iteration-based diff for cross-iteration comparison
-  const { isIterationMode, getFileDiffByPath } = useIterationDiff();
+  const { isIterationMode, getFileDiffByPath, selectedRange } = useIterationDiff();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -194,6 +194,12 @@ export function DiffView() {
     setDraftBody('');
     setSubmitError(null);
   }, [selectedFileIndex]);
+
+  // Reset change navigation when iteration selection changes
+  // This ensures J/K navigation works correctly after switching iterations
+  useEffect(() => {
+    resetChangeIndex();
+  }, [selectedRange, resetChangeIndex]);
 
   // Disable change navigation for fully added/removed files (every line is a change, navigation is meaningless)
   const isFullFileChange = selectedFile?.status === FileChangeStatus.Added ||
