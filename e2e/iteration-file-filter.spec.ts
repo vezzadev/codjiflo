@@ -7,7 +7,7 @@
  * from the GitHub artifact. Mock mode doesn't include iteration data.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from "./fixtures/test";
 
 test.describe('Iteration-aware File List (AC-4.8.11)', () => {
   // Skip in both modes for now - PR #28 iteration data may be stale/expired
