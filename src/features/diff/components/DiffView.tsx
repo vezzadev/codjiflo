@@ -6,6 +6,8 @@ import {
   detectLanguage,
   getDiffLinePosition,
   alignDiffLines,
+  filterToChangesOnly,
+  filterAlignedToChangesOnly,
 } from '../utils';
 import { useIterationDiff } from '../hooks';
 import { DiffLine } from './DiffLine';
@@ -96,8 +98,14 @@ export function DiffView() {
   const { diffLines, language } = useMemo(() => {
     // Priority 1: Use iteration diff when in iteration mode (S-4.8)
     if (isIterationMode && iterationDiff) {
+      // In iteration mode, respect the showFullFile toggle
+      // When showFullFile=false, filter to show only changes with context
+      const lines = viewConfig.showFullFile
+        ? iterationDiff.diffLines
+        : filterToChangesOnly(iterationDiff.diffLines);
+
       return {
-        diffLines: iterationDiff.diffLines,
+        diffLines: lines,
         language: detectLanguage(filename ?? ''),
       };
     }
@@ -127,7 +135,11 @@ export function DiffView() {
 
     // Priority 1: Use iteration diff aligned lines
     if (isIterationMode && iterationDiff) {
-      return iterationDiff.alignedLines;
+      // In iteration mode, respect the showFullFile toggle
+      // When showFullFile=false, filter to show only changes with context
+      return viewConfig.showFullFile
+        ? iterationDiff.alignedLines
+        : filterAlignedToChangesOnly(iterationDiff.alignedLines);
     }
 
     // Priority 2: Use full file aligned lines when available (AC-3.1.7-9)
@@ -248,23 +260,29 @@ export function DiffView() {
     };
   }, [viewConfig.showFullFile, filename, currentPR, owner, repo, computeFullFileDiff]);
 
-  // Track container height for virtualization
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+  // Track container height for virtualization using callback ref pattern
+  const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
+    // Also store in the existing ref for other uses
+    (scrollContainerRef).current = node;
+
+    if (!node) return;
 
     const updateHeight = () => {
-      setContainerHeight(container.clientHeight);
+      const newHeight = node.clientHeight;
+      // Ignore height 0 - this happens during re-renders when container is briefly hidden
+      if (newHeight === 0) return;
+      setContainerHeight(newHeight);
     };
 
-    // Initial height
-    updateHeight();
+    // Initial height with slight delay to ensure layout is complete
+    requestAnimationFrame(updateHeight);
 
     // Watch for resize
     const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(container);
+    resizeObserver.observe(node);
 
-    return () => resizeObserver.disconnect();
+    // Cleanup will happen automatically when the element unmounts
+    // and the callback is called with null
   }, []);
 
   // Handle comment submission for both unified and SxS views
@@ -425,7 +443,7 @@ export function DiffView() {
       {/* Diff content - conditional rendering based on view mode and virtualization */}
       {viewConfig.mode === 'unified' ? (
         <div
-          ref={scrollContainerRef}
+          ref={containerRefCallback}
           className="diff-content-area"
           role="region"
           aria-label={`Diff content for ${selectedFile.filename}`}
@@ -493,7 +511,7 @@ export function DiffView() {
         </div>
       ) : diffLines.length > VIRTUALIZATION_THRESHOLD ? (
         <div
-          ref={scrollContainerRef}
+          ref={containerRefCallback}
           className="diff-content-area"
           role="region"
           aria-label={`Diff content for ${selectedFile.filename}`}
