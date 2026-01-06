@@ -24,12 +24,12 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
     // Click "Latest" to compare v5 → v6
     await page.getByRole('button', { name: 'Latest' }).click();
 
-    // Wait for file list to update
-    await page.waitForTimeout(1000);
-
-    // Get all file list items
+    // Wait for file list to update - wait for any file button to be visible
     const fileList = page.getByRole('navigation', { name: 'Changed files' });
     const fileButtons = fileList.getByRole('button').filter({ hasNotText: 'Pull Request Description' });
+    await expect(fileButtons.first()).toBeVisible();
+
+    // Get all file list items
 
     // Count files shown in Latest view
     const latestFileCount = await fileButtons.count();
@@ -54,7 +54,8 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
 
     // Now switch to Full diff and verify more files appear
     await page.getByRole('button', { name: 'Full diff' }).click();
-    await page.waitForTimeout(1000);
+    // Wait for file list to update by waiting for the count to stabilize
+    await expect(fileButtons.first()).toBeVisible();
 
     const fullDiffFileCount = await fileButtons.count();
     console.log('Full diff view shows ' + String(fullDiffFileCount) + ' files');
@@ -68,7 +69,8 @@ test.describe('Iteration-aware File List (AC-4.8.11)', () => {
 
     // Switch back to Latest - eslint.config.mjs should be hidden
     await page.getByRole('button', { name: 'Latest' }).click();
-    await page.waitForTimeout(1000);
+    // Wait for file list to update by waiting for visible buttons
+    await expect(fileButtons.first()).toBeVisible();
 
     // eslint.config.mjs should NOT be visible in Latest if it wasn't changed in v5→v6
     const eslintInLatest = fileList.getByRole('button', { name: /eslint\.config\.mjs/ });

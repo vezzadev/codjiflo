@@ -92,9 +92,7 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     await page.goto(config.pageUrl);
     await page.waitForLoadState("load");
 
-    // Wait for the page to stabilize
-    await page.waitForTimeout(1000);
-
+    // Wait for the page to stabilize by waiting for the banner to appear
     // Look for the degraded mode banner (rendered as a status element)
     const banner = page.getByRole("status");
     await expect(banner).toBeVisible();
@@ -111,7 +109,9 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     await page.waitForLoadState("load");
 
     // Wait for the page to stabilize and iteration loading to complete
-    await page.waitForTimeout(2000);
+    // by waiting for the file list to be visible (which appears after loading)
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
 
     // Iteration selector should NOT be visible when in degraded mode
     const selector = page.getByTestId("iteration-selector");
@@ -265,7 +265,8 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const fileCount = await fileItems.count();
     if (fileCount > 0) {
       await fileItems.first().click();
-      await page.waitForTimeout(500);
+      // Wait for the diff to render
+      await expect(page.locator(".diff-viewer")).toBeVisible();
     }
 
     // Wait for iterations to load

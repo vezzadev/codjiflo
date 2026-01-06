@@ -327,19 +327,18 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Focus on the page body to ensure keyboard events work
     await page.locator("body").click();
-    await page.waitForTimeout(500); // Give time for focus to settle
+    // Wait for focus to settle by ensuring the body is focused
+    await page.waitForFunction(() => document.activeElement === document.body || document.activeElement?.tagName === 'BODY');
 
     // [AC-1.5.1] Press j to go to first file
     await page.keyboard.press("j");
-    await page.waitForTimeout(200); // Small delay for state update
-
+    
     // First file (second button) should be selected
     const firstFile = fileButtons.nth(1);
     await expect(firstFile).toHaveAttribute("aria-current", "location", );
 
     // [AC-1.5.1] Press k to go back to PR Description
     await page.keyboard.press("k");
-    await page.waitForTimeout(200); // Small delay for state update
     await expect(prDescButton).toHaveAttribute("aria-current", "location", );
   });
 
@@ -354,8 +353,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     const shortcutsButton = page.getByRole("button", { name: /Show keyboard shortcuts/i });
     await expect(shortcutsButton).toBeVisible();
 
-    // Wait a moment for any re-renders to complete
-    await page.waitForTimeout(500);
+    // Wait for any re-renders to complete by checking button is stable
+    await expect(shortcutsButton).toBeEnabled();
 
     // [AC-1.5.4] Click the shortcuts button to open modal
     await shortcutsButton.click();
@@ -377,18 +376,19 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Wait for page to be fully loaded
     await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
 
-    // Wait for hydration
-    await page.waitForTimeout(1000);
+    // Wait for hydration by ensuring the input is ready
+    const input = page.getByLabel(/GitHub Pull Request URL/i);
+    await expect(input).toBeVisible();
+    await expect(input).toBeEnabled();
 
     // Enter invalid URL
-    const input = page.getByLabel(/GitHub Pull Request URL/i);
     await input.fill("https://gitlab.com/owner/repo/pull/123");
 
-    // Wait a moment for form state to update
-    await page.waitForTimeout(500);
+    // Wait for form state to update by checking submit button is ready
+    const submitButton = page.getByRole("button", { name: /Load Pull Request/i });
+    await expect(submitButton).toBeEnabled();
 
     // Submit form
-    const submitButton = page.getByRole("button", { name: /Load Pull Request/i });
     await submitButton.click();
 
     // Should show error message
