@@ -283,39 +283,160 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selectorInHeader).toBeVisible();
   });
 
-  test("Change navigation resets after switching iterations", async ({
+});
+
+test.describe("Change Navigation Reset (Mock Mode)", () => {
+  // Test validates that currentChangeIndex resets when iteration changes.
+  // Uses mock mode with controlled data to guarantee testable state.
+  // This test only runs in mock mode.
+
+  // Initial file with content that will have multiple changes
+  const initialFiles = {
+    "src/app.ts": `export function main() {
+  console.log("Hello");
+  console.log("World");
+  return 0;
+}
+`,
+  };
+
+  // Iteration 1: Add multiple lines (creates at least 2 changes)
+  const patch1 = `From abc1234 Mon Sep 17 00:00:00 2001
+From: Test User <test@example.com>
+Date: Thu, 2 Jan 2026 10:00:00 +0000
+Subject: [PATCH] feat: Add feature
+
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,5 +1,8 @@
+ export function main() {
++  console.log("Starting");
+   console.log("Hello");
++  console.log("Processing");
+   console.log("World");
++  console.log("Done");
+   return 0;
+ }
+`;
+
+  // Iteration 2: Modify lines (also has multiple changes)
+  const patch2 = `From def5678 Mon Sep 17 00:00:00 2001
+From: Test User <test@example.com>
+Date: Thu, 2 Jan 2026 11:00:00 +0000
+Subject: [PATCH] fix: Update messages
+
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,8 +1,8 @@
+ export function main() {
+-  console.log("Starting");
++  console.log("Initializing");
+   console.log("Hello");
+-  console.log("Processing");
++  console.log("Running");
+   console.log("World");
+-  console.log("Done");
++  console.log("Complete");
+   return 0;
+ }
+`;
+
+  const mockPR: MockPR = {
+    id: 200,
+    number: 200,
+    title: "Test change navigation reset",
+    body: "Testing J/K navigation reset on iteration switch",
+    state: "open",
+    merged: false,
+    draft: false,
+    user: { id: 1, login: "testuser" },
+    head: { ref: "feature/test", sha: "def5678" },
+    base: { ref: "main", sha: "base123" },
+    html_url: "https://github.com/test/repo/pull/200",
+    created_at: "2026-01-02T10:00:00Z",
+    updated_at: "2026-01-02T11:00:00Z",
+  };
+
+  const mockFiles: MockFile[] = [
+    {
+      filename: "src/app.ts",
+      status: "modified",
+      additions: 6,
+      deletions: 3,
+      changes: 9,
+      patch: `@@ -1,5 +1,8 @@
+ export function main() {
+-  console.log("Starting");
++  console.log("Initializing");
+   console.log("Hello");
+-  console.log("Processing");
++  console.log("Running");
+   console.log("World");
+-  console.log("Done");
++  console.log("Complete");
+   return 0;
+ }`,
+      baseContent: initialFiles["src/app.ts"],
+      headContent: `export function main() {
+  console.log("Initializing");
+  console.log("Hello");
+  console.log("Running");
+  console.log("World");
+  console.log("Complete");
+  return 0;
+}
+`,
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    test.skip(!isMockMode(), "Only runs in mock mode");
+
+    await setupAuthState(page);
+
+    // Build mock iteration database with 2 iterations
+    const mockDb = buildIterationDb({
+      initialFiles,
+      patches: [patch1, patch2],
+    });
+
+    // Setup PR mocks and iteration artifact
+    await setupFullPRMocks(page, "test", "repo", 200, {
+      pr: mockPR,
+      files: mockFiles,
+    });
+    await setupIterationArtifactMock(page, "test", "repo", 200, mockDb);
+  });
+
+  test("Previous button resets to disabled after switching iterations", async ({
     page,
   }) => {
-    // This test validates that currentChangeIndex resets when iteration changes.
-    // Without the fix, navigating with J then switching iterations would leave
-    // the Previous button enabled (stale index) when it should be disabled.
+    // TEST FAILURE VALIDATION:
+    // Without the fix (resetChangeIndex on selectedRange change):
+    //   - Test fails at line with "await expect(prevChangeBtn).toBeDisabled()"
+    //   - Expected: disabled, Received: enabled
+    //   - Previous button stays enabled (stale index) after iteration switch
+    // With the fix:
+    //   - Test passes - Previous button correctly disabled after iteration switch
 
-    const { owner, repo, prNumber } = iterationTestPR;
-    const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
-
-    await page.goto(pageUrl);
+    await page.goto("/test/repo/200");
     await page.waitForLoadState("load");
 
-    // Wait for files to load first
+    // Wait for file list and iterations to load
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-
-    // Wait for the file list to stop showing loading skeletons
     await expect(fileList.locator(".skeleton")).toHaveCount(0, { timeout: 10000 });
 
-    // Wait for iterations to load (may take time to download artifact)
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeVisible({ timeout: 15000 });
 
-    // Click on an actual file (not PR description) to show the diff view
-    const allListItems = fileList.getByRole("listitem");
-    const allCount = await allListItems.count();
-    test.skip(allCount <= 1, "No files available to test");
+    // Click on the file (second item after PR description)
+    const fileItems = fileList.getByRole("listitem");
+    await fileItems.nth(1).click();
 
-    // Click on the second item (first actual file, after PR description)
-    await allListItems.nth(1).click();
-
-    // Wait for diff toolbar to appear
+    // Wait for diff toolbar
     const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
     await expect(toolbar).toBeVisible({ timeout: 10000 });
 
@@ -325,34 +446,19 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(nextChangeBtn).toBeVisible();
     await expect(prevChangeBtn).toBeVisible();
 
-    // Initially, Previous should be disabled (at start, index = -1)
+    // Initially, Previous should be disabled (index = -1)
     await expect(prevChangeBtn).toBeDisabled();
 
-    // Navigate forward with J twice to move index > 0
-    // First J: index -1 -> 0 (first change, Previous still disabled)
-    // Second J: index 0 -> 1 (second change, Previous now enabled)
-    const isNextEnabled = await nextChangeBtn.isEnabled();
-    test.skip(!isNextEnabled, "File has no changes to navigate");
-
-    // Press J to go to first change
+    // Navigate forward twice with J to move index > 0
+    // First J: index -1 -> 0, Second J: index 0 -> 1
+    await page.keyboard.press("j");
     await page.keyboard.press("j");
 
-    // Check if we can navigate further (file has at least 2 changes)
-    const canNavigateFurther = await nextChangeBtn.isEnabled();
-    test.skip(!canNavigateFurther, "File needs at least 2 changes for this test");
-
-    // Press J again to go to second change
-    await page.keyboard.press("j");
-
-    // After pressing J twice, Previous should now be ENABLED (index > 0)
+    // After pressing J twice, Previous should be ENABLED (index > 0)
     await expect(prevChangeBtn).toBeEnabled();
 
-    // Now switch iterations
+    // Switch to first iteration (currently on last)
     const tabs = selector.locator(".iteration-tab");
-    const tabCount = await tabs.count();
-    test.skip(tabCount < 2, "Need at least 2 iterations to test");
-
-    // Click on first iteration tab (different from current which is likely last)
     const firstTab = tabs.nth(0);
     await firstTab.click();
     await expect(firstTab).toHaveClass(/selected/);
@@ -362,7 +468,6 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
 
     // CRITICAL: After iteration switch, Previous should be DISABLED again
     // because the change index should reset to -1 (start position)
-    // Without the fix, it would stay enabled (stale index)
     await expect(prevChangeBtn).toBeDisabled();
   });
 });
