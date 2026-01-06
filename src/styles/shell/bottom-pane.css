@@ -1,0 +1,54 @@
+/* ============================================
+   BOTTOM PANE
+   ============================================ */
+.bottom-pane {
+  min-height: 8px;
+  height: 200px;
+  background-color: var(--main-bg);
+  border-top: 1px solid var(--combobox-border);
+  overflow: hidden;
+}
+
+.bottom-pane .tabs {
+  height: 100%;
+}
+
+.bottom-pane .tab-content {
+  height: calc(100% - 32px);
+  overflow-y: auto;
+}
+
+/* ============================================
+   COMMENTS LIST
+   ============================================ */
+.comments-list {
+  padding: 8px;
+}
+
+.comment-item {
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: var(--control-bg);
+  border-radius: 2px;
+}
+
+.comment-item.resolved {
+  opacity: 0.7;
+}
+
+.comment-author {
+  font-weight: bold;
+  color: var(--main-fg);
+  margin-right: 8px;
+}
+
+.comment-time {
+  color: var(--comment-list-author);
+  font-size: 11px;
+}
+
+.comment-text {
+  margin: 4px 0 0 0;
+  color: var(--main-fg);
+  font-size: 13px;
+}

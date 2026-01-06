@@ -1,0 +1,53 @@
+/* ============================================
+   AUTH STATUS PAGES (Callback/Landing)
+   ============================================ */
+.auth-status-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-status-card {
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  padding: 32px;
+  text-align: center;
+  min-width: 300px;
+}
+
+.auth-status-text {
+  color: var(--control-disabled-fg);
+  margin: 16px 0 0 0;
+}
+
+.auth-error-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--error-fg);
+  margin: 0 0 8px 0;
+}
+
+.auth-error-message {
+  color: var(--control-disabled-fg);
+  margin: 0 0 24px 0;
+}
+
+/* Spinner animation */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--combobox-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

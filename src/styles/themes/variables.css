@@ -186,6 +186,16 @@
   --window-btn-hover: #515153;
   --window-btn-focus: #AA6E6E6E;
   --sidebar-bg: #202020;
+
+  /* Interactive elements */
+  --focus-border: #6AC5FB;
+  --menu-hover: rgba(153, 153, 153, 0.67);
+  --menu-focus: rgba(110, 110, 110, 0.67);
+  --close-btn-hover: #E81123;
+  --close-btn-border: #666666;
+  --collapse-hover: #AAAAAA;
+  --watermark-text: #BBB;
+  --badge-merged: #6f42c1;
 }
 
 /* ============================================

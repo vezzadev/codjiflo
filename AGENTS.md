@@ -126,11 +126,39 @@ src/
 ### 1.3 Styling (Custom CSS)
 1.  **Custom Classes**: Use custom CSS classes defined in `src/styles/`. Do NOT use Tailwind utility classes.
 2.  **CSS Variables**: Use CSS custom properties from `src/styles/themes/variables.css` for theming (dark/light/black/high-contrast).
-3.  **Class Locations**:
-    - `src/styles/shared/buttons.css` - Button styles (`.btn`, `.btn-colorful`, etc.)
-    - `src/styles/shared/controls.css` - Form controls (`.textbox`, `.select`, `.checkbox`, etc.)
-    - `src/styles/shared/features.css` - Feature-specific styles (`.diff-*`, `.comment-*`, etc.)
-    - `src/styles/shell/mainwindow.css` - Layout styles (`.window`, `.sidebar`, etc.)
+3.  **Directory Structure**:
+    ```
+    src/styles/
+    ├── themes/
+    │   └── variables.css       # CSS variables for all themes (dark/light/black/high-contrast)
+    ├── shared/
+    │   ├── buttons.css         # Button styles (.btn, .btn-colorful, etc.)
+    │   ├── controls.css        # Form controls (.textbox, .select, .checkbox, etc.)
+    │   ├── features.css        # Feature-specific styles (.diff-*, .comment-*, etc.)
+    │   └── utilities.css       # Utility classes (.sr-only, .skeleton, etc.)
+    ├── shell/
+    │   ├── layout.css          # Window container, main layout grid
+    │   ├── titlebar.css        # Title bar, logo, version
+    │   ├── sidebar.css         # Sidebar navigation
+    │   ├── left-pane.css       # File explorer, properties panel
+    │   ├── main-content.css    # Nav bar, toolbar, diff viewer
+    │   ├── bottom-pane.css     # Bottom pane, comments list
+    │   ├── right-pane.css      # News feed
+    │   └── status-bar.css      # Status bar
+    ├── pages/
+    │   ├── login.css           # Login page
+    │   ├── dashboard.css       # Dashboard page
+    │   └── auth-status.css     # Auth callback/landing pages
+    └── modals/
+        ├── modal-base.css      # Base modal overlay styles
+        └── theme-modal.css     # Theme settings modal
+    ```
+4.  **Key CSS Variables** (defined in `variables.css`):
+    - `--focus-border` - Focus state border color
+    - `--menu-hover`, `--menu-focus` - Menu button states
+    - `--close-btn-hover`, `--close-btn-border` - Close button states
+    - `--badge-merged` - Merged PR badge color
+    - `--watermark-text` - Placeholder/watermark text color
 
 ### 1.4 Testing Strategy
 1.  **Unit Tests (Vitest)**: Focus on logic in `utils/` and `stores/`. Code coverage goal: 70%.
