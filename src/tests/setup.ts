@@ -3,8 +3,11 @@ import "@testing-library/jest-dom/vitest";
 
 // Mock ResizeObserver (not available in jsdom)
 class ResizeObserverMock {
-    observe(_target: Element): void {}
-    unobserve(_target: Element): void {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    observe(target: Element): void {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    unobserve(target: Element): void {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     disconnect(): void {}
 }
 window.ResizeObserver = ResizeObserverMock;
