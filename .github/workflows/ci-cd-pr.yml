@@ -21,6 +21,13 @@ jobs:
         timeout-minutes: 1
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
       - name: Install dependencies
         timeout-minutes: 1
         run: npm ci
@@ -35,6 +42,13 @@ jobs:
       - name: Checkout repository
         timeout-minutes: 1
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
 
       - name: Install dependencies
         timeout-minutes: 1
@@ -61,10 +75,6 @@ jobs:
       - name: Install dependencies
         timeout-minutes: 1
         run: npm ci
-
-      - name: Install action dependencies
-        timeout-minutes: 3
-        run: cd action && npm ci
 
       - name: Run unit tests with coverage
         timeout-minutes: 2
@@ -149,6 +159,13 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
 
       - run: npm ci
 
