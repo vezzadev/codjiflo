@@ -610,3 +610,48 @@
 .side-by-side-pane .diff-content {
   width: auto;
 }
+
+/* ============================================
+   VIRTUALIZED DIFF COMPONENTS
+   ============================================ */
+
+/* Virtualized row wrapper */
+.virtualized-row {
+  overflow: hidden;
+}
+
+.virtualized-row .diff-table {
+  table-layout: fixed;
+  min-width: 100%;
+}
+
+/* Virtualized side-by-side container */
+.virtualized-sxs-wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+.virtualized-sxs-row {
+  overflow: hidden;
+}
+
+.virtualized-sxs-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.virtualized-sxs-pane {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.virtualized-sxs-pane-left {
+  border-right: 2px solid var(--combobox-border);
+}
+
+.virtualized-sxs-pane .diff-table {
+  width: 100%;
+  table-layout: fixed;
+}

@@ -1,6 +1,17 @@
 import "@testing-library/jest-dom/vitest";
 
 
+// Mock ResizeObserver (not available in jsdom)
+class ResizeObserverMock {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    observe() {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    unobserve() {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    disconnect() {}
+}
+window.ResizeObserver = ResizeObserverMock;
+
 // Mock localStorage
 const localStorageMock = (function () {
     let store: Record<string, string> = {};

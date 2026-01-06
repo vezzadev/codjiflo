@@ -11,6 +11,8 @@ import { useIterationDiff } from '../hooks';
 import { DiffLine } from './DiffLine';
 import { DiffToolbar } from './DiffToolbar';
 import { SideBySideDiffView } from './SideBySideDiffView';
+import { VirtualizedDiffTable } from './VirtualizedDiffTable';
+import { VirtualizedSideBySideDiffView } from './VirtualizedSideBySideDiffView';
 import { Skeleton } from '@/components/ui';
 import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
@@ -21,6 +23,9 @@ import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
+
+/** Threshold for enabling virtualization (AC-3.1.12) */
+const VIRTUALIZATION_THRESHOLD = 500;
 
 /**
  * Main diff view component with support for unified and side-by-side modes
@@ -66,6 +71,9 @@ export function DiffView() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Container height for virtualization
+  const [containerHeight, setContainerHeight] = useState(600);
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
@@ -240,6 +248,25 @@ export function DiffView() {
     };
   }, [viewConfig.showFullFile, filename, currentPR, owner, repo, computeFullFileDiff]);
 
+  // Track container height for virtualization
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const updateHeight = () => {
+      setContainerHeight(container.clientHeight);
+    };
+
+    // Initial height
+    updateHeight();
+
+    // Watch for resize
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // Handle comment submission for both unified and SxS views
   const handleSubmitComment = useCallback(
     async (index: number, side: 'LEFT' | 'RIGHT', body: string) => {
@@ -395,7 +422,7 @@ export function DiffView() {
         </div>
       )}
 
-      {/* Diff content - conditional rendering based on view mode */}
+      {/* Diff content - conditional rendering based on view mode and virtualization */}
       {viewConfig.mode === 'unified' ? (
         <div
           ref={scrollContainerRef}
@@ -404,33 +431,99 @@ export function DiffView() {
           aria-label={`Diff content for ${selectedFile.filename}`}
           tabIndex={0}
         >
-          <UnifiedDiffTable
-            key={filename ?? 'diff-table'}
-            diffLines={diffLines}
+          {diffLines.length > VIRTUALIZATION_THRESHOLD ? (
+            <VirtualizedDiffTable
+              key={filename ?? 'diff-table-virtualized'}
+              diffLines={diffLines}
+              language={language}
+              containerHeight={containerHeight}
+              threadsByLineAndSide={threadsByLineAndSide}
+              currentUserLogin={currentUser.login}
+              addReply={addReply}
+              editComment={editComment}
+              deleteComment={deleteComment}
+              toggleResolved={toggleResolved}
+              draftLineIndex={draftLineIndex}
+              draftBody={draftBody}
+              isSubmittingDraft={isSubmittingDraft}
+              submitError={submitError}
+              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+              onCancelDraft={handleCancelDraft}
+              onChangeDraftBody={setDraftBody}
+              onSubmitDraft={() => {
+                if (draftLineIndex !== null) {
+                  const targetLine = diffLines[draftLineIndex];
+                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+                  void handleSubmitComment(draftLineIndex, side, draftBody);
+                }
+              }}
+              showWhitespace={viewConfig.showWhitespace}
+              lineNumberMode={viewConfig.filter === 'left' ? 'left' : viewConfig.filter === 'right' ? 'right' : 'both'}
+            />
+          ) : (
+            <UnifiedDiffTable
+              key={filename ?? 'diff-table'}
+              diffLines={diffLines}
+              language={language}
+              filename={filename ?? ''}
+              threadsByLineAndSide={threadsByLineAndSide}
+              currentUserLogin={currentUser.login}
+              addReply={addReply}
+              editComment={editComment}
+              deleteComment={deleteComment}
+              toggleResolved={toggleResolved}
+              draftLineIndex={draftLineIndex}
+              draftBody={draftBody}
+              isSubmittingDraft={isSubmittingDraft}
+              submitError={submitError}
+              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+              onCancelDraft={handleCancelDraft}
+              onChangeDraftBody={setDraftBody}
+              onSubmitDraft={() => {
+                if (draftLineIndex !== null) {
+                  const targetLine = diffLines[draftLineIndex];
+                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+                  void handleSubmitComment(draftLineIndex, side, draftBody);
+                }
+              }}
+              showWhitespace={viewConfig.showWhitespace}
+              contentFilter={viewConfig.filter}
+            />
+          )}
+        </div>
+      ) : diffLines.length > VIRTUALIZATION_THRESHOLD ? (
+        <div
+          ref={scrollContainerRef}
+          className="diff-content-area"
+          role="region"
+          aria-label={`Diff content for ${selectedFile.filename}`}
+          tabIndex={0}
+        >
+          <VirtualizedSideBySideDiffView
+            alignedLines={alignedLines}
             language={language}
-            filename={filename ?? ''}
+            containerHeight={containerHeight}
             threadsByLineAndSide={threadsByLineAndSide}
             currentUserLogin={currentUser.login}
             addReply={addReply}
             editComment={editComment}
             deleteComment={deleteComment}
             toggleResolved={toggleResolved}
+            contentFilter={viewConfig.filter}
             draftLineIndex={draftLineIndex}
+            draftSide={draftSide}
             draftBody={draftBody}
             isSubmittingDraft={isSubmittingDraft}
             submitError={submitError}
-            onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+            onStartComment={handleStartComment}
             onCancelDraft={handleCancelDraft}
             onChangeDraftBody={setDraftBody}
             onSubmitDraft={() => {
-              if (draftLineIndex !== null) {
-                const targetLine = diffLines[draftLineIndex];
-                const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                void handleSubmitComment(draftLineIndex, side, draftBody);
+              if (draftLineIndex !== null && draftSide !== null) {
+                void handleSubmitComment(draftLineIndex, draftSide, draftBody);
               }
             }}
             showWhitespace={viewConfig.showWhitespace}
-            contentFilter={viewConfig.filter}
           />
         </div>
       ) : (
