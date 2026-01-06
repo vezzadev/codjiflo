@@ -360,9 +360,16 @@ function determineViewContext(left: Span, right: Span): CommentViewContext {
 |--------|----------|
 | Scroll | Synchronized in SideBySide mode |
 | Click minimap | Jump to position |
-| Next/Prev diff | Navigate between change blocks |
+| Next/Prev file (`S`/`W`) | Navigate between files in file list |
+| Next/Prev change (`J`/`K`) | Navigate between change hunks within current file |
 | Go to line | Jump to specific line number |
 | Find | Search within current view |
+
+**Change Navigation Details:**
+- Changes are grouped into "hunks" (consecutive groups of additions/deletions)
+- Navigation scrolls to show context lines above the change
+- Navigation is disabled for fully added/deleted files (every line is a change)
+- Toolbar buttons show disabled state at navigation boundaries
 
 ### Selection & Comments
 
@@ -391,13 +398,46 @@ interface SelectionBehavior {
 
 ### Keyboard Shortcuts
 
+#### File Navigation
+| Shortcut | Action |
+|----------|--------|
+| `S` | Next file in file list |
+| `W` | Previous file in file list |
+
+#### Change Navigation (within file)
+| Shortcut | Action |
+|----------|--------|
+| `J` | Next change (hunk) |
+| `K` | Previous change (hunk) |
+
+**Note:** Change navigation (J/K) is disabled for fully added or deleted files where every line is a change, making navigation meaningless.
+
+#### View Mode Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `I` | Switch to Inline (Unified) view |
+| `X` | Switch to Side-by-Side (Split) view |
+
+#### Content Filter Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `L` | Show Left only (original) |
+| `O` | Show Both (default) |
+| `R` | Show Right only (modified) |
+
+#### Display Toggles
+| Shortcut | Action |
+|----------|--------|
+| `F` | Toggle Full file / Changes only |
+| `B` | Toggle whitespace visibility |
+
+#### Other Shortcuts
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+F` | Find in file |
-| `F7` | Next difference |
-| `Shift+F7` | Previous difference |
 | `Ctrl+G` | Go to line |
 | `Ctrl+Mouse Wheel` | Zoom |
+| `?` | Show keyboard shortcuts modal |
 
 ---
 
@@ -515,4 +555,4 @@ For React/TypeScript reimplementation:
 - [ ] Whitespace toggle with immediate recompute
 - [ ] Minimap overview margin
 - [ ] Theme-aware colors
-- [ ] Keyboard navigation between diffs
+- [ ] Keyboard navigation between diffs (J/K for changes, S/W for files)
