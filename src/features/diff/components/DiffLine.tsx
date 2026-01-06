@@ -129,11 +129,12 @@ function processChildrenForWhitespace(children: React.ReactNode): React.ReactNod
     
     // Handle React elements - recursively process their children
     if (React.isValidElement(child)) {
-      const props = child.props as { children?: React.ReactNode };
-      if (props.children) {
+      // Type guard to safely access children
+      const props = child.props as Record<string, unknown>;
+      if ('children' in props && props.children != null) {
         return React.cloneElement(child, {
           ...props,
-          children: processChildrenForWhitespace(props.children),
+          children: processChildrenForWhitespace(props.children as React.ReactNode),
         } as Partial<typeof props> & React.Attributes);
       }
     }
@@ -158,6 +159,7 @@ function SyntaxHighlighterWithWhitespace({
   showWhitespace: boolean;
 }) {
   // Memoize the syntax-highlighted output
+  // Note: codeStyle is a module-level constant so doesn't need to be in dependencies
   const highlightedContent = React.useMemo(() => (
     <SyntaxHighlighter
       language={language}
@@ -178,12 +180,16 @@ function SyntaxHighlighterWithWhitespace({
       return highlightedContent;
     }
     
-    // Process the children of the highlighted content
-    const props = highlightedContent.props as { children?: React.ReactNode };
-    return React.cloneElement(highlightedContent, {
-      ...props,
-      children: processChildrenForWhitespace(props.children),
-    } as Partial<typeof props> & React.Attributes);
+    // Type guard to safely access children
+    const props = highlightedContent.props as Record<string, unknown>;
+    if ('children' in props && props.children != null) {
+      return React.cloneElement(highlightedContent, {
+        ...props,
+        children: processChildrenForWhitespace(props.children as React.ReactNode),
+      } as Partial<typeof props> & React.Attributes);
+    }
+    
+    return highlightedContent;
   }, [highlightedContent, showWhitespace]);
 
   return <>{processedContent}</>;
