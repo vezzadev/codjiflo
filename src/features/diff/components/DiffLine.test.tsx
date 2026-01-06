@@ -609,6 +609,32 @@ describe('DiffLine', () => {
       expect(container.textContent).toContain('abc');
       expect(container.textContent).toContain('def');
     });
+
+    it('preserves syntax highlighting when showWhitespace is enabled', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'const foo = "bar";',
+        oldLineNumber: null,
+        newLineNumber: 1,
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" showWhitespace />
+          </tbody>
+        </table>
+      );
+
+      // Should have both syntax highlighting and whitespace markers
+      // SyntaxHighlighter is mocked but we can verify it's being used
+      expect(container.querySelector('[data-testid="syntax-highlighter"]')).toBeInTheDocument();
+      // And whitespace markers should be present
+      expect(container.querySelector('.whitespace-visible')).toBeInTheDocument();
+      // Content should still be there
+      expect(container.textContent).toContain('const');
+      expect(container.textContent).toContain('foo');
+    });
   });
 
   // DiffLineSpacer tests
