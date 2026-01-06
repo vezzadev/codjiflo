@@ -134,6 +134,7 @@ export const useDiffStore = create<DiffState>()(
         isLoading: false,
         error: null,
         currentChangeIndex: -1,
+        totalChangeCount: 0,
         // Keep viewConfig on reset - it's a user preference
       }),
     }),
