@@ -9,6 +9,7 @@ import bash from 'react-syntax-highlighter/dist/esm/languages/hljs/bash';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/hljs/markdown';
 import type { ParsedDiffLine, WordDiffSegment } from '../types';
 import { Button } from '@/components';
+import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
 
 // Register languages for syntax highlighting
 SyntaxHighlighter.registerLanguage('typescript', typescript);
@@ -159,6 +160,7 @@ export function DiffLine({
   showWhitespace = false,
   lineNumberMode = 'both',
 }: DiffLineProps) {
+  const syntaxStyle = useSyntaxTheme();
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
   // For side-by-side, show the appropriate line number
@@ -238,6 +240,7 @@ export function DiffLine({
         ) : (
           <SyntaxHighlighter
             language={language}
+            style={syntaxStyle}
             useInlineStyles={true}
             customStyle={codeStyle}
             PreTag="span"
