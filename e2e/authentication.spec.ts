@@ -180,7 +180,7 @@ test.describe("Redirect After Login", () => {
 
     // PR content should be visible (indicates successful load)
     // Check for the file explorer header which is always present on the PR page
-    await expect(page.getByText("Files")).toBeVisible();
+    await expect(page.getByRole("listitem", { name: /Pull Request Description/i })).toBeVisible();
   });
 
   test("should preserve query params in redirect after login", async ({
