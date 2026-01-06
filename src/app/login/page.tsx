@@ -57,7 +57,7 @@ function LoginContent() {
           <div className="login-header">
             <div className="logo">
               <Image
-                src="/icons/codjiflo.svg"
+                src="/codjiflo.svg"
                 alt="CodjiFlo"
                 width={48}
                 height={48}
@@ -140,7 +140,7 @@ function LoadingFallback() {
           <div className="login-header">
             <div className="logo">
               <Image
-                src="/icons/codjiflo.svg"
+                src="/codjiflo.svg"
                 alt="CodjiFlo"
                 width={48}
                 height={48}
