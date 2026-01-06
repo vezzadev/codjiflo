@@ -5,6 +5,7 @@ import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
+import { useIterationDiff } from '../hooks';
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -39,6 +40,18 @@ vi.mock('@/features/comments', async () => {
 
 vi.mock('next/navigation', () => ({
   useParams: vi.fn(() => ({ owner: 'testowner', repo: 'testrepo' })),
+}));
+
+// Mock useIterationDiff hook for iteration switch tests
+const mockIterationDiff = {
+  isIterationMode: false,
+  getFileDiffByPath: vi.fn(() => null),
+  selectedRange: null as { fromSnapshot: number; toSnapshot: number } | null,
+  changedFiles: [],
+  getArtifactByPath: vi.fn(() => undefined),
+};
+vi.mock('../hooks', () => ({
+  useIterationDiff: vi.fn(() => mockIterationDiff),
 }));
 
 const mockDefaultCommentsState = {
@@ -532,6 +545,51 @@ describe('DiffView', () => {
         expect(setTotalChangeCount).toHaveBeenCalled();
         const lastCall = setTotalChangeCount.mock.calls[setTotalChangeCount.mock.calls.length - 1];
         expect(lastCall?.[0]).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe('Change navigation reset on iteration switch', () => {
+    it('calls resetChangeIndex when iteration selectedRange changes', async () => {
+      const resetChangeIndex = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/index.ts',
+            status: FileChangeStatus.Modified,
+            additions: 1,
+            deletions: 1,
+            changes: 2,
+            patch: '@@ -1,3 +1,3 @@\n context\n-old line\n+new line',
+          },
+        ],
+        resetChangeIndex,
+      });
+
+      // Initial render with no iteration selected
+      vi.mocked(useIterationDiff).mockReturnValue({
+        ...mockIterationDiff,
+        selectedRange: null,
+      });
+
+      const { rerender } = render(<DiffView />);
+
+      // resetChangeIndex called on initial render
+      expect(resetChangeIndex).toHaveBeenCalled();
+      const initialCallCount = resetChangeIndex.mock.calls.length;
+
+      // Simulate iteration switch by changing selectedRange
+      vi.mocked(useIterationDiff).mockReturnValue({
+        ...mockIterationDiff,
+        selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+      });
+
+      rerender(<DiffView />);
+
+      // resetChangeIndex should be called again due to selectedRange change
+      await waitFor(() => {
+        expect(resetChangeIndex.mock.calls.length).toBeGreaterThan(initialCallCount);
       });
     });
   });
