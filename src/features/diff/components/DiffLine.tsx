@@ -1,3 +1,4 @@
+import React from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
@@ -107,6 +108,87 @@ function renderVisibleWhitespace(content: string): React.ReactNode {
   }
 
   return parts.length > 0 ? parts : content;
+}
+
+/**
+ * Component that applies both syntax highlighting and whitespace rendering
+ * Uses useEffect to post-process the syntax-highlighted DOM and inject whitespace markers
+ */
+function SyntaxHighlighterWithWhitespace({
+  content,
+  language,
+  syntaxStyle,
+  showWhitespace,
+}: {
+  content: string;
+  language: string;
+  syntaxStyle: Record<string, React.CSSProperties>;
+  showWhitespace: boolean;
+}) {
+  const containerRef = React.useRef<HTMLSpanElement>(null);
+
+  React.useEffect(() => {
+    if (!showWhitespace || !containerRef.current) return;
+
+    // Post-process the rendered content to add whitespace markers
+    const processTextNode = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+        const text = node.textContent;
+        if (text.includes(' ') || text.includes('\t')) {
+          // Create a document fragment with whitespace markers
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+          
+          for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === ' ' || char === '\t') {
+              // Add any text before this whitespace
+              if (i > lastIndex) {
+                fragment.appendChild(document.createTextNode(text.slice(lastIndex, i)));
+              }
+              
+              // Add whitespace marker
+              const span = document.createElement('span');
+              span.className = 'whitespace-visible';
+              span.textContent = char === ' ' ? '·' : '→   ';
+              fragment.appendChild(span);
+              
+              lastIndex = i + 1;
+            }
+          }
+          
+          // Add remaining text
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          }
+          
+          // Replace the text node with the fragment
+          node.parentNode?.replaceChild(fragment, node);
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        // Recursively process child nodes
+        // Create array from childNodes to avoid live collection issues
+        Array.from(node.childNodes).forEach(processTextNode);
+      }
+    };
+
+    processTextNode(containerRef.current);
+  }, [showWhitespace, content]); // Re-run when content or showWhitespace changes
+
+  return (
+    <span ref={containerRef}>
+      <SyntaxHighlighter
+        language={language}
+        style={syntaxStyle}
+        useInlineStyles={true}
+        customStyle={codeStyle}
+        PreTag="span"
+        CodeTag="span"
+      >
+        {content}
+      </SyntaxHighlighter>
+    </span>
+  );
 }
 
 // Custom style to match diff view - minimal styling, let parent handle background
@@ -233,21 +315,13 @@ export function DiffLine({
           <pre className="diff-code">{line.content}</pre>
         ) : hasWordDiff && line.wordDiff ? (
           <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
-        ) : showWhitespace ? (
-          <span className="diff-code">
-            {renderVisibleWhitespace(line.content)}
-          </span>
         ) : (
-          <SyntaxHighlighter
+          <SyntaxHighlighterWithWhitespace
+            content={line.content}
             language={language}
-            style={syntaxStyle}
-            useInlineStyles={true}
-            customStyle={codeStyle}
-            PreTag="span"
-            CodeTag="span"
-          >
-            {line.content}
-          </SyntaxHighlighter>
+            syntaxStyle={syntaxStyle}
+            showWhitespace={showWhitespace}
+          />
         )}
       </td>
     </tr>
