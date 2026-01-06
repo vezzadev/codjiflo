@@ -46,6 +46,7 @@ E2E tests support two modes:
 Both E2E test modes start a test server automatically. It is NOT necessary to start a separate dev server. 
 
 **Environment:**
+- `.env.local` - Created by running `npm run dev` (pulls from Vercel). Required for prod mode tests locally.
 - `CODJIFLO_E2E_GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, from secrets in CI)
 
 **Test fixtures:**
