@@ -16,7 +16,7 @@
 }
 
 .textbox:focus {
-  border-color: #6AC5FB;
+  border-color: var(--focus-border);
 }
 
 .textbox:disabled {
@@ -52,7 +52,7 @@
   position: absolute;
   left: 12px;
   bottom: 6px;
-  color: #BBB;
+  color: var(--watermark-text);
   font-style: italic;
   pointer-events: none;
   transition: opacity 0.15s ease;
@@ -96,7 +96,7 @@
 
 .checkbox input:focus {
   outline: none;
-  border-color: #6AC5FB;
+  border-color: var(--focus-border);
 }
 
 .checkbox input:checked {
@@ -151,7 +151,7 @@
 
 .select:focus {
   outline: none;
-  border-color: #6AC5FB;
+  border-color: var(--focus-border);
 }
 
 .select:disabled {
@@ -427,34 +427,8 @@
 }
 
 .badge-merged {
-  background-color: #6f42c1;
+  background-color: var(--badge-merged);
   color: white;
 }
 
-/* ============================================
-   SKELETON LOADING
-   ============================================ */
-@keyframes skeleton-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.skeleton {
-  background-color: var(--control-disabled);
-  border-radius: 2px;
-  animation: skeleton-pulse 2s ease-in-out infinite;
-}
-
-.skeleton-text {
-  height: 16px;
-}
-
-.skeleton-text-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+/* Note: Skeleton loading classes moved to utilities.css */

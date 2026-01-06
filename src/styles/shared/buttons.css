@@ -84,7 +84,7 @@
 }
 
 .btn-toggle:focus {
-  border-color: #6AC5FB;
+  border-color: var(--focus-border);
 }
 
 /* ============================================
@@ -137,11 +137,11 @@
 }
 
 .btn-menu:hover {
-  background-color: rgba(153, 153, 153, 0.67);
+  background-color: var(--menu-hover);
 }
 
 .btn-menu:focus {
-  background-color: rgba(110, 110, 110, 0.67);
+  background-color: var(--menu-focus);
 }
 
 .btn-menu img,
@@ -185,7 +185,7 @@
 }
 
 .btn-window.close:hover {
-  background-color: #E81123;
+  background-color: var(--close-btn-hover);
 }
 
 .btn-window.close:hover svg {
@@ -267,7 +267,7 @@
 }
 
 .btn-diff:focus {
-  border-color: #6AC5FB;
+  border-color: var(--focus-border);
 }
 
 /* ============================================
@@ -285,7 +285,7 @@
 }
 
 .btn-collapse:hover {
-  background-color: #AAAAAA;
+  background-color: var(--collapse-hover);
 }
 
 .btn-collapse.collapsed {
@@ -328,7 +328,7 @@
 
 .btn-close:hover {
   background-color: var(--checkbox-hover);
-  border-color: #666666;
+  border-color: var(--close-btn-border);
 }
 
 .btn-close img,

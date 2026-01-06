@@ -1,0 +1,86 @@
+/* ============================================
+   TITLE BAR
+   ============================================ */
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 8px;
+  background-color: var(--window-bg);
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-center {
+  flex: 1;
+  text-align: center;
+}
+
+.window-title {
+  color: var(--titlebar-text);
+  font-size: 12px;
+}
+
+.window-inactive .window-title {
+  color: var(--titlebar-text-inactive);
+}
+
+.titlebar-right {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo img {
+  width: 32px;
+  height: 32px;
+}
+
+.logo-text {
+  color: var(--titlebar-text);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.version {
+  color: var(--titlebar-text);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Menu button when sidebar is collapsed */
+.btn-menu-collapsed {
+  display: none;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--titlebar-text);
+}
+
+.btn-menu-collapsed:hover {
+  background-color: var(--menu-hover);
+}
+
+.sidebar-collapsed .btn-menu-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

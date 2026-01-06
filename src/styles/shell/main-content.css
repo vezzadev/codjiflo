@@ -1,0 +1,118 @@
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--main-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ============================================
+   NAVIGATION BAR
+   ============================================ */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background-color: var(--control-bg);
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.nav-left {
+  display: flex;
+  gap: 4px;
+}
+
+/* ============================================
+   TOOLBAR
+   ============================================ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background-color: var(--control-bg);
+  border-bottom: 1px solid black;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--main-fg);
+}
+
+.current-file {
+  font-size: 13px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================
+   DIFF VIEWER
+   ============================================ */
+.diff-viewer {
+  flex: 1;
+  position: relative;
+  overflow: hidden; /* Scroll handled by .diff-content-area */
+  background-color: var(--main-bg);
+}
+
+.diff-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--main-fg);
+}
+
+/* ============================================
+   SEARCH AND GOTO PANES
+   ============================================ */
+.search-pane,
+.goto-pane {
+  position: absolute;
+  top: 0;
+  right: 30px;
+  z-index: 100;
+}
+
+.search-pane-content,
+.goto-pane-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-top: none;
+}
+
+.search-pane-content .textbox {
+  width: 200px;
+}
+
+.goto-pane-content .textbox {
+  width: 120px;
+}
+
+/* ============================================
+   RESIZE HANDLE HORIZONTAL
+   ============================================ */
+.resize-handle-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 10px;
+  background-color: transparent;
+  cursor: ns-resize;
+  margin-right: 6px;
+}

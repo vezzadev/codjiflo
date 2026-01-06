@@ -1,0 +1,45 @@
+/* ============================================
+   DASHBOARD PAGE
+   ============================================ */
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dashboard-card {
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.dashboard-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--main-fg);
+  margin: 0 0 8px 0;
+}
+
+.dashboard-subtitle {
+  color: var(--control-disabled-fg);
+  margin: 0 0 24px 0;
+}
+
+.dashboard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-hint {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--control-disabled-fg);
+  font-size: 13px;
+}

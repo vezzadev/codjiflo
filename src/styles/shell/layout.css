@@ -1,0 +1,55 @@
+/* ============================================
+   WINDOW CONTAINER
+   ============================================ */
+.window {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  min-width: 400px;
+  min-height: 200px;
+  background-color: var(--window-bg);
+  overflow: hidden;
+}
+
+/* ============================================
+   MAIN LAYOUT GRID
+   ============================================ */
+.main-layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: var(--sidebar-width, 60px) var(--left-pane-width, 330px) 1fr var(--right-pane-width, 0px);
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
+/* Sidebar collapsed state */
+.sidebar-collapsed .main-layout {
+  --sidebar-width: 0px;
+}
+
+/* ============================================
+   COLLAPSE BUTTON STATES
+   ============================================ */
+.btn-collapse.collapsed,
+.btn-collapse-v.collapsed {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 800px) {
+  .main-layout {
+    --sidebar-width: 0px;
+    --left-pane-width: 200px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .btn-menu-collapsed {
+    display: flex;
+  }
+}
