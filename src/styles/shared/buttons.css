@@ -233,20 +233,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 4px;
+  padding: 2px 6px;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: 2px;
+  border: 1px solid var(--combobox-border);
+  height: 25px;
+  min-width: 36px;
 }
 
-.btn-nav:hover {
+.btn-nav:hover:not(:disabled) {
   background-color: var(--btn-hover);
-  border-color: var(--combobox-border);
+}
+
+.btn-nav:focus {
+  border-color: var(--focus-border);
 }
 
 .btn-nav:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.btn-nav-hint {
+  font-size: 12px;
+  color: var(--main-fg);
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.btn-group-nav {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+  border-left: 1px solid var(--combobox-border);
+  padding-left: 8px;
 }
 
 /* ============================================

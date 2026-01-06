@@ -13,6 +13,8 @@ vi.mock('lucide-react', () => ({
   Eye: () => <span data-testid="icon-eye" />,
   EyeOff: () => <span data-testid="icon-eyeoff" />,
   File: () => <span data-testid="icon-file" />,
+  ChevronUp: () => <span data-testid="icon-chevronup" />,
+  ChevronDown: () => <span data-testid="icon-chevrondown" />,
 }));
 
 describe('DiffToolbar', () => {
@@ -25,6 +27,8 @@ describe('DiffToolbar', () => {
         showFullFile: false,
         showWhitespace: false,
       },
+      currentChangeIndex: -1,
+      totalChangeCount: 0,
     });
   });
 
@@ -217,10 +221,10 @@ describe('DiffToolbar', () => {
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
 
-    it('pressing S switches to split mode', () => {
+    it('pressing X switches to split mode', () => {
       render(<DiffToolbar />);
 
-      fireEvent.keyDown(window, { key: 's' });
+      fireEvent.keyDown(window, { key: 'x' });
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
@@ -235,7 +239,7 @@ describe('DiffToolbar', () => {
 
       const input = screen.getByTestId('test-input');
       input.focus();
-      fireEvent.keyDown(input, { key: 's' });
+      fireEvent.keyDown(input, { key: 'x' });
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
@@ -250,7 +254,7 @@ describe('DiffToolbar', () => {
 
       const textarea = screen.getByTestId('test-textarea');
       textarea.focus();
-      fireEvent.keyDown(textarea, { key: 's' });
+      fireEvent.keyDown(textarea, { key: 'x' });
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
@@ -258,13 +262,13 @@ describe('DiffToolbar', () => {
     it('ignores keyboard shortcuts with modifier keys', () => {
       render(<DiffToolbar />);
 
-      fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+      fireEvent.keyDown(window, { key: 'x', ctrlKey: true });
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
 
-      fireEvent.keyDown(window, { key: 's', metaKey: true });
+      fireEvent.keyDown(window, { key: 'x', metaKey: true });
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
 
-      fireEvent.keyDown(window, { key: 's', altKey: true });
+      fireEvent.keyDown(window, { key: 'x', altKey: true });
       expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
     });
   });
@@ -291,7 +295,7 @@ describe('DiffToolbar', () => {
       render(<DiffToolbar />);
 
       const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      expect(toggleButton).toHaveAttribute('title', expect.stringContaining('S'));
+      expect(toggleButton).toHaveAttribute('title', expect.stringContaining('X'));
     });
   });
 });

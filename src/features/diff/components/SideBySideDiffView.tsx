@@ -39,7 +39,7 @@ interface SideBySideDiffViewProps {
   onSubmitDraft: () => void;
   /** Show whitespace characters visibly */
   showWhitespace?: boolean;
-  /** Ref for the container element (used for autoscroll) */
+  /** Ref for the container element (used for change navigation) */
   containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 

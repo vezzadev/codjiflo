@@ -10,12 +10,16 @@ vi.mock('@/features/diff', () => ({
 describe('useKeyboardShortcuts', () => {
   const mockSelectNextFile = vi.fn();
   const mockSelectPreviousFile = vi.fn();
+  const mockScrollToNextChange = vi.fn();
+  const mockScrollToPreviousChange = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useDiffStore).mockImplementation((selector) => {
       const state = {
         selectNextFile: mockSelectNextFile,
         selectPreviousFile: mockSelectPreviousFile,
+        scrollToNextChange: mockScrollToNextChange,
+        scrollToPreviousChange: mockScrollToPreviousChange,
       };
       return selector(state as never);
     });
@@ -43,19 +47,37 @@ describe('useKeyboardShortcuts', () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
   });
 
-  it('calls selectNextFile when j is pressed', () => {
+  it('calls scrollToNextChange when j is pressed', () => {
     renderHook(() => useKeyboardShortcuts());
 
     const event = new KeyboardEvent('keydown', { key: 'j' });
     window.dispatchEvent(event);
 
-    expect(mockSelectNextFile).toHaveBeenCalledTimes(1);
+    expect(mockScrollToNextChange).toHaveBeenCalledTimes(1);
   });
 
-  it('calls selectPreviousFile when k is pressed', () => {
+  it('calls scrollToPreviousChange when k is pressed', () => {
     renderHook(() => useKeyboardShortcuts());
 
     const event = new KeyboardEvent('keydown', { key: 'k' });
+    window.dispatchEvent(event);
+
+    expect(mockScrollToPreviousChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls selectNextFile when s is pressed', () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    const event = new KeyboardEvent('keydown', { key: 's' });
+    window.dispatchEvent(event);
+
+    expect(mockSelectNextFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls selectPreviousFile when w is pressed', () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    const event = new KeyboardEvent('keydown', { key: 'w' });
     window.dispatchEvent(event);
 
     expect(mockSelectPreviousFile).toHaveBeenCalledTimes(1);
@@ -133,17 +155,19 @@ describe('getShortcutsList', () => {
     const shortcuts = getShortcutsList();
 
     expect(shortcuts).toEqual([
-      { key: 'j', description: 'Next file' },
-      { key: 'k', description: 'Previous file' },
+      { key: 'j', description: 'Next change' },
+      { key: 'k', description: 'Previous change' },
+      { key: 's', description: 'Next file' },
+      { key: 'w', description: 'Previous file' },
       { key: 'Space', description: 'Scroll down in diff view' },
       { key: 'i', description: 'Inline view' },
-      { key: 's', description: 'Side-by-side view' },
+      { key: 'x', description: 'Side-by-side view' },
       { key: 'l', description: 'Left only (deletions)' },
-      { key: 'b', description: 'Show both sides' },
+      { key: 'o', description: 'Show both sides' },
       { key: 'r', description: 'Right only (additions)' },
       { key: 'f', description: 'Show full file' },
       { key: 'c', description: 'Show changes only' },
-      { key: 'w', description: 'Toggle whitespace visibility' },
+      { key: 'b', description: 'Toggle whitespace visibility' },
     ]);
   });
 });

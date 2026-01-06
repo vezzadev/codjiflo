@@ -196,21 +196,9 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       // PR Description should no longer be selected
       await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
 
-      // Autoscroll: first changed line should be visible in viewport (inline mode)
-      const firstChangedLine = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
-      await expect(firstChangedLine).toBeInViewport();
-
-      // Switch to side-by-side mode and verify autoscroll still works
-      await page.keyboard.press("s");
-      await expect(page.getByRole("region", { name: "Side-by-side diff view" })).toBeVisible();
-
-      // Click another file to trigger autoscroll in side-by-side mode
-      await fileNav.getByText("src/index.ts").click();
-      await expect(page.getByRole("heading", { name: "src/index.ts" })).toBeVisible();
-
-      // Autoscroll: first changed line should be visible in viewport (side-by-side mode)
-      const firstChangedLineSxS = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
-      await expect(firstChangedLineSxS).toBeInViewport();
+      // Verify diff content is visible
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
     } else {
       // Real mode: click first actual file
       const fileButtons = fileNav.getByRole("listitem");
@@ -219,10 +207,6 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
         await allButtons[1]?.click();
         // PR Description should no longer be selected
         await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
-
-        // Autoscroll: first changed line should be visible in viewport
-        const firstChangedLine = page.locator('[data-line-type="addition"], [data-line-type="deletion"]').first();
-        await expect(firstChangedLine).toBeInViewport();
       }
     }
   });
@@ -330,15 +314,15 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Wait for focus to settle by ensuring the body is focused
     await page.waitForFunction(() => document.activeElement === document.body);
 
-    // [AC-1.5.1] Press j to go to first file
-    await page.keyboard.press("j");
-    
+    // [AC-1.5.1] Press s to go to first file (next file)
+    await page.keyboard.press("s");
+
     // First file (second button) should be selected
     const firstFile = fileButtons.nth(1);
     await expect(firstFile).toHaveAttribute("aria-current", "location");
 
-    // [AC-1.5.1] Press k to go back to PR Description
-    await page.keyboard.press("k");
+    // [AC-1.5.1] Press w to go back to PR Description (previous file)
+    await page.keyboard.press("w");
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
   });
 

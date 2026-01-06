@@ -177,7 +177,7 @@
 
   /* Diff layout constants (not theme-dependent) */
   --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
-  --diff-scroll-context-lines: 3; /* Lines shown above first change on autoscroll */
+  --diff-scroll-context-lines: 3; /* Context lines shown above change when navigating with J/K */
 
   /* Window chrome */
   --window-bg: #EEEEEE;

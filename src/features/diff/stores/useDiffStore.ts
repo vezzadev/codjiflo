@@ -22,6 +22,8 @@ export const useDiffStore = create<DiffState>()(
       isLoading: false,
       error: null,
       viewConfig: DEFAULT_VIEW_CONFIG,
+      currentChangeIndex: -1,
+      totalChangeCount: 0,
 
       loadFiles: async (owner, repo, number) => {
         set({ isLoading: true, error: null });
@@ -51,7 +53,7 @@ export const useDiffStore = create<DiffState>()(
         const { files } = get();
         // Allow -1 for PR description, or valid file indices
         if (index === PR_DESCRIPTION_INDEX || (index >= 0 && index < files.length)) {
-          set({ selectedFileIndex: index });
+          set({ selectedFileIndex: index, currentChangeIndex: -1 });
         }
       },
 
@@ -59,7 +61,7 @@ export const useDiffStore = create<DiffState>()(
         const { selectedFileIndex, files } = get();
         // From description (-1) go to first file (0), then continue through files
         if (selectedFileIndex < files.length - 1) {
-          set({ selectedFileIndex: selectedFileIndex + 1 });
+          set({ selectedFileIndex: selectedFileIndex + 1, currentChangeIndex: -1 });
         }
       },
 
@@ -67,7 +69,7 @@ export const useDiffStore = create<DiffState>()(
         const { selectedFileIndex } = get();
         // Allow going back to description (-1)
         if (selectedFileIndex > PR_DESCRIPTION_INDEX) {
-          set({ selectedFileIndex: selectedFileIndex - 1 });
+          set({ selectedFileIndex: selectedFileIndex - 1, currentChangeIndex: -1 });
         }
       },
 
@@ -102,11 +104,36 @@ export const useDiffStore = create<DiffState>()(
         }));
       },
 
+      // Change navigation actions
+      scrollToNextChange: () => {
+        const { currentChangeIndex, totalChangeCount } = get();
+        // Only advance if there are more hunks
+        if (currentChangeIndex < totalChangeCount - 1) {
+          set({ currentChangeIndex: currentChangeIndex + 1 });
+        }
+      },
+
+      scrollToPreviousChange: () => {
+        const { currentChangeIndex } = get();
+        if (currentChangeIndex > 0) {
+          set({ currentChangeIndex: currentChangeIndex - 1 });
+        }
+      },
+
+      resetChangeIndex: () => {
+        set({ currentChangeIndex: -1, totalChangeCount: 0 });
+      },
+
+      setTotalChangeCount: (count) => {
+        set({ totalChangeCount: count });
+      },
+
       reset: () => set({
         files: [],
         selectedFileIndex: PR_DESCRIPTION_INDEX,
         isLoading: false,
         error: null,
+        currentChangeIndex: -1,
         // Keep viewConfig on reset - it's a user preference
       }),
     }),
