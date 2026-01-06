@@ -43,18 +43,11 @@ jobs:
         timeout-minutes: 1
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        timeout-minutes: 1
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-
       - name: Install dependencies
         timeout-minutes: 1
         run: npm ci
 
-      - name: Run linter
+      - name: Run typecheck
         timeout-minutes: 1
         run: npm run typecheck
 
