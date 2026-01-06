@@ -290,10 +290,12 @@
 .content-filter-indicator {
   flex: 1;
   height: 100%;
+  border: 1px solid var(--combobox-border);
 }
 
 .content-filter-indicator-left {
   background-color: var(--diff-add-word);
+  border-right: none;
 }
 
 .content-filter-indicator-both {
@@ -302,6 +304,7 @@
 
 .content-filter-indicator-right {
   background-color: var(--diff-delete-word);
+  border-left: none;
 }
 
 .content-filter-thumb {
