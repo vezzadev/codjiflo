@@ -30,11 +30,9 @@ export default defineConfig({
     timeout: 2000,
   },
   reporter: "html",
-  // Global setup handles building and starting the server with OS-assigned port
-  // The test fixture (e2e/fixtures/test.ts) provides the dynamic baseURL
-  globalSetup: "./e2e/global-setup.ts",
   use: {
-    // baseURL is set dynamically by the test fixture based on the port file
+    // E2E_PORT is set by webServer stdout capture at runtime
+    baseURL: `http://localhost:${process.env.E2E_PORT}`,
     trace: "retain-on-failure",
     actionTimeout: 2000,
   },
@@ -46,4 +44,11 @@ export default defineConfig({
       },
     },
   ],
+  webServer: {
+    command: "npm run build && npm run start -- -p 0",
+    // Wait for Next.js to output port and capture it in E2E_PORT env var
+    wait: { stdout: /localhost:(?<E2E_PORT>\d+)/ },
+    reuseExistingServer: !isCI,
+    timeout: 180_000,
+  },
 });

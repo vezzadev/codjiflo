@@ -154,5 +154,3 @@ storybook-static/
 
 # SQL.js WASM files (copied from node_modules at build time)
 public/sql-wasm/
-e2e/.build-done
-e2e/.port
