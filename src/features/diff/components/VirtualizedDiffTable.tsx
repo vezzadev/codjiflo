@@ -3,7 +3,7 @@
  * Uses react-window for performant rendering
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { DiffLine } from './DiffLine';
 import type { ParsedDiffLine } from '../types';
@@ -36,6 +36,8 @@ interface VirtualizedDiffTableProps {
   onSubmitDraft: () => void;
   showWhitespace: boolean;
   lineNumberMode: 'left' | 'both' | 'right';
+  /** Row index to scroll to (for J/K navigation) */
+  scrollToRowIndex?: number | undefined;
 }
 
 interface RowData {
@@ -172,8 +174,19 @@ export function VirtualizedDiffTable({
   onSubmitDraft,
   showWhitespace,
   lineNumberMode,
+  scrollToRowIndex,
 }: VirtualizedDiffTableProps) {
   const listRef = useRef<List>(null);
+
+  // Scroll to row when scrollToRowIndex changes (J/K navigation)
+  useEffect(() => {
+    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
+      // Scroll with some offset to show context lines above
+      const contextLines = 3;
+      const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
+      listRef.current.scrollToItem(targetIndex, 'start');
+    }
+  }, [scrollToRowIndex]);
 
   // Memoize item data to prevent unnecessary re-renders
   const itemData = useMemo<RowData>(

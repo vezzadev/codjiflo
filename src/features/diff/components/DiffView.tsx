@@ -8,6 +8,8 @@ import {
   alignDiffLines,
   filterToChangesOnly,
   filterAlignedToChangesOnly,
+  calculateHunkIndices,
+  calculateAlignedHunkIndices,
 } from '../utils';
 import { useIterationDiff } from '../hooks';
 import { DiffLine } from './DiffLine';
@@ -193,77 +195,73 @@ export function DiffView() {
     setSubmitError(null);
   }, [selectedFileIndex]);
 
-  // Calculate hunks (groups of consecutive changes) and set total count
-  // A hunk is a contiguous group of addition/deletion lines
-  const getHunkStartElements = useCallback((container: HTMLElement): Element[] => {
-    const allRows = Array.from(container.querySelectorAll('[data-line-type]'));
-    const hunkStarts: Element[] = [];
-    let inHunk = false;
-
-    for (const row of allRows) {
-      const lineType = row.getAttribute('data-line-type');
-      const isChange = lineType === 'addition' || lineType === 'deletion';
-
-      if (isChange && !inHunk) {
-        // Start of a new hunk
-        hunkStarts.push(row);
-        inHunk = true;
-      } else if (!isChange) {
-        // Context or header line - end of hunk
-        inHunk = false;
-      }
-    }
-
-    return hunkStarts;
-  }, []);
-
-  // Update total hunk count when diff content changes
   // Disable change navigation for fully added/removed files (every line is a change, navigation is meaningless)
   const isFullFileChange = selectedFile?.status === FileChangeStatus.Added ||
                            selectedFile?.status === FileChangeStatus.Deleted;
 
-  useEffect(() => {
+  // Calculate hunk indices from data (works for both virtualized and non-virtualized views)
+  // For side-by-side mode, use aligned lines; for inline mode, use diffLines
+  const hunkIndices = useMemo(() => {
     if (isShowingDescription || isFullFileChange) {
-      setTotalChangeCount(0);
-      return;
+      return [];
     }
 
-    let cancelled = false;
+    if (viewConfig.mode === 'split') {
+      // Use aligned lines for side-by-side mode
+      return calculateAlignedHunkIndices(alignedLines);
+    } else {
+      // Use diffLines for inline/unified mode
+      return calculateHunkIndices(diffLines);
+    }
+  }, [isShowingDescription, isFullFileChange, viewConfig.mode, diffLines, alignedLines]);
 
-    // Use double requestAnimationFrame to ensure DOM has updated after React render
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-
-        const scrollContainer = scrollContainerRef.current;
-        if (!scrollContainer) return;
-
-        const hunkStarts = getHunkStartElements(scrollContainer);
-        setTotalChangeCount(hunkStarts.length);
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isShowingDescription, isFullFileChange, selectedFileIndex, setTotalChangeCount, getHunkStartElements, viewConfig.showFullFile, diffLines.length]);
-
-  // Scroll to specific hunk when currentChangeIndex changes (navigation via J/K keys)
+  // Update total hunk count when hunkIndices changes
   useEffect(() => {
-    if (isShowingDescription || currentChangeIndex < 0) return;
+    setTotalChangeCount(hunkIndices.length);
+  }, [hunkIndices.length, setTotalChangeCount]);
+
+  // Get the row index to scroll to for the current change (for virtualized views)
+  const scrollToRowIndex = useMemo(() => {
+    if (currentChangeIndex < 0 || currentChangeIndex >= hunkIndices.length) {
+      return undefined;
+    }
+    return hunkIndices[currentChangeIndex];
+  }, [currentChangeIndex, hunkIndices]);
+
+  // Check if we're using virtualized rendering
+  const isVirtualized = diffLines.length > VIRTUALIZATION_THRESHOLD;
+
+  // Scroll to specific hunk when currentChangeIndex changes (for non-virtualized views)
+  // Virtualized views handle scrolling via scrollToRowIndex prop
+  useEffect(() => {
+    if (isShowingDescription || currentChangeIndex < 0 || isVirtualized) return;
 
     const frameId = requestAnimationFrame(() => {
       const scrollContainer = scrollContainerRef.current;
       if (!scrollContainer) return;
 
-      const hunkStarts = getHunkStartElements(scrollContainer);
+      // Query DOM for the target element (non-virtualized views render all rows)
+      const allRows = Array.from(scrollContainer.querySelectorAll('[data-line-type]'));
+      let hunkCount = 0;
+      let inHunk = false;
+      let targetElement: Element | null = null;
 
-      // If index exceeds available hunks, don't scroll
-      if (currentChangeIndex >= hunkStarts.length) {
-        return;
+      for (const row of allRows) {
+        const lineType = row.getAttribute('data-line-type');
+        const isChange = lineType === 'addition' || lineType === 'deletion';
+
+        if (isChange && !inHunk) {
+          if (hunkCount === currentChangeIndex) {
+            targetElement = row;
+            break;
+          }
+          hunkCount++;
+          inHunk = true;
+        } else if (!isChange) {
+          inHunk = false;
+        }
       }
 
-      const targetElement = hunkStarts[currentChangeIndex];
       if (targetElement) {
         const rootStyles = getComputedStyle(document.documentElement);
         const lineHeight = parseFloat(rootStyles.getPropertyValue('--diff-line-height')) || 23;
@@ -278,7 +276,7 @@ export function DiffView() {
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [currentChangeIndex, isShowingDescription, getHunkStartElements]);
+  }, [currentChangeIndex, isShowingDescription, isVirtualized]);
 
   // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
   useEffect(() => {
@@ -532,6 +530,7 @@ export function DiffView() {
               }}
               showWhitespace={viewConfig.showWhitespace}
               lineNumberMode={viewConfig.filter === 'left' ? 'left' : viewConfig.filter === 'right' ? 'right' : 'both'}
+              scrollToRowIndex={scrollToRowIndex}
             />
           ) : (
             <UnifiedDiffTable
@@ -597,6 +596,7 @@ export function DiffView() {
               }
             }}
             showWhitespace={viewConfig.showWhitespace}
+            scrollToRowIndex={scrollToRowIndex}
           />
         </div>
       ) : (

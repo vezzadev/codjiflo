@@ -548,4 +548,116 @@ const baz = 'qux';
       }
     }
   });
+
+  test("Change navigation works in virtualized diff (500+ lines)", async ({
+    page,
+  }) => {
+    // Skip in prod mode - mock mode only test
+    test.skip(!isMockMode(), "Virtualized diff test runs in mock mode only");
+
+    // Generate a large file with 600+ lines to trigger virtualization (threshold is 500)
+    const generateLargeFile = () => {
+      const lines: string[] = [];
+      // Add header
+      lines.push("@@ -1,300 +1,310 @@");
+      // Add context lines, then a hunk of changes, repeat
+      for (let i = 0; i < 60; i++) {
+        // 10 context lines
+        for (let j = 0; j < 10; j++) {
+          lines.push(` // Context line ${i * 10 + j}`);
+        }
+        // Then a hunk of changes (deletion + addition)
+        lines.push(`-const oldVar${String(i)} = ${String(i)};`);
+        lines.push(`+const newVar${String(i)} = ${String(i + 100)};`);
+      }
+      return lines.join("\n");
+    };
+
+    const largePatch = generateLargeFile();
+
+    // Override the mock to use the large file
+    await page.route(
+      "**/repos/test/repo/pulls/123/files*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              sha: "abc123",
+              filename: "src/large-file.ts",
+              status: "modified",
+              additions: 60,
+              deletions: 60,
+              changes: 120,
+              patch: largePatch,
+            },
+          ]),
+        });
+      }
+    );
+
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    // Click on the large file
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("src/large-file.ts").click();
+
+    // Wait for diff to render
+    await expect(
+      page.getByRole("heading", { name: "src/large-file.ts" })
+    ).toBeVisible();
+
+    // Get the toolbar
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar).toBeVisible();
+
+    // Get navigation buttons
+    const prevChangeButton = toolbar.getByRole("button", {
+      name: /Previous change/i,
+    });
+    const nextChangeButton = toolbar.getByRole("button", {
+      name: /Next change/i,
+    });
+
+    // Wait for hunk count to be calculated (buttons should be enabled)
+    await expect(nextChangeButton).toBeEnabled();
+    await expect(prevChangeButton).toBeDisabled();
+
+    // Focus the page body for keyboard navigation
+    await page.locator("body").click();
+
+    // Press J to navigate to first change
+    await page.keyboard.press("j");
+
+    // After first J press, we should be at index 0
+    // Prev should still be disabled (at start), Next should be enabled (many more hunks)
+    await expect(prevChangeButton).toBeDisabled();
+    await expect(nextChangeButton).toBeEnabled();
+
+    // Press J a few more times to navigate through changes
+    await page.keyboard.press("j");
+    await page.keyboard.press("j");
+
+    // Now we're at index 2, both buttons should be enabled
+    await expect(prevChangeButton).toBeEnabled();
+    await expect(nextChangeButton).toBeEnabled();
+
+    // Press K to go back
+    await page.keyboard.press("k");
+
+    // Still both enabled (we're at index 1)
+    await expect(prevChangeButton).toBeEnabled();
+    await expect(nextChangeButton).toBeEnabled();
+
+    // Go back to start
+    await page.keyboard.press("k");
+
+    // Now at index 0, prev disabled
+    await expect(prevChangeButton).toBeDisabled();
+    await expect(nextChangeButton).toBeEnabled();
+  });
 });
