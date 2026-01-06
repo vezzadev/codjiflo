@@ -27,7 +27,6 @@ const files = ['sql-wasm.wasm', 'sql-wasm.js'];
 // Ensure target directory exists
 if (!existsSync(targetDir)) {
   mkdirSync(targetDir, { recursive: true });
-  console.log('Created directory:', targetDir);
 }
 
 // Copy files
@@ -37,10 +36,7 @@ for (const file of files) {
 
   if (existsSync(source)) {
     copyFileSync(source, target);
-    console.log(`Copied: ${file}`);
   } else {
     console.warn(`Warning: Source file not found: ${source}`);
   }
 }
-
-console.log('SQL.js WASM files copied to public/sql-wasm/');
