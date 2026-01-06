@@ -283,9 +283,13 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selectorInHeader).toBeVisible();
   });
 
-  test("Change navigation (J/K) works after switching iterations", async ({
+  test("Change navigation resets after switching iterations", async ({
     page,
   }) => {
+    // This test validates that currentChangeIndex resets when iteration changes.
+    // Without the fix, navigating with J then switching iterations would leave
+    // the Previous button enabled (stale index) when it should be disabled.
+
     const { owner, repo, prNumber } = iterationTestPR;
     const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
 
@@ -304,61 +308,62 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     await expect(selector).toBeVisible({ timeout: 15000 });
 
     // Click on an actual file (not PR description) to show the diff view
-    // Files show status indicators like +N for additions, which real files have
     const allListItems = fileList.getByRole("listitem");
     const allCount = await allListItems.count();
-
-    // Skip PR description (first item), click on an actual file
     test.skip(allCount <= 1, "No files available to test");
 
     // Click on the second item (first actual file, after PR description)
     await allListItems.nth(1).click();
 
-    // Wait for diff toolbar to appear (uses role="toolbar" with name "Diff view controls")
+    // Wait for diff toolbar to appear
     const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
     await expect(toolbar).toBeVisible({ timeout: 10000 });
 
-    // Find the "Next change" button
+    // Get navigation buttons
     const nextChangeBtn = page.getByRole("button", { name: /Next change/i });
+    const prevChangeBtn = page.getByRole("button", { name: /Previous change/i });
     await expect(nextChangeBtn).toBeVisible();
+    await expect(prevChangeBtn).toBeVisible();
 
-    // Check if next change button is enabled (file has changes)
+    // Initially, Previous should be disabled (at start, index = -1)
+    await expect(prevChangeBtn).toBeDisabled();
+
+    // Navigate forward with J twice to move index > 0
+    // First J: index -1 -> 0 (first change, Previous still disabled)
+    // Second J: index 0 -> 1 (second change, Previous now enabled)
     const isNextEnabled = await nextChangeBtn.isEnabled();
+    test.skip(!isNextEnabled, "File has no changes to navigate");
 
-    if (isNextEnabled) {
-      // Press J to navigate to next change
-      await page.keyboard.press("j");
+    // Press J to go to first change
+    await page.keyboard.press("j");
 
-      // The button state should remain consistent after navigation
-      await expect(nextChangeBtn).toBeVisible();
-    }
+    // Check if we can navigate further (file has at least 2 changes)
+    const canNavigateFurther = await nextChangeBtn.isEnabled();
+    test.skip(!canNavigateFurther, "File needs at least 2 changes for this test");
 
-    // Now test switching iterations
+    // Press J again to go to second change
+    await page.keyboard.press("j");
+
+    // After pressing J twice, Previous should now be ENABLED (index > 0)
+    await expect(prevChangeBtn).toBeEnabled();
+
+    // Now switch iterations
     const tabs = selector.locator(".iteration-tab");
     const tabCount = await tabs.count();
+    test.skip(tabCount < 2, "Need at least 2 iterations to test");
 
-    if (tabCount >= 2) {
-      // Click on a different iteration tab
-      const firstTab = tabs.nth(0);
-      await firstTab.click();
-      await expect(firstTab).toHaveClass(/selected/);
+    // Click on first iteration tab (different from current which is likely last)
+    const firstTab = tabs.nth(0);
+    await firstTab.click();
+    await expect(firstTab).toHaveClass(/selected/);
 
-      // Wait for diff to update
-      await page.waitForLoadState("networkidle");
+    // Wait for diff to update
+    await page.waitForLoadState("networkidle");
 
-      // After iteration switch, navigation should still work
-      // Check if the next change button is visible and functional
-      await expect(nextChangeBtn).toBeVisible();
-
-      // If there are changes in this iteration, navigation should work
-      const isEnabledAfterSwitch = await nextChangeBtn.isEnabled();
-      if (isEnabledAfterSwitch) {
-        // Press J - should not throw and should work
-        await page.keyboard.press("j");
-        // Button should still be visible after navigation
-        await expect(nextChangeBtn).toBeVisible();
-      }
-    }
+    // CRITICAL: After iteration switch, Previous should be DISABLED again
+    // because the change index should reset to -1 (start position)
+    // Without the fix, it would stay enabled (stale index)
+    await expect(prevChangeBtn).toBeDisabled();
   });
 });
 
