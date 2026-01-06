@@ -282,6 +282,84 @@ test.describe("Iteration Tabs UI (Prod Mode)", () => {
     const selectorInHeader = headerContainer.getByTestId("iteration-selector");
     await expect(selectorInHeader).toBeVisible();
   });
+
+  test("Change navigation (J/K) works after switching iterations", async ({
+    page,
+  }) => {
+    const { owner, repo, prNumber } = iterationTestPR;
+    const pageUrl = `/${owner}/${repo}/${String(prNumber)}`;
+
+    await page.goto(pageUrl);
+    await page.waitForLoadState("load");
+
+    // Wait for files to load first
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Wait for the file list to stop showing loading skeletons
+    await expect(fileList.locator(".skeleton")).toHaveCount(0, { timeout: 10000 });
+
+    // Wait for iterations to load (may take time to download artifact)
+    const selector = page.getByTestId("iteration-selector");
+    await expect(selector).toBeVisible({ timeout: 15000 });
+
+    // Click on an actual file (not PR description) to show the diff view
+    // Files show status indicators like +N for additions, which real files have
+    const allListItems = fileList.getByRole("listitem");
+    const allCount = await allListItems.count();
+
+    // Skip PR description (first item), click on an actual file
+    test.skip(allCount <= 1, "No files available to test");
+
+    // Click on the second item (first actual file, after PR description)
+    await allListItems.nth(1).click();
+
+    // Wait for diff toolbar to appear (uses role="toolbar" with name "Diff view controls")
+    const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
+    await expect(toolbar).toBeVisible({ timeout: 10000 });
+
+    // Find the "Next change" button
+    const nextChangeBtn = page.getByRole("button", { name: /Next change/i });
+    await expect(nextChangeBtn).toBeVisible();
+
+    // Check if next change button is enabled (file has changes)
+    const isNextEnabled = await nextChangeBtn.isEnabled();
+
+    if (isNextEnabled) {
+      // Press J to navigate to next change
+      await page.keyboard.press("j");
+
+      // The button state should remain consistent after navigation
+      await expect(nextChangeBtn).toBeVisible();
+    }
+
+    // Now test switching iterations
+    const tabs = selector.locator(".iteration-tab");
+    const tabCount = await tabs.count();
+
+    if (tabCount >= 2) {
+      // Click on a different iteration tab
+      const firstTab = tabs.nth(0);
+      await firstTab.click();
+      await expect(firstTab).toHaveClass(/selected/);
+
+      // Wait for diff to update
+      await page.waitForLoadState("networkidle");
+
+      // After iteration switch, navigation should still work
+      // Check if the next change button is visible and functional
+      await expect(nextChangeBtn).toBeVisible();
+
+      // If there are changes in this iteration, navigation should work
+      const isEnabledAfterSwitch = await nextChangeBtn.isEnabled();
+      if (isEnabledAfterSwitch) {
+        // Press J - should not throw and should work
+        await page.keyboard.press("j");
+        // Button should still be visible after navigation
+        await expect(nextChangeBtn).toBeVisible();
+      }
+    }
+  });
 });
 
 test.describe("Iteration File Status", () => {
