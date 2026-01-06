@@ -50,8 +50,8 @@
 }
 
 .diff-line-header {
-  background-color: var(--control-bg);
-  color: var(--control-disabled-fg);
+  background-color: var(--diff-hunk-line);
+  color: var(--diff-hunk-fg);
   font-weight: 600;
 }
 
@@ -85,8 +85,8 @@
 }
 
 .diff-gutter-header {
-  color: var(--control-disabled-fg);
-  background-color: var(--control-bg);
+  color: var(--diff-hunk-fg);
+  background-color: var(--diff-hunk-gutter);
 }
 
 .diff-gutter-spacer {
