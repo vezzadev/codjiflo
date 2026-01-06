@@ -8,8 +8,8 @@
 
 import Database from "better-sqlite3";
 import { createHash } from "crypto";
+import { computeLineDiff, lineDiffsToSpanMappings } from "@codjiflo/diff-engine";
 import { parsePatch, applyPatch as applyParsedPatch } from "./patch-parser";
-import { buildSpanMappings } from "./span-tracker-builder";
 
 // Inline schema to avoid import resolution issues with Playwright
 // This matches action/src/db/schema.ts SCHEMA_SQL
@@ -207,7 +207,8 @@ export function buildIterationDb(
         .run(artifactId, leftSnapshotIndex, rightSnapshotIndex).lastInsertRowid;
 
       // Build and store span mappings
-      const mappings = buildSpanMappings(leftContent ?? "", rightContent ?? "");
+      const diffs = computeLineDiff(leftContent ?? "", rightContent ?? "");
+      const mappings = lineDiffsToSpanMappings(diffs);
       const insertMapping = db.prepare(
         `INSERT INTO span_mappings (tracker_id, left_line_start, left_line_end, right_line_start, right_line_end, mapping_type)
          VALUES (?, ?, ?, ?, ?, ?)`

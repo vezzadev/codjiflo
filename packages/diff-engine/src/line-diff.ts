@@ -22,6 +22,14 @@ export interface LineDiff {
   rightLines: number;
 }
 
+export interface SpanMapping {
+  left_line_start: number | null;
+  left_line_end: number | null;
+  right_line_start: number | null;
+  right_line_end: number | null;
+  mapping_type: "unchanged" | "modified" | "deleted" | "added";
+}
+
 // ============================================================================
 // Diff Computation
 // ============================================================================
@@ -79,6 +87,77 @@ export function computeLineDiff(left: string, right: string): LineDiff[] {
   }
 
   return result;
+}
+
+// ============================================================================
+// Span Mapping Conversion
+// ============================================================================
+
+/**
+ * Convert a LineDiff array to SpanMapping array with correct line numbers.
+ * Line numbers are 1-based.
+ */
+export function lineDiffsToSpanMappings(diffs: LineDiff[]): SpanMapping[] {
+  const mappings: SpanMapping[] = [];
+  let leftLine = 1;
+  let rightLine = 1;
+
+  for (const diff of diffs) {
+    mappings.push(lineDiffToSpanMapping(diff, leftLine, rightLine));
+
+    // Advance line counters
+    leftLine += diff.leftLines;
+    rightLine += diff.rightLines;
+  }
+
+  return mappings;
+}
+
+/**
+ * Convert a single LineDiff to a SpanMapping.
+ */
+export function lineDiffToSpanMapping(
+  diff: LineDiff,
+  leftStart: number,
+  rightStart: number
+): SpanMapping {
+  switch (diff.type) {
+    case "unchanged":
+      return {
+        left_line_start: leftStart,
+        left_line_end: leftStart + diff.leftLines - 1,
+        right_line_start: rightStart,
+        right_line_end: rightStart + diff.rightLines - 1,
+        mapping_type: "unchanged",
+      };
+
+    case "modified":
+      return {
+        left_line_start: leftStart,
+        left_line_end: leftStart + diff.leftLines - 1,
+        right_line_start: rightStart,
+        right_line_end: rightStart + diff.rightLines - 1,
+        mapping_type: "modified",
+      };
+
+    case "deleted":
+      return {
+        left_line_start: leftStart,
+        left_line_end: leftStart + diff.leftLines - 1,
+        right_line_start: null,
+        right_line_end: null,
+        mapping_type: "deleted",
+      };
+
+    case "added":
+      return {
+        left_line_start: null,
+        left_line_end: null,
+        right_line_start: rightStart,
+        right_line_end: rightStart + diff.rightLines - 1,
+        mapping_type: "added",
+      };
+  }
 }
 
 /**

@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { computeLineDiff } from "./line-diff.js";
+import {
+  computeLineDiff,
+  lineDiffsToSpanMappings,
+  lineDiffToSpanMapping,
+} from "./line-diff.js";
 
 describe("computeLineDiff", () => {
   it("returns empty array for identical strings", () => {
@@ -97,6 +101,182 @@ describe("computeLineDiff", () => {
       { type: "unchanged", leftLines: 1, rightLines: 1 },
       { type: "deleted", leftLines: 1, rightLines: 0 },
       { type: "unchanged", leftLines: 1, rightLines: 1 },
+    ]);
+  });
+});
+
+describe("lineDiffToSpanMapping", () => {
+  it("converts unchanged diff to span mapping", () => {
+    const result = lineDiffToSpanMapping(
+      { type: "unchanged", leftLines: 3, rightLines: 3 },
+      1,
+      1
+    );
+    expect(result).toEqual({
+      left_line_start: 1,
+      left_line_end: 3,
+      right_line_start: 1,
+      right_line_end: 3,
+      mapping_type: "unchanged",
+    });
+  });
+
+  it("converts modified diff to span mapping", () => {
+    const result = lineDiffToSpanMapping(
+      { type: "modified", leftLines: 2, rightLines: 3 },
+      5,
+      5
+    );
+    expect(result).toEqual({
+      left_line_start: 5,
+      left_line_end: 6,
+      right_line_start: 5,
+      right_line_end: 7,
+      mapping_type: "modified",
+    });
+  });
+
+  it("converts deleted diff to span mapping with null right", () => {
+    const result = lineDiffToSpanMapping(
+      { type: "deleted", leftLines: 2, rightLines: 0 },
+      10,
+      10
+    );
+    expect(result).toEqual({
+      left_line_start: 10,
+      left_line_end: 11,
+      right_line_start: null,
+      right_line_end: null,
+      mapping_type: "deleted",
+    });
+  });
+
+  it("converts added diff to span mapping with null left", () => {
+    const result = lineDiffToSpanMapping(
+      { type: "added", leftLines: 0, rightLines: 4 },
+      1,
+      1
+    );
+    expect(result).toEqual({
+      left_line_start: null,
+      left_line_end: null,
+      right_line_start: 1,
+      right_line_end: 4,
+      mapping_type: "added",
+    });
+  });
+});
+
+describe("lineDiffsToSpanMappings", () => {
+  it("returns empty array for empty diffs", () => {
+    const result = lineDiffsToSpanMappings([]);
+    expect(result).toEqual([]);
+  });
+
+  it("converts single unchanged diff", () => {
+    const result = lineDiffsToSpanMappings([
+      { type: "unchanged", leftLines: 2, rightLines: 2 },
+    ]);
+    expect(result).toEqual([
+      {
+        left_line_start: 1,
+        left_line_end: 2,
+        right_line_start: 1,
+        right_line_end: 2,
+        mapping_type: "unchanged",
+      },
+    ]);
+  });
+
+  it("tracks line numbers correctly across multiple diffs", () => {
+    const result = lineDiffsToSpanMappings([
+      { type: "unchanged", leftLines: 1, rightLines: 1 },
+      { type: "added", leftLines: 0, rightLines: 2 },
+      { type: "unchanged", leftLines: 1, rightLines: 1 },
+    ]);
+
+    expect(result).toEqual([
+      {
+        left_line_start: 1,
+        left_line_end: 1,
+        right_line_start: 1,
+        right_line_end: 1,
+        mapping_type: "unchanged",
+      },
+      {
+        left_line_start: null,
+        left_line_end: null,
+        right_line_start: 2,
+        right_line_end: 3,
+        mapping_type: "added",
+      },
+      {
+        left_line_start: 2,
+        left_line_end: 2,
+        right_line_start: 4,
+        right_line_end: 4,
+        mapping_type: "unchanged",
+      },
+    ]);
+  });
+
+  it("works with computeLineDiff for identical content", () => {
+    const diffs = computeLineDiff("line1\nline2\n", "line1\nline2\n");
+    const result = lineDiffsToSpanMappings(diffs);
+
+    expect(result).toEqual([
+      {
+        left_line_start: 1,
+        left_line_end: 2,
+        right_line_start: 1,
+        right_line_end: 2,
+        mapping_type: "unchanged",
+      },
+    ]);
+  });
+
+  it("works with computeLineDiff for added content", () => {
+    const diffs = computeLineDiff("", "new line 1\nnew line 2\n");
+    const result = lineDiffsToSpanMappings(diffs);
+
+    expect(result).toEqual([
+      {
+        left_line_start: null,
+        left_line_end: null,
+        right_line_start: 1,
+        right_line_end: 2,
+        mapping_type: "added",
+      },
+    ]);
+  });
+
+  it("works with computeLineDiff for deleted content", () => {
+    const diffs = computeLineDiff("old line 1\nold line 2\n", "");
+    const result = lineDiffsToSpanMappings(diffs);
+
+    expect(result).toEqual([
+      {
+        left_line_start: 1,
+        left_line_end: 2,
+        right_line_start: null,
+        right_line_end: null,
+        mapping_type: "deleted",
+      },
+    ]);
+  });
+
+  it("works with computeLineDiff for modified content", () => {
+    const diffs = computeLineDiff("old line\n", "new line\n");
+    const result = lineDiffsToSpanMappings(diffs);
+
+    expect(result).toEqual([
+      {
+        left_line_start: 1,
+        left_line_end: 1,
+        right_line_start: 1,
+        right_line_end: 1,
+        mapping_type: "modified",
+      },
     ]);
   });
 });
