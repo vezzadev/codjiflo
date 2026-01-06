@@ -59,6 +59,12 @@ const LINE_MARKERS = {
   header: '',
 };
 
+// Whitespace rendering constants
+const WHITESPACE_CHARS = {
+  space: '·',
+  tab: '→   ', // Tab arrow followed by spaces to maintain alignment
+} as const;
+
 // Word-level diff segment styles (S-3.4: AC-3.4.1, AC-3.4.2)
 const WORD_DIFF_CLASSES: Record<WordDiffSegment['type'], string> = {
   added: 'word-diff-added',
@@ -88,12 +94,12 @@ function renderVisibleWhitespace(content: string): React.ReactNode {
 
       if (char === ' ') {
         parts.push(
-          <span key={i} className="whitespace-visible">·</span>
+          <span key={i} className="whitespace-visible">{WHITESPACE_CHARS.space}</span>
         );
       } else {
         // char === '\t'
         parts.push(
-          <span key={i} className="whitespace-visible">→{'   '}</span>
+          <span key={i} className="whitespace-visible">{WHITESPACE_CHARS.tab}</span>
         );
       }
 
@@ -126,9 +132,16 @@ function SyntaxHighlighterWithWhitespace({
   showWhitespace: boolean;
 }) {
   const containerRef = React.useRef<HTMLSpanElement>(null);
+  const processedRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (!showWhitespace || !containerRef.current) return;
+    if (!showWhitespace || !containerRef.current) {
+      processedRef.current = false;
+      return;
+    }
+
+    // Avoid re-processing if already done for this render
+    if (processedRef.current) return;
 
     // Post-process the rendered content to add whitespace markers
     const processTextNode = (node: Node) => {
@@ -150,7 +163,7 @@ function SyntaxHighlighterWithWhitespace({
               // Add whitespace marker
               const span = document.createElement('span');
               span.className = 'whitespace-visible';
-              span.textContent = char === ' ' ? '·' : '→   ';
+              span.textContent = char === ' ' ? WHITESPACE_CHARS.space : WHITESPACE_CHARS.tab;
               fragment.appendChild(span);
               
               lastIndex = i + 1;
@@ -173,6 +186,7 @@ function SyntaxHighlighterWithWhitespace({
     };
 
     processTextNode(containerRef.current);
+    processedRef.current = true;
   }, [showWhitespace, content]); // Re-run when content or showWhitespace changes
 
   return (
