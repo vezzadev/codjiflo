@@ -236,7 +236,7 @@ Iterations: 2`,
     }
     const contentStartY = headerBox.y + headerBox.height;
 
-    // Context line 1 was already defined earlier, just get its bounding box
+    // Context line 1 locator was already created and awaited above; now get its bounding box
     const contextLine1Box = await contextLine1Row.boundingBox();
     if (!contextLine1Box) {
       throw new Error("Failed to get context line 1 bounding box");

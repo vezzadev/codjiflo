@@ -96,7 +96,6 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     // Look for the degraded mode banner (rendered as a status element with iteration tracking text)
     const banner = page.getByRole("status").filter({ hasText: /iteration tracking/i });
     await expect(banner).toBeVisible();
-    await expect(banner).toContainText(/iteration tracking/i);
   });
 
   test("Iteration selector is hidden when no artifact is available", async ({ page }) => {
