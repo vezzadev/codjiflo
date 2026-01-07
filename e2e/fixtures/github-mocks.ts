@@ -161,7 +161,7 @@ export async function setupPRMock(
 
 /**
  * Set up PR files mock
- * In mock mode: returns mock file data
+ * In mock mode: returns mock file data with pagination support
  * In real mode: no-op (uses real API)
  */
 export async function setupFilesMock(
@@ -173,8 +173,9 @@ export async function setupFilesMock(
 ): Promise<void> {
   if (!isMockMode()) return;
 
+  // Use regex to match with any query params (pagination)
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+    new RegExp(`repos/${owner}/${repo}/pulls/${String(prNumber)}/files`),
     async (route) => {
       if (options?.failWith) {
         await route.fulfill({
@@ -183,10 +184,19 @@ export async function setupFilesMock(
           body: JSON.stringify({ message: "Not Found" }),
         });
       } else {
+        const url = new URL(route.request().url());
+        const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+        const perPage = parseInt(url.searchParams.get("per_page") ?? "30", 10);
+
+        const allFiles = options?.files ?? [];
+        const start = (page - 1) * perPage;
+        const end = start + perPage;
+        const pageFiles = allFiles.slice(start, end);
+
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(options?.files ?? []),
+          body: JSON.stringify(pageFiles),
         });
       }
     }

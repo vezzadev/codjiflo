@@ -316,8 +316,9 @@ test.describe("Token Refresh Flow", () => {
     );
 
     // Set up files and comments mocks (these succeed normally)
+    // Use regex to match URLs with pagination query params
     await page.route(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+      new RegExp(`repos/${owner}/${repo}/pulls/${String(prNumber)}/files`),
       async (route) => {
         await route.fulfill({
           status: 200,

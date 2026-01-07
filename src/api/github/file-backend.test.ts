@@ -40,7 +40,7 @@ describe('GitHubFileBackend', () => {
 
       const result = await backend.getFiles('owner', 'repo', 42);
 
-      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/files');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/files?per_page=100&page=1');
       expect(result).toEqual([
         {
           filename: 'src/index.ts',
@@ -51,6 +51,36 @@ describe('GitHubFileBackend', () => {
           patch: '@@ -1,3 +1,4 @@\n+import foo',
         },
       ]);
+    });
+
+    it('paginates through all pages of files', async () => {
+      // First page returns 100 files
+      const page1Files = Array.from({ length: 100 }, (_, i) => ({
+        filename: `file${i}.ts`,
+        status: 'modified',
+        additions: 1,
+        deletions: 0,
+        changes: 1,
+      }));
+      // Second page returns 20 files (less than 100, indicating last page)
+      const page2Files = Array.from({ length: 20 }, (_, i) => ({
+        filename: `file${100 + i}.ts`,
+        status: 'modified',
+        additions: 1,
+        deletions: 0,
+        changes: 1,
+      }));
+
+      mockFetch
+        .mockResolvedValueOnce(page1Files)
+        .mockResolvedValueOnce(page2Files);
+
+      const result = await backend.getFiles('owner', 'repo', 42);
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenNthCalledWith(1, '/repos/owner/repo/pulls/42/files?per_page=100&page=1');
+      expect(mockFetch).toHaveBeenNthCalledWith(2, '/repos/owner/repo/pulls/42/files?per_page=100&page=2');
+      expect(result).toHaveLength(120);
     });
 
     it('maps added status correctly', async () => {

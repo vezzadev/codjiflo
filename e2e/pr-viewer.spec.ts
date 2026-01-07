@@ -5,6 +5,8 @@ import {
   setupFullPRMocks,
   setupPRMock,
   setupFilesMock,
+  setupCommentsMock,
+  setupIterationMocks,
   type MockPR,
   type MockFile,
 } from "./fixtures/github-mocks";
@@ -393,5 +395,48 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Should show error message (use first() since error may appear in multiple places)
     await expect(page.getByText(/Pull request not found/i).first()).toBeVisible();
+  });
+
+  test("PRs with many files load all files via pagination", async ({ page }) => {
+    // This test only runs in mock mode - we need to control the exact file count
+    if (!isMockMode()) {
+      test.skip();
+      return;
+    }
+
+    // Generate 120 mock files (exceeds GitHub's 100 per page limit)
+    const manyFiles: MockFile[] = Array.from({ length: 120 }, (_, i) => ({
+      filename: `src/file${String(i).padStart(3, "0")}.ts`,
+      status: "modified" as const,
+      additions: 1,
+      deletions: 0,
+      changes: 1,
+      patch: `@@ -1 +1 @@\n-old${String(i)}\n+new${String(i)}`,
+    }));
+
+    // Set up mocks with many files
+    await setupPRMock(page, "test", "repo", 456, { pr: { ...mockPR, number: 456 } });
+    await setupFilesMock(page, "test", "repo", 456, { files: manyFiles });
+    await setupCommentsMock(page, "test", "repo", 456, { comments: [] });
+    await setupIterationMocks(page, "test", "repo", 456);
+
+    // Navigate to the PR
+    await page.goto("/test/repo/456");
+
+    // Wait for files to load
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    // Verify first file is visible
+    await expect(fileNav.getByText("src/file000.ts")).toBeVisible();
+
+    // Verify last file is visible (file 119, proving all 120 files loaded)
+    await expect(fileNav.getByText("src/file119.ts")).toBeVisible();
+
+    // Verify total file count by counting list items (excluding PR Description)
+    const fileListItems = fileNav.getByRole("listitem");
+    const count = await fileListItems.count();
+    // 120 files + 1 PR Description = 121 items
+    expect(count).toBe(121);
   });
 });
