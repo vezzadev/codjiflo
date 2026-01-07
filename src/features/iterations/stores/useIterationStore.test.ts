@@ -48,7 +48,7 @@ function createMockIterations(count: number): Iteration[] {
   return Array.from({ length: count }, (_, i) => ({
     id: i + 1,
     revision: i + 1,
-    createdAt: new Date(`2024-01-0${i + 1}`),
+    createdAt: new Date(2024, 0, i + 1),
     headSha: `head-sha-${i + 1}`,
     baseSha: 'base-sha',
     beforeSha: i === 0 ? null : `head-sha-${i}`,
@@ -351,6 +351,7 @@ describe('useIterationStore', () => {
       expect(state.isLoading).toBe(false);
       expect(state.isDegraded).toBe(false);
       expect(mockClose).toHaveBeenCalled();
+      expect(mockClearCache).toHaveBeenCalled();
     });
   });
 });
