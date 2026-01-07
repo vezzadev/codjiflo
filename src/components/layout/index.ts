@@ -4,3 +4,4 @@ export { LeftPane } from './LeftPane';
 export { MainContent } from './MainContent';
 export { BottomPane } from './BottomPane';
 export { ResizeHandle } from './ResizeHandle';
+export { CollapseBar } from './CollapseBar';

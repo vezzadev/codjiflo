@@ -305,3 +305,31 @@
   top: 50%;
   transform: translateY(-50%);
 }
+
+/* ============================================
+   LEFT PANE COLLAPSE BAR
+   ============================================ */
+.collapse-bar.collapse-bar-left {
+  width: 8px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--grid-splitter);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.collapse-bar.collapse-bar-left:hover {
+  background-color: var(--btn-hover);
+}
+
+.collapse-bar.collapse-bar-left:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.collapse-bar.collapse-bar-left svg {
+  color: var(--main-fg);
+}

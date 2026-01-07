@@ -52,3 +52,32 @@
   color: var(--main-fg);
   font-size: 13px;
 }
+
+/* ============================================
+   BOTTOM PANE COLLAPSE BAR
+   ============================================ */
+.collapse-bar.collapse-bar-bottom {
+  width: 100%;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--grid-splitter);
+  border: none;
+  border-top: 1px solid var(--combobox-border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.collapse-bar.collapse-bar-bottom:hover {
+  background-color: var(--btn-hover);
+}
+
+.collapse-bar.collapse-bar-bottom:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.collapse-bar.collapse-bar-bottom svg {
+  color: var(--main-fg);
+}

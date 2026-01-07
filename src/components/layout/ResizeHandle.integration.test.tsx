@@ -89,16 +89,19 @@ describe('ResizeHandle integration', () => {
 
       const handle = getHandle('.resize-handle-v');
 
-      // Try to resize beyond max (600px)
+      // Try to resize beyond max (2000px)
       fireEvent.mouseDown(handle, { clientX: 100 });
-      fireEvent.mouseMove(document, { clientX: 500 }); // +400 would be 730px
+      fireEvent.mouseMove(document, { clientX: 2100 }); // +2000 would be 2330px
       fireEvent.mouseUp(document);
 
-      expect(useLayoutStore.getState().leftPaneWidth).toBe(600); // Clamped to max
+      expect(useLayoutStore.getState().leftPaneWidth).toBe(2000); // Clamped to max
 
-      // Try to resize below min (200px)
-      fireEvent.mouseDown(handle, { clientX: 500 });
-      fireEvent.mouseMove(document, { clientX: 0 }); // -500 would be 100px
+      // Reset to default
+      useLayoutStore.getState().setLeftPaneWidth(300);
+
+      // Resize down but stay above collapse threshold (50px)
+      fireEvent.mouseDown(handle, { clientX: 300 });
+      fireEvent.mouseMove(document, { clientX: 150 }); // -150 would be 150px, clamps to 200
       fireEvent.mouseUp(document);
 
       expect(useLayoutStore.getState().leftPaneWidth).toBe(200); // Clamped to min
@@ -160,16 +163,19 @@ describe('ResizeHandle integration', () => {
 
       const handle = getHandle('.resize-handle-h');
 
-      // Try to resize beyond max (500px) - drag up by 400
-      fireEvent.mouseDown(handle, { clientY: 300 });
-      fireEvent.mouseMove(document, { clientY: -100 }); // delta = -400, would be 600px
+      // Try to resize beyond max (2000px) - drag up by 1900
+      fireEvent.mouseDown(handle, { clientY: 2000 });
+      fireEvent.mouseMove(document, { clientY: 100 }); // delta = -1900, would be 2100px
       fireEvent.mouseUp(document);
 
-      expect(useLayoutStore.getState().bottomPaneHeight).toBe(500); // Clamped to max
+      expect(useLayoutStore.getState().bottomPaneHeight).toBe(2000); // Clamped to max
 
-      // Try to resize below min (100px) - drag down by 500
+      // Reset to default
+      useLayoutStore.getState().setBottomPaneHeight(200);
+
+      // Resize down but stay above collapse threshold (50px)
       fireEvent.mouseDown(handle, { clientY: 0 });
-      fireEvent.mouseMove(document, { clientY: 500 }); // delta = 500, would be 0px
+      fireEvent.mouseMove(document, { clientY: 120 }); // delta = 120, would be 80px, clamps to 100
       fireEvent.mouseUp(document);
 
       expect(useLayoutStore.getState().bottomPaneHeight).toBe(100); // Clamped to min

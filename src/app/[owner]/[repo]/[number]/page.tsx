@@ -19,6 +19,7 @@ import {
   MainContent,
   BottomPane,
   ResizeHandle,
+  CollapseBar,
 } from '@/components/layout';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 
@@ -39,7 +40,16 @@ function PullRequestContent({ params }: PRPageProps) {
   const { loadFiles, reset: resetDiff } = useDiffStore();
   const { threads, loadThreads, reset: resetComments } = useCommentsStore();
   const { loadIterations, reset: resetIterations } = useIterationStore();
-  const { leftPaneWidth, resizeLeftPane, bottomPaneHeight, resizeBottomPane } = useLayoutStore();
+  const {
+    leftPaneWidth,
+    bottomPaneHeight,
+    isLeftPaneCollapsed,
+    isBottomPaneCollapsed,
+    resizeLeftPane,
+    resizeBottomPane,
+    expandLeftPane,
+    expandBottomPane,
+  } = useLayoutStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts();
@@ -184,27 +194,42 @@ function PullRequestContent({ params }: PRPageProps) {
 
       <DegradedModeBanner />
 
-      <div className="main-layout" style={{ gridTemplateColumns: `${String(leftPaneWidth)}px 1fr` }}>
-        <LeftPane
-          header={
-            <div className="file-explorer-header">
-              <span>Files</span>
-            </div>
-          }
-        >
-          <FileList />
-          <ResizeHandle direction="horizontal" onResize={resizeLeftPane} />
-        </LeftPane>
+      <div
+        className="main-layout"
+        style={{
+          gridTemplateColumns: isLeftPaneCollapsed
+            ? '8px 1fr'
+            : `${String(leftPaneWidth)}px 1fr`,
+        }}
+      >
+        {isLeftPaneCollapsed ? (
+          <CollapseBar direction="horizontal" onExpand={expandLeftPane} />
+        ) : (
+          <LeftPane
+            header={
+              <div className="file-explorer-header">
+                <span>Files</span>
+              </div>
+            }
+          >
+            <FileList />
+            <ResizeHandle direction="horizontal" onResize={resizeLeftPane} />
+          </LeftPane>
+        )}
 
         <MainContent>
           <DiffView />
         </MainContent>
       </div>
 
-      <>
-        <ResizeHandle direction="vertical" onResize={resizeBottomPane} />
-        <BottomPane tabs={bottomPaneTabs} defaultTab="comments" height={bottomPaneHeight} />
-      </>
+      {isBottomPaneCollapsed ? (
+        <CollapseBar direction="vertical" onExpand={expandBottomPane} />
+      ) : (
+        <>
+          <ResizeHandle direction="vertical" onResize={resizeBottomPane} />
+          <BottomPane tabs={bottomPaneTabs} defaultTab="comments" height={bottomPaneHeight} />
+        </>
+      )}
 
       <ShortcutsModal
         isOpen={showShortcuts}
