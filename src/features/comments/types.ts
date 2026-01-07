@@ -9,6 +9,8 @@ export interface CommentAuthor {
 export interface Comment {
   id: string;
   body: string;
+  /** Pre-rendered HTML from SQLite artifact (preferred over runtime markdown parsing) */
+  renderedHtml?: string;
   author: CommentAuthor;
   createdAt: Date;
   updatedAt: Date;

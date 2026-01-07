@@ -1,37 +1,22 @@
-import { useMemo } from 'react';
 import Markdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import rehypeRemoveComments from 'rehype-remove-comments';
-import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
-import remarkGithub from 'remark-github';
-import { remarkGitHubAlerts } from 'remark-github-markdown-alerts';
-import type { PluggableList } from 'unified';
 
 interface PRDescriptionProps {
+  /** Raw markdown source (used for fallback or when renderedHtml not available) */
   description: string;
-  /** Repository in 'owner/repo' format for GitHub reference linking */
-  repository?: string;
+  /** Pre-rendered HTML from SQLite artifact (preferred) */
+  renderedHtml?: string;
 }
 
 /**
- * Renders PR description as markdown
+ * Renders PR description as markdown.
+ * Uses pre-rendered HTML when available (from SQLite artifact),
+ * otherwise falls back to runtime markdown rendering.
+ *
  * S-1.2: AC-1.2.2 - Markdown rendered
  */
-export function PRDescription({ description, repository }: PRDescriptionProps) {
-  const remarkPlugins = useMemo<PluggableList>(() => {
-    const plugins: PluggableList = [
-      remarkGfm,
-      remarkGemoji,
-      remarkGitHubAlerts,
-    ];
-    if (repository) {
-      plugins.push([remarkGithub, { repository }]);
-    }
-    return plugins;
-  }, [repository]);
-
-  if (!description.trim()) {
+export function PRDescription({ description, renderedHtml }: PRDescriptionProps) {
+  if (!description.trim() && !renderedHtml) {
     return (
       <div className="pr-description pr-description-empty">
         No description provided.
@@ -39,14 +24,26 @@ export function PRDescription({ description, repository }: PRDescriptionProps) {
     );
   }
 
+  // Use pre-rendered HTML when available (sanitized at build time in action)
+  if (renderedHtml) {
+    return (
+      <div className="pr-description">
+        <div
+          className="pr-description-content"
+          dangerouslySetInnerHTML={{ __html: renderedHtml }}
+        />
+      </div>
+    );
+  }
+
+  // Fallback: runtime markdown rendering for degraded mode
+  // Uses basic GFM support (tables, task lists, strikethrough, autolinks)
   return (
     <div className="pr-description">
       <div className="pr-description-content">
         <Markdown
-          remarkPlugins={remarkPlugins}
-          rehypePlugins={[rehypeRaw, rehypeRemoveComments]}
+          remarkPlugins={[remarkGfm]}
           components={{
-            // Open links in new tab
             a: ({ children, ...props }) => (
               <a
                 {...props}

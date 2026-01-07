@@ -85,53 +85,87 @@ describe("CommentItem", () => {
   it("calls onEdit when edit button is clicked", async () => {
     const onEdit = vi.fn();
     render(<CommentItem {...defaultProps} isCurrentUser={true} onEdit={onEdit} />);
-    
+
     await userEvent.click(screen.getByRole("button", { name: "Edit" }));
-    
+
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
 
   it("calls onDelete when delete button is clicked", async () => {
     const onDelete = vi.fn();
     render(<CommentItem {...defaultProps} isCurrentUser={true} onDelete={onDelete} />);
-    
+
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
-    
+
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("renders markdown content", () => {
-    const markdownComment = { ...mockComment, body: "**bold text**" };
-    render(<CommentItem {...defaultProps} comment={markdownComment} />);
-    expect(screen.getByText("bold text")).toBeInTheDocument();
+  describe("with pre-rendered HTML", () => {
+    it("renders pre-rendered HTML content", () => {
+      const comment = { ...mockComment, renderedHtml: "<p><strong>bold text</strong></p>" };
+      render(<CommentItem {...defaultProps} comment={comment} />);
+      expect(screen.getByText("bold text")).toBeInTheDocument();
+    });
+
+    it("renders links from pre-rendered HTML", () => {
+      const comment = {
+        ...mockComment,
+        renderedHtml: '<p>Check <a href="https://example.com">this</a></p>',
+      };
+      render(<CommentItem {...defaultProps} comment={comment} />);
+
+      const link = screen.getByRole("link", { name: "this" });
+      expect(link).toHaveAttribute("href", "https://example.com");
+    });
+
+    it("renders task lists from pre-rendered HTML", () => {
+      const comment = {
+        ...mockComment,
+        renderedHtml: '<ul><li><input type="checkbox" checked disabled /> Done</li><li><input type="checkbox" disabled /> Todo</li></ul>',
+      };
+      render(<CommentItem {...defaultProps} comment={comment} />);
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes).toHaveLength(2);
+      expect(checkboxes[0]).toBeChecked();
+      expect(checkboxes[1]).not.toBeChecked();
+    });
   });
 
-  it("renders external links with indicator", () => {
-    const linkComment = { ...mockComment, body: "Check [this](https://example.com)" };
-    render(<CommentItem {...defaultProps} comment={linkComment} />);
-    
-    const link = screen.getByRole("link", { name: /this/i });
-    expect(link).toHaveAttribute("target", "_blank");
-    expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    expect(screen.getByText("↗")).toBeInTheDocument();
-  });
+  describe("fallback to runtime markdown rendering", () => {
+    it("renders markdown content", () => {
+      const comment = { ...mockComment, body: "**bold text**" };
+      render(<CommentItem {...defaultProps} comment={comment} />);
+      expect(screen.getByText("bold text")).toBeInTheDocument();
+    });
 
-  it("renders internal links without external indicator", () => {
-    const linkComment = { ...mockComment, body: "Check [this](/local-path)" };
-    render(<CommentItem {...defaultProps} comment={linkComment} />);
+    it("renders external links with indicator", () => {
+      const comment = { ...mockComment, body: "Check [this](https://example.com)" };
+      render(<CommentItem {...defaultProps} comment={comment} />);
 
-    const link = screen.getByRole("link", { name: "this" });
-    expect(link).not.toHaveAttribute("target", "_blank");
-    expect(screen.queryByText("↗")).not.toBeInTheDocument();
-  });
+      const link = screen.getByRole("link", { name: /this/i });
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      expect(screen.getByText("↗")).toBeInTheDocument();
+    });
 
-  it("renders GitHub Flavored Markdown task lists", () => {
-    const taskListComment = { ...mockComment, body: "- [x] Done\n- [ ] Todo" };
-    render(<CommentItem {...defaultProps} comment={taskListComment} />);
+    it("renders internal links without external indicator", () => {
+      const comment = { ...mockComment, body: "Check [this](/local-path)" };
+      render(<CommentItem {...defaultProps} comment={comment} />);
 
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(2);
-    expect(checkboxes[0]).toBeChecked();
-    expect(checkboxes[1]).not.toBeChecked();
+      const link = screen.getByRole("link", { name: "this" });
+      expect(link).not.toHaveAttribute("target", "_blank");
+      expect(screen.queryByText("↗")).not.toBeInTheDocument();
+    });
+
+    it("renders GFM task lists", () => {
+      const comment = { ...mockComment, body: "- [x] Done\n- [ ] Todo" };
+      render(<CommentItem {...defaultProps} comment={comment} />);
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes).toHaveLength(2);
+      expect(checkboxes[0]).toBeChecked();
+      expect(checkboxes[1]).not.toBeChecked();
+    });
   });
 });

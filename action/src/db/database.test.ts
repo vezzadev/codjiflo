@@ -338,7 +338,7 @@ describe('IterationDatabase', () => {
     });
 
     it('should return current schema version constant', () => {
-      expect(SCHEMA_VERSION).toBe(2);
+      expect(SCHEMA_VERSION).toBe(3);
     });
   });
 });

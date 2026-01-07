@@ -44,6 +44,32 @@ interface SnapshotWithContentRow {
 }
 
 // ============================================================================
+// Exported Types for PR Content
+// ============================================================================
+
+export interface PRDescription {
+  iterationId: number;
+  sourceMd: string;
+  renderedHtml: string;
+}
+
+export interface PRComment {
+  id: number;
+  iterationId: number;
+  githubId: number;
+  authorLogin: string;
+  authorAvatarUrl: string | null;
+  filePath: string | null;
+  lineNumber: number | null;
+  side: 'LEFT' | 'RIGHT' | null;
+  sourceMd: string;
+  renderedHtml: string;
+  createdAt: Date;
+  updatedAt: Date;
+  inReplyToId: number | null;
+}
+
+// ============================================================================
 // Iteration Client Class
 // ============================================================================
 
@@ -317,5 +343,96 @@ export class IterationClient {
    */
   close(): void {
     this.db.close();
+  }
+
+  // ============================================================================
+  // PR Content Queries
+  // ============================================================================
+
+  /**
+   * Get PR description for a specific iteration.
+   */
+  getPRDescription(iterationId: number): PRDescription | undefined {
+    const row = this.db.queryOne<{
+      iteration_id: number;
+      source_md: string;
+      rendered_html: string;
+    }>(
+      `SELECT
+         d.iteration_id,
+         source.content as source_md,
+         rendered.content as rendered_html
+       FROM pr_descriptions d
+       JOIN content_blobs source ON d.source_hash = source.content_hash
+       JOIN content_blobs rendered ON d.rendered_hash = rendered.content_hash
+       WHERE d.iteration_id = ?`,
+      [iterationId]
+    );
+
+    if (!row) return undefined;
+
+    return {
+      iterationId: row.iteration_id,
+      sourceMd: row.source_md,
+      renderedHtml: row.rendered_html,
+    };
+  }
+
+  /**
+   * Get all PR comments for a specific iteration.
+   */
+  getPRComments(iterationId: number): PRComment[] {
+    const rows = this.db.query<{
+      id: number;
+      iteration_id: number;
+      github_id: number;
+      author_login: string;
+      author_avatar_url: string | null;
+      file_path: string | null;
+      line_number: number | null;
+      side: 'LEFT' | 'RIGHT' | null;
+      source_md: string;
+      rendered_html: string;
+      created_at: string;
+      updated_at: string;
+      in_reply_to_id: number | null;
+    }>(
+      `SELECT
+         c.id,
+         c.iteration_id,
+         c.github_id,
+         c.author_login,
+         c.author_avatar_url,
+         c.file_path,
+         c.line_number,
+         c.side,
+         source.content as source_md,
+         rendered.content as rendered_html,
+         c.created_at,
+         c.updated_at,
+         c.in_reply_to_id
+       FROM pr_comments c
+       JOIN content_blobs source ON c.source_hash = source.content_hash
+       JOIN content_blobs rendered ON c.rendered_hash = rendered.content_hash
+       WHERE c.iteration_id = ?
+       ORDER BY c.created_at ASC`,
+      [iterationId]
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      iterationId: row.iteration_id,
+      githubId: row.github_id,
+      authorLogin: row.author_login,
+      authorAvatarUrl: row.author_avatar_url,
+      filePath: row.file_path,
+      lineNumber: row.line_number,
+      side: row.side,
+      sourceMd: row.source_md,
+      renderedHtml: row.rendered_html,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+      inReplyToId: row.in_reply_to_id,
+    }));
   }
 }

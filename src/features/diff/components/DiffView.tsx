@@ -434,7 +434,7 @@ export function DiffView() {
           <>
             <PRMetadata pr={currentPR} />
             <div className="diff-description-separator">
-              <PRDescription description={currentPR.description} repository={`${owner}/${repo}`} />
+              <PRDescription description={currentPR.description} />
             </div>
           </>
         ) : (
