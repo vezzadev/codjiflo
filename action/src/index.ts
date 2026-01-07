@@ -20,6 +20,7 @@ import AdmZip from 'adm-zip';
 
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
+import { capturePRContent } from './capture/pr-content-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
 import { updatePRComment, getArtifactNameFromComment, updatePRDescription } from './comment/comment-manager';
 import { downloadArtifactWithFallback } from './artifact/artifact-download';
@@ -113,6 +114,11 @@ async function run(): Promise<void> {
       core.info('Capturing iteration...');
       const iterationId = await captureIteration(db, ctx);
       core.info(`Captured iteration ${iterationId}`);
+
+      // Capture PR description and comments (pre-rendered)
+      core.info('Capturing PR content...');
+      await capturePRContent(db, { octokit, owner, repo, prNumber }, iterationId);
+      core.info('PR content captured');
 
       // Get iteration info for SpanTracker computation
       const iteration = db.getLatestIteration();

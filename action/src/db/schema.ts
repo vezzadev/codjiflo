@@ -5,7 +5,7 @@
  * content, and precomputed SpanTrackers.
  */
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA_SQL = `
 -- Schema metadata table
@@ -85,4 +85,41 @@ CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots
 CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);
 CREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);
+
+-- PR descriptions table
+-- One per iteration, stores pre-rendered markdown
+-- References content_blobs for deduplication (same description across iterations)
+CREATE TABLE IF NOT EXISTS pr_descriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  iteration_id INTEGER NOT NULL REFERENCES iterations(id) ON DELETE CASCADE,
+  source_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  rendered_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  UNIQUE(iteration_id)
+);
+
+-- PR comments table
+-- Review comments captured at each iteration
+-- References content_blobs for both source and rendered HTML
+CREATE TABLE IF NOT EXISTS pr_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  iteration_id INTEGER NOT NULL REFERENCES iterations(id) ON DELETE CASCADE,
+  github_id INTEGER NOT NULL,
+  author_login TEXT NOT NULL,
+  author_avatar_url TEXT,
+  file_path TEXT,
+  line_number INTEGER,
+  side TEXT CHECK(side IN ('LEFT', 'RIGHT')),
+  source_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  rendered_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  in_reply_to_id INTEGER,
+  UNIQUE(iteration_id, github_id)
+);
+
+-- Indexes for PR content queries
+CREATE INDEX IF NOT EXISTS idx_pr_descriptions_iteration ON pr_descriptions(iteration_id);
+CREATE INDEX IF NOT EXISTS idx_pr_comments_iteration ON pr_comments(iteration_id);
+CREATE INDEX IF NOT EXISTS idx_pr_comments_github_id ON pr_comments(github_id);
+CREATE INDEX IF NOT EXISTS idx_pr_comments_file ON pr_comments(file_path);
 `;

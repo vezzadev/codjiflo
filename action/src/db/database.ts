@@ -58,6 +58,43 @@ export interface SpanMappingRow {
   mapping_type: 'unchanged' | 'modified' | 'deleted' | 'added';
 }
 
+export interface PRDescriptionRow {
+  id: number;
+  iteration_id: number;
+  source_hash: string;
+  rendered_hash: string;
+}
+
+export interface PRCommentRow {
+  id: number;
+  iteration_id: number;
+  github_id: number;
+  author_login: string;
+  author_avatar_url: string | null;
+  file_path: string | null;
+  line_number: number | null;
+  side: 'LEFT' | 'RIGHT' | null;
+  source_hash: string;
+  rendered_hash: string;
+  created_at: string;
+  updated_at: string;
+  in_reply_to_id: number | null;
+}
+
+export interface PRCommentInput {
+  github_id: number;
+  author_login: string;
+  author_avatar_url?: string;
+  file_path?: string;
+  line_number?: number;
+  side?: 'LEFT' | 'RIGHT';
+  source_md: string;
+  rendered_html: string;
+  created_at: string;
+  updated_at: string;
+  in_reply_to_id?: number;
+}
+
 // ============================================================================
 // Database Class
 // ============================================================================
@@ -274,6 +311,125 @@ export class IterationDatabase {
       INSERT INTO span_mappings (tracker_id, left_line_start, left_line_end, right_line_start, right_line_end, mapping_type)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(trackerId, leftStart, leftEnd, rightStart, rightEnd, mappingType);
+  }
+
+  // --------------------------------------------------------------------------
+  // PR Description Methods
+  // --------------------------------------------------------------------------
+
+  /**
+   * Insert or update PR description for an iteration.
+   * Both source markdown and rendered HTML are stored in content_blobs.
+   */
+  insertPRDescription(
+    iterationId: number,
+    sourceMd: string,
+    renderedHtml: string
+  ): void {
+    const sourceHash = this.getOrCreateContentBlob(sourceMd);
+    const renderedHash = this.getOrCreateContentBlob(renderedHtml);
+
+    this.db.prepare(`
+      INSERT OR REPLACE INTO pr_descriptions (iteration_id, source_hash, rendered_hash)
+      VALUES (?, ?, ?)
+    `).run(iterationId, sourceHash, renderedHash);
+  }
+
+  /**
+   * Get PR description for an iteration with resolved content.
+   */
+  getPRDescription(iterationId: number): {
+    sourceMd: string;
+    renderedHtml: string;
+  } | undefined {
+    const row = this.db.prepare<[number], {
+      source_content: string;
+      rendered_content: string;
+    }>(`
+      SELECT
+        src.content as source_content,
+        rnd.content as rendered_content
+      FROM pr_descriptions d
+      JOIN content_blobs src ON d.source_hash = src.content_hash
+      JOIN content_blobs rnd ON d.rendered_hash = rnd.content_hash
+      WHERE d.iteration_id = ?
+    `).get(iterationId);
+
+    if (!row) return undefined;
+
+    return {
+      sourceMd: row.source_content,
+      renderedHtml: row.rendered_content,
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // PR Comment Methods
+  // --------------------------------------------------------------------------
+
+  /**
+   * Insert or update a PR comment for an iteration.
+   * Both source markdown and rendered HTML are stored in content_blobs.
+   */
+  insertPRComment(iterationId: number, comment: PRCommentInput): void {
+    const sourceHash = this.getOrCreateContentBlob(comment.source_md);
+    const renderedHash = this.getOrCreateContentBlob(comment.rendered_html);
+
+    this.db.prepare(`
+      INSERT OR REPLACE INTO pr_comments (
+        iteration_id, github_id, author_login, author_avatar_url,
+        file_path, line_number, side, source_hash, rendered_hash,
+        created_at, updated_at, in_reply_to_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      iterationId,
+      comment.github_id,
+      comment.author_login,
+      comment.author_avatar_url ?? null,
+      comment.file_path ?? null,
+      comment.line_number ?? null,
+      comment.side ?? null,
+      sourceHash,
+      renderedHash,
+      comment.created_at,
+      comment.updated_at,
+      comment.in_reply_to_id ?? null
+    );
+  }
+
+  /**
+   * Bulk insert PR comments for an iteration.
+   */
+  insertPRComments(iterationId: number, comments: PRCommentInput[]): void {
+    const insertMany = this.db.transaction((comments: PRCommentInput[]) => {
+      for (const comment of comments) {
+        this.insertPRComment(iterationId, comment);
+      }
+    });
+    insertMany(comments);
+  }
+
+  /**
+   * Get all PR comments for an iteration with resolved content.
+   */
+  getPRComments(iterationId: number): Array<PRCommentRow & {
+    source_md: string;
+    rendered_html: string;
+  }> {
+    return this.db.prepare<[number], PRCommentRow & {
+      source_md: string;
+      rendered_html: string;
+    }>(`
+      SELECT
+        c.*,
+        src.content as source_md,
+        rnd.content as rendered_html
+      FROM pr_comments c
+      JOIN content_blobs src ON c.source_hash = src.content_hash
+      JOIN content_blobs rnd ON c.rendered_hash = rnd.content_hash
+      WHERE c.iteration_id = ?
+      ORDER BY c.created_at ASC
+    `).all(iterationId);
   }
 
   // --------------------------------------------------------------------------
