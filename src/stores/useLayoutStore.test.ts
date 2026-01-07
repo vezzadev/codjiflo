@@ -94,10 +94,13 @@ describe('useLayoutStore', () => {
       expect(useLayoutStore.getState().leftPaneWidth).toBe(250);
     });
 
-    it('clamps result to minimum when delta would go below minimum', () => {
+    it('auto-collapses when delta would go below minimum', () => {
       useLayoutStore.getState().setLeftPaneWidth(220);
-      useLayoutStore.getState().resizeLeftPane(-50);
-      expect(useLayoutStore.getState().leftPaneWidth).toBe(200);
+      useLayoutStore.getState().resizeLeftPane(-50); // 220 - 50 = 170 < 200
+
+      expect(useLayoutStore.getState().isLeftPaneCollapsed).toBe(true);
+      expect(useLayoutStore.getState().leftPaneWidth).toBe(0);
+      expect(useLayoutStore.getState().lastLeftPaneWidth).toBe(220);
     });
 
     it('clamps result to maximum when delta would go above maximum', () => {
@@ -126,10 +129,13 @@ describe('useLayoutStore', () => {
       expect(useLayoutStore.getState().bottomPaneHeight).toBe(250);
     });
 
-    it('clamps result to minimum when delta would go below minimum', () => {
+    it('auto-collapses when delta would go below minimum', () => {
       useLayoutStore.getState().setBottomPaneHeight(120);
-      useLayoutStore.getState().resizeBottomPane(50);
-      expect(useLayoutStore.getState().bottomPaneHeight).toBe(100);
+      useLayoutStore.getState().resizeBottomPane(50); // 120 - 50 = 70 < 100
+
+      expect(useLayoutStore.getState().isBottomPaneCollapsed).toBe(true);
+      expect(useLayoutStore.getState().bottomPaneHeight).toBe(0);
+      expect(useLayoutStore.getState().lastBottomPaneHeight).toBe(120);
     });
 
     it('clamps result to maximum when delta would go above maximum', () => {
@@ -254,32 +260,30 @@ describe('useLayoutStore', () => {
   });
 
   describe('auto-collapse on resize', () => {
-    it('auto-collapses left pane when resized below threshold', () => {
-      // Start at minimum (200px) and resize with large negative delta
-      useLayoutStore.getState().setLeftPaneWidth(200);
-      // Resize to bring it below collapse threshold (50px): 200 - 180 = 20
-      useLayoutStore.getState().resizeLeftPane(-180);
+    it('auto-collapses left pane when resized below minimum', () => {
+      // Start at 250px and resize with negative delta to go below min (200)
+      useLayoutStore.getState().setLeftPaneWidth(250);
+      useLayoutStore.getState().resizeLeftPane(-60); // 250 - 60 = 190 < 200
 
       expect(useLayoutStore.getState().isLeftPaneCollapsed).toBe(true);
       expect(useLayoutStore.getState().leftPaneWidth).toBe(0);
-      expect(useLayoutStore.getState().lastLeftPaneWidth).toBe(200);
+      expect(useLayoutStore.getState().lastLeftPaneWidth).toBe(250);
     });
 
-    it('auto-collapses bottom pane when resized below threshold', () => {
-      // Start at minimum (100px) and resize with large positive delta
-      useLayoutStore.getState().setBottomPaneHeight(100);
-      // Resize down to bring it below collapse threshold: 100 - 80 = 20
-      useLayoutStore.getState().resizeBottomPane(80);
+    it('auto-collapses bottom pane when resized below minimum', () => {
+      // Start at 150px and resize with positive delta to go below min (100)
+      useLayoutStore.getState().setBottomPaneHeight(150);
+      useLayoutStore.getState().resizeBottomPane(60); // 150 - 60 = 90 < 100
 
       expect(useLayoutStore.getState().isBottomPaneCollapsed).toBe(true);
       expect(useLayoutStore.getState().bottomPaneHeight).toBe(0);
-      expect(useLayoutStore.getState().lastBottomPaneHeight).toBe(100);
+      expect(useLayoutStore.getState().lastBottomPaneHeight).toBe(150);
     });
 
-    it('does not auto-collapse when staying above threshold', () => {
+    it('does not auto-collapse when staying at exactly minimum', () => {
       useLayoutStore.getState().setLeftPaneWidth(300);
-      // Resize to 200 (above threshold), should clamp to min, not collapse
-      useLayoutStore.getState().resizeLeftPane(-100);
+      // Resize to exactly 200 (minimum), should not collapse
+      useLayoutStore.getState().resizeLeftPane(-100); // 300 - 100 = 200
 
       expect(useLayoutStore.getState().isLeftPaneCollapsed).toBe(false);
       expect(useLayoutStore.getState().leftPaneWidth).toBe(200);

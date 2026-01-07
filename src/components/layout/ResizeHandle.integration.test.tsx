@@ -99,12 +99,13 @@ describe('ResizeHandle integration', () => {
       // Reset to default
       useLayoutStore.getState().setLeftPaneWidth(300);
 
-      // Resize down but stay above collapse threshold (50px)
+      // Resize down below minimum triggers collapse
       fireEvent.mouseDown(handle, { clientX: 300 });
-      fireEvent.mouseMove(document, { clientX: 150 }); // -150 would be 150px, clamps to 200
+      fireEvent.mouseMove(document, { clientX: 150 }); // -150 would be 150px < 200 min
       fireEvent.mouseUp(document);
 
-      expect(useLayoutStore.getState().leftPaneWidth).toBe(200); // Clamped to min
+      expect(useLayoutStore.getState().leftPaneWidth).toBe(0); // Collapsed
+      expect(useLayoutStore.getState().isLeftPaneCollapsed).toBe(true);
     });
   });
 
@@ -173,12 +174,13 @@ describe('ResizeHandle integration', () => {
       // Reset to default
       useLayoutStore.getState().setBottomPaneHeight(200);
 
-      // Resize down but stay above collapse threshold (50px)
+      // Resize down below minimum triggers collapse
       fireEvent.mouseDown(handle, { clientY: 0 });
-      fireEvent.mouseMove(document, { clientY: 120 }); // delta = 120, would be 80px, clamps to 100
+      fireEvent.mouseMove(document, { clientY: 120 }); // delta = 120, would be 80px < 100 min
       fireEvent.mouseUp(document);
 
-      expect(useLayoutStore.getState().bottomPaneHeight).toBe(100); // Clamped to min
+      expect(useLayoutStore.getState().bottomPaneHeight).toBe(0); // Collapsed
+      expect(useLayoutStore.getState().isBottomPaneCollapsed).toBe(true);
     });
   });
 

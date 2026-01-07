@@ -21,12 +21,10 @@ interface LayoutState {
 const MIN_LEFT_PANE_WIDTH = 200;
 const MAX_LEFT_PANE_WIDTH = 2000;
 const DEFAULT_LEFT_PANE_WIDTH = 330;
-const COLLAPSE_THRESHOLD_LEFT = 50;
 
 const MIN_BOTTOM_PANE_HEIGHT = 100;
 const MAX_BOTTOM_PANE_HEIGHT = 2000;
 const DEFAULT_BOTTOM_PANE_HEIGHT = 200;
-const COLLAPSE_THRESHOLD_BOTTOM = 50;
 
 export const useLayoutStore = create<LayoutState>()(
   persist(
@@ -58,8 +56,8 @@ export const useLayoutStore = create<LayoutState>()(
         const state = get();
         const newWidth = state.leftPaneWidth + delta;
 
-        // Auto-collapse when resized below threshold
-        if (newWidth < COLLAPSE_THRESHOLD_LEFT) {
+        // Auto-collapse when resized below minimum
+        if (newWidth < MIN_LEFT_PANE_WIDTH) {
           set({
             lastLeftPaneWidth: state.leftPaneWidth,
             leftPaneWidth: 0,
@@ -68,10 +66,7 @@ export const useLayoutStore = create<LayoutState>()(
           return;
         }
 
-        const clampedWidth = Math.min(
-          Math.max(newWidth, MIN_LEFT_PANE_WIDTH),
-          MAX_LEFT_PANE_WIDTH
-        );
+        const clampedWidth = Math.min(newWidth, MAX_LEFT_PANE_WIDTH);
         set({ leftPaneWidth: clampedWidth });
       },
 
@@ -80,8 +75,8 @@ export const useLayoutStore = create<LayoutState>()(
         // Negative delta = resize up (make bottom pane taller)
         const newHeight = state.bottomPaneHeight - delta;
 
-        // Auto-collapse when resized below threshold
-        if (newHeight < COLLAPSE_THRESHOLD_BOTTOM) {
+        // Auto-collapse when resized below minimum
+        if (newHeight < MIN_BOTTOM_PANE_HEIGHT) {
           set({
             lastBottomPaneHeight: state.bottomPaneHeight,
             bottomPaneHeight: 0,
@@ -90,10 +85,7 @@ export const useLayoutStore = create<LayoutState>()(
           return;
         }
 
-        const clampedHeight = Math.min(
-          Math.max(newHeight, MIN_BOTTOM_PANE_HEIGHT),
-          MAX_BOTTOM_PANE_HEIGHT
-        );
+        const clampedHeight = Math.min(newHeight, MAX_BOTTOM_PANE_HEIGHT);
         set({ bottomPaneHeight: clampedHeight });
       },
 
