@@ -24,9 +24,35 @@ import { iterationToRightSnapshot } from '../types';
 // Store State Interface
 // ============================================================================
 
-/** Creates a unique key for a PR to partition cached data */
+/** Maximum number of PR ranges to keep in cache (LRU eviction) */
+const MAX_CACHED_RANGES = 50;
+
+/** Creates a unique key for a PR using GitHub URL format */
 function getPrKey(owner: string, repo: string, prNumber: number): string {
-  return `${owner}/${repo}#${prNumber}`;
+  return `https://github.com/${owner}/${repo}/pull/${prNumber}`;
+}
+
+/**
+ * LRU cache helper: moves key to end (most recent) and evicts oldest if over limit.
+ * Returns a new object with proper ordering.
+ */
+function updateLRUCache(
+  cache: Record<string, IterationRange>,
+  key: string,
+  value: IterationRange
+): Record<string, IterationRange> {
+  // Build new cache: exclude existing key (if any), add all others, then add current key at end
+  const entries = Object.entries(cache).filter(([k]) => k !== key);
+
+  // Add current entry at end (most recent)
+  entries.push([key, value]);
+
+  // Evict oldest entries if over limit
+  const trimmedEntries = entries.length > MAX_CACHED_RANGES
+    ? entries.slice(entries.length - MAX_CACHED_RANGES)
+    : entries;
+
+  return Object.fromEntries(trimmedEntries);
 }
 
 interface IterationState {
@@ -149,9 +175,9 @@ export const useIterationStore = create<IterationState>()(
           // Use cached range if valid, otherwise use default
           const rangeToUse = isCachedRangeValid ? cachedRange : defaultRange;
 
-          // Update selectedRanges with the range for this PR
+          // Update selectedRanges with LRU eviction
           const newSelectedRanges = rangeToUse
-            ? { ...selectedRanges, [prKey]: rangeToUse }
+            ? updateLRUCache(selectedRanges, prKey, rangeToUse)
             : selectedRanges;
 
           set({
@@ -187,10 +213,7 @@ export const useIterationStore = create<IterationState>()(
         }
 
         set({
-          selectedRanges: {
-            ...selectedRanges,
-            [currentPrKey]: { fromSnapshot, toSnapshot },
-          },
+          selectedRanges: updateLRUCache(selectedRanges, currentPrKey, { fromSnapshot, toSnapshot }),
         });
       },
 
@@ -251,10 +274,7 @@ export const useIterationStore = create<IterationState>()(
         }
 
         set({
-          selectedRanges: {
-            ...selectedRanges,
-            [currentPrKey]: newRange,
-          },
+          selectedRanges: updateLRUCache(selectedRanges, currentPrKey, newRange),
         });
       },
 
