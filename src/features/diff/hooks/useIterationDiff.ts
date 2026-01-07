@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useCallback } from 'react';
-import { useIterationStore } from '@/features/iterations/stores';
+import { useIterationStore, selectSelectedRange } from '@/features/iterations/stores';
 import type { FileContent as IterationFileContent, ReviewFileArtifact } from '@/features/iterations/types';
 import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff, FileContent } from '../types';
 import { computeLineDiff, enhanceWithWordDiffs, computeAlignment } from '../workers/diff-engine';
@@ -30,7 +30,8 @@ interface IterationDiffResult {
  * Returns iteration-based diff data when available, otherwise returns empty results.
  */
 export function useIterationDiff(): IterationDiffResult {
-  const { client, selectedRange, isDegraded, artifacts } = useIterationStore();
+  const { client, isDegraded, artifacts } = useIterationStore();
+  const selectedRange = useIterationStore(selectSelectedRange);
 
   const isIterationMode = useMemo(() => {
     return !isDegraded && client !== null && selectedRange !== null;

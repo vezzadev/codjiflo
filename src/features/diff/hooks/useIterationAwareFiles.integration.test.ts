@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useIterationAwareFiles } from './useIterationAwareFiles';
 import { useDiffStore } from '../stores';
-import { useIterationStore } from '@/features/iterations/stores';
 import { FileChangeStatus } from '@/api/types';
 import type { FileChange } from '@/api/types';
 import type { ReviewFileArtifact, FileContent } from '@/features/iterations/types';
@@ -19,8 +18,26 @@ vi.mock('../stores', () => ({
   useDiffStore: vi.fn(),
 }));
 
+// Store state that tests can configure
+interface MockIterationStoreState {
+  client: MockIterationClient | null;
+  isDegraded: boolean;
+  artifacts: ReviewFileArtifact[];
+  selectedRange: { fromSnapshot: number; toSnapshot: number } | null;
+}
+
+let currentIterationStoreState: MockIterationStoreState;
+
 vi.mock('@/features/iterations/stores', () => ({
-  useIterationStore: vi.fn(),
+  useIterationStore: vi.fn((selector?: (state: unknown) => unknown) => {
+    if (typeof selector === 'function') {
+      // Called with selector (selectSelectedRange) - return selected range
+      return currentIterationStoreState.selectedRange;
+    }
+    // Called without selector - return full state
+    return currentIterationStoreState;
+  }),
+  selectSelectedRange: vi.fn((state: { selectedRange: { fromSnapshot: number; toSnapshot: number } | null }) => state.selectedRange),
 }));
 
 // Helper to create mock file
@@ -153,18 +170,12 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       reset: vi.fn(),
     });
 
-    vi.mocked(useIterationStore).mockReturnValue({
+    currentIterationStoreState = {
       client: selectedRange ? mockClient : null,
       selectedRange,
       isDegraded: !selectedRange,
       artifacts,
-      iterations: [],
-      isLoading: false,
-      error: null,
-      loadIterations: vi.fn(),
-      setSelectedRange: vi.fn(),
-      reset: vi.fn(),
-    } as ReturnType<typeof useIterationStore>);
+    };
   }
 
   describe('Non-iteration mode (degraded)', () => {

@@ -39,8 +39,6 @@ interface IterationState {
   // Selection (partitioned by PR)
   currentPrKey: string | null;
   selectedRanges: Record<string, IterationRange>;
-  // Derived from currentPrKey + selectedRanges for backward compatibility
-  selectedRange: IterationRange | null;
 
   // Services (not persisted)
   client: IterationClient | null;
@@ -59,6 +57,13 @@ interface IterationState {
   reset: () => void;
 }
 
+/** Selector to get the current PR's selected range */
+export function selectSelectedRange(state: IterationState): IterationRange | null {
+  const { currentPrKey, selectedRanges } = state;
+  if (!currentPrKey) return null;
+  return selectedRanges[currentPrKey] ?? null;
+}
+
 // ============================================================================
 // Initial State
 // ============================================================================
@@ -70,7 +75,6 @@ const initialState = {
   artifactReference: null,
   currentPrKey: null,
   selectedRanges: {},
-  selectedRange: null,
   client: null,
   spanTrackerService: null,
   isLoading: false,
@@ -102,7 +106,6 @@ export const useIterationStore = create<IterationState>()(
               isDegraded: true,
               iterations: [],
               artifacts: [],
-              selectedRange: null,
             });
             return;
           }
@@ -157,7 +160,6 @@ export const useIterationStore = create<IterationState>()(
             artifactTimestamp: reference.timestamp,
             artifactReference: reference,
             selectedRanges: newSelectedRanges,
-            selectedRange: rangeToUse,
             client,
             spanTrackerService,
             isLoading: false,
@@ -184,13 +186,11 @@ export const useIterationStore = create<IterationState>()(
           return;
         }
 
-        const newRange = { fromSnapshot, toSnapshot };
         set({
           selectedRanges: {
             ...selectedRanges,
-            [currentPrKey]: newRange,
+            [currentPrKey]: { fromSnapshot, toSnapshot },
           },
-          selectedRange: newRange,
         });
       },
 
@@ -255,7 +255,6 @@ export const useIterationStore = create<IterationState>()(
             ...selectedRanges,
             [currentPrKey]: newRange,
           },
-          selectedRange: newRange,
         });
       },
 

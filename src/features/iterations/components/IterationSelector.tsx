@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { useIterationStore } from '../stores';
+import { useIterationStore, selectSelectedRange } from '../stores';
 import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
 
@@ -93,7 +93,8 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectedRange, selectRange, isLoading, isDegraded } = useIterationStore();
+  const { iterations, selectRange, isLoading, isDegraded } = useIterationStore();
+  const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
