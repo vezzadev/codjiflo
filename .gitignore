@@ -83,6 +83,7 @@ next-env.d.ts
 .nuxt
 dist
 !action/dist
+!packages/diff-engine/dist
 
 # Gatsby files
 .cache/

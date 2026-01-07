@@ -42,6 +42,40 @@ export interface SpanMappingRow {
     right_line_end: number | null;
     mapping_type: 'unchanged' | 'modified' | 'deleted' | 'added';
 }
+export interface PRDescriptionRow {
+    id: number;
+    iteration_id: number;
+    source_hash: string;
+    rendered_hash: string;
+}
+export interface PRCommentRow {
+    id: number;
+    iteration_id: number;
+    github_id: number;
+    author_login: string;
+    author_avatar_url: string | null;
+    file_path: string | null;
+    line_number: number | null;
+    side: 'LEFT' | 'RIGHT' | null;
+    source_hash: string;
+    rendered_hash: string;
+    created_at: string;
+    updated_at: string;
+    in_reply_to_id: number | null;
+}
+export interface PRCommentInput {
+    github_id: number;
+    author_login: string;
+    author_avatar_url?: string;
+    file_path?: string;
+    line_number?: number;
+    side?: 'LEFT' | 'RIGHT';
+    source_md: string;
+    rendered_html: string;
+    created_at: string;
+    updated_at: string;
+    in_reply_to_id?: number;
+}
 export declare class IterationDatabase {
     private db;
     constructor(filePath: string);
@@ -82,6 +116,34 @@ export declare class IterationDatabase {
     getContentBlob(contentHash: string): ContentBlobRow | undefined;
     insertSpanTracker(artifactId: number, leftSnapshotIndex: number, rightSnapshotIndex: number): number;
     insertSpanMapping(trackerId: number, leftStart: number | null, leftEnd: number | null, rightStart: number | null, rightEnd: number | null, mappingType: SpanMappingRow['mapping_type']): void;
+    /**
+     * Insert or update PR description for an iteration.
+     * Both source markdown and rendered HTML are stored in content_blobs.
+     */
+    insertPRDescription(iterationId: number, sourceMd: string, renderedHtml: string): void;
+    /**
+     * Get PR description for an iteration with resolved content.
+     */
+    getPRDescription(iterationId: number): {
+        sourceMd: string;
+        renderedHtml: string;
+    } | undefined;
+    /**
+     * Insert or update a PR comment for an iteration.
+     * Both source markdown and rendered HTML are stored in content_blobs.
+     */
+    insertPRComment(iterationId: number, comment: PRCommentInput): void;
+    /**
+     * Bulk insert PR comments for an iteration.
+     */
+    insertPRComments(iterationId: number, comments: PRCommentInput[]): void;
+    /**
+     * Get all PR comments for an iteration with resolved content.
+     */
+    getPRComments(iterationId: number): Array<PRCommentRow & {
+        source_md: string;
+        rendered_html: string;
+    }>;
     private hashContent;
     /**
      * Get the schema version stored in the database.
