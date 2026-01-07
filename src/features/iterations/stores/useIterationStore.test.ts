@@ -124,10 +124,10 @@ describe('useIterationStore', () => {
       expect(state.isLoading).toBe(false);
       expect(state.isDegraded).toBe(false);
       expect(state.iterations).toHaveLength(3);
-      expect(state.currentPrKey).toBe('owner/repo#1');
+      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
       // Default range should be base (0) to latest iteration's right snapshot
       // For 3 iterations, latest revision is 3, right snapshot = 2*3-1 = 5
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5, // iterationToRightSnapshot(3) = 2*3-1 = 5
       });
@@ -141,7 +141,7 @@ describe('useIterationStore', () => {
     it('should use default range when cached range is invalid (toSnapshot too high)', async () => {
       // Simulate a cached range from when this PR had more iterations
       useIterationStore.setState({
-        selectedRanges: { 'owner/repo#1': { fromSnapshot: 0, toSnapshot: 11 } },
+        selectedRanges: { 'https://github.com/owner/repo/pull/1': { fromSnapshot: 0, toSnapshot: 11 } },
       });
 
       const mockIterations = createMockIterations(2); // Only 2 iterations, max toSnapshot = 3
@@ -159,7 +159,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // Should use default range, not the invalid cached one
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3, // iterationToRightSnapshot(2) = 2*2-1 = 3
       });
@@ -168,7 +168,7 @@ describe('useIterationStore', () => {
     it('should use default range when cached range has invalid fromSnapshot', async () => {
       // Cached range with negative fromSnapshot
       useIterationStore.setState({
-        selectedRanges: { 'owner/repo#1': { fromSnapshot: -1, toSnapshot: 3 } },
+        selectedRanges: { 'https://github.com/owner/repo/pull/1': { fromSnapshot: -1, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(2);
@@ -185,7 +185,7 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
@@ -194,7 +194,7 @@ describe('useIterationStore', () => {
     it('should use default range when fromSnapshot >= toSnapshot', async () => {
       // Invalid: fromSnapshot must be less than toSnapshot
       useIterationStore.setState({
-        selectedRanges: { 'owner/repo#1': { fromSnapshot: 3, toSnapshot: 3 } },
+        selectedRanges: { 'https://github.com/owner/repo/pull/1': { fromSnapshot: 3, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(2);
@@ -211,7 +211,7 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
@@ -220,7 +220,7 @@ describe('useIterationStore', () => {
     it('should preserve valid cached range for this PR', async () => {
       // Valid cached range for this PR
       useIterationStore.setState({
-        selectedRanges: { 'owner/repo#1': { fromSnapshot: 1, toSnapshot: 3 } },
+        selectedRanges: { 'https://github.com/owner/repo/pull/1': { fromSnapshot: 1, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(3); // max toSnapshot = 5
@@ -238,7 +238,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // Should preserve the valid cached range
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 1,
         toSnapshot: 3,
       });
@@ -247,7 +247,7 @@ describe('useIterationStore', () => {
     it('should isolate ranges between different PRs', async () => {
       // Pre-set a range for PR #2
       useIterationStore.setState({
-        selectedRanges: { 'owner/repo#2': { fromSnapshot: 0, toSnapshot: 11 } },
+        selectedRanges: { 'https://github.com/owner/repo/pull/2': { fromSnapshot: 0, toSnapshot: 11 } },
       });
 
       const mockIterations = createMockIterations(2);
@@ -266,13 +266,13 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // PR #1 should have its own default range
-      expect(state.currentPrKey).toBe('owner/repo#1');
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
       // PR #2's range should still be preserved
-      expect(state.selectedRanges['owner/repo#2']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/2']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 11,
       });
@@ -291,7 +291,7 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.isDegraded).toBe(true);
       expect(state.iterations).toHaveLength(0);
-      expect(state.currentPrKey).toBe('owner/repo#1');
+      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
       expect(selectSelectedRange(state)).toBeNull();
     });
 
@@ -303,6 +303,41 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.isLoading).toBe(false);
       expect(state.error).toBe('Network error');
+    });
+
+    it('should evict oldest entries when cache exceeds 50 PRs (LRU)', async () => {
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      // Pre-populate cache with 50 PRs
+      const initialRanges: Record<string, { fromSnapshot: number; toSnapshot: number }> = {};
+      for (let i = 1; i <= 50; i++) {
+        initialRanges[`https://github.com/old/repo/pull/${i}`] = { fromSnapshot: 0, toSnapshot: 1 };
+      }
+      useIterationStore.setState({ selectedRanges: initialRanges });
+
+      // Load a new PR (51st entry)
+      await useIterationStore.getState().loadIterations('new', 'repo', 999);
+
+      const state = useIterationStore.getState();
+      const keys = Object.keys(state.selectedRanges);
+
+      // Should have exactly 50 entries (oldest evicted)
+      expect(keys).toHaveLength(50);
+      // Oldest entry should be gone
+      expect(state.selectedRanges['https://github.com/old/repo/pull/1']).toBeUndefined();
+      // Newest entry should exist
+      expect(state.selectedRanges['https://github.com/new/repo/pull/999']).toBeDefined();
+      // Second oldest should still exist
+      expect(state.selectedRanges['https://github.com/old/repo/pull/2']).toBeDefined();
     });
   });
 
@@ -326,7 +361,7 @@ describe('useIterationStore', () => {
       useIterationStore.getState().selectRange(0, 5);
 
       const state = useIterationStore.getState();
-      expect(state.selectedRanges['owner/repo#1']).toEqual({
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -345,7 +380,7 @@ describe('useIterationStore', () => {
       useIterationStore.getState().selectRange(5, 3);
 
       // Should not change the existing range
-      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
+      expect(useIterationStore.getState().selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
@@ -385,7 +420,7 @@ describe('useIterationStore', () => {
     it('should set full range for "full" preset', () => {
       useIterationStore.getState().selectPreset('full');
 
-      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
+      expect(useIterationStore.getState().selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -396,7 +431,7 @@ describe('useIterationStore', () => {
 
       // Latest = previous iteration end to latest end
       // For 3 iterations: prev is iter 2 (right snapshot = 3), latest is iter 3 (right snapshot = 5)
-      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
+      expect(useIterationStore.getState().selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
         fromSnapshot: 3,
         toSnapshot: 5,
       });
@@ -420,7 +455,7 @@ describe('useIterationStore', () => {
 
       // Verify state was set
       expect(useIterationStore.getState().iterations).toHaveLength(2);
-      expect(useIterationStore.getState().currentPrKey).toBe('owner/repo#1');
+      expect(useIterationStore.getState().currentPrKey).toBe('https://github.com/owner/repo/pull/1');
 
       // Reset
       useIterationStore.getState().reset();
@@ -462,7 +497,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // selectSelectedRange should return the current PR's range
-      expect(state.currentPrKey).toBe('owner/repo#2');
+      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/2');
       expect(selectSelectedRange(state)).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
