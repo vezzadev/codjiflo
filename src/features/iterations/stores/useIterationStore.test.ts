@@ -2,8 +2,8 @@
  * Tests for useIterationStore
  *
  * These tests verify iteration loading and range selection,
- * particularly the fix for issue #133 where invalid persisted
- * ranges caused files to display as deleted.
+ * particularly the fix for issue #133 where ranges are now
+ * partitioned by PR to prevent cross-PR range conflicts.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -87,7 +87,8 @@ describe('useIterationStore', () => {
       artifacts: [],
       artifactTimestamp: null,
       artifactReference: null,
-      selectedRange: null,
+      currentPrKey: null,
+      selectedRanges: {},
       client: null,
       spanTrackerService: null,
       isLoading: false,
@@ -105,7 +106,7 @@ describe('useIterationStore', () => {
   });
 
   describe('loadIterations', () => {
-    it('should set default range when no persisted range exists', async () => {
+    it('should set default range when no cached range exists for this PR', async () => {
       const mockIterations = createMockIterations(3);
       const mockArtifacts = createMockArtifacts();
       const mockDb = {};
@@ -123,18 +124,24 @@ describe('useIterationStore', () => {
       expect(state.isLoading).toBe(false);
       expect(state.isDegraded).toBe(false);
       expect(state.iterations).toHaveLength(3);
+      expect(state.currentPrKey).toBe('owner/repo#1');
       // Default range should be base (0) to latest iteration's right snapshot
       // For 3 iterations, latest revision is 3, right snapshot = 2*3-1 = 5
-      expect(state.selectedRange).toEqual({
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5, // iterationToRightSnapshot(3) = 2*3-1 = 5
       });
+      // selectedRange getter should return the current PR's range
+      expect(state.selectedRange).toEqual({
+        fromSnapshot: 0,
+        toSnapshot: 5,
+      });
     });
 
-    it('should use default range when persisted range is invalid (toSnapshot too high)', async () => {
-      // Simulate a persisted range from a different PR with more iterations
+    it('should use default range when cached range is invalid (toSnapshot too high)', async () => {
+      // Simulate a cached range from when this PR had more iterations
       useIterationStore.setState({
-        selectedRange: { fromSnapshot: 0, toSnapshot: 11 }, // Invalid: PR only has 2 iterations
+        selectedRanges: { 'owner/repo#1': { fromSnapshot: 0, toSnapshot: 11 } },
       });
 
       const mockIterations = createMockIterations(2); // Only 2 iterations, max toSnapshot = 3
@@ -151,17 +158,17 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      // Should use default range, not the invalid persisted one
-      expect(state.selectedRange).toEqual({
+      // Should use default range, not the invalid cached one
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3, // iterationToRightSnapshot(2) = 2*2-1 = 3
       });
     });
 
-    it('should use default range when persisted range has invalid fromSnapshot', async () => {
-      // Persisted range with negative fromSnapshot
+    it('should use default range when cached range has invalid fromSnapshot', async () => {
+      // Cached range with negative fromSnapshot
       useIterationStore.setState({
-        selectedRange: { fromSnapshot: -1, toSnapshot: 3 },
+        selectedRanges: { 'owner/repo#1': { fromSnapshot: -1, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(2);
@@ -178,7 +185,7 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      expect(state.selectedRange).toEqual({
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
@@ -187,7 +194,7 @@ describe('useIterationStore', () => {
     it('should use default range when fromSnapshot >= toSnapshot', async () => {
       // Invalid: fromSnapshot must be less than toSnapshot
       useIterationStore.setState({
-        selectedRange: { fromSnapshot: 3, toSnapshot: 3 },
+        selectedRanges: { 'owner/repo#1': { fromSnapshot: 3, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(2);
@@ -204,16 +211,16 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      expect(state.selectedRange).toEqual({
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
     });
 
-    it('should preserve valid persisted range that matches current PR iterations', async () => {
-      // Valid range for a PR with 3 iterations
+    it('should preserve valid cached range for this PR', async () => {
+      // Valid cached range for this PR
       useIterationStore.setState({
-        selectedRange: { fromSnapshot: 1, toSnapshot: 3 },
+        selectedRanges: { 'owner/repo#1': { fromSnapshot: 1, toSnapshot: 3 } },
       });
 
       const mockIterations = createMockIterations(3); // max toSnapshot = 5
@@ -230,9 +237,48 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      // Should preserve the valid persisted range
-      expect(state.selectedRange).toEqual({
+      // Should preserve the valid cached range
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 1,
+        toSnapshot: 3,
+      });
+    });
+
+    it('should isolate ranges between different PRs', async () => {
+      // Pre-set a range for PR #2
+      useIterationStore.setState({
+        selectedRanges: { 'owner/repo#2': { fromSnapshot: 0, toSnapshot: 11 } },
+      });
+
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      // Load PR #1 - should NOT be affected by PR #2's cached range
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      // PR #1 should have its own default range
+      expect(state.currentPrKey).toBe('owner/repo#1');
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
+        fromSnapshot: 0,
+        toSnapshot: 3,
+      });
+      // PR #2's range should still be preserved
+      expect(state.selectedRanges['owner/repo#2']).toEqual({
+        fromSnapshot: 0,
+        toSnapshot: 11,
+      });
+      // selectedRange getter should return PR #1's range
+      expect(state.selectedRange).toEqual({
+        fromSnapshot: 0,
         toSnapshot: 3,
       });
     });
@@ -245,6 +291,7 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.isDegraded).toBe(true);
       expect(state.iterations).toHaveLength(0);
+      expect(state.currentPrKey).toBe('owner/repo#1');
       expect(state.selectedRange).toBeNull();
     });
 
@@ -260,10 +307,30 @@ describe('useIterationStore', () => {
   });
 
   describe('selectRange', () => {
-    it('should update selectedRange with valid range', () => {
+    beforeEach(async () => {
+      const mockIterations = createMockIterations(3);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+    });
+
+    it('should update selectedRanges for current PR', () => {
       useIterationStore.getState().selectRange(0, 5);
 
-      expect(useIterationStore.getState().selectedRange).toEqual({
+      const state = useIterationStore.getState();
+      expect(state.selectedRanges['owner/repo#1']).toEqual({
+        fromSnapshot: 0,
+        toSnapshot: 5,
+      });
+      expect(state.selectedRange).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -272,15 +339,29 @@ describe('useIterationStore', () => {
     it('should reject range where fromSnapshot >= toSnapshot', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-      useIterationStore.setState({ selectedRange: { fromSnapshot: 0, toSnapshot: 3 } });
+      // First set a valid range
+      useIterationStore.getState().selectRange(0, 3);
+      // Then try to set an invalid one
       useIterationStore.getState().selectRange(5, 3);
 
       // Should not change the existing range
-      expect(useIterationStore.getState().selectedRange).toEqual({
+      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
 
+      consoleSpy.mockRestore();
+    });
+
+    it('should warn when no PR is loaded', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      // Reset to clear currentPrKey
+      useIterationStore.setState({ currentPrKey: null, selectedRanges: {} });
+
+      useIterationStore.getState().selectRange(0, 5);
+
+      expect(consoleSpy).toHaveBeenCalledWith('Cannot select range: no PR is currently loaded');
       consoleSpy.mockRestore();
     });
   });
@@ -304,7 +385,7 @@ describe('useIterationStore', () => {
     it('should set full range for "full" preset', () => {
       useIterationStore.getState().selectPreset('full');
 
-      expect(useIterationStore.getState().selectedRange).toEqual({
+      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -315,7 +396,7 @@ describe('useIterationStore', () => {
 
       // Latest = previous iteration end to latest end
       // For 3 iterations: prev is iter 2 (right snapshot = 3), latest is iter 3 (right snapshot = 5)
-      expect(useIterationStore.getState().selectedRange).toEqual({
+      expect(useIterationStore.getState().selectedRanges['owner/repo#1']).toEqual({
         fromSnapshot: 3,
         toSnapshot: 5,
       });
@@ -339,6 +420,7 @@ describe('useIterationStore', () => {
 
       // Verify state was set
       expect(useIterationStore.getState().iterations).toHaveLength(2);
+      expect(useIterationStore.getState().currentPrKey).toBe('owner/repo#1');
 
       // Reset
       useIterationStore.getState().reset();
@@ -346,12 +428,45 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.iterations).toHaveLength(0);
       expect(state.artifacts).toHaveLength(0);
+      expect(state.selectedRanges).toEqual({});
+      expect(state.currentPrKey).toBeNull();
       expect(state.selectedRange).toBeNull();
       expect(state.client).toBeNull();
       expect(state.isLoading).toBe(false);
       expect(state.isDegraded).toBe(false);
       expect(mockClose).toHaveBeenCalled();
       expect(mockClearCache).toHaveBeenCalled();
+    });
+  });
+
+  describe('selectedRange property', () => {
+    it('should return null when no PR is loaded', () => {
+      const state = useIterationStore.getState();
+      expect(state.currentPrKey).toBeNull();
+      expect(state.selectedRange).toBeNull();
+    });
+
+    it('should be set to current PR range when loading iterations', async () => {
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 2);
+
+      const state = useIterationStore.getState();
+      // selectedRange should match the current PR's range
+      expect(state.currentPrKey).toBe('owner/repo#2');
+      expect(state.selectedRange).toEqual({
+        fromSnapshot: 0,
+        toSnapshot: 3,
+      });
     });
   });
 });
