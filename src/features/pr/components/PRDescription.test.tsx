@@ -97,5 +97,36 @@ describe('PRDescription', () => {
       expect(screen.getByText(/more visible/)).toBeInTheDocument();
       expect(screen.queryByText(/hidden comment/)).not.toBeInTheDocument();
     });
+
+    it('converts emoji shortcodes to emoji', () => {
+      render(<PRDescription description="Great work! :+1: :rocket:" />);
+
+      expect(screen.getByText(/👍/)).toBeInTheDocument();
+      expect(screen.getByText(/🚀/)).toBeInTheDocument();
+      expect(screen.queryByText(':+1:')).not.toBeInTheDocument();
+    });
+
+    it('renders GitHub alerts/admonitions', () => {
+      const alertMarkdown = `> [!NOTE]
+> This is a note`;
+
+      render(<PRDescription description={alertMarkdown} />);
+
+      expect(screen.getByText(/This is a note/)).toBeInTheDocument();
+    });
+
+    it('links issue references when repository provided', () => {
+      render(<PRDescription description="Fixes #123" repository="owner/repo" />);
+
+      const link = screen.getByRole('link', { name: '#123' });
+      expect(link).toHaveAttribute('href', 'https://github.com/owner/repo/issues/123');
+    });
+
+    it('links @mentions when repository provided', () => {
+      render(<PRDescription description="Thanks @johndoe for the review" repository="owner/repo" />);
+
+      const link = screen.getByRole('link', { name: '@johndoe' });
+      expect(link).toHaveAttribute('href', 'https://github.com/johndoe');
+    });
   });
 });

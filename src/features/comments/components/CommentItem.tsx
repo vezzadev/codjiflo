@@ -1,8 +1,13 @@
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeRemoveComments from 'rehype-remove-comments';
+import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
+import remarkGithub from 'remark-github';
+import { remarkGitHubAlerts } from 'remark-github-markdown-alerts';
+import type { PluggableList } from 'unified';
 import type { Comment } from '../types';
 import { Button } from '@/components';
 import { formatTimeAgo } from '@/utils/time';
@@ -12,10 +17,24 @@ interface CommentItemProps {
   isCurrentUser: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  /** Repository in 'owner/repo' format for GitHub reference linking */
+  repository?: string;
 }
 
-export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: CommentItemProps) {
+export function CommentItem({ comment, isCurrentUser, onEdit, onDelete, repository }: CommentItemProps) {
   const timeAgo = formatTimeAgo(comment.createdAt);
+
+  const remarkPlugins = useMemo<PluggableList>(() => {
+    const plugins: PluggableList = [
+      remarkGfm,
+      remarkGemoji,
+      remarkGitHubAlerts,
+    ];
+    if (repository) {
+      plugins.push([remarkGithub, { repository }]);
+    }
+    return plugins;
+  }, [repository]);
 
   return (
     <article
@@ -41,7 +60,7 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
         </div>
         <div className="comment-content">
           <Markdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={remarkPlugins}
             rehypePlugins={[rehypeRaw, rehypeRemoveComments]}
             components={{
               a: ({ children, href, ...props }) => {
