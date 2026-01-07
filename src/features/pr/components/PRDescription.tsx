@@ -5,7 +5,7 @@ interface PRDescriptionProps {
   /** Raw markdown source (used for fallback or when renderedHtml not available) */
   description: string;
   /** Pre-rendered HTML from SQLite artifact (preferred) */
-  renderedHtml?: string;
+  renderedHtml?: string | undefined;
 }
 
 /**

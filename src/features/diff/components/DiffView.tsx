@@ -22,7 +22,7 @@ import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comme
 import type { ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
-import { IterationSelector } from '@/features/iterations';
+import { IterationSelector, useIterationStore } from '@/features/iterations';
 import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
 import { FileChangeStatus } from '@/api/types';
 
@@ -50,6 +50,17 @@ export function DiffView() {
 
   // Iteration-based diff for cross-iteration comparison
   const { isIterationMode, getFileDiffByPath, selectedRange } = useIterationDiff();
+  const { client: iterationClient } = useIterationStore();
+
+  // Get pre-rendered PR description HTML from iteration data
+  const prDescriptionRenderedHtml = useMemo(() => {
+    if (!iterationClient || !selectedRange) return undefined;
+    // Convert snapshot index to iteration ID
+    const toSnapshot = selectedRange.toSnapshot;
+    const iterationId = toSnapshot % 2 === 1 ? (toSnapshot + 1) / 2 : toSnapshot / 2 + 1;
+    return iterationClient.getPRDescription(iterationId)?.renderedHtml;
+  }, [iterationClient, selectedRange]);
+
   const {
     threads,
     isLoading: isLoadingComments,
@@ -434,7 +445,7 @@ export function DiffView() {
           <>
             <PRMetadata pr={currentPR} />
             <div className="diff-description-separator">
-              <PRDescription description={currentPR.description} />
+              <PRDescription description={currentPR.description} renderedHtml={prDescriptionRenderedHtml} />
             </div>
           </>
         ) : (
