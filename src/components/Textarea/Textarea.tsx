@@ -1,5 +1,5 @@
-import { forwardRef, TextareaHTMLAttributes } from 'react';
-import { FormField } from '@/components/FormField';
+import { forwardRef, TextareaHTMLAttributes } from "react";
+import { FormField } from "@/components/FormField";
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -31,4 +31,4 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   }
 );
 
-Textarea.displayName = 'Textarea';
+Textarea.displayName = "Textarea";
