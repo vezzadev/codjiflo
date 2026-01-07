@@ -119,9 +119,19 @@ describe("CommentItem", () => {
   it("renders internal links without external indicator", () => {
     const linkComment = { ...mockComment, body: "Check [this](/local-path)" };
     render(<CommentItem {...defaultProps} comment={linkComment} />);
-    
+
     const link = screen.getByRole("link", { name: "this" });
     expect(link).not.toHaveAttribute("target", "_blank");
     expect(screen.queryByText("↗")).not.toBeInTheDocument();
+  });
+
+  it("renders GitHub Flavored Markdown task lists", () => {
+    const taskListComment = { ...mockComment, body: "- [x] Done\n- [ ] Todo" };
+    render(<CommentItem {...defaultProps} comment={taskListComment} />);
+
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(2);
+    expect(checkboxes[0]).toBeChecked();
+    expect(checkboxes[1]).not.toBeChecked();
   });
 });

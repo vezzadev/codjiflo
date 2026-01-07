@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Comment } from '../types';
 import { Button } from '@/components';
 import { formatTimeAgo } from '@/utils/time';
@@ -38,6 +39,7 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
         </div>
         <div className="comment-content">
           <Markdown
+            remarkPlugins={[remarkGfm]}
             components={{
               a: ({ children, href, ...props }) => {
                 const isExternal = typeof href === 'string' && /^https?:\/\//.test(href);

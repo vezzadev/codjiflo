@@ -47,4 +47,47 @@ describe('PRDescription', () => {
 
     expect(screen.getByText('const')).toBeInTheDocument();
   });
+
+  describe('GitHub Flavored Markdown', () => {
+    it('renders tables', () => {
+      const tableMarkdown = `| Feature | Status |
+| --- | --- |
+| Tables | ✅ |
+| Task lists | ✅ |`;
+
+      render(<PRDescription description={tableMarkdown} />);
+
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'Feature' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument();
+      expect(screen.getByRole('cell', { name: 'Tables' })).toBeInTheDocument();
+    });
+
+    it('renders task lists with checkboxes', () => {
+      const taskListMarkdown = `- [x] Completed task
+- [ ] Pending task`;
+
+      render(<PRDescription description={taskListMarkdown} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      expect(checkboxes).toHaveLength(2);
+      expect(checkboxes[0]).toBeChecked();
+      expect(checkboxes[1]).not.toBeChecked();
+    });
+
+    it('renders strikethrough text', () => {
+      render(<PRDescription description="This is ~~deleted~~ text." />);
+
+      const deletedText = screen.getByText('deleted');
+      expect(deletedText.tagName.toLowerCase()).toBe('del');
+    });
+
+    it('renders autolinks for URLs', () => {
+      render(<PRDescription description="Check out https://github.com for more." />);
+
+      const link = screen.getByRole('link', { name: 'https://github.com' });
+      expect(link).toHaveAttribute('href', 'https://github.com');
+      expect(link).toHaveAttribute('target', '_blank');
+    });
+  });
 });

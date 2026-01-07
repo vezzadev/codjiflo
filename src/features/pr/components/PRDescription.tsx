@@ -1,4 +1,5 @@
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface PRDescriptionProps {
   description: string;
@@ -21,6 +22,7 @@ export function PRDescription({ description }: PRDescriptionProps) {
     <div className="pr-description">
       <div className="pr-description-content">
         <Markdown
+          remarkPlugins={[remarkGfm]}
           components={{
             // Open links in new tab
             a: ({ children, ...props }) => (
