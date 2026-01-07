@@ -89,5 +89,13 @@ describe('PRDescription', () => {
       expect(link).toHaveAttribute('href', 'https://github.com');
       expect(link).toHaveAttribute('target', '_blank');
     });
+
+    it('hides HTML comments', () => {
+      render(<PRDescription description="Visible text <!-- hidden comment --> more visible" />);
+
+      expect(screen.getByText(/Visible text/)).toBeInTheDocument();
+      expect(screen.getByText(/more visible/)).toBeInTheDocument();
+      expect(screen.queryByText(/hidden comment/)).not.toBeInTheDocument();
+    });
   });
 });

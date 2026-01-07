@@ -1,4 +1,6 @@
 import Markdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeRemoveComments from 'rehype-remove-comments';
 import remarkGfm from 'remark-gfm';
 
 interface PRDescriptionProps {
@@ -23,6 +25,7 @@ export function PRDescription({ description }: PRDescriptionProps) {
       <div className="pr-description-content">
         <Markdown
           remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw, rehypeRemoveComments]}
           components={{
             // Open links in new tab
             a: ({ children, ...props }) => (

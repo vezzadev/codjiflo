@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import Markdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeRemoveComments from 'rehype-remove-comments';
 import remarkGfm from 'remark-gfm';
 import type { Comment } from '../types';
 import { Button } from '@/components';
@@ -40,6 +42,7 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
         <div className="comment-content">
           <Markdown
             remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw, rehypeRemoveComments]}
             components={{
               a: ({ children, href, ...props }) => {
                 const isExternal = typeof href === 'string' && /^https?:\/\//.test(href);
