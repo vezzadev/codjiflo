@@ -4,4 +4,4 @@
  * Public exports for iteration state management.
  */
 
-export { useIterationStore } from './useIterationStore';
+export { useIterationStore, selectSelectedRange } from './useIterationStore';

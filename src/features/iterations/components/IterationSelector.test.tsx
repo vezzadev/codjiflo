@@ -1,15 +1,31 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IterationSelector } from './IterationSelector';
-import { useIterationStore } from '../stores';
 import type { Iteration, IterationRange } from '../types';
 
-// Mock the store
-vi.mock('../stores', () => ({
-  useIterationStore: vi.fn(),
-}));
+// Store state that tests can configure
+interface MockStoreState {
+  iterations: Iteration[];
+  selectedRange: IterationRange | null;
+  selectRange: ReturnType<typeof vi.fn>;
+  isLoading: boolean;
+  isDegraded: boolean;
+}
 
-const mockUseIterationStore = vi.mocked(useIterationStore);
+let currentMockState: MockStoreState;
+
+// Mock the store - useIterationStore can be called with or without selector
+vi.mock('../stores', () => ({
+  useIterationStore: vi.fn((selector?: (state: unknown) => unknown) => {
+    if (typeof selector === 'function') {
+      // Called with selector (selectSelectedRange) - return selected range
+      return currentMockState.selectedRange;
+    }
+    // Called without selector - return full state
+    return currentMockState;
+  }),
+  selectSelectedRange: vi.fn((state: { selectedRange: IterationRange | null }) => state.selectedRange),
+}));
 
 // Helper to create mock iterations
 function createMockIteration(revision: number): Iteration {
@@ -24,48 +40,54 @@ function createMockIteration(revision: number): Iteration {
   };
 }
 
-describe('IterationSelector', () => {
+// Helper to setup mock state
+function setupMockState(state: Partial<MockStoreState>) {
   const mockSelectRange = vi.fn();
+  currentMockState = {
+    iterations: [],
+    selectedRange: null,
+    selectRange: mockSelectRange,
+    isLoading: false,
+    isDegraded: false,
+    ...state,
+  };
+  return { mockSelectRange: currentMockState.selectRange };
+}
 
+describe('IterationSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('rendering conditions', () => {
     it('returns null when isDegraded is true', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: true,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       const { container } = render(<IterationSelector />);
       expect(container.firstChild).toBeNull();
     });
 
     it('returns null when iterations array is empty', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [],
         selectedRange: null,
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       const { container } = render(<IterationSelector />);
       expect(container.firstChild).toBeNull();
     });
 
     it('renders iteration tabs when iterations exist', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -76,13 +98,12 @@ describe('IterationSelector', () => {
     });
 
     it('shows loading indicator when isLoading is true', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
         isLoading: true,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -96,13 +117,11 @@ describe('IterationSelector', () => {
 
   describe('tab display', () => {
     it('displays iteration numbers correctly', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -112,13 +131,11 @@ describe('IterationSelector', () => {
     });
 
     it('applies selected class to range end tab', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // toSnapshot 5 = iteration 3
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -127,13 +144,11 @@ describe('IterationSelector', () => {
     });
 
     it('applies in-range class to iterations within range', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // Base to iteration 3
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -144,13 +159,11 @@ describe('IterationSelector', () => {
     });
 
     it('applies custom className when provided', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector className="custom-class" />);
 
@@ -160,13 +173,11 @@ describe('IterationSelector', () => {
 
   describe('click interactions', () => {
     it('selects single iteration on click (base to iteration)', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -181,13 +192,11 @@ describe('IterationSelector', () => {
     });
 
     it('handles mouseUp when not dragging', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -201,13 +210,11 @@ describe('IterationSelector', () => {
 
   describe('drag interactions', () => {
     it('selects range when dragging across tabs', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -225,13 +232,11 @@ describe('IterationSelector', () => {
     });
 
     it('handles reverse drag (right to left)', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -249,13 +254,11 @@ describe('IterationSelector', () => {
     });
 
     it('ignores mouseEnter when not dragging', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -272,13 +275,11 @@ describe('IterationSelector', () => {
 
   describe('keyboard interactions', () => {
     it('selects iteration on Enter key', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -290,13 +291,11 @@ describe('IterationSelector', () => {
     });
 
     it('selects iteration on Space key', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -308,13 +307,11 @@ describe('IterationSelector', () => {
     });
 
     it('ignores other keys', () => {
-      mockUseIterationStore.mockReturnValue({
+      const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -329,13 +326,11 @@ describe('IterationSelector', () => {
   describe('range highlighting', () => {
     it('highlights range start and end for iteration-to-iteration range', () => {
       // Range from iteration 1 to iteration 3 (snapshot 1 to snapshot 5)
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
-        selectedRange: { fromSnapshot: 1, toSnapshot: 5 } as IterationRange,
-        selectRange: mockSelectRange,
-        isLoading: false,
+        selectedRange: { fromSnapshot: 1, toSnapshot: 5 },
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -358,13 +353,11 @@ describe('IterationSelector', () => {
 
   describe('accessibility', () => {
     it('has correct ARIA attributes', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -377,13 +370,11 @@ describe('IterationSelector', () => {
     });
 
     it('tabs have aria-pressed attribute', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 
@@ -396,13 +387,11 @@ describe('IterationSelector', () => {
     });
 
     it('tabs have title with date information', () => {
-      mockUseIterationStore.mockReturnValue({
+      setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        selectRange: mockSelectRange,
-        isLoading: false,
         isDegraded: false,
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       render(<IterationSelector />);
 

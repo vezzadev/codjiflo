@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useIterationStore } from './useIterationStore';
+import { useIterationStore, selectSelectedRange } from './useIterationStore';
 import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types';
 
 // Create mock implementations that will be controlled by tests
@@ -131,8 +131,8 @@ describe('useIterationStore', () => {
         fromSnapshot: 0,
         toSnapshot: 5, // iterationToRightSnapshot(3) = 2*3-1 = 5
       });
-      // selectedRange getter should return the current PR's range
-      expect(state.selectedRange).toEqual({
+      // selectSelectedRange selector should return the current PR's range
+      expect(selectSelectedRange(state)).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -276,8 +276,8 @@ describe('useIterationStore', () => {
         fromSnapshot: 0,
         toSnapshot: 11,
       });
-      // selectedRange getter should return PR #1's range
-      expect(state.selectedRange).toEqual({
+      // selectSelectedRange selector should return PR #1's range
+      expect(selectSelectedRange(state)).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });
@@ -292,7 +292,7 @@ describe('useIterationStore', () => {
       expect(state.isDegraded).toBe(true);
       expect(state.iterations).toHaveLength(0);
       expect(state.currentPrKey).toBe('owner/repo#1');
-      expect(state.selectedRange).toBeNull();
+      expect(selectSelectedRange(state)).toBeNull();
     });
 
     it('should handle loading errors', async () => {
@@ -330,7 +330,7 @@ describe('useIterationStore', () => {
         fromSnapshot: 0,
         toSnapshot: 5,
       });
-      expect(state.selectedRange).toEqual({
+      expect(selectSelectedRange(state)).toEqual({
         fromSnapshot: 0,
         toSnapshot: 5,
       });
@@ -430,7 +430,7 @@ describe('useIterationStore', () => {
       expect(state.artifacts).toHaveLength(0);
       expect(state.selectedRanges).toEqual({});
       expect(state.currentPrKey).toBeNull();
-      expect(state.selectedRange).toBeNull();
+      expect(selectSelectedRange(state)).toBeNull();
       expect(state.client).toBeNull();
       expect(state.isLoading).toBe(false);
       expect(state.isDegraded).toBe(false);
@@ -439,11 +439,11 @@ describe('useIterationStore', () => {
     });
   });
 
-  describe('selectedRange property', () => {
+  describe('selectSelectedRange selector', () => {
     it('should return null when no PR is loaded', () => {
       const state = useIterationStore.getState();
       expect(state.currentPrKey).toBeNull();
-      expect(state.selectedRange).toBeNull();
+      expect(selectSelectedRange(state)).toBeNull();
     });
 
     it('should be set to current PR range when loading iterations', async () => {
@@ -461,9 +461,9 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 2);
 
       const state = useIterationStore.getState();
-      // selectedRange should match the current PR's range
+      // selectSelectedRange should return the current PR's range
       expect(state.currentPrKey).toBe('owner/repo#2');
-      expect(state.selectedRange).toEqual({
+      expect(selectSelectedRange(state)).toEqual({
         fromSnapshot: 0,
         toSnapshot: 3,
       });

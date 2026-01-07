@@ -5,11 +5,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useIterationDiff } from './useIterationDiff';
-import { useIterationStore } from '@/features/iterations/stores';
+import type { IterationRange, ReviewFileArtifact } from '@/features/iterations/types';
 
-// Mock the iteration store
+// Store state that tests can configure
+interface MockStoreState {
+  client: unknown;
+  selectedRange: IterationRange | null;
+  isDegraded: boolean;
+  artifacts: ReviewFileArtifact[];
+}
+
+let currentMockState: MockStoreState;
+
+// Mock the iteration store - useIterationStore can be called with or without selector
 vi.mock('@/features/iterations/stores', () => ({
-  useIterationStore: vi.fn(),
+  useIterationStore: vi.fn((selector?: (state: unknown) => unknown) => {
+    if (typeof selector === 'function') {
+      // Called with selector (selectSelectedRange) - return selected range
+      return currentMockState.selectedRange;
+    }
+    // Called without selector - return full state
+    return currentMockState;
+  }),
+  selectSelectedRange: vi.fn((state: { selectedRange: IterationRange | null }) => state.selectedRange),
 }));
 
 const mockClient = {
@@ -18,6 +36,17 @@ const mockClient = {
   getFilePath: vi.fn(),
 };
 
+// Helper to setup mock state
+function setupMockState(state: Partial<MockStoreState>) {
+  currentMockState = {
+    client: null,
+    selectedRange: null,
+    isDegraded: false,
+    artifacts: [],
+    ...state,
+  };
+}
+
 describe('useIterationDiff', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -25,12 +54,12 @@ describe('useIterationDiff', () => {
 
   describe('when degraded mode', () => {
     it('should return empty results when isDegraded is true', () => {
-      vi.mocked(useIterationStore).mockReturnValue({
+      setupMockState({
         client: mockClient,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
         isDegraded: true,
         artifacts: [],
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       const { result } = renderHook(() => useIterationDiff());
 
@@ -42,12 +71,12 @@ describe('useIterationDiff', () => {
 
   describe('when no client', () => {
     it('should return empty results when client is null', () => {
-      vi.mocked(useIterationStore).mockReturnValue({
+      setupMockState({
         client: null,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
         isDegraded: false,
         artifacts: [],
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       const { result } = renderHook(() => useIterationDiff());
 
@@ -58,12 +87,12 @@ describe('useIterationDiff', () => {
 
   describe('when no selected range', () => {
     it('should return empty results when selectedRange is null', () => {
-      vi.mocked(useIterationStore).mockReturnValue({
+      setupMockState({
         client: mockClient,
         selectedRange: null,
         isDegraded: false,
         artifacts: [],
-      } as ReturnType<typeof useIterationStore>);
+      });
 
       const { result } = renderHook(() => useIterationDiff());
 
@@ -74,7 +103,7 @@ describe('useIterationDiff', () => {
   });
 
   describe('when iteration mode is active', () => {
-    const mockArtifacts = [
+    const mockArtifacts: ReviewFileArtifact[] = [
       {
         id: 1,
         changeTrackingId: 'file-1',
@@ -92,12 +121,12 @@ describe('useIterationDiff', () => {
     ];
 
     beforeEach(() => {
-      vi.mocked(useIterationStore).mockReturnValue({
+      setupMockState({
         client: mockClient,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
         isDegraded: false,
         artifacts: mockArtifacts,
-      } as unknown);
+      });
 
       mockClient.getArtifactsForRange.mockReturnValue(mockArtifacts);
     });
@@ -139,12 +168,12 @@ describe('useIterationDiff', () => {
 
     describe('getFileDiffByPath', () => {
       it('should return null when not in iteration mode', () => {
-        vi.mocked(useIterationStore).mockReturnValue({
+        setupMockState({
           client: null,
           selectedRange: null,
           isDegraded: true,
           artifacts: [],
-        } as ReturnType<typeof useIterationStore>);
+        });
 
         const { result } = renderHook(() => useIterationDiff());
         const diff = result.current.getFileDiffByPath('src/file1.ts');
@@ -186,12 +215,12 @@ describe('useIterationDiff', () => {
           },
         ];
 
-        vi.mocked(useIterationStore).mockReturnValue({
+        setupMockState({
           client: mockClient,
           selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
           isDegraded: false,
           artifacts: deletedFileArtifacts,
-        } as unknown);
+        });
 
         mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
           if (snapshotIndex === 1) return undefined; // File deleted at head
@@ -261,12 +290,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 1, // File exists through snapshot 1
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
             isDegraded: false,
             artifacts: [sparseArtifact],
-          } as unknown);
+          });
 
           // getFileContent returns content at or before requested snapshot
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
@@ -299,12 +328,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 0, // File only exists at snapshot 0
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
             isDegraded: false,
             artifacts: [deletedArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             if (snapshotIndex <= 0) {
@@ -339,12 +368,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 1,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
             isDegraded: false,
             artifacts: [addedLateArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             if (snapshotIndex >= 1) {
@@ -379,12 +408,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 1,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
             isDegraded: false,
             artifacts: [renamedArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => ({
             artifactId,
@@ -420,12 +449,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 3,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 3 }, // Base to iteration 2
             isDegraded: false,
             artifacts: [lateModifiedArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             // Content only stored at snapshots 2 and 3
@@ -477,12 +506,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 3,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 1, toSnapshot: 3 }, // Iteration 1 to iteration 2
             isDegraded: false,
             artifacts: [lateModifiedArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             if (snapshotIndex === 2) {
@@ -530,12 +559,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 3,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
             isDegraded: false,
             artifacts: [addedInIteration2],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             if (snapshotIndex === 3) {
@@ -573,12 +602,12 @@ describe('useIterationDiff', () => {
             lastSnapshotIndex: 3,
           };
 
-          vi.mocked(useIterationStore).mockReturnValue({
+          setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 }, // Viewing iteration 1
             isDegraded: false,
             artifacts: [lateModifiedArtifact],
-          } as unknown);
+          });
 
           mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
             // Content only exists at snapshots 2 and 3

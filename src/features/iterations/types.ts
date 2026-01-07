@@ -126,8 +126,11 @@ export interface IterationState {
   /** All iterations loaded from artifact */
   iterations: Iteration[];
 
-  /** Currently selected range for comparison */
-  selectedRange: IterationRange | null;
+  /** Current PR key for lookup in selectedRanges */
+  currentPrKey: string | null;
+
+  /** Selected ranges partitioned by PR key */
+  selectedRanges: Record<string, IterationRange>;
 
   /** All file artifacts */
   artifacts: ReviewFileArtifact[];
