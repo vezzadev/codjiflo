@@ -24,6 +24,11 @@ import { iterationToRightSnapshot } from '../types';
 // Store State Interface
 // ============================================================================
 
+/** Creates a unique key for a PR to partition cached data */
+function getPrKey(owner: string, repo: string, prNumber: number): string {
+  return `${owner}/${repo}#${prNumber}`;
+}
+
 interface IterationState {
   // Data
   iterations: Iteration[];
@@ -31,7 +36,10 @@ interface IterationState {
   artifactTimestamp: string | null;
   artifactReference: ArtifactReference | null;
 
-  // Selection
+  // Selection (partitioned by PR)
+  currentPrKey: string | null;
+  selectedRanges: Record<string, IterationRange>;
+  // Derived from currentPrKey + selectedRanges for backward compatibility
   selectedRange: IterationRange | null;
 
   // Services (not persisted)
@@ -60,6 +68,8 @@ const initialState = {
   artifacts: [],
   artifactTimestamp: null,
   artifactReference: null,
+  currentPrKey: null,
+  selectedRanges: {},
   selectedRange: null,
   client: null,
   spanTrackerService: null,
@@ -78,7 +88,8 @@ export const useIterationStore = create<IterationState>()(
       ...initialState,
 
       loadIterations: async (owner, repo, prNumber) => {
-        set({ isLoading: true, error: null });
+        const prKey = getPrKey(owner, repo, prNumber);
+        set({ isLoading: true, error: null, currentPrKey: prKey });
 
         try {
           const loader = new ArtifactLoader(owner, repo, prNumber);
@@ -118,24 +129,35 @@ export const useIterationStore = create<IterationState>()(
               }
             : null;
 
-          // Validate persisted range against current PR's iterations
-          // The range is invalid if it references snapshots that don't exist in this PR
-          const persistedRange = get().selectedRange;
+          // Check if we have a cached range for this specific PR
+          const { selectedRanges } = get();
+          const cachedRange = selectedRanges[prKey];
+
+          // Validate cached range against current PR's iterations
           const maxValidSnapshot = latestIteration
             ? iterationToRightSnapshot(latestIteration.revision)
             : 0;
-          const isPersistedRangeValid =
-            persistedRange !== null &&
-            persistedRange.fromSnapshot >= 0 &&
-            persistedRange.toSnapshot <= maxValidSnapshot &&
-            persistedRange.fromSnapshot < persistedRange.toSnapshot;
+          const isCachedRangeValid =
+            cachedRange !== undefined &&
+            cachedRange.fromSnapshot >= 0 &&
+            cachedRange.toSnapshot <= maxValidSnapshot &&
+            cachedRange.fromSnapshot < cachedRange.toSnapshot;
+
+          // Use cached range if valid, otherwise use default
+          const rangeToUse = isCachedRangeValid ? cachedRange : defaultRange;
+
+          // Update selectedRanges with the range for this PR
+          const newSelectedRanges = rangeToUse
+            ? { ...selectedRanges, [prKey]: rangeToUse }
+            : selectedRanges;
 
           set({
             iterations,
             artifacts,
             artifactTimestamp: reference.timestamp,
             artifactReference: reference,
-            selectedRange: isPersistedRangeValid ? persistedRange : defaultRange,
+            selectedRanges: newSelectedRanges,
+            selectedRange: rangeToUse,
             client,
             spanTrackerService,
             isLoading: false,
@@ -152,19 +174,29 @@ export const useIterationStore = create<IterationState>()(
       },
 
       selectRange: (fromSnapshot, toSnapshot) => {
+        const { currentPrKey, selectedRanges } = get();
+        if (!currentPrKey) {
+          console.warn('Cannot select range: no PR is currently loaded');
+          return;
+        }
         if (fromSnapshot >= toSnapshot) {
           console.warn('Invalid range: fromSnapshot must be less than toSnapshot');
           return;
         }
 
+        const newRange = { fromSnapshot, toSnapshot };
         set({
-          selectedRange: { fromSnapshot, toSnapshot },
+          selectedRanges: {
+            ...selectedRanges,
+            [currentPrKey]: newRange,
+          },
+          selectedRange: newRange,
         });
       },
 
       selectPreset: (preset) => {
-        const { iterations } = get();
-        if (iterations.length === 0) return;
+        const { iterations, currentPrKey, selectedRanges } = get();
+        if (iterations.length === 0 || !currentPrKey) return;
 
         const latestIteration = iterations[iterations.length - 1];
         if (!latestIteration) return;
@@ -218,7 +250,13 @@ export const useIterationStore = create<IterationState>()(
             return;
         }
 
-        set({ selectedRange: newRange });
+        set({
+          selectedRanges: {
+            ...selectedRanges,
+            [currentPrKey]: newRange,
+          },
+          selectedRange: newRange,
+        });
       },
 
       getSpanTrackerService: () => {
@@ -251,8 +289,8 @@ export const useIterationStore = create<IterationState>()(
     {
       name: 'iteration-store',
       partialize: (state) => ({
-        // Only persist user's selection, not data
-        selectedRange: state.selectedRange,
+        // Only persist user's selections per PR, not data
+        selectedRanges: state.selectedRanges,
       }),
     }
   )
