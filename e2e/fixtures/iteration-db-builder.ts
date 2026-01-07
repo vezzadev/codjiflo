@@ -65,6 +65,14 @@ CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots
 CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);
 CREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);
+CREATE TABLE IF NOT EXISTS pr_descriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  iteration_id INTEGER NOT NULL REFERENCES iterations(id) ON DELETE CASCADE,
+  source_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  rendered_hash TEXT NOT NULL REFERENCES content_blobs(content_hash),
+  UNIQUE(iteration_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pr_descriptions_iteration ON pr_descriptions(iteration_id);
 `;
 
 // ============================================================================
@@ -82,6 +90,8 @@ export interface IterationDbBuilderOptions {
   baseSha?: string;
   /** Default author if not in patch (default: 'test-user') */
   defaultAuthor?: string;
+  /** PR description (markdown) - same for all iterations if string, or per-iteration if array */
+  prDescription?: string | string[];
 }
 
 export interface MockIterationDb {
@@ -110,6 +120,7 @@ export function buildIterationDb(
     patches,
     baseSha = "mock-base-sha",
     defaultAuthor = "test-user",
+    prDescription = "Mock PR description",
   } = options;
 
   // Create in-memory SQLite database
@@ -147,6 +158,18 @@ export function buildIterationDb(
       `INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
        VALUES (?, ?, ?, ?, ?, ?)`
     ).run(revision, headSha, baseSha, beforeSha, author, createdAt);
+
+    // Insert PR description for this iteration
+    const descriptionMd = Array.isArray(prDescription)
+      ? (prDescription[revision - 1] ?? "Mock PR description")
+      : prDescription;
+    const descriptionHtml = `<p>${descriptionMd}</p>`; // Simple HTML rendering
+    const sourceHash = storeContent(db, descriptionMd);
+    const renderedHash = storeContent(db, descriptionHtml);
+    db.prepare(
+      `INSERT INTO pr_descriptions (iteration_id, source_hash, rendered_hash)
+       VALUES (?, ?, ?)`
+    ).run(revision, sourceHash, renderedHash);
 
     // Get file state before applying this patch
     const previousFiles = { ...currentFiles };
