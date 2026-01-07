@@ -118,12 +118,24 @@ export const useIterationStore = create<IterationState>()(
               }
             : null;
 
+          // Validate persisted range against current PR's iterations
+          // The range is invalid if it references snapshots that don't exist in this PR
+          const persistedRange = get().selectedRange;
+          const maxValidSnapshot = latestIteration
+            ? iterationToRightSnapshot(latestIteration.revision)
+            : 0;
+          const isPersistedRangeValid =
+            persistedRange !== null &&
+            persistedRange.fromSnapshot >= 0 &&
+            persistedRange.toSnapshot <= maxValidSnapshot &&
+            persistedRange.fromSnapshot < persistedRange.toSnapshot;
+
           set({
             iterations,
             artifacts,
             artifactTimestamp: reference.timestamp,
             artifactReference: reference,
-            selectedRange: get().selectedRange ?? defaultRange,
+            selectedRange: isPersistedRangeValid ? persistedRange : defaultRange,
             client,
             spanTrackerService,
             isLoading: false,
