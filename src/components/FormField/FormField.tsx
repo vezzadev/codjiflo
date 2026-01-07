@@ -7,8 +7,6 @@ export interface FormFieldProps {
   id?: string | undefined;
   children: (props: {
     id: string;
-    errorId: string | undefined;
-    helperId: string | undefined;
     ariaDescribedBy: string | undefined;
     ariaInvalid: 'true' | 'false';
   }) => ReactNode;
@@ -41,8 +39,6 @@ export function FormField({
       )}
       {children({
         id: fieldId,
-        errorId,
-        helperId,
         ariaDescribedBy,
         ariaInvalid,
       })}
