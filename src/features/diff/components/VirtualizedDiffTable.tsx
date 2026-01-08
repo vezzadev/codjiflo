@@ -3,8 +3,8 @@
  * Uses react-window for performant rendering
  */
 
-import { useMemo, useRef, useEffect } from 'react';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import { useMemo, useEffect } from 'react';
+import { List, useListRef, type RowComponentProps } from 'react-window';
 import { DiffLine } from './DiffLine';
 import type { ParsedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
@@ -64,30 +64,31 @@ interface RowData {
 /**
  * Individual row renderer for the virtualized list
  */
-function DiffRow({ index, style, data }: ListChildComponentProps<RowData>) {
-  const {
-    diffLines,
-    language,
-    threadsByLineAndSide,
-    currentUserLogin,
-    addReply,
-    editComment,
-    deleteComment,
-    toggleResolved,
-    draftLineIndex,
-    draftBody,
-    isSubmittingDraft,
-    submitError,
-    onStartComment,
-    onCancelDraft,
-    onChangeDraftBody,
-    onSubmitDraft,
-    showWhitespace,
-    lineNumberMode,
-  } = data;
+function DiffRow({
+  index,
+  style,
+  diffLines,
+  language,
+  threadsByLineAndSide,
+  currentUserLogin,
+  addReply,
+  editComment,
+  deleteComment,
+  toggleResolved,
+  draftLineIndex,
+  draftBody,
+  isSubmittingDraft,
+  submitError,
+  onStartComment,
+  onCancelDraft,
+  onChangeDraftBody,
+  onSubmitDraft,
+  showWhitespace,
+  lineNumberMode,
+}: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
-  if (!line) return null;
+  if (!line) return <div style={style} />;
 
   // Get threads for this line
   const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
@@ -176,7 +177,7 @@ export function VirtualizedDiffTable({
   lineNumberMode,
   scrollToRowIndex,
 }: VirtualizedDiffTableProps) {
-  const listRef = useRef<List>(null);
+  const listRef = useListRef(null);
 
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
@@ -190,12 +191,12 @@ export function VirtualizedDiffTable({
         contextLines = parsed;
       }
       const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
-      listRef.current.scrollToItem(targetIndex, 'start');
+      listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
     }
   }, [scrollToRowIndex]);
 
-  // Memoize item data to prevent unnecessary re-renders
-  const itemData = useMemo<RowData>(
+  // Memoize row props to prevent unnecessary re-renders
+  const rowProps = useMemo<RowData>(
     () => ({
       diffLines,
       language,
@@ -240,15 +241,13 @@ export function VirtualizedDiffTable({
 
   return (
     <List
-      ref={listRef}
-      height={containerHeight}
-      itemCount={diffLines.length}
-      itemSize={LINE_HEIGHT}
-      width="100%"
+      listRef={listRef}
+      rowComponent={DiffRow}
+      rowCount={diffLines.length}
+      rowHeight={LINE_HEIGHT}
+      style={{ height: containerHeight, width: '100%' }}
       overscanCount={OVERSCAN_COUNT}
-      itemData={itemData}
-    >
-      {DiffRow}
-    </List>
+      rowProps={rowProps}
+    />
   );
 }
