@@ -229,3 +229,6 @@ Push notifications for live sync.
 - **Dr. Michaela Greiler's Blog:** "How Code Reviews Work at Microsoft" - Overview of CodeFlow usage and practices
   - URL: https://www.michaelagreiler.com/code-reviews-at-microsoft-how-to-code-review-at-a-large-software-company/
   - Published: March 27, 2019 (Updated January 22, 2022)
+- **Microsoft News Center** "A Bar, an Idea, and a Garage: The Story of CodeFlow"
+  - URL: [Microsoft News Center dead link](http://www.microsoft.com/en-us/news/features/2012/jan12/01-05CodeFlow.aspx) ([Archived copy from the Wayback Machine](https://web.archive.org/web/20131006162507/http://www.microsoft.com/en-us/news/features/2012/jan12/01-05CodeFlow.aspx)
+  - Published: January 5, 2012
