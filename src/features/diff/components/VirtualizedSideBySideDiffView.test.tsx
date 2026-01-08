@@ -6,27 +6,29 @@ import { useThemeStore } from '@/features/theme';
 
 // Mock react-window
 vi.mock('react-window', () => ({
-  FixedSizeList: ({ children, itemCount, itemData }: {
-    children: React.ComponentType<{ index: number; style: React.CSSProperties; data: unknown }>;
-    itemCount: number;
-    itemData: unknown;
+  List: ({ rowComponent, rowCount, rowProps }: {
+    rowComponent: React.ComponentType<{ index: number; style: React.CSSProperties } & Record<string, unknown>>;
+    rowCount: number;
+    rowProps: Record<string, unknown>;
   }) => {
-    const Child = children;
+    const RowComponent = rowComponent;
     // Render first few items for testing
-    const itemsToRender = Math.min(itemCount, 5);
+    const itemsToRender = Math.min(rowCount, 5);
     return (
       <div data-testid="virtualized-sxs-list">
         {Array.from({ length: itemsToRender }).map((_, index) => (
-          <Child
+          <RowComponent
             key={index}
             index={index}
             style={{ height: 23, top: index * 23 }}
-            data={itemData}
+            ariaAttributes={{ 'aria-posinset': index + 1, 'aria-setsize': rowCount, role: 'listitem' }}
+            {...rowProps}
           />
         ))}
       </div>
     );
   },
+  useListRef: (initialValue: unknown) => ({ current: initialValue }),
 }));
 
 const createMockDiffLine = (overrides: Partial<ParsedDiffLine> = {}): ParsedDiffLine => ({
