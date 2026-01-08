@@ -3,8 +3,8 @@
  * Uses react-window for performant rendering with synchronized scrolling
  */
 
-import { useMemo, useRef, useEffect } from 'react';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import { useMemo, useEffect } from 'react';
+import { List, useListRef, type RowComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
 import type { AlignedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
@@ -80,31 +80,32 @@ function getThreadsForLine(
  * Individual row renderer for the virtualized list
  * Renders both left and right sides in a single row
  */
-function SideBySideRow({ index, style, data }: ListChildComponentProps<RowData>) {
-  const {
-    alignedLines,
-    language,
-    threadsByLineAndSide,
-    currentUserLogin,
-    addReply,
-    editComment,
-    deleteComment,
-    toggleResolved,
-    contentFilter,
-    draftLineIndex,
-    draftSide,
-    draftBody,
-    isSubmittingDraft,
-    submitError,
-    onStartComment,
-    onCancelDraft,
-    onChangeDraftBody,
-    onSubmitDraft,
-    showWhitespace,
-  } = data;
+function SideBySideRow({
+  index,
+  style,
+  alignedLines,
+  language,
+  threadsByLineAndSide,
+  currentUserLogin,
+  addReply,
+  editComment,
+  deleteComment,
+  toggleResolved,
+  contentFilter,
+  draftLineIndex,
+  draftSide,
+  draftBody,
+  isSubmittingDraft,
+  submitError,
+  onStartComment,
+  onCancelDraft,
+  onChangeDraftBody,
+  onSubmitDraft,
+  showWhitespace,
+}: RowComponentProps<RowData>) {
 
   const pair = alignedLines[index];
-  if (!pair) return null;
+  if (!pair) return <div style={style} />;
 
   const { left: leftLine, right: rightLine } = pair;
 
@@ -260,7 +261,7 @@ export function VirtualizedSideBySideDiffView({
   showWhitespace,
   scrollToRowIndex,
 }: VirtualizedSideBySideDiffViewProps) {
-  const listRef = useRef<List>(null);
+  const listRef = useListRef(null);
 
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
@@ -318,7 +319,7 @@ export function VirtualizedSideBySideDiffView({
         contextLines = parsed;
       }
       const targetIndex = Math.max(0, effectiveIndex - contextLines);
-      listRef.current.scrollToItem(targetIndex, 'start');
+      listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
     }
   }, [scrollToRowIndex, alignedLines, contentFilter]);
 
@@ -335,8 +336,8 @@ export function VirtualizedSideBySideDiffView({
     });
   }, [alignedLines, contentFilter]);
 
-  // Memoize item data to prevent unnecessary re-renders
-  const itemData = useMemo<RowData>(
+  // Memoize row props to prevent unnecessary re-renders
+  const rowProps = useMemo<RowData>(
     () => ({
       alignedLines: filteredLines,
       language,
@@ -388,16 +389,14 @@ export function VirtualizedSideBySideDiffView({
       aria-label="Side-by-side diff view"
     >
       <List
-        ref={listRef}
-        height={containerHeight}
-        itemCount={filteredLines.length}
-        itemSize={LINE_HEIGHT}
-        width="100%"
+        listRef={listRef}
+        rowComponent={SideBySideRow}
+        rowCount={filteredLines.length}
+        rowHeight={LINE_HEIGHT}
+        style={{ height: containerHeight, width: '100%' }}
         overscanCount={OVERSCAN_COUNT}
-        itemData={itemData}
-      >
-        {SideBySideRow}
-      </List>
+        rowProps={rowProps}
+      />
     </div>
   );
 }
