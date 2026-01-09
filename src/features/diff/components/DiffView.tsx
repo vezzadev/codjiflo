@@ -32,6 +32,15 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 /** Threshold for enabling virtualization (AC-3.1.12) */
 const VIRTUALIZATION_THRESHOLD = 500;
 
+/** Convert content filter to line number display mode (AC-3.3.14-15) */
+function getLineNumberModeFromFilter(filter: 'left' | 'both' | 'right'): 'left' | 'right' | 'both' {
+  switch (filter) {
+    case 'left': return 'left';
+    case 'right': return 'right';
+    default: return 'both';
+  }
+}
+
 /**
  * Main diff view component with support for unified and side-by-side modes
  * S-1.4: AC-1.4.1 through AC-1.4.10 (Unified view)
@@ -410,6 +419,26 @@ export function DiffView() {
     setSubmitError(null);
   }, []);
 
+  // Submit handler for unified view (determines side from line type)
+  const handleUnifiedSubmitDraft = useCallback(() => {
+    if (draftLineIndex === null) return;
+    const targetLine = diffLines[draftLineIndex];
+    const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+    void handleSubmitComment(draftLineIndex, side, draftBody);
+  }, [draftLineIndex, diffLines, draftBody, handleSubmitComment]);
+
+  // Submit handler for side-by-side view (uses explicit side)
+  const handleSideBySideSubmitDraft = useCallback(() => {
+    if (draftLineIndex === null || draftSide === null) return;
+    void handleSubmitComment(draftLineIndex, draftSide, draftBody);
+  }, [draftLineIndex, draftSide, draftBody, handleSubmitComment]);
+
+  // Start comment handler for unified view (always uses RIGHT side)
+  const handleUnifiedStartComment = useCallback(
+    (index: number) => handleStartComment(index, 'RIGHT'),
+    [handleStartComment]
+  );
+
   // Loading state (includes full file content loading AC-3.1.13)
   const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff;
   if (isLoading || (isShowingDescription && isPRLoading) || isLoadingFullFile) {
@@ -524,18 +553,12 @@ export function DiffView() {
               draftBody={draftBody}
               isSubmittingDraft={isSubmittingDraft}
               submitError={submitError}
-              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+              onStartComment={handleUnifiedStartComment}
               onCancelDraft={handleCancelDraft}
               onChangeDraftBody={setDraftBody}
-              onSubmitDraft={() => {
-                if (draftLineIndex !== null) {
-                  const targetLine = diffLines[draftLineIndex];
-                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                  void handleSubmitComment(draftLineIndex, side, draftBody);
-                }
-              }}
+              onSubmitDraft={handleUnifiedSubmitDraft}
               showWhitespace={viewConfig.showWhitespace}
-              lineNumberMode={viewConfig.filter === 'left' ? 'left' : viewConfig.filter === 'right' ? 'right' : 'both'}
+              lineNumberMode={getLineNumberModeFromFilter(viewConfig.filter)}
               scrollToRowIndex={scrollToRowIndex}
             />
           ) : (
@@ -543,7 +566,6 @@ export function DiffView() {
               key={filename ?? 'diff-table'}
               diffLines={diffLines}
               language={language}
-              filename={filename ?? ''}
               threadsByLineAndSide={threadsByLineAndSide}
               currentUserLogin={currentUser.login}
               addReply={addReply}
@@ -554,16 +576,10 @@ export function DiffView() {
               draftBody={draftBody}
               isSubmittingDraft={isSubmittingDraft}
               submitError={submitError}
-              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
+              onStartComment={handleUnifiedStartComment}
               onCancelDraft={handleCancelDraft}
               onChangeDraftBody={setDraftBody}
-              onSubmitDraft={() => {
-                if (draftLineIndex !== null) {
-                  const targetLine = diffLines[draftLineIndex];
-                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                  void handleSubmitComment(draftLineIndex, side, draftBody);
-                }
-              }}
+              onSubmitDraft={handleUnifiedSubmitDraft}
               showWhitespace={viewConfig.showWhitespace}
               contentFilter={viewConfig.filter}
             />
@@ -596,11 +612,7 @@ export function DiffView() {
             onStartComment={handleStartComment}
             onCancelDraft={handleCancelDraft}
             onChangeDraftBody={setDraftBody}
-            onSubmitDraft={() => {
-              if (draftLineIndex !== null && draftSide !== null) {
-                void handleSubmitComment(draftLineIndex, draftSide, draftBody);
-              }
-            }}
+            onSubmitDraft={handleSideBySideSubmitDraft}
             showWhitespace={viewConfig.showWhitespace}
             scrollToRowIndex={scrollToRowIndex}
           />
@@ -626,11 +638,7 @@ export function DiffView() {
           onStartComment={handleStartComment}
           onCancelDraft={handleCancelDraft}
           onChangeDraftBody={setDraftBody}
-          onSubmitDraft={() => {
-            if (draftLineIndex !== null && draftSide !== null) {
-              void handleSubmitComment(draftLineIndex, draftSide, draftBody);
-            }
-          }}
+          onSubmitDraft={handleSideBySideSubmitDraft}
           showWhitespace={viewConfig.showWhitespace}
         />
       )}
@@ -645,7 +653,6 @@ export function DiffView() {
 interface UnifiedDiffTableProps {
   diffLines: ParsedDiffLine[];
   language: string;
-  filename: string;
   threadsByLineAndSide: Map<string, ReviewThread[]>;
   currentUserLogin: string;
   addReply: (threadId: string, body: string) => Promise<void>;
@@ -707,7 +714,7 @@ function UnifiedDiffTable({
   }, [diffLines, contentFilter]);
 
   // Determine line number display mode based on content filter (AC-3.3.14-15)
-  const lineNumberMode = contentFilter === 'left' ? 'left' : contentFilter === 'right' ? 'right' : 'both';
+  const lineNumberMode = getLineNumberModeFromFilter(contentFilter);
 
   return (
     <table className="diff-table">
