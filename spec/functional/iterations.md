@@ -106,10 +106,16 @@ This has important implications for file status determination:
 
 3. **Range overlap requirement**: Base equivalence only applies when the file's artifact overlaps with the selected iteration range. This prevents files from appearing in ranges where they weren't actually modified.
 
+4. **Rebase boundary exception**: Base equivalence does **NOT** apply across rebase boundaries. When a PR is rebased, the `base_sha` changes, so left snapshots from post-rebase iterations have different content than pre-rebase iterations. Files first modified after a rebase should show as "Added" (not "Modified") because the original base content is not equivalent to the rebased base content.
+
 **Example**: `action.yml` exists in PR base, unchanged in iteration 1, first modified in iteration 2:
 - Iteration 1 only: `action.yml` should NOT appear (no changes)
 - Iteration 2 only: `action.yml` shows as "M" (modified) because base content exists
 - Iteration 1→2 range: `action.yml` shows as "M" (modified)
+
+**Example (rebase scenario)**: PR rebased between iteration 2 and 3. File `new-feature.ts` exists in rebased base but not in original base, first modified in iteration 3:
+- Base→Iteration 3: `new-feature.ts` shows as "A" (added), NOT "M" (modified)
+- Reason: Cannot use base equivalence because `base_sha` changed at iteration 3
 
 ### File Matching Algorithm
 
