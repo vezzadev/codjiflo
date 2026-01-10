@@ -38,9 +38,9 @@ async function run(): Promise<void> {
     const octokit = github.getOctokit(token);
 
     // Get context
-    const ctx = getCaptureContext(octokit);
+    const ctx = await getCaptureContext(octokit);
     if (!ctx) {
-      core.info('Not a pull_request event, skipping');
+      core.info('Not a pull_request event and no PR_NUMBER provided, skipping');
       return;
     }
 
