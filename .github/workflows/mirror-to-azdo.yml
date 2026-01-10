@@ -50,7 +50,10 @@ jobs:
           git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
 
           git fetch origin --prune
-          git push azdo --mirror
+
+          # Push branches and tags (not PR refs which AzDO rejects)
+          git push azdo --all --prune
+          git push azdo --tags --prune
 
   mirror-pr:
     runs-on: ubuntu-slim
