@@ -261,7 +261,7 @@ jobs:
 
               # Skip if already synced or is the mirror link comment
               if echo "$SYNCED_IDS" | grep -q "^comment-${comment_id}$"; then
-                ((conv_skipped++))
+                conv_skipped=$((conv_skipped + 1))
                 continue
               fi
 
@@ -269,7 +269,8 @@ jobs:
 
               # Skip our own mirror comments
               if echo "$body" | grep -q '<!-- azdo-mirror:'; then
-                ((conv_skipped++))
+                conv_skipped=$((conv_skipped + 1))
+                echo "      -> Skipping mirror comment #$comment_id"
                 continue
               fi
 
@@ -278,6 +279,7 @@ jobs:
 
               echo "      -> Syncing conversation comment #$comment_id from @$author"
 
+              # Build content and JSON payload
               content="<!-- gh-comment:comment-${comment_id} -->
           **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}):
 
@@ -285,16 +287,20 @@ jobs:
 
           ${body}"
 
+              payload=$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')
+              echo "        Payload size: ${#payload} bytes"
+
               response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')")
+                -d "$payload")
 
               if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
-                ((conv_synced++))
+                conv_synced=$((conv_synced + 1))
+                echo "        Created thread ID: $(echo "$response" | jq -r '.id')"
               else
-                echo "      [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
+                echo "        [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
               fi
             done
             echo "    Conversation comments: $conv_synced synced, $conv_skipped skipped"
@@ -308,7 +314,7 @@ jobs:
               comment_id=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-comment-${comment_id}$"; then
-                ((inline_skipped++))
+                inline_skipped=$((inline_skipped + 1))
                 continue
               fi
 
@@ -353,17 +359,21 @@ jobs:
                 echo "        Thread context: file-level only (no line)"
               fi
 
+              payload=$(jq -n \
+                --arg content "$content" \
+                --argjson ctx "$thread_context" \
+                '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], threadContext: $ctx, status: 1}')
+              echo "        Payload size: ${#payload} bytes"
+
               response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n \
-                  --arg content "$content" \
-                  --argjson ctx "$thread_context" \
-                  '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], threadContext: $ctx, status: 1}')")
+                -d "$payload")
 
               if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
-                ((inline_synced++))
+                inline_synced=$((inline_synced + 1))
+                echo "        Created thread ID: $(echo "$response" | jq -r '.id')"
               else
                 echo "        [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
               fi
@@ -379,7 +389,7 @@ jobs:
               review_id=$(echo "$GH_REVIEWS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-${review_id}$"; then
-                ((review_skipped++))
+                review_skipped=$((review_skipped + 1))
                 continue
               fi
 
@@ -390,7 +400,7 @@ jobs:
 
               # Skip empty reviews (just approvals without comment body)
               if [ -z "$body" ] && [ "$state" != "CHANGES_REQUESTED" ]; then
-                ((review_skipped++))
+                review_skipped=$((review_skipped + 1))
                 echo "      -> Skipping empty review #$review_id ($state) from @$author"
                 continue
               fi
@@ -412,14 +422,18 @@ jobs:
 
           ${body}"
 
+              payload=$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')
+              echo "        Payload size: ${#payload} bytes"
+
               response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')")
+                -d "$payload")
 
               if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
-                ((review_synced++))
+                review_synced=$((review_synced + 1))
+                echo "        Created thread ID: $(echo "$response" | jq -r '.id')"
               else
                 echo "        [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
               fi
