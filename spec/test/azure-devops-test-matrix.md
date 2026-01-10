@@ -715,7 +715,7 @@ Timeline:
 |----------|-------|-----------------|
 | CI shallow clone | depth=1 | All parent commits |
 | Partial clone | depth=50 | Commits > 50 back |
-| Treeless clone | blobless | Older blob content |
+| Treeless clone | filter=tree:0 | Tree objects (directories) |
 
 | ID | Test Case | Setup | Expected Behavior | User Story |
 |----|-----------|-------|-------------------|------------|
