@@ -22,10 +22,30 @@ interface GitHubTokenResponse {
  */
 export async function POST(req: Request): Promise<Response> {
   try {
-    const body = await req.json() as Partial<RefreshRequest>;
-    const refresh_token = body.refresh_token;
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
 
-    if (typeof refresh_token !== 'string' || refresh_token.trim().length === 0) {
+    if (
+      !rawBody ||
+      typeof rawBody !== 'object' ||
+      typeof (rawBody as Record<string, unknown>).refresh_token !== 'string'
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid parameter: refresh_token must be a non-empty string' },
+        { status: 400 }
+      );
+    }
+
+    const { refresh_token } = rawBody as RefreshRequest;
+
+    if (refresh_token.trim().length === 0) {
       return NextResponse.json(
         { error: 'Invalid parameter: refresh_token must be a non-empty string' },
         { status: 400 }
