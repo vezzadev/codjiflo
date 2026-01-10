@@ -370,6 +370,7 @@ jobs:
               original_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].original_line // empty")
               original_start_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].original_start_line // empty")
               side=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].side // \"RIGHT\"")
+              start_side=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].start_side // empty")
               html_url=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].html_url")
 
               # Determine line range for display
@@ -394,8 +395,21 @@ jobs:
 
               # Build thread context for inline placement
               # AzDO uses rightFileStart/End for new code, leftFileStart/End for old code
-              if [ "$side" = "LEFT" ] && [ -n "$original_line" ]; then
-                # LEFT side comment - use original_start_line to original_line range
+              # GitHub comments can span both sides (cross-side comments)
+              if [ "$start_side" = "LEFT" ] && [ "$side" = "RIGHT" ] && [ -n "$original_line" ] && [ -n "$line" ]; then
+                # Cross-side comment: starts on LEFT, ends on RIGHT
+                left_start="${original_start_line:-$original_line}"
+                right_end="$line"
+                thread_context=$(jq -n \
+                  --arg path "/$path" \
+                  --argjson lstart "$left_start" \
+                  --argjson lend "$original_line" \
+                  --argjson rstart "$left_start" \
+                  --argjson rend "$right_end" \
+                  '{filePath: $path, leftFileStart: {line: $lstart, offset: 1}, leftFileEnd: {line: $lend, offset: 1}, rightFileStart: {line: $rstart, offset: 1}, rightFileEnd: {line: $rend, offset: 1}}')
+                echo "        Thread context: CROSS-SIDE, LEFT $left_start-$original_line, RIGHT $left_start-$right_end"
+              elif [ "$side" = "LEFT" ] && [ -n "$original_line" ]; then
+                # LEFT side only comment
                 left_start="${original_start_line:-$original_line}"
                 thread_context=$(jq -n \
                   --arg path "/$path" \
@@ -404,7 +418,7 @@ jobs:
                   '{filePath: $path, leftFileStart: {line: $start, offset: 1}, leftFileEnd: {line: $end, offset: 1}}')
                 echo "        Thread context: LEFT side, lines $left_start-$original_line"
               elif [ -n "$line" ]; then
-                # RIGHT side comment - use start_line to line range
+                # RIGHT side only comment
                 right_start="${start_line:-$line}"
                 thread_context=$(jq -n \
                   --arg path "/$path" \
