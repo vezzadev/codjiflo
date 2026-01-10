@@ -8,9 +8,18 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to run workflow on'
+        required: true
+        type: number
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
@@ -96,7 +105,7 @@ jobs:
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           file-coverage-mode: changes
-          pr-number: ${{ github.event.pull_request.number }}
+          pr-number: ${{ env.PR_NUMBER }}
           json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
           threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
 
@@ -172,18 +181,18 @@ jobs:
       - name: Deploy to Vercel
         id: deploy
         run: |
-          url=$(npx vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }} --meta gitPrNumber=${{ github.event.pull_request.number }})
+          url=$(npx vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }} --meta gitPrNumber=${{ env.PR_NUMBER }})
           echo "url=$url" >> $GITHUB_OUTPUT
 
       - name: Set deployment alias
         run: |
-          npx vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ github.event.pull_request.number }}.codjiflo.vza.net --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+          npx vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ env.PR_NUMBER }}.codjiflo.vza.net --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
 
       - name: Find Comment
         uses: peter-evans/find-comment@v3
         id: fc
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ env.PR_NUMBER }}
           comment-author: 'github-actions[bot]'
           body-includes: 'Preview Deployment'
 
@@ -191,11 +200,11 @@ jobs:
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ env.PR_NUMBER }}
           body: |
             ## Preview Deployment
 
-            :rocket: **Preview:** https://pr-${{ github.event.pull_request.number }}.codjiflo.vza.net/${{ github.repository }}/${{ github.event.pull_request.number }}
+            :rocket: **Preview:** https://pr-${{ env.PR_NUMBER }}.codjiflo.vza.net/${{ github.repository }}/${{ env.PR_NUMBER }}
 
             _Updated for commit ${{ github.event.pull_request.head.sha }}_
           edit-mode: replace
@@ -215,7 +224,7 @@ jobs:
       - name: Upload iteration artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codjiflo-pr-${{ github.event.pull_request.number }}-run-${{ github.run_id }}
+          name: codjiflo-pr-${{ env.PR_NUMBER }}-run-${{ github.run_id }}
           path: codjiflo-data/
           retention-days: 90
 
