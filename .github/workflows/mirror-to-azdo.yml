@@ -109,8 +109,9 @@ jobs:
           for gh_num in $(echo "$GH_PRS" | jq -r '.[].number'); do
             azdo_id=$(gh pr view "$gh_num" --comments --json comments 2>/dev/null \
               | jq -r '.comments[].body // empty' \
-              | awk 'match($0, /<!-- azdo-mirror:([0-9]+)/, m) { print m[1]; exit }' \
-              || true)
+              | grep -o '<!-- azdo-mirror:[0-9]*' \
+              | sed 's/<!-- azdo-mirror://' \
+              | head -1 || true)
             if [ -n "$azdo_id" ]; then
               GH_TO_AZDO[$gh_num]=$azdo_id
               echo "  GH #$gh_num -> AzDO #$azdo_id"
@@ -291,7 +292,9 @@ jobs:
             echo "    Found $(echo "$AZDO_THREADS" | jq 'length') existing AzDO threads"
 
             # Extract already-synced GitHub comment IDs from AzDO thread content
-            SYNCED_IDS=$(echo "$AZDO_THREADS" | jq -r '.[].comments[]?.content // empty' | grep -oP '<!-- gh-comment:\K[^>]+(?= -->)' || true)
+            SYNCED_IDS=$(echo "$AZDO_THREADS" | jq -r '.[].comments[]?.content // empty' \
+              | grep -o '<!-- gh-comment:[^ ]*' \
+              | sed 's/<!-- gh-comment://' || true)
             synced_count=$(echo "$SYNCED_IDS" | grep -c . || echo 0)
             echo "    Already synced: $synced_count comments"
 
