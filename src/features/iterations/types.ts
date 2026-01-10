@@ -67,6 +67,11 @@ export interface FileContent {
 
 
 
+/** Get left (before/base) snapshot index for an iteration */
+export function iterationToLeftSnapshot(revision: number): number {
+  return (revision - 1) * 2;
+}
+
 /** Get right (after) snapshot index for an iteration */
 export function iterationToRightSnapshot(revision: number): number {
   return (revision - 1) * 2 + 1;

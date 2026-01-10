@@ -125,15 +125,17 @@ describe('useIterationStore', () => {
       expect(state.isDegraded).toBe(false);
       expect(state.iterations).toHaveLength(3);
       expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
-      // Default range should be base (0) to latest iteration's right snapshot
-      // For 3 iterations, latest revision is 3, right snapshot = 2*3-1 = 5
+      // Default range uses the latest iteration's base to handle rebases correctly (issue #151)
+      // For 3 iterations, latest revision is 3:
+      // - left snapshot = (3-1)*2 = 4
+      // - right snapshot = (3-1)*2+1 = 5
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
-        toSnapshot: 5, // iterationToRightSnapshot(3) = 2*3-1 = 5
+        fromSnapshot: 4, // iterationToLeftSnapshot(3) = (3-1)*2 = 4
+        toSnapshot: 5, // iterationToRightSnapshot(3) = (3-1)*2+1 = 5
       });
       // selectSelectedRange selector should return the current PR's range
       expect(selectSelectedRange(state)).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 4,
         toSnapshot: 5,
       });
     });
@@ -159,9 +161,10 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // Should use default range, not the invalid cached one
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
-        toSnapshot: 3, // iterationToRightSnapshot(2) = 2*2-1 = 3
+        fromSnapshot: 2, // iterationToLeftSnapshot(2) = (2-1)*2 = 2
+        toSnapshot: 3, // iterationToRightSnapshot(2) = (2-1)*2+1 = 3
       });
     });
 
@@ -185,8 +188,9 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 2,
         toSnapshot: 3,
       });
     });
@@ -211,8 +215,9 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 2,
         toSnapshot: 3,
       });
     });
@@ -266,9 +271,10 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // PR #1 should have its own default range
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 2,
         toSnapshot: 3,
       });
       // PR #2's range should still be preserved
@@ -278,7 +284,7 @@ describe('useIterationStore', () => {
       });
       // selectSelectedRange selector should return PR #1's range
       expect(selectSelectedRange(state)).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 2,
         toSnapshot: 3,
       });
     });
@@ -303,6 +309,50 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.isLoading).toBe(false);
       expect(state.error).toBe('Network error');
+    });
+
+    it('should use latest iteration base for default range after rebase (issue #151)', async () => {
+      // Simulate a rebase scenario where iterations have different base commits
+      const mockIterations: Iteration[] = [
+        {
+          id: 1,
+          revision: 1,
+          createdAt: new Date(2024, 0, 1),
+          headSha: 'head-sha-1',
+          baseSha: 'old-base-sha', // Original base
+          beforeSha: null,
+          author: 'test-user',
+        },
+        {
+          id: 2,
+          revision: 2,
+          createdAt: new Date(2024, 0, 2),
+          headSha: 'head-sha-2',
+          baseSha: 'new-base-sha', // Different base after rebase!
+          beforeSha: 'head-sha-1',
+          author: 'test-user',
+        },
+      ];
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      // After a rebase, the default range should use the LATEST iteration's base (snapshot 2)
+      // not the stale snapshot 0 which contains the old base content.
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
+        fromSnapshot: 2, // Latest iteration's base, NOT 0 (stale old base)
+        toSnapshot: 3,
+      });
     });
 
     it('should evict oldest entries when cache exceeds 50 PRs (LRU)', async () => {
@@ -420,8 +470,10 @@ describe('useIterationStore', () => {
     it('should set full range for "full" preset', () => {
       useIterationStore.getState().selectPreset('full');
 
+      // For 3 iterations: left = (3-1)*2 = 4, right = (3-1)*2+1 = 5
+      // Uses latest iteration's base to handle rebases correctly (issue #151)
       expect(useIterationStore.getState().selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 4,
         toSnapshot: 5,
       });
     });
@@ -497,9 +549,10 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       // selectSelectedRange should return the current PR's range
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/2');
       expect(selectSelectedRange(state)).toEqual({
-        fromSnapshot: 0,
+        fromSnapshot: 2,
         toSnapshot: 3,
       });
     });
