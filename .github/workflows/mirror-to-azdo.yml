@@ -253,11 +253,15 @@ jobs:
 
             # Sync conversation comments
             comment_count=$(echo "$GH_COMMENTS" | jq 'length')
+            conv_synced=0
+            conv_skipped=0
+            echo "    Processing $comment_count conversation comments..."
             for ((j=0; j<comment_count; j++)); do
               comment_id=$(echo "$GH_COMMENTS" | jq -r ".[$j].id")
 
               # Skip if already synced or is the mirror link comment
               if echo "$SYNCED_IDS" | grep -q "^comment-${comment_id}$"; then
+                ((conv_skipped++))
                 continue
               fi
 
@@ -265,13 +269,14 @@ jobs:
 
               # Skip our own mirror comments
               if echo "$body" | grep -q '<!-- azdo-mirror:'; then
+                ((conv_skipped++))
                 continue
               fi
 
               author=$(echo "$GH_COMMENTS" | jq -r ".[$j].user.login")
               html_url=$(echo "$GH_COMMENTS" | jq -r ".[$j].html_url")
 
-              echo "  Syncing comment #$comment_id from @$author"
+              echo "      -> Syncing conversation comment #$comment_id from @$author"
 
               content="<!-- gh-comment:comment-${comment_id} -->
           **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}):
@@ -280,19 +285,30 @@ jobs:
 
           ${body}"
 
-              curl -s -X POST \
+              response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')")
+
+              if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
+                ((conv_synced++))
+              else
+                echo "      [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
+              fi
             done
+            echo "    Conversation comments: $conv_synced synced, $conv_skipped skipped"
 
             # Sync review comments (inline code comments)
             review_comment_count=$(echo "$GH_REVIEW_COMMENTS" | jq 'length')
+            inline_synced=0
+            inline_skipped=0
+            echo "    Processing $review_comment_count inline review comments..."
             for ((j=0; j<review_comment_count; j++)); do
               comment_id=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-comment-${comment_id}$"; then
+                ((inline_skipped++))
                 continue
               fi
 
@@ -308,7 +324,7 @@ jobs:
               display_line="${line:-$original_line}"
               display_line="${display_line:-?}"
 
-              echo "  Syncing review comment #$comment_id from @$author on $path:$display_line ($side)"
+              echo "      -> Syncing inline comment #$comment_id from @$author on $path:$display_line ($side)"
 
               content="<!-- gh-comment:review-comment-${comment_id} -->
           **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}) (\`${path}:${display_line}\`):
@@ -324,32 +340,46 @@ jobs:
                   --arg path "/$path" \
                   --argjson line "$original_line" \
                   '{filePath: $path, leftFileStart: {line: $line, offset: 1}, leftFileEnd: {line: $line, offset: 1}}')
+                echo "        Thread context: LEFT side, line $original_line"
               elif [ -n "$line" ]; then
                 thread_context=$(jq -n \
                   --arg path "/$path" \
                   --argjson line "$line" \
                   '{filePath: $path, rightFileStart: {line: $line, offset: 1}, rightFileEnd: {line: $line, offset: 1}}')
+                echo "        Thread context: RIGHT side, line $line"
               else
                 # Fallback: no line context, just file path
                 thread_context=$(jq -n --arg path "/$path" '{filePath: $path}')
+                echo "        Thread context: file-level only (no line)"
               fi
 
-              curl -s -X POST \
+              response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d "$(jq -n \
                   --arg content "$content" \
                   --argjson ctx "$thread_context" \
-                  '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], threadContext: $ctx, status: 1}')" > /dev/null
+                  '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], threadContext: $ctx, status: 1}')")
+
+              if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
+                ((inline_synced++))
+              else
+                echo "        [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
+              fi
             done
+            echo "    Inline review comments: $inline_synced synced, $inline_skipped skipped"
 
             # Sync review summaries (approve/request changes/comment)
             review_count=$(echo "$GH_REVIEWS" | jq 'length')
+            review_synced=0
+            review_skipped=0
+            echo "    Processing $review_count review summaries..."
             for ((j=0; j<review_count; j++)); do
               review_id=$(echo "$GH_REVIEWS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-${review_id}$"; then
+                ((review_skipped++))
                 continue
               fi
 
@@ -360,6 +390,8 @@ jobs:
 
               # Skip empty reviews (just approvals without comment body)
               if [ -z "$body" ] && [ "$state" != "CHANGES_REQUESTED" ]; then
+                ((review_skipped++))
+                echo "      -> Skipping empty review #$review_id ($state) from @$author"
                 continue
               fi
 
@@ -371,7 +403,7 @@ jobs:
                 *) state_label="📝 $state" ;;
               esac
 
-              echo "  Syncing review #$review_id ($state) from @$author"
+              echo "      -> Syncing review #$review_id ($state) from @$author"
 
               content="<!-- gh-comment:review-${review_id} -->
           **[@${author}](https://github.com/${author})** ${state_label} on [GitHub](${html_url}):
@@ -380,12 +412,21 @@ jobs:
 
           ${body}"
 
-              curl -s -X POST \
+              response=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')")
+
+              if echo "$response" | jq -e '.id' > /dev/null 2>&1; then
+                ((review_synced++))
+              else
+                echo "        [WARN] Failed to create thread: $(echo "$response" | jq -c '.message // .')"
+              fi
             done
+            echo "    Review summaries: $review_synced synced, $review_skipped skipped"
+
+            echo "  PR #$gh_num sync complete: conv=$conv_synced, inline=$inline_synced, reviews=$review_synced"
           done
 
           echo "Comment sync complete."
