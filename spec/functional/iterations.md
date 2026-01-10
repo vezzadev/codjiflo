@@ -92,10 +92,22 @@ A comparison is "cross-iteration" when not comparing adjacent left/right snapsho
 
 ### Base Equivalence Principle
 
-All **left (even) snapshots** are fetched from the PR's `baseSha`, meaning they contain equivalent content:
+**Without rebase**: All **left (even) snapshots** are fetched from the PR's `baseSha`, meaning they contain equivalent content:
 
 ```
 Snapshot 0 content = Snapshot 2 content = Snapshot 4 content = ... = PR base
+```
+
+**After rebase**: When a PR is rebased, the base changes. Each iteration's `base_sha` may differ:
+
+```
+Before rebase:
+  Iteration 1: base_sha = "abc123" → Snapshot 0 contains content from abc123
+
+After rebase (new commits in base branch):
+  Iteration 2: base_sha = "def456" → Snapshot 2 contains content from def456
+
+  Snapshot 0 content ≠ Snapshot 2 content (base changed!)
 ```
 
 This has important implications for file status determination:
@@ -106,10 +118,19 @@ This has important implications for file status determination:
 
 3. **Range overlap requirement**: Base equivalence only applies when the file's artifact overlaps with the selected iteration range. This prevents files from appearing in ranges where they weren't actually modified.
 
+4. **Rebase-aware default range**: When viewing "full diff" (base → latest), the system uses the **latest iteration's left snapshot** as the base, not snapshot 0. This ensures diffs are computed against the current base after any rebase operations.
+
 **Example**: `action.yml` exists in PR base, unchanged in iteration 1, first modified in iteration 2:
 - Iteration 1 only: `action.yml` should NOT appear (no changes)
 - Iteration 2 only: `action.yml` shows as "M" (modified) because base content exists
 - Iteration 1→2 range: `action.yml` shows as "M" (modified)
+
+**Rebase Example**: Line 4 changed in base branch during rebase:
+- Iteration 1: User changed line 2
+- Rebase: Base branch now has line 4 changed
+- Iteration 2: After rebase, new base includes line 4 change
+- Full diff (base → iteration 2): Shows only line 2 changed (line 4 is already in new base)
+- If we incorrectly used snapshot 0: Would show both lines 2 and 4 changed (stale base)
 
 ### File Matching Algorithm
 
@@ -574,6 +595,37 @@ After rebase:
 | Azure DevOps | New iteration created. `changeTrackingId` maintains file identity across rebase. Comments persist via artifact ID. |
 | GitHub + Workflow | `before_sha` in workflow event captures pre-rebase HEAD. SpanTrackers recomputed for new commit range. |
 | GitHub (degraded) | Comments reference old C, D SHAs. May fail to display or show as orphaned. |
+
+**Base Snapshot Handling After Rebase:**
+
+When a PR is rebased, the base commit changes. The iteration tracking system captures this:
+
+```
+Iteration 1 (before rebase):
+  base_sha: "old-base" → Snapshot 0 contains old base content
+  head_sha: "C"        → Snapshot 1 contains head content
+
+Iteration 2 (after rebase):
+  base_sha: "new-base" → Snapshot 2 contains NEW base content (E, F included)
+  head_sha: "D'"       → Snapshot 3 contains rebased head content
+```
+
+**Critical Implementation Detail:**
+- The "full diff" preset and default range use the **latest iteration's left snapshot** as the base
+- This ensures diffs are computed against the current (post-rebase) base
+- Using snapshot 0 after a rebase would show stale diffs against the old base
+
+**Example:**
+```
+File: config.txt
+Old base (snapshot 0): line1, line2, line3, line4
+Iteration 1 head:      line1, MODIFIED-line2, line3, line4
+New base (snapshot 2): line1, line2, line3, NEW-line4  (line4 changed in E or F)
+Iteration 2 head:      line1, MODIFIED-line2, line3, NEW-line4
+
+Correct "full diff" (snapshot 2 → 3): Shows only line2 changed
+Incorrect (snapshot 0 → 3): Would show both line2 AND line4 changed
+```
 
 **Comment Tracking Challenges:**
 1. **Content changes:** If rebase introduces conflicts, resolved content may differ from original

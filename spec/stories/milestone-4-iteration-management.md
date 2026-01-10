@@ -149,8 +149,9 @@ Compute SpanTracker data for common comparison pairs during the action run. Stor
     - [ ] [AC-4.4.2] Run diff algorithm on file content pairs.
     - [ ] [AC-4.4.3] Serialize SpanTracker mapping data to BLOB.
 2.  **Base→Latest Computation**:
-    - [ ] [AC-4.4.4] Compute SpanTracker from snapshot 0 to latest right snapshot.
+    - [ ] [AC-4.4.4] Compute SpanTracker from each iteration's left snapshot to its right snapshot (e.g., 0→1, 2→3).
     - [ ] [AC-4.4.5] Update on each new iteration.
+    - [ ] [AC-4.4.5.1] Note: "Base→Latest" for viewing uses latest iteration's left snapshot (not snapshot 0) to handle rebases correctly. SpanTrackers are computed per-iteration, and the frontend chains them as needed.
 3.  **Storage**:
     - [ ] [AC-4.4.6] Store in `span_trackers` table with unique (artifact_id, left, right) key.
     - [ ] [AC-4.4.7] Efficient serialization format (consider MessagePack or JSON).
@@ -230,9 +231,10 @@ Provide UI controls for selecting iteration comparison range. Integrate with the
     - [ ] [AC-4.7.3] Options include: "Base", each iteration ("Update 1", "Update 2"...), "Latest".
     - [ ] [AC-4.7.4] Visual timeline showing iteration sequence.
 2.  **Quick Presets**:
-    - [ ] [AC-4.7.5] "Full diff" preset: Base → Latest.
-    - [ ] [AC-4.7.6] "Latest update" preset: Previous → Latest.
+    - [ ] [AC-4.7.5] "Full diff" preset: Uses latest iteration's left snapshot → latest iteration's right snapshot. This ensures correct base is used after rebases (not stale snapshot 0).
+    - [ ] [AC-4.7.6] "Latest update" preset: Previous iteration's right → Latest iteration's right.
     - [ ] [AC-4.7.7] "Since last review" preset (if review history available).
+    - [ ] [AC-4.7.7.1] Default range on load: Same as "Full diff" preset (latest iteration's base → head).
 3.  **State Management**:
     - [ ] [AC-4.7.8] Store selected range in Zustand store.
     - [ ] [AC-4.7.9] Persist last selection in localStorage per PR.
