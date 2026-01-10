@@ -53,17 +53,16 @@ jobs:
 
           git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
 
-          # Create local branches for all remote tracking branches
-          # This is needed because git push --all only pushes local branches
-          for remote in $(git branch -r | grep -v HEAD | sed 's/origin\///' ); do
-            git branch --track "$remote" "origin/$remote" 2>/dev/null || true
-          done
+          # Fetch all branches as local branches (checkout only creates one local branch)
+          # Detach HEAD first so git allows updating all branches including the current one
+          git checkout --detach
+          git fetch origin '+refs/heads/*:refs/heads/*'
 
-          # Push all branches and tags (--force for non-fast-forward after force push)
-          # Note: Do NOT use --prune as it deletes branches that don't exist locally,
-          # which can delete main when pushing from a feature branch
-          git push azdo --all --force
-          git push azdo --tags --force
+          # Push all branches and tags
+          # --prune removes branches/tags from Azure DevOps that were deleted from GitHub
+          # --force handles non-fast-forward updates after force pushes
+          git push azdo --all --prune --force
+          git push azdo --tags --prune --force
 
   mirror-pr:
     runs-on: ubuntu-slim
