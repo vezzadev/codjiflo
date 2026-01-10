@@ -813,14 +813,36 @@ line5
     //        AC-4.7.7.1 (Default range on load uses latest iteration base)
     //
     // TEST FAILURE VALIDATION (issue #151):
-    // Before fix (fromSnapshot always 0):
-    //   - Diff shows 4 changed lines (line2 + line4, comparing to old base)
+    // Before fix (cached fromSnapshot:0 is used, comparing to old base):
+    //   - Diff shows 4 changed lines (line2 + line4)
     //   - Test fails: expected 2 changed lines, got 4
-    // After fix (fromSnapshot uses latest iteration's left snapshot):
-    //   - Diff shows 2 changed lines (only line2, comparing to new base)
+    // After fix (cached fromSnapshot:0 is invalidated, using new base):
+    //   - Diff shows 2 changed lines (only line2)
     //   - Test passes
 
+    // CRITICAL: Inject a STALE cached range to simulate a user who visited
+    // this PR before the rebase. The cached range has fromSnapshot: 0 (old base).
+    // The fix should INVALIDATE this cache and use the new base instead.
     await page.goto("/test/repo/151");
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "iteration-store",
+        JSON.stringify({
+          state: {
+            selectedRanges: {
+              "https://github.com/test/repo/pull/151": {
+                fromSnapshot: 0, // Stale cached value pointing to OLD base
+                toSnapshot: 3,
+              },
+            },
+          },
+          version: 0,
+        })
+      );
+    });
+
+    // Reload to apply the cached value
+    await page.reload();
     await page.waitForLoadState("load");
 
     // Wait for iterations to load

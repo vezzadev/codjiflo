@@ -808,7 +808,7 @@ Timeline:
 | #20 | Merge Commit (2 Parents) | MC2-01 to MC2-05 | `test/merge-commit` |
 | #21 | Octopus Merge (3+ Parents) | OM-01 to OM-04 | `test/octopus-merge` |
 | #22 | Multiple Merges | MM-01 to MM-05 | `test/multiple-merges` |
-| #23 | Rebase Operation | RB-01 to RB-06 | `test/rebase-operation` |
+| #23 | Rebase Operation | RB-01 to RB-09 | `test/rebase-operation` |
 | #24 | Force Push Scenarios | FP-01 to FP-06 | `test/force-push-scenarios` |
 | #25 | Many Iterations | MI-01 to MI-06 | `test/many-iterations` |
 | #26 | Git LFS Files | LFS-01 to LFS-07 | `test/git-lfs` |
@@ -818,7 +818,7 @@ Timeline:
 | #30 | Symlinks & Special Files | SF-01 to SF-07 | `test/special-files` |
 | #31 | Merge Conflict Artifacts | MCF-01 to MCF-04 | `test/merge-conflicts` |
 
-**Total: 144 test cases across 29 PRs**
+**Total: 147 test cases across 29 PRs**
 
 ---
 

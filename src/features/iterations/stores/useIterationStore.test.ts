@@ -311,7 +311,15 @@ describe('useIterationStore', () => {
       expect(state.error).toBe('Network error');
     });
 
-    it('should use latest iteration base for default range after rebase (issue #151)', async () => {
+    it('should invalidate cached range with fromSnapshot:0 after rebase (issue #151)', async () => {
+      // PRE-CONDITION: User previously visited this PR before the rebase
+      // and the cached range has fromSnapshot: 0 (the old base)
+      useIterationStore.setState({
+        selectedRanges: {
+          'https://github.com/owner/repo/pull/1': { fromSnapshot: 0, toSnapshot: 3 },
+        },
+      });
+
       // Simulate a rebase scenario where iterations have different base commits
       const mockIterations: Iteration[] = [
         {
@@ -346,11 +354,12 @@ describe('useIterationStore', () => {
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      // After a rebase, the default range should use the LATEST iteration's base (snapshot 2)
-      // not the stale snapshot 0 which contains the old base content.
+      // The cached range (fromSnapshot: 0) should be INVALIDATED because:
+      // - The latest iteration's left snapshot is 2 (not 0)
+      // - This indicates a rebase occurred and snapshot 0 is now stale
       // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
       expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
-        fromSnapshot: 2, // Latest iteration's base, NOT 0 (stale old base)
+        fromSnapshot: 2, // Latest iteration's base, NOT the cached 0 (stale old base)
         toSnapshot: 3,
       });
     });
