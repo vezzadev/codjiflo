@@ -1,5 +1,5 @@
 /**
- * Tests for useIterationDiff hook
+ * Tests for useIterationDiff hook.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
