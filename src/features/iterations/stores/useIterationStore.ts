@@ -169,11 +169,18 @@ export const useIterationStore = create<IterationState>()(
           const maxValidSnapshot = latestIteration
             ? iterationToRightSnapshot(latestIteration.revision)
             : 0;
+          const latestLeftSnapshot = latestIteration
+            ? iterationToLeftSnapshot(latestIteration.revision)
+            : 0;
           const isCachedRangeValid =
             cachedRange !== undefined &&
             cachedRange.fromSnapshot >= 0 &&
             cachedRange.toSnapshot <= maxValidSnapshot &&
-            cachedRange.fromSnapshot < cachedRange.toSnapshot;
+            cachedRange.fromSnapshot < cachedRange.toSnapshot &&
+            // Invalidate cached "full diff" if a rebase occurred:
+            // If cached fromSnapshot is 0 but latest iteration's left snapshot is different,
+            // the base has changed (rebase) and we should use the new base instead.
+            !(cachedRange.fromSnapshot === 0 && latestLeftSnapshot > 0);
 
           // Use cached range if valid, otherwise use default
           const rangeToUse = isCachedRangeValid ? cachedRange : defaultRange;
