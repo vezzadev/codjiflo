@@ -366,13 +366,22 @@ jobs:
               author=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].user.login")
               path=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].path")
               line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].line // empty")
+              start_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].start_line // empty")
               original_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].original_line // empty")
+              original_start_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].original_start_line // empty")
               side=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].side // \"RIGHT\"")
               html_url=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].html_url")
 
-              # Determine which line number to use for display
-              display_line="${line:-$original_line}"
-              display_line="${display_line:-?}"
+              # Determine line range for display
+              if [ -n "$start_line" ] && [ "$start_line" != "$line" ]; then
+                display_line="${start_line}-${line}"
+              elif [ -n "$line" ]; then
+                display_line="$line"
+              elif [ -n "$original_start_line" ] && [ "$original_start_line" != "$original_line" ]; then
+                display_line="${original_start_line}-${original_line}"
+              else
+                display_line="${original_line:-?}"
+              fi
 
               echo "      -> Syncing inline comment #$comment_id from @$author on $path:$display_line ($side)"
 
@@ -386,17 +395,23 @@ jobs:
               # Build thread context for inline placement
               # AzDO uses rightFileStart/End for new code, leftFileStart/End for old code
               if [ "$side" = "LEFT" ] && [ -n "$original_line" ]; then
+                # LEFT side comment - use original_start_line to original_line range
+                left_start="${original_start_line:-$original_line}"
                 thread_context=$(jq -n \
                   --arg path "/$path" \
-                  --argjson line "$original_line" \
-                  '{filePath: $path, leftFileStart: {line: $line, offset: 1}, leftFileEnd: {line: $line, offset: 1}}')
-                echo "        Thread context: LEFT side, line $original_line"
+                  --argjson start "$left_start" \
+                  --argjson end "$original_line" \
+                  '{filePath: $path, leftFileStart: {line: $start, offset: 1}, leftFileEnd: {line: $end, offset: 1}}')
+                echo "        Thread context: LEFT side, lines $left_start-$original_line"
               elif [ -n "$line" ]; then
+                # RIGHT side comment - use start_line to line range
+                right_start="${start_line:-$line}"
                 thread_context=$(jq -n \
                   --arg path "/$path" \
-                  --argjson line "$line" \
-                  '{filePath: $path, rightFileStart: {line: $line, offset: 1}, rightFileEnd: {line: $line, offset: 1}}')
-                echo "        Thread context: RIGHT side, line $line"
+                  --argjson start "$right_start" \
+                  --argjson end "$line" \
+                  '{filePath: $path, rightFileStart: {line: $start, offset: 1}, rightFileEnd: {line: $end, offset: 1}}')
+                echo "        Thread context: RIGHT side, lines $right_start-$line"
               else
                 # Fallback: no line context, just file path
                 thread_context=$(jq -n --arg path "/$path" '{filePath: $path}')
