@@ -84,6 +84,7 @@ jobs:
 
       - name: Create PR in Azure DevOps
         if: github.event.action == 'opened'
+        uses: nick-fields/retry@v3
         env:
           AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
           GH_TOKEN: ${{ github.token }}
@@ -93,40 +94,44 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_REF: ${{ github.head_ref }}
           BASE_REF: ${{ github.base_ref }}
-        run: |
-          # Build description with GH PR link and original body
-          DESCRIPTION="Mirrored from GitHub PR #${PR_NUMBER}: ${PR_URL}
+        with:
+          timeout_minutes: 2
+          max_attempts: 5
+          retry_wait_seconds: 10
+          command: |
+            # Build description with GH PR link and original body
+            DESCRIPTION="Mirrored from GitHub PR #${PR_NUMBER}: ${PR_URL}
 
-          ---
+            ---
 
-          ${PR_BODY}"
+            ${PR_BODY}"
 
-          # Create PR in Azure DevOps
-          RESPONSE=$(curl -s -X POST \
-            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests?api-version=7.1" \
-            -H "Authorization: Bearer ${AZDO_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n \
-              --arg src "refs/heads/${HEAD_REF}" \
-              --arg tgt "refs/heads/${BASE_REF}" \
-              --arg title "$PR_TITLE" \
-              --arg desc "$DESCRIPTION" \
-              '{sourceRefName: $src, targetRefName: $tgt, title: $title, description: $desc}')")
+            # Create PR in Azure DevOps
+            RESPONSE=$(curl -s -X POST \
+              "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests?api-version=7.1" \
+              -H "Authorization: Bearer ${AZDO_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n \
+                --arg src "refs/heads/${HEAD_REF}" \
+                --arg tgt "refs/heads/${BASE_REF}" \
+                --arg title "$PR_TITLE" \
+                --arg desc "$DESCRIPTION" \
+                '{sourceRefName: $src, targetRefName: $tgt, title: $title, description: $desc}')")
 
-          AZDO_PR_ID=$(echo "$RESPONSE" | jq -r '.pullRequestId')
+            AZDO_PR_ID=$(echo "$RESPONSE" | jq -r '.pullRequestId')
 
-          if [ "$AZDO_PR_ID" != "null" ] && [ -n "$AZDO_PR_ID" ]; then
-            AZDO_PR_URL="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}/pullrequest/${AZDO_PR_ID}"
+            if [ "$AZDO_PR_ID" != "null" ] && [ -n "$AZDO_PR_ID" ]; then
+              AZDO_PR_URL="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}/pullrequest/${AZDO_PR_ID}"
 
-            gh pr comment "${PR_NUMBER}" \
-              --body "<!-- azdo-mirror:${AZDO_PR_ID} -->
-          🔗 **Azure DevOps Mirror**: [PR #${AZDO_PR_ID}](${AZDO_PR_URL})"
+              gh pr comment "${PR_NUMBER}" \
+                --body "<!-- azdo-mirror:${AZDO_PR_ID} -->
+            🔗 **Azure DevOps Mirror**: [PR #${AZDO_PR_ID}](${AZDO_PR_URL})"
 
-            echo "Created AzDO PR #${AZDO_PR_ID}"
-          else
-            echo "Failed to create AzDO PR: $RESPONSE"
-            exit 1
-          fi
+              echo "Created AzDO PR #${AZDO_PR_ID}"
+            else
+              echo "Failed to create AzDO PR: $RESPONSE"
+              exit 1
+            fi
 
       - name: Close PR in Azure DevOps
         if: github.event.action == 'closed'
