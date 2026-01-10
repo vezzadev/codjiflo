@@ -22,6 +22,7 @@ jobs:
   mirror-git:
     runs-on: ubuntu-slim
     if: github.event_name != 'pull_request'
+    environment: azdo-mirror
 
     steps:
       - name: Checkout
@@ -54,6 +55,7 @@ jobs:
   mirror-pr:
     runs-on: ubuntu-slim
     if: github.event_name == 'pull_request'
+    environment: azdo-mirror
 
     steps:
       - name: Azure Login (OIDC)
