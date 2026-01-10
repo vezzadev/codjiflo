@@ -115,26 +115,53 @@ async function captureFile(
 }
 
 /**
- * Get capture context from GitHub event.
+ * Get capture context from GitHub event or environment variable.
+ * Supports both pull_request events and workflow_dispatch triggers.
  */
-export function getCaptureContext(
+export async function getCaptureContext(
   octokit: ReturnType<typeof github.getOctokit>
-): CaptureContext | null {
+): Promise<CaptureContext | null> {
   const { payload } = github.context;
 
-  if (!payload.pull_request) {
-    return null;
+  // Case 1: pull_request event (normal flow)
+  if (payload.pull_request) {
+    const pr = payload.pull_request;
+    return {
+      octokit,
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      prNumber: pr.number,
+      headSha: pr.head.sha,
+      baseSha: pr.base.sha,
+      beforeSha: payload.before ?? null,
+    };
   }
 
-  const pr = payload.pull_request;
+  // Case 2: workflow_dispatch with PR_NUMBER env variable
+  const prNumber = process.env.PR_NUMBER;
+  if (prNumber) {
+    const prNum = parseInt(prNumber, 10);
+    if (isNaN(prNum)) {
+      throw new Error(`Invalid PR_NUMBER: ${prNumber}`);
+    }
 
-  return {
-    octokit,
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    prNumber: pr.number,
-    headSha: pr.head.sha,
-    baseSha: pr.base.sha,
-    beforeSha: payload.before ?? null,
-  };
+    // Fetch PR data via API
+    const { data: pr } = await octokit.rest.pulls.get({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      pull_number: prNum,
+    });
+
+    return {
+      octokit,
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      prNumber: pr.number,
+      headSha: pr.head.sha,
+      baseSha: pr.base.sha,
+      beforeSha: null, // No 'before' SHA in workflow_dispatch
+    };
+  }
+
+  return null;
 }
