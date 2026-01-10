@@ -5,9 +5,9 @@ This document defines the comprehensive test dataset for validating CodjiFlo's A
 ## Test Repository
 
 - **Organization**: `pedropaulovc`
-- **Project**: `BasicAppServiceRecommender`
-- **Repo**: `BasicAppServiceRecommender`
-- **URL**: https://dev.azure.com/pedropaulovc/BasicAppServiceRecommender/_git/BasicAppServiceRecommender
+- **Project**: `CodjiFlo`
+- **Repo**: `CodjiFlo`
+- **URL**: https://dev.azure.com/pedropaulovc/CodjiFlo/_git/CodjiFlo
 
 ---
 
