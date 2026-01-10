@@ -701,6 +701,8 @@ on: [pull_request, workflow_dispatch]
 });
 
 test.describe("Rebase Base Commit Handling (Issue #151)", () => {
+  // Tests: AC-4.7.5, AC-4.7.7.1 (Rebase-aware default range and "Full diff" preset)
+  //
   // Test for issue #151: After rebase, diff viewer should use the new base
   // not the stale old base from snapshot 0.
   //
@@ -807,6 +809,9 @@ line5
   test("Full diff after rebase uses new base, not stale old base", async ({
     page,
   }) => {
+    // Tests: AC-4.7.5 ("Full diff" preset uses latest iteration's left snapshot)
+    //        AC-4.7.7.1 (Default range on load uses latest iteration base)
+    //
     // TEST FAILURE VALIDATION (issue #151):
     // Before fix (fromSnapshot always 0):
     //   - Diff shows 4 changed lines (line2 + line4, comparing to old base)
@@ -857,6 +862,8 @@ line5
   });
 
   test("Iteration 1 diff uses original base correctly", async ({ page }) => {
+    // Tests: Regression check for AC-4.4.4 (Individual iteration selection)
+    //
     // Sanity check: Iteration 1 should still work correctly,
     // showing line2 change against the ORIGINAL base
 
