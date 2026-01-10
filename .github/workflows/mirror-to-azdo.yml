@@ -33,6 +33,8 @@ jobs:
   mirror:
     runs-on: ubuntu-slim
     environment: azdo-mirror
+    # Skip issue_comment events that are not on PRs
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
 
     steps:
       - name: Checkout
@@ -107,11 +109,45 @@ jobs:
           for gh_num in $(echo "$GH_PRS" | jq -r '.[].number'); do
             azdo_id=$(gh pr view "$gh_num" --comments --json comments 2>/dev/null \
               | jq -r '.comments[].body // empty' \
-              | grep -oP '<!-- azdo-mirror:\K\d+' \
-              | head -1 || true)
+              | awk 'match($0, /<!-- azdo-mirror:([0-9]+)/, m) { print m[1]; exit }' \
+              || true)
             if [ -n "$azdo_id" ]; then
               GH_TO_AZDO[$gh_num]=$azdo_id
               echo "  GH #$gh_num -> AzDO #$azdo_id"
+            else
+              echo "  GH #$gh_num -> (no AzDO link found)"
+            fi
+          done
+
+          # Abandon orphaned AzDO PRs BEFORE syncing (to free up branches)
+          echo "Checking for orphaned Azure DevOps PRs..."
+          # Build list of linked AzDO IDs safely
+          LINKED_AZDO_IDS=""
+          for key in "${!GH_TO_AZDO[@]}"; do
+            LINKED_AZDO_IDS="${LINKED_AZDO_IDS}${GH_TO_AZDO[$key]}"$'\n'
+          done
+
+          azdo_pr_count=$(echo "$AZDO_PRS" | jq 'length')
+          for ((i=0; i<azdo_pr_count; i++)); do
+            azdo_id=$(echo "$AZDO_PRS" | jq -r ".[$i].pullRequestId")
+            azdo_desc=$(echo "$AZDO_PRS" | jq -r ".[$i].description // \"\"")
+
+            # Check if this AzDO PR was created by our mirror (has GitHub PR link)
+            if echo "$azdo_desc" | grep -q "Mirrored from GitHub PR"; then
+              # Check if it's still linked to an open GitHub PR
+              if ! echo "$LINKED_AZDO_IDS" | grep -q "^${azdo_id}$"; then
+                echo "  Abandoning orphaned AzDO PR #$azdo_id..."
+                response=$(curl -s -X PATCH \
+                  "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
+                  -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d '{"status": "abandoned"}')
+                if ! echo "$response" | jq -e '.pullRequestId' > /dev/null 2>&1; then
+                  echo "    [WARN] Failed to abandon: $(echo "$response" | jq -c '.message // .')"
+                fi
+              else
+                echo "  AzDO PR #$azdo_id is linked, keeping"
+              fi
             fi
           done
 
@@ -135,19 +171,38 @@ jobs:
             azdo_id=${GH_TO_AZDO[$gh_num]:-}
 
             if [ -n "$azdo_id" ]; then
-              # Update existing AzDO PR
-              echo "Updating AzDO PR #$azdo_id for GH #$gh_num..."
-              curl -s -X PATCH \
+              # Fetch current AzDO PR status to avoid invalid state transitions
+              azdo_status=$(curl -s \
+                "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                | jq -r '.status // empty')
+
+              # Don't try to reactivate a completed PR (merged PRs can't be reopened)
+              if [ "$azdo_status" = "completed" ]; then
+                echo "  Updating AzDO PR #$azdo_id for GH #$gh_num (completed, title/desc only)..."
+                update_payload=$(jq -n \
+                  --arg title "$gh_title" \
+                  --arg desc "$description" \
+                  '{title: $title, description: $desc}')
+              else
+                echo "  Updating AzDO PR #$azdo_id for GH #$gh_num..."
+                update_payload=$(jq -n \
+                  --arg title "$gh_title" \
+                  --arg desc "$description" \
+                  '{title: $title, description: $desc, status: "active"}')
+              fi
+
+              response=$(curl -s -X PATCH \
                 "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n \
-                  --arg title "$gh_title" \
-                  --arg desc "$description" \
-                  '{title: $title, description: $desc, status: "active"}')" > /dev/null
+                -d "$update_payload")
+              if ! echo "$response" | jq -e '.pullRequestId' > /dev/null 2>&1; then
+                echo "    [WARN] Failed to update: $(echo "$response" | jq -c '.message // .')"
+              fi
             else
               # Create new AzDO PR
-              echo "Creating AzDO PR for GH #$gh_num..."
+              echo "  Creating AzDO PR for GH #$gh_num..."
               RESPONSE=$(curl -s -X POST \
                 "${AZDO_API}/pullrequests?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
@@ -166,39 +221,28 @@ jobs:
                 gh pr comment "$gh_num" \
                   --body "<!-- azdo-mirror:${new_azdo_id} -->
           🔗 **Azure DevOps Mirror**: [PR #${new_azdo_id}](${AZDO_PR_URL})"
-                echo "  Created AzDO PR #$new_azdo_id"
+                echo "    Created AzDO PR #$new_azdo_id"
                 GH_TO_AZDO[$gh_num]=$new_azdo_id
               else
-                echo "  Failed to create AzDO PR: $RESPONSE"
-              fi
-            fi
-          done
-
-          # Abandon AzDO PRs that no longer have corresponding GitHub PRs
-          echo "Checking for orphaned Azure DevOps PRs..."
-          LINKED_AZDO_IDS=$(printf '%s\n' "${GH_TO_AZDO[@]}" | sort -u)
-
-          azdo_pr_count=$(echo "$AZDO_PRS" | jq 'length')
-          for ((i=0; i<azdo_pr_count; i++)); do
-            azdo_id=$(echo "$AZDO_PRS" | jq -r ".[$i].pullRequestId")
-            azdo_desc=$(echo "$AZDO_PRS" | jq -r ".[$i].description // \"\"")
-
-            # Check if this AzDO PR was created by our mirror (has GitHub PR link)
-            if echo "$azdo_desc" | grep -q "Mirrored from GitHub PR"; then
-              # Check if it's still linked to an open GitHub PR
-              if ! echo "$LINKED_AZDO_IDS" | grep -q "^${azdo_id}$"; then
-                echo "Abandoning orphaned AzDO PR #$azdo_id..."
-                curl -s -X PATCH \
-                  "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
-                  -H "Authorization: Bearer ${AZDO_TOKEN}" \
-                  -H "Content-Type: application/json" \
-                  -d '{"status": "abandoned"}' > /dev/null
+                echo "    Failed to create AzDO PR: $RESPONSE"
               fi
             fi
           done
 
           # Export the mapping for comment sync step
-          echo "GH_TO_AZDO_JSON=$(echo "${!GH_TO_AZDO[@]}" | tr ' ' '\n' | while read k; do echo "\"$k\":\"${GH_TO_AZDO[$k]}\""; done | paste -sd, | sed 's/^/{/;s/$/}/')" >> $GITHUB_OUTPUT
+          GH_TO_AZDO_JSON="{"
+          first=true
+          for key in "${!GH_TO_AZDO[@]}"; do
+            if [ "$first" = true ]; then
+              first=false
+            else
+              GH_TO_AZDO_JSON+=","
+            fi
+            GH_TO_AZDO_JSON+="\"$key\":\"${GH_TO_AZDO[$key]}\""
+          done
+          GH_TO_AZDO_JSON+="}"
+          echo "GH_TO_AZDO_JSON=$GH_TO_AZDO_JSON" >> $GITHUB_OUTPUT
+          echo "Exported mapping: $GH_TO_AZDO_JSON"
 
           echo "PR sync complete."
         id: pr-sync
