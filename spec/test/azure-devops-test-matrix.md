@@ -542,6 +542,9 @@ After rebase (iteration 3):
 | RB-04 | Diff 2 → 3 (across rebase) | Compare pre/post rebase | Shows delta from rebase (E, F integrated) | S-4.8 |
 | RB-05 | Content unchanged tracking | File unchanged by rebase | No spurious changes shown | S-4.8 |
 | RB-06 | Line shift from rebase | New lines from E, F shift positions | Comments re-anchor correctly | S-4.9, S-5.4 |
+| RB-07 | Full diff uses new base after rebase | View "base → iteration 3" | Uses snapshot 4 (new base), not snapshot 0 (old base) | S-4.7, AC-4.7.5 |
+| RB-08 | Rebase base content differs from original | Compare snapshot 0 vs snapshot 4 | Different content (E, F changes in new base) | S-4.8, AC-4.8.16 |
+| RB-09 | Default range uses latest iteration base | Load PR after rebase | Default range = latest left → latest right snapshot | S-4.7, AC-4.7.7.1 |
 
 ---
 
