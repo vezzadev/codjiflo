@@ -299,23 +299,49 @@ jobs:
               body=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].body // \"\"")
               author=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].user.login")
               path=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].path")
-              line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].line // .[$j].original_line // \"?\"")
+              line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].line // empty")
+              original_line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].original_line // empty")
+              side=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].side // \"RIGHT\"")
               html_url=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].html_url")
 
-              echo "  Syncing review comment #$comment_id from @$author on $path:$line"
+              # Determine which line number to use for display
+              display_line="${line:-$original_line}"
+              display_line="${display_line:-?}"
+
+              echo "  Syncing review comment #$comment_id from @$author on $path:$display_line ($side)"
 
               content="<!-- gh-comment:review-comment-${comment_id} -->
-          **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}) (\`${path}:${line}\`):
+          **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}) (\`${path}:${display_line}\`):
 
           ---
 
           ${body}"
 
+              # Build thread context for inline placement
+              # AzDO uses rightFileStart/End for new code, leftFileStart/End for old code
+              if [ "$side" = "LEFT" ] && [ -n "$original_line" ]; then
+                thread_context=$(jq -n \
+                  --arg path "/$path" \
+                  --argjson line "$original_line" \
+                  '{filePath: $path, leftFileStart: {line: $line, offset: 1}, leftFileEnd: {line: $line, offset: 1}}')
+              elif [ -n "$line" ]; then
+                thread_context=$(jq -n \
+                  --arg path "/$path" \
+                  --argjson line "$line" \
+                  '{filePath: $path, rightFileStart: {line: $line, offset: 1}, rightFileEnd: {line: $line, offset: 1}}')
+              else
+                # Fallback: no line context, just file path
+                thread_context=$(jq -n --arg path "/$path" '{filePath: $path}')
+              fi
+
               curl -s -X POST \
                 "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
                 -H "Authorization: Bearer ${AZDO_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+                -d "$(jq -n \
+                  --arg content "$content" \
+                  --argjson ctx "$thread_context" \
+                  '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], threadContext: $ctx, status: 1}')" > /dev/null
             done
 
             # Sync review summaries (approve/request changes/comment)
