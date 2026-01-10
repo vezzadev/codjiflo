@@ -91,6 +91,7 @@ jobs:
           # Fetch all open GitHub PRs
           echo "Fetching GitHub PRs..."
           GH_PRS=$(gh pr list --state open --json number,title,body,url,headRefName,baseRefName)
+          echo "  Found $(echo "$GH_PRS" | jq 'length') open GitHub PRs"
 
           # Fetch all active Azure DevOps PRs
           echo "Fetching Azure DevOps PRs..."
@@ -98,6 +99,7 @@ jobs:
             "${AZDO_API}/pullrequests?searchCriteria.status=active&api-version=7.1" \
             -H "Authorization: Bearer ${AZDO_TOKEN}" \
             | jq '.value // []')
+          echo "  Found $(echo "$AZDO_PRS" | jq 'length') active Azure DevOps PRs"
 
           # Build map of GH PR number -> AzDO PR ID from existing comments
           echo "Building PR mapping from GitHub comments..."
@@ -115,13 +117,14 @@ jobs:
 
           # Sync each GitHub PR to Azure DevOps
           echo "Syncing GitHub PRs to Azure DevOps..."
-          for row in $(echo "$GH_PRS" | jq -c '.[]'); do
-            gh_num=$(echo "$row" | jq -r '.number')
-            gh_title=$(echo "$row" | jq -r '.title')
-            gh_body=$(echo "$row" | jq -r '.body // ""')
-            gh_url=$(echo "$row" | jq -r '.url')
-            gh_head=$(echo "$row" | jq -r '.headRefName')
-            gh_base=$(echo "$row" | jq -r '.baseRefName')
+          pr_count=$(echo "$GH_PRS" | jq 'length')
+          for ((i=0; i<pr_count; i++)); do
+            gh_num=$(echo "$GH_PRS" | jq -r ".[$i].number")
+            gh_title=$(echo "$GH_PRS" | jq -r ".[$i].title")
+            gh_body=$(echo "$GH_PRS" | jq -r ".[$i].body // \"\"")
+            gh_url=$(echo "$GH_PRS" | jq -r ".[$i].url")
+            gh_head=$(echo "$GH_PRS" | jq -r ".[$i].headRefName")
+            gh_base=$(echo "$GH_PRS" | jq -r ".[$i].baseRefName")
 
             description="Mirrored from GitHub PR #${gh_num}: ${gh_url}
 
@@ -175,9 +178,10 @@ jobs:
           echo "Checking for orphaned Azure DevOps PRs..."
           LINKED_AZDO_IDS=$(printf '%s\n' "${GH_TO_AZDO[@]}" | sort -u)
 
-          for azdo_pr in $(echo "$AZDO_PRS" | jq -c '.[]'); do
-            azdo_id=$(echo "$azdo_pr" | jq -r '.pullRequestId')
-            azdo_desc=$(echo "$azdo_pr" | jq -r '.description // ""')
+          azdo_pr_count=$(echo "$AZDO_PRS" | jq 'length')
+          for ((i=0; i<azdo_pr_count; i++)); do
+            azdo_id=$(echo "$AZDO_PRS" | jq -r ".[$i].pullRequestId")
+            azdo_desc=$(echo "$AZDO_PRS" | jq -r ".[$i].description // \"\"")
 
             # Check if this AzDO PR was created by our mirror (has GitHub PR link)
             if echo "$azdo_desc" | grep -q "Mirrored from GitHub PR"; then
@@ -215,7 +219,8 @@ jobs:
             exit 0
           fi
 
-          echo "Syncing comments for linked PRs..."
+          linked_count=$(echo "$GH_TO_AZDO_JSON" | jq 'length')
+          echo "Syncing comments for $linked_count linked PRs..."
 
           # Iterate through each linked PR pair
           for gh_num in $(echo "$GH_TO_AZDO_JSON" | jq -r 'keys[]'); do
@@ -224,41 +229,47 @@ jobs:
 
             # Fetch GitHub PR comments (conversation comments)
             GH_COMMENTS=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${gh_num}/comments" --paginate 2>/dev/null || echo '[]')
+            echo "    Found $(echo "$GH_COMMENTS" | jq 'length') conversation comments"
 
             # Fetch GitHub PR review comments (inline code comments)
             GH_REVIEW_COMMENTS=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${gh_num}/comments" --paginate 2>/dev/null || echo '[]')
+            echo "    Found $(echo "$GH_REVIEW_COMMENTS" | jq 'length') review comments"
 
             # Fetch GitHub PR reviews (review summaries)
             GH_REVIEWS=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${gh_num}/reviews" --paginate 2>/dev/null || echo '[]')
+            echo "    Found $(echo "$GH_REVIEWS" | jq 'length') reviews"
 
             # Fetch existing AzDO threads to check what's already synced
             AZDO_THREADS=$(curl -s \
               "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
               -H "Authorization: Bearer ${AZDO_TOKEN}" \
               | jq '.value // []')
+            echo "    Found $(echo "$AZDO_THREADS" | jq 'length') existing AzDO threads"
 
             # Extract already-synced GitHub comment IDs from AzDO thread content
             SYNCED_IDS=$(echo "$AZDO_THREADS" | jq -r '.[].comments[]?.content // empty' | grep -oP '<!-- gh-comment:\K[^>]+(?= -->)' || true)
+            synced_count=$(echo "$SYNCED_IDS" | grep -c . || echo 0)
+            echo "    Already synced: $synced_count comments"
 
             # Sync conversation comments
-            for comment in $(echo "$GH_COMMENTS" | jq -c '.[]'); do
-              comment_id=$(echo "$comment" | jq -r '.id')
+            comment_count=$(echo "$GH_COMMENTS" | jq 'length')
+            for ((j=0; j<comment_count; j++)); do
+              comment_id=$(echo "$GH_COMMENTS" | jq -r ".[$j].id")
 
               # Skip if already synced or is the mirror link comment
               if echo "$SYNCED_IDS" | grep -q "^comment-${comment_id}$"; then
                 continue
               fi
 
-              body=$(echo "$comment" | jq -r '.body // ""')
+              body=$(echo "$GH_COMMENTS" | jq -r ".[$j].body // \"\"")
 
               # Skip our own mirror comments
               if echo "$body" | grep -q '<!-- azdo-mirror:'; then
                 continue
               fi
 
-              author=$(echo "$comment" | jq -r '.user.login')
-              created=$(echo "$comment" | jq -r '.created_at')
-              html_url=$(echo "$comment" | jq -r '.html_url')
+              author=$(echo "$GH_COMMENTS" | jq -r ".[$j].user.login")
+              html_url=$(echo "$GH_COMMENTS" | jq -r ".[$j].html_url")
 
               echo "  Syncing comment #$comment_id from @$author"
 
@@ -277,18 +288,19 @@ jobs:
             done
 
             # Sync review comments (inline code comments)
-            for comment in $(echo "$GH_REVIEW_COMMENTS" | jq -c '.[]'); do
-              comment_id=$(echo "$comment" | jq -r '.id')
+            review_comment_count=$(echo "$GH_REVIEW_COMMENTS" | jq 'length')
+            for ((j=0; j<review_comment_count; j++)); do
+              comment_id=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-comment-${comment_id}$"; then
                 continue
               fi
 
-              body=$(echo "$comment" | jq -r '.body // ""')
-              author=$(echo "$comment" | jq -r '.user.login')
-              path=$(echo "$comment" | jq -r '.path')
-              line=$(echo "$comment" | jq -r '.line // .original_line // "?"')
-              html_url=$(echo "$comment" | jq -r '.html_url')
+              body=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].body // \"\"")
+              author=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].user.login")
+              path=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].path")
+              line=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].line // .[$j].original_line // \"?\"")
+              html_url=$(echo "$GH_REVIEW_COMMENTS" | jq -r ".[$j].html_url")
 
               echo "  Syncing review comment #$comment_id from @$author on $path:$line"
 
@@ -307,17 +319,18 @@ jobs:
             done
 
             # Sync review summaries (approve/request changes/comment)
-            for review in $(echo "$GH_REVIEWS" | jq -c '.[]'); do
-              review_id=$(echo "$review" | jq -r '.id')
+            review_count=$(echo "$GH_REVIEWS" | jq 'length')
+            for ((j=0; j<review_count; j++)); do
+              review_id=$(echo "$GH_REVIEWS" | jq -r ".[$j].id")
 
               if echo "$SYNCED_IDS" | grep -q "^review-${review_id}$"; then
                 continue
               fi
 
-              body=$(echo "$review" | jq -r '.body // ""')
-              state=$(echo "$review" | jq -r '.state')
-              author=$(echo "$review" | jq -r '.user.login')
-              html_url=$(echo "$review" | jq -r '.html_url')
+              body=$(echo "$GH_REVIEWS" | jq -r ".[$j].body // \"\"")
+              state=$(echo "$GH_REVIEWS" | jq -r ".[$j].state")
+              author=$(echo "$GH_REVIEWS" | jq -r ".[$j].user.login")
+              html_url=$(echo "$GH_REVIEWS" | jq -r ".[$j].html_url")
 
               # Skip empty reviews (just approvals without comment body)
               if [ -z "$body" ] && [ "$state" != "CHANGES_REQUESTED" ]; then
