@@ -18,7 +18,7 @@ import type {
   IterationPreset,
   ArtifactReference,
 } from '../types';
-import { iterationToRightSnapshot } from '../types';
+import { iterationToLeftSnapshot, iterationToRightSnapshot } from '../types';
 
 // ============================================================================
 // Store State Interface
@@ -150,10 +150,13 @@ export const useIterationStore = create<IterationState>()(
           const spanTrackerService = new SpanTrackerService(spanTrackerReader);
 
           // Set default selection (full diff: base to latest)
+          // Uses the base snapshot of the latest iteration to handle rebases correctly.
+          // After a rebase, the latest iteration's left snapshot contains the new base,
+          // while snapshot 0 would contain the stale old base.
           const latestIteration = iterations[iterations.length - 1];
           const defaultRange: IterationRange | null = latestIteration
             ? {
-                fromSnapshot: 0, // Base
+                fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
                 toSnapshot: iterationToRightSnapshot(latestIteration.revision),
               }
             : null;
@@ -230,8 +233,12 @@ export const useIterationStore = create<IterationState>()(
 
         switch (preset) {
           case 'full':
-            // Base to latest
-            newRange = { fromSnapshot: 0, toSnapshot: latestRightSnapshot };
+            // Base to latest: use the base snapshot of the latest iteration
+            // This handles rebases correctly by using the current base instead of stale snapshot 0
+            newRange = {
+              fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
+              toSnapshot: latestRightSnapshot,
+            };
             break;
 
           case 'latest':

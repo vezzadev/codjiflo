@@ -314,3 +314,140 @@ function storeContent(db: Database.Database, content: string): string {
 function hashContent(content: string): string {
   return createHash("sha1").update(content, "utf8").digest("hex");
 }
+
+// ============================================================================
+// Rebase Scenario Builder
+// ============================================================================
+
+export interface RebaseIterationDbOptions {
+  /** File path */
+  filePath: string;
+  /** Content at the original base (before rebase) */
+  originalBaseContent: string;
+  /** Content at head after iteration 1 */
+  iteration1HeadContent: string;
+  /** Content at the new base (after rebase) */
+  rebasedBaseContent: string;
+  /** Content at head after iteration 2 (after rebase) */
+  iteration2HeadContent: string;
+}
+
+/**
+ * Build a mock SQLite iteration database that simulates a rebase scenario.
+ *
+ * This is specifically for testing issue #151:
+ * - Iteration 1: oldBase → head1
+ * - Rebase happens: base changes to newBase
+ * - Iteration 2: newBase → head2
+ *
+ * The key difference from normal iteration tracking is that iteration 2's
+ * left snapshot has DIFFERENT content than what iteration 1 ended with.
+ */
+export function buildRebaseIterationDb(
+  options: RebaseIterationDbOptions
+): MockIterationDb {
+  const {
+    filePath,
+    originalBaseContent,
+    iteration1HeadContent,
+    rebasedBaseContent,
+    iteration2HeadContent,
+  } = options;
+
+  // Create in-memory SQLite database
+  const db = new Database(":memory:");
+  db.exec(SCHEMA_SQL);
+
+  // Insert artifact record
+  const changeTrackingId = hashContent(filePath);
+  db.prepare(
+    "INSERT INTO file_artifacts (id, change_tracking_id) VALUES (?, ?)"
+  ).run(1, changeTrackingId);
+
+  // Iteration 1: oldBase → head1
+  // Snapshots: 0 (left = oldBase), 1 (right = head1)
+  db.prepare(
+    `INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(1, "head-sha-1", "old-base-sha", null, "test-user", new Date().toISOString());
+
+  const baseHash1 = storeContent(db, originalBaseContent);
+  const headHash1 = storeContent(db, iteration1HeadContent);
+
+  db.prepare(
+    `INSERT INTO artifact_snapshots (artifact_id, snapshot_index, file_path, content_hash)
+     VALUES (?, ?, ?, ?)`
+  ).run(1, 0, filePath, baseHash1); // Snapshot 0: old base
+
+  db.prepare(
+    `INSERT INTO artifact_snapshots (artifact_id, snapshot_index, file_path, content_hash)
+     VALUES (?, ?, ?, ?)`
+  ).run(1, 1, filePath, headHash1); // Snapshot 1: head after iter 1
+
+  // Iteration 2: newBase → head2 (after rebase)
+  // Snapshots: 2 (left = newBase), 3 (right = head2)
+  db.prepare(
+    `INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(2, "head-sha-2", "new-base-sha", "head-sha-1", "test-user", new Date().toISOString());
+
+  const baseHash2 = storeContent(db, rebasedBaseContent);
+  const headHash2 = storeContent(db, iteration2HeadContent);
+
+  db.prepare(
+    `INSERT INTO artifact_snapshots (artifact_id, snapshot_index, file_path, content_hash)
+     VALUES (?, ?, ?, ?)`
+  ).run(1, 2, filePath, baseHash2); // Snapshot 2: NEW base (after rebase)
+
+  db.prepare(
+    `INSERT INTO artifact_snapshots (artifact_id, snapshot_index, file_path, content_hash)
+     VALUES (?, ?, ?, ?)`
+  ).run(1, 3, filePath, headHash2); // Snapshot 3: head after iter 2
+
+  // Compute span trackers for both iterations
+  for (const [leftIdx, rightIdx, leftContent, rightContent] of [
+    [0, 1, originalBaseContent, iteration1HeadContent],
+    [2, 3, rebasedBaseContent, iteration2HeadContent],
+  ] as const) {
+    const trackerId = db
+      .prepare(
+        `INSERT INTO span_trackers (artifact_id, left_snapshot_index, right_snapshot_index)
+         VALUES (?, ?, ?)`
+      )
+      .run(1, leftIdx, rightIdx).lastInsertRowid;
+
+    const diffs = computeLineDiff(leftContent, rightContent);
+    const mappings = lineDiffsToSpanMappings(diffs);
+    const insertMapping = db.prepare(
+      `INSERT INTO span_mappings (tracker_id, left_line_start, left_line_end, right_line_start, right_line_end, mapping_type)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const mapping of mappings) {
+      insertMapping.run(
+        trackerId,
+        mapping.left_line_start,
+        mapping.left_line_end,
+        mapping.right_line_start,
+        mapping.right_line_end,
+        mapping.mapping_type
+      );
+    }
+  }
+
+  // Export database to buffer
+  const uint8Array = db.serialize();
+  db.close();
+
+  return {
+    buffer: uint8Array.buffer.slice(
+      uint8Array.byteOffset,
+      uint8Array.byteOffset + uint8Array.byteLength
+    ) as ArrayBuffer,
+    meta: {
+      iterationCount: 2,
+      fileCount: 1,
+      snapshotCount: 4,
+    },
+  };
+}
