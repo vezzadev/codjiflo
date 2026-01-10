@@ -1,5 +1,5 @@
 Line 1: This is file x
-Line 2: Some content here
+Line 2: EDITED IN BRANCH B
 Line 3: More content
 Line 4: Even more content
 Line 5: End of file
