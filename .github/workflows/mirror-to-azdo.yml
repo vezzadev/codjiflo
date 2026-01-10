@@ -5,14 +5,23 @@ on:
     branches: ['**']
     tags: ['**']
   delete:
+  pull_request:
+    types: [opened, closed, reopened]
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
+
+env:
+  AZDO_ORG: pedropaulovc
+  AZDO_PROJECT: CodjiFlo
+  AZDO_REPO: CodjiFlo
 
 jobs:
-  mirror:
-    runs-on: ubuntu-latest
+  mirror-git:
+    runs-on: ubuntu-slim
+    if: github.event_name != 'pull_request'
 
     steps:
       - name: Checkout
@@ -37,11 +46,135 @@ jobs:
 
           echo "::add-mask::${TOKEN}"
 
-          git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/pedropaulovc/CodjiFlo/_git/CodjiFlo"
+          git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
 
           git fetch origin --prune
           git push azdo --mirror
 
-      - name: Azure Logout
-        if: always()
-        run: az logout
+  mirror-pr:
+    runs-on: ubuntu-slim
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_AZDO_MIRROR_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_AZDO_MIRROR_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Get Azure DevOps Token
+        id: azdo-token
+        run: |
+          TOKEN=$(az account get-access-token \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query accessToken \
+            --output tsv)
+          echo "::add-mask::${TOKEN}"
+          echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+
+      - name: Create PR in Azure DevOps
+        if: github.event.action == 'opened'
+        env:
+          AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Build description with GH PR link and original body
+          DESCRIPTION="Mirrored from GitHub PR #${PR_NUMBER}: ${PR_URL}
+
+          ---
+
+          ${PR_BODY}"
+
+          # Create PR in Azure DevOps
+          RESPONSE=$(curl -s -X POST \
+            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests?api-version=7.1" \
+            -H "Authorization: Bearer ${AZDO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg src "refs/heads/${HEAD_REF}" \
+              --arg tgt "refs/heads/${BASE_REF}" \
+              --arg title "$PR_TITLE" \
+              --arg desc "$DESCRIPTION" \
+              '{sourceRefName: $src, targetRefName: $tgt, title: $title, description: $desc}')")
+
+          AZDO_PR_ID=$(echo "$RESPONSE" | jq -r '.pullRequestId')
+
+          if [ "$AZDO_PR_ID" != "null" ] && [ -n "$AZDO_PR_ID" ]; then
+            AZDO_PR_URL="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}/pullrequest/${AZDO_PR_ID}"
+
+            gh pr comment "${PR_NUMBER}" \
+              --body "<!-- azdo-mirror:${AZDO_PR_ID} -->
+          🔗 **Azure DevOps Mirror**: [PR #${AZDO_PR_ID}](${AZDO_PR_URL})"
+
+            echo "Created AzDO PR #${AZDO_PR_ID}"
+          else
+            echo "Failed to create AzDO PR: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Close PR in Azure DevOps
+        if: github.event.action == 'closed'
+        env:
+          AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          # Find AzDO PR ID from GitHub PR comments
+          AZDO_PR_ID=$(gh pr view "${PR_NUMBER}" --comments --json comments \
+            | jq -r '.comments[].body' \
+            | grep -oP '<!-- azdo-mirror:\K\d+' \
+            | head -1)
+
+          if [ -z "$AZDO_PR_ID" ]; then
+            echo "No AzDO PR found in comments, skipping"
+            exit 0
+          fi
+
+          if [ "$PR_MERGED" == "true" ]; then
+            STATUS="completed"
+            BODY='{"status": "completed", "completionOptions": {"deleteSourceBranch": false}}'
+          else
+            STATUS="abandoned"
+            BODY='{"status": "abandoned"}'
+          fi
+
+          curl -s -X PATCH \
+            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests/${AZDO_PR_ID}?api-version=7.1" \
+            -H "Authorization: Bearer ${AZDO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$BODY"
+
+          echo "Set AzDO PR #${AZDO_PR_ID} to ${STATUS}"
+
+      - name: Reopen PR in Azure DevOps
+        if: github.event.action == 'reopened'
+        env:
+          AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          AZDO_PR_ID=$(gh pr view "${PR_NUMBER}" --comments --json comments \
+            | jq -r '.comments[].body' \
+            | grep -oP '<!-- azdo-mirror:\K\d+' \
+            | head -1)
+
+          if [ -z "$AZDO_PR_ID" ]; then
+            echo "No AzDO PR found in comments, skipping"
+            exit 0
+          fi
+
+          curl -s -X PATCH \
+            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests/${AZDO_PR_ID}?api-version=7.1" \
+            -H "Authorization: Bearer ${AZDO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "active"}'
+
+          echo "Reactivated AzDO PR #${AZDO_PR_ID}"
