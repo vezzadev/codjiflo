@@ -508,6 +508,378 @@ When the commented code is deleted:
 
 ---
 
+## Complex Git Scenarios
+
+This section documents behavior for advanced git operations that affect iteration tracking and comment persistence.
+
+### Merge Commits
+
+**Scenario:** PR branch contains merge commits from integrating the base branch.
+
+```
+Before merge:
+  main:   A - B - C
+  branch: A - B - D - E (PR changes)
+
+After merging main into branch:
+  main:   A - B - C
+  branch: A - B - D - E - M (merge commit, 2 parents: E and C)
+```
+
+**Iteration Behavior:**
+| Platform | Behavior |
+|----------|----------|
+| Azure DevOps | New iteration created with merge commit as head. File list shows union of changes from both parents relative to base. |
+| GitHub + Workflow | Iteration captures post-merge state. Comments on pre-merge code track to new positions. |
+
+**Comment Tracking:**
+- Comments on code from the PR branch (D, E) track normally
+- Comments on code introduced via merge (from C) may show as "new" in the iteration
+- SpanTracker computes diff from iteration N-1 right snapshot to iteration N right snapshot
+
+### Octopus Merges (3+ Parents)
+
+**Scenario:** Merge commit with more than 2 parents (git merge branch1 branch2 branch3).
+
+```
+  branch: A - B - M (merge with 3+ parents)
+```
+
+**Iteration Behavior:**
+- Treated similarly to 2-parent merge
+- File list shows cumulative changes from all parent branches
+- Conflict resolution captured in merge commit content
+
+**Comment Tracking:**
+- Comments track based on final merged content
+- Original parent branch comments may become orphaned if conflicts resolved differently
+
+### Rebase Operations
+
+**Scenario:** PR branch rebased onto updated base branch.
+
+```
+Before rebase:
+  main:   A - B - E - F (main advanced)
+  branch: A - B - C - D (PR at C, D)
+
+After rebase:
+  main:   A - B - E - F
+  branch: A - B - E - F - C' - D' (new commit SHAs)
+```
+
+**Iteration Behavior:**
+| Platform | Behavior |
+|----------|----------|
+| Azure DevOps | New iteration created. `changeTrackingId` maintains file identity across rebase. Comments persist via artifact ID. |
+| GitHub + Workflow | `before_sha` in workflow event captures pre-rebase HEAD. SpanTrackers recomputed for new commit range. |
+| GitHub (degraded) | Comments reference old C, D SHAs. May fail to display or show as orphaned. |
+
+**Comment Tracking Challenges:**
+1. **Content changes:** If rebase introduces conflicts, resolved content may differ from original
+2. **Line shifts:** New commits (E, F) before rebased commits shift line numbers
+3. **SHA discontinuity:** Git history shows new SHAs (C', D') with no ancestry to old (C, D)
+
+**Mitigation:**
+- CodjiFlo artifacts track by `changeTrackingId`, not SHA
+- SpanTracker chains recomputed: old snapshot → new snapshot
+- Comments with tracking confidence < threshold show warning indicator
+
+### Force Push
+
+**Scenario:** Author force-pushes to rewrite history (amend, rebase, reset).
+
+```
+Before force push:
+  branch: A - B - C - D (comment on line 10 of file.txt in D)
+
+After force push (amend D):
+  branch: A - B - C - D' (D' has different SHA, possibly different content)
+```
+
+**Iteration Behavior:**
+| Platform | Behavior |
+|----------|----------|
+| Azure DevOps | New iteration with new head SHA. Previous iteration remains accessible. Comments persist via iteration ID. |
+| GitHub + Workflow | `before` SHA from `pull_request.synchronize` event captures D. New iteration stores D' as head. Artifact preserves pre-force-push content. |
+| GitHub (degraded) | Commits D unreachable. Comments anchored to D fail to resolve. |
+
+**Force Push Types:**
+| Type | Git Command | Impact |
+|------|-------------|--------|
+| Amend | `git commit --amend` | Last commit replaced, content may change |
+| Rebase | `git rebase -i` | Multiple commits rewritten |
+| Reset | `git reset --hard` | Commits removed entirely |
+| Filter-branch | `git filter-branch` | Bulk history rewrite |
+
+**Comment Preservation:**
+- Comments tracked by (artifact_id, snapshot_index), not commit SHA
+- SpanTracker recomputed from before_sha to new head
+- If commented code deleted in force push, comment becomes orphaned
+
+### Squash Merge to PR Branch
+
+**Scenario:** Author squashes commits within PR branch before merge.
+
+```
+Before squash:
+  branch: A - B - C - D - E (5 commits, comments on C and E)
+
+After squash:
+  branch: A - B - F (F = squashed C+D+E)
+```
+
+**Iteration Behavior:**
+- New iteration created with squashed commit as head
+- File content in F equals content in E (final state unchanged)
+- Comments on intermediate commits (C, D) may need re-anchoring
+
+**Comment Tracking:**
+- Comments on code still present in F: track normally (content unchanged)
+- Comments on code removed during squash: become orphaned
+
+### Large File Handling
+
+**Scenario:** PR contains files exceeding normal size thresholds.
+
+**Size Thresholds:**
+| Category | Size | Behavior |
+|----------|------|----------|
+| Normal | < 1 MB | Full diff computation, word-level highlighting |
+| Large | 1-10 MB | Line-level diff only, no word highlighting |
+| Very Large | 10-100 MB | Truncated diff view, "File too large" warning |
+| Oversized | > 100 MB | Metadata only, no content display |
+
+**Performance Mitigations:**
+1. **Lazy loading:** Large file content fetched on-demand, not with PR metadata
+2. **Virtualized rendering:** Only visible lines rendered
+3. **Diff computation offload:** Worker thread for files > 500 KB
+4. **Streaming:** Very large files streamed in chunks
+
+**Comment Behavior:**
+- Comments allowed on all file sizes
+- Character-level precision may be degraded for very large files
+- SpanTracker computation may timeout for oversized files (graceful fallback to line-level tracking)
+
+### PRs with Many Files
+
+**Scenario:** PR contains hundreds or thousands of changed files.
+
+**Scale Thresholds:**
+| File Count | Behavior |
+|------------|----------|
+| < 100 | All files loaded immediately |
+| 100-500 | Paginated file list, lazy content loading |
+| 500-1000 | File tree virtualized, content on-demand |
+| > 1000 | Warning banner, potential truncation |
+
+**Performance Mitigations:**
+1. **File list virtualization:** Only visible file entries rendered
+2. **On-demand content:** File diffs loaded when selected
+3. **Batch API calls:** File metadata fetched in batches of 100
+4. **IndexedDB caching:** Previously loaded files cached locally
+
+**Iteration Impact:**
+- Iteration artifact size grows with file count
+- SpanTracker computation parallelized across files
+- Cross-iteration comparison may be slower for many-file PRs
+
+### PRs with Many Code Changes
+
+**Scenario:** PR has extensive modifications (10,000+ lines changed).
+
+**Change Volume Thresholds:**
+| Lines Changed | Behavior |
+|---------------|----------|
+| < 1,000 | Full word-level diff |
+| 1,000-10,000 | Word-level diff, may batch computation |
+| 10,000-50,000 | Line-level diff preferred, word-level optional |
+| > 50,000 | Summary view, detailed diff on-demand |
+
+**UI Adaptations:**
+1. **Overview first:** Show summary statistics before full diff
+2. **File grouping:** Group files by directory or change type
+3. **Diff sampling:** For very large PRs, show representative sample with "load more"
+4. **Comment density warnings:** Alert if comment tracking may be affected
+
+### Many Iterations
+
+**Scenario:** PR with 50+ iterations (many revisions/updates).
+
+**Scale Considerations:**
+| Iteration Count | Behavior |
+|-----------------|----------|
+| < 20 | All iterations in dropdown |
+| 20-50 | Grouped by date, collapsible |
+| > 50 | Search/filter interface, recent iterations prioritized |
+
+**Performance Mitigations:**
+1. **Iteration metadata pagination:** Only recent iteration details loaded initially
+2. **SpanTracker caching:** Adjacent pair trackers cached, cross-iteration computed on-demand
+3. **Comment aggregation:** Comments grouped by iteration for efficient loading
+
+### Git LFS (Large File Storage)
+
+**Scenario:** PR contains files tracked by Git LFS.
+
+**LFS File Handling:**
+| File Type | Display Behavior |
+|-----------|------------------|
+| Binary (images, archives) | Metadata only: size, OID, type |
+| Text-like (large JSON, logs) | Attempt content fetch if < threshold |
+| Modified LFS file | Show size delta, OID change |
+
+**Iteration Behavior:**
+- LFS pointers stored in git, actual content in LFS server
+- Artifact may store LFS pointers or actual content (configurable)
+- Comments allowed at file-level only (no line-level for binary)
+
+**Content Fetching:**
+```typescript
+interface LFSFile {
+  oid: string;           // SHA-256 hash of content
+  size: number;          // Actual file size
+  pointer: string;       // Git-stored pointer content
+  contentUrl?: string;   // URL to fetch actual content
+}
+```
+
+**Platform Behavior:**
+| Platform | LFS Support |
+|----------|-------------|
+| Azure DevOps | Native LFS hosting, transparent fetch |
+| GitHub | LFS hosting, requires authentication for private repos |
+| Self-hosted | Depends on LFS server configuration |
+
+### Git Submodules
+
+**Scenario:** PR modifies submodule references.
+
+**Submodule Change Types:**
+| Change | Git Representation | Display |
+|--------|-------------------|---------|
+| Add submodule | New gitlink + .gitmodules entry | "Submodule added: path → repo@commit" |
+| Update commit | Gitlink SHA changes | "Submodule updated: old-sha → new-sha" |
+| Change URL | .gitmodules modified | Show URL diff |
+| Remove submodule | Delete gitlink + .gitmodules entry | "Submodule removed: path" |
+
+**Iteration Behavior:**
+- Submodule changes appear as special file entries (mode 160000)
+- Content shows commit SHA, not file contents
+- Cross-iteration tracking follows gitlink changes
+
+**Display Considerations:**
+```typescript
+interface SubmoduleChange {
+  path: string;
+  oldCommit?: string;    // Previous commit SHA
+  newCommit?: string;    // New commit SHA
+  url?: string;          // Repository URL
+  urlChanged?: boolean;  // True if URL modified
+}
+```
+
+**Comment Behavior:**
+- File-level comments allowed on submodule entries
+- No line-level comments (submodules have no "lines")
+- Comments track submodule path across iterations
+
+### Unreachable Commits (Post-GC)
+
+**Scenario:** Referenced commits become unavailable after remote garbage collection.
+
+**Timeline:**
+```
+1. Iteration 1 created with commit A
+2. Force push replaces with commit B (A becomes dangling)
+3. Time passes, remote GC runs
+4. Commit A deleted from remote
+5. User attempts to view iteration 1
+```
+
+**Failure Modes:**
+| Component | Without Artifact | With Artifact |
+|-----------|------------------|---------------|
+| Iteration list | Shows, commit fetch fails | Shows normally |
+| File content | "Commit not found" error | Content from artifact |
+| Diff computation | Fails | Works from artifact snapshots |
+| Comment display | May fail if content needed | Works from artifact |
+
+**Graceful Degradation:**
+1. **Artifact-based recovery:** If artifact contains snapshot, use it
+2. **Partial availability:** Show available iterations, warn about missing
+3. **Metadata preservation:** Iteration entry visible even if content missing
+4. **Error messaging:** "Commit X is no longer available on the remote"
+
+**Mitigation Strategy:**
+- CodjiFlo artifacts store file content, not just commit references
+- SpanTrackers computed from artifact content, not live git
+- Comments reference artifact snapshots, remain valid after GC
+
+### Shallow Clones
+
+**Scenario:** Repository cloned with limited history (CI environments, large repos).
+
+**Shallow Clone Types:**
+| Type | Command | Available Data |
+|------|---------|----------------|
+| Depth-limited | `git clone --depth=1` | Only recent commits |
+| Treeless | `git clone --filter=tree:0` | Commits + root trees |
+| Blobless | `git clone --filter=blob:none` | Commits + trees, fetch blobs on demand |
+
+**Iteration Impact:**
+| Scenario | Behavior |
+|----------|----------|
+| Base commit outside shallow | API fallback to fetch content |
+| Old iteration commit missing | Use artifact or API |
+| Diff requires missing blob | Fetch blob on-demand |
+
+**Platform Considerations:**
+| Platform | Shallow Clone Support |
+|----------|----------------------|
+| Azure DevOps | Full API fallback available |
+| GitHub | API fallback, rate limits apply |
+| GitLab | API fallback available |
+
+**Performance Notes:**
+- Shallow clones common in CI/CD pipelines
+- CodjiFlo should not assume full git history available
+- Artifact-based iteration storage bypasses shallow clone limitations
+
+### Symlinks and Special File Modes
+
+**Scenario:** PR contains symlinks or files with special git modes.
+
+**Git File Modes:**
+| Mode | Type | Description |
+|------|------|-------------|
+| 100644 | Regular file | Normal file (rw-r--r--) |
+| 100755 | Executable | Executable file (rwxr-xr-x) |
+| 120000 | Symlink | Symbolic link |
+| 160000 | Gitlink | Submodule reference |
+| 040000 | Tree | Directory (not in PR files) |
+
+**Mode Change Handling:**
+| Change | Display |
+|--------|---------|
+| 100644 → 100755 | "Mode changed to executable" |
+| 100755 → 100644 | "Mode changed to non-executable" |
+| 100644 → 120000 | "Converted to symlink → target" |
+| 120000 → 100644 | "Converted from symlink to regular file" |
+
+**Symlink Specifics:**
+- Content shows link target path
+- Diff shows target path changes
+- Broken symlinks (target doesn't exist) display with warning
+- Comments at file-level only
+
+**Comment Behavior:**
+- Mode-only changes: file-level comments allowed
+- Symlinks: file-level comments on link entry
+- Symlink target changes: comment tracks symlink path
+
+---
+
 ## Caching
 
 **SpanTracker Cache:** Computing span trackers is expensive. Cache by snapshot pair key (e.g., `"2-3"`) and reuse.
