@@ -1,12 +1,23 @@
 name: Mirror to Azure DevOps
 
 on:
+  workflow_dispatch:
   push:
     branches: ['**']
     tags: ['**']
   delete:
   pull_request:
-    types: [opened, closed, reopened]
+    types: [opened, closed, reopened, edited, synchronize]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+concurrency:
+  group: azdo-mirror
+  cancel-in-progress: true
 
 permissions:
   id-token: write
@@ -19,9 +30,8 @@ env:
   AZDO_REPO: CodjiFlo
 
 jobs:
-  mirror-git:
+  mirror:
     runs-on: ubuntu-slim
-    if: github.event_name != 'pull_request'
     environment: azdo-mirror
 
     steps:
@@ -31,45 +41,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'delete' && 'main' || github.ref }}
 
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_AZDO_MIRROR_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_AZDO_MIRROR_TENANT_ID }}
-          allow-no-subscriptions: true
-
-      - name: Mirror to Azure DevOps
-        run: |
-          set -e
-
-          # 499b84ac-1321-427f-aa17-267ca6975798 is Azure DevOps Services resource ID
-          # (well-known AAD application ID for Azure DevOps)
-          TOKEN=$(az account get-access-token \
-            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
-            --query accessToken \
-            --output tsv)
-
-          echo "::add-mask::${TOKEN}"
-
-          git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
-
-          # Fetch all branches as local branches (checkout only creates one local branch)
-          # Detach HEAD first so git allows updating all branches including the current one
-          git checkout --detach
-          git fetch origin '+refs/heads/*:refs/heads/*'
-
-          # Push all branches and tags
-          # --prune removes branches/tags from Azure DevOps that were deleted from GitHub
-          # --force handles non-fast-forward updates after force pushes
-          git push azdo --all --prune --force
-          git push azdo --tags --prune --force
-
-  mirror-pr:
-    runs-on: ubuntu-slim
-    if: github.event_name == 'pull_request'
-    environment: azdo-mirror
-
-    steps:
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -89,113 +60,293 @@ jobs:
           echo "::add-mask::${TOKEN}"
           echo "token=${TOKEN}" >> $GITHUB_OUTPUT
 
-      - name: Create PR in Azure DevOps
-        if: github.event.action == 'opened'
-        uses: nick-fields/retry@v3
+      - name: Mirror Git (branches and tags)
+        env:
+          AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
+        run: |
+          set -e
+
+          git remote add azdo "https://oauth2:${AZDO_TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
+
+          # Fetch all branches as local branches (checkout only creates one local branch)
+          # Detach HEAD first so git allows updating all branches including the current one
+          git checkout --detach
+          git fetch origin '+refs/heads/*:refs/heads/*'
+
+          # Push all branches and tags
+          # --prune removes branches/tags from Azure DevOps that were deleted from GitHub
+          # --force handles non-fast-forward updates after force pushes
+          git push azdo --all --prune --force
+          git push azdo --tags --prune --force
+
+      - name: Sync Pull Requests
         env:
           AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
           GH_TOKEN: ${{ github.token }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_REF: ${{ github.head_ref }}
-          BASE_REF: ${{ github.base_ref }}
-        with:
-          timeout_minutes: 2
-          max_attempts: 5
-          retry_wait_seconds: 10
-          command: |
-            # Build description with GH PR link and original body
-            DESCRIPTION="Mirrored from GitHub PR #${PR_NUMBER}: ${PR_URL}
+        run: |
+          set -e
 
-            ---
+          AZDO_API="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}"
 
-            ${PR_BODY}"
+          # Fetch all open GitHub PRs
+          echo "Fetching GitHub PRs..."
+          GH_PRS=$(gh pr list --state open --json number,title,body,url,headRefName,baseRefName)
 
-            # Create PR in Azure DevOps
-            RESPONSE=$(curl -s -X POST \
-              "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests?api-version=7.1" \
-              -H "Authorization: Bearer ${AZDO_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -d "$(jq -n \
-                --arg src "refs/heads/${HEAD_REF}" \
-                --arg tgt "refs/heads/${BASE_REF}" \
-                --arg title "$PR_TITLE" \
-                --arg desc "$DESCRIPTION" \
-                '{sourceRefName: $src, targetRefName: $tgt, title: $title, description: $desc}')")
+          # Fetch all active Azure DevOps PRs
+          echo "Fetching Azure DevOps PRs..."
+          AZDO_PRS=$(curl -s \
+            "${AZDO_API}/pullrequests?searchCriteria.status=active&api-version=7.1" \
+            -H "Authorization: Bearer ${AZDO_TOKEN}" \
+            | jq '.value // []')
 
-            AZDO_PR_ID=$(echo "$RESPONSE" | jq -r '.pullRequestId')
-
-            if [ "$AZDO_PR_ID" != "null" ] && [ -n "$AZDO_PR_ID" ]; then
-              AZDO_PR_URL="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}/pullrequest/${AZDO_PR_ID}"
-
-              gh pr comment "${PR_NUMBER}" \
-                --body "<!-- azdo-mirror:${AZDO_PR_ID} -->
-            🔗 **Azure DevOps Mirror**: [PR #${AZDO_PR_ID}](${AZDO_PR_URL})"
-
-              echo "Created AzDO PR #${AZDO_PR_ID}"
-            else
-              echo "Failed to create AzDO PR: $RESPONSE"
-              exit 1
+          # Build map of GH PR number -> AzDO PR ID from existing comments
+          echo "Building PR mapping from GitHub comments..."
+          declare -A GH_TO_AZDO
+          for gh_num in $(echo "$GH_PRS" | jq -r '.[].number'); do
+            azdo_id=$(gh pr view "$gh_num" --comments --json comments 2>/dev/null \
+              | jq -r '.comments[].body // empty' \
+              | grep -oP '<!-- azdo-mirror:\K\d+' \
+              | head -1 || true)
+            if [ -n "$azdo_id" ]; then
+              GH_TO_AZDO[$gh_num]=$azdo_id
+              echo "  GH #$gh_num -> AzDO #$azdo_id"
             fi
+          done
 
-      - name: Close PR in Azure DevOps
-        if: github.event.action == 'closed'
+          # Sync each GitHub PR to Azure DevOps
+          echo "Syncing GitHub PRs to Azure DevOps..."
+          for row in $(echo "$GH_PRS" | jq -c '.[]'); do
+            gh_num=$(echo "$row" | jq -r '.number')
+            gh_title=$(echo "$row" | jq -r '.title')
+            gh_body=$(echo "$row" | jq -r '.body // ""')
+            gh_url=$(echo "$row" | jq -r '.url')
+            gh_head=$(echo "$row" | jq -r '.headRefName')
+            gh_base=$(echo "$row" | jq -r '.baseRefName')
+
+            description="Mirrored from GitHub PR #${gh_num}: ${gh_url}
+
+          ---
+
+          ${gh_body}"
+
+            azdo_id=${GH_TO_AZDO[$gh_num]:-}
+
+            if [ -n "$azdo_id" ]; then
+              # Update existing AzDO PR
+              echo "Updating AzDO PR #$azdo_id for GH #$gh_num..."
+              curl -s -X PATCH \
+                "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n \
+                  --arg title "$gh_title" \
+                  --arg desc "$description" \
+                  '{title: $title, description: $desc, status: "active"}')" > /dev/null
+            else
+              # Create new AzDO PR
+              echo "Creating AzDO PR for GH #$gh_num..."
+              RESPONSE=$(curl -s -X POST \
+                "${AZDO_API}/pullrequests?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n \
+                  --arg src "refs/heads/${gh_head}" \
+                  --arg tgt "refs/heads/${gh_base}" \
+                  --arg title "$gh_title" \
+                  --arg desc "$description" \
+                  '{sourceRefName: $src, targetRefName: $tgt, title: $title, description: $desc}')")
+
+              new_azdo_id=$(echo "$RESPONSE" | jq -r '.pullRequestId')
+
+              if [ "$new_azdo_id" != "null" ] && [ -n "$new_azdo_id" ]; then
+                AZDO_PR_URL="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}/pullrequest/${new_azdo_id}"
+                gh pr comment "$gh_num" \
+                  --body "<!-- azdo-mirror:${new_azdo_id} -->
+          🔗 **Azure DevOps Mirror**: [PR #${new_azdo_id}](${AZDO_PR_URL})"
+                echo "  Created AzDO PR #$new_azdo_id"
+                GH_TO_AZDO[$gh_num]=$new_azdo_id
+              else
+                echo "  Failed to create AzDO PR: $RESPONSE"
+              fi
+            fi
+          done
+
+          # Abandon AzDO PRs that no longer have corresponding GitHub PRs
+          echo "Checking for orphaned Azure DevOps PRs..."
+          LINKED_AZDO_IDS=$(printf '%s\n' "${GH_TO_AZDO[@]}" | sort -u)
+
+          for azdo_pr in $(echo "$AZDO_PRS" | jq -c '.[]'); do
+            azdo_id=$(echo "$azdo_pr" | jq -r '.pullRequestId')
+            azdo_desc=$(echo "$azdo_pr" | jq -r '.description // ""')
+
+            # Check if this AzDO PR was created by our mirror (has GitHub PR link)
+            if echo "$azdo_desc" | grep -q "Mirrored from GitHub PR"; then
+              # Check if it's still linked to an open GitHub PR
+              if ! echo "$LINKED_AZDO_IDS" | grep -q "^${azdo_id}$"; then
+                echo "Abandoning orphaned AzDO PR #$azdo_id..."
+                curl -s -X PATCH \
+                  "${AZDO_API}/pullrequests/${azdo_id}?api-version=7.1" \
+                  -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d '{"status": "abandoned"}' > /dev/null
+              fi
+            fi
+          done
+
+          # Export the mapping for comment sync step
+          echo "GH_TO_AZDO_JSON=$(echo "${!GH_TO_AZDO[@]}" | tr ' ' '\n' | while read k; do echo "\"$k\":\"${GH_TO_AZDO[$k]}\""; done | paste -sd, | sed 's/^/{/;s/$/}/')" >> $GITHUB_OUTPUT
+
+          echo "PR sync complete."
+        id: pr-sync
+
+      - name: Sync Comments
         env:
           AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_MERGED: ${{ github.event.pull_request.merged }}
+          GH_TO_AZDO_JSON: ${{ steps.pr-sync.outputs.GH_TO_AZDO_JSON }}
         run: |
-          # Find AzDO PR ID from GitHub PR comments
-          AZDO_PR_ID=$(gh pr view "${PR_NUMBER}" --comments --json comments \
-            | jq -r '.comments[].body' \
-            | grep -oP '<!-- azdo-mirror:\K\d+' \
-            | head -1)
+          set -e
 
-          if [ -z "$AZDO_PR_ID" ]; then
-            echo "No AzDO PR found in comments, skipping"
+          AZDO_API="https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}"
+
+          # Parse the PR mapping
+          if [ -z "$GH_TO_AZDO_JSON" ] || [ "$GH_TO_AZDO_JSON" == "{}" ]; then
+            echo "No linked PRs to sync comments for"
             exit 0
           fi
 
-          if [ "$PR_MERGED" == "true" ]; then
-            STATUS="completed"
-            BODY='{"status": "completed", "completionOptions": {"deleteSourceBranch": false}}'
-          else
-            STATUS="abandoned"
-            BODY='{"status": "abandoned"}'
-          fi
+          echo "Syncing comments for linked PRs..."
 
-          curl -s -X PATCH \
-            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests/${AZDO_PR_ID}?api-version=7.1" \
-            -H "Authorization: Bearer ${AZDO_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "$BODY"
+          # Iterate through each linked PR pair
+          for gh_num in $(echo "$GH_TO_AZDO_JSON" | jq -r 'keys[]'); do
+            azdo_id=$(echo "$GH_TO_AZDO_JSON" | jq -r --arg k "$gh_num" '.[$k]')
+            echo "Processing GH #$gh_num -> AzDO #$azdo_id"
 
-          echo "Set AzDO PR #${AZDO_PR_ID} to ${STATUS}"
+            # Fetch GitHub PR comments (conversation comments)
+            GH_COMMENTS=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${gh_num}/comments" --paginate 2>/dev/null || echo '[]')
 
-      - name: Reopen PR in Azure DevOps
-        if: github.event.action == 'reopened'
-        env:
-          AZDO_TOKEN: ${{ steps.azdo-token.outputs.token }}
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          AZDO_PR_ID=$(gh pr view "${PR_NUMBER}" --comments --json comments \
-            | jq -r '.comments[].body' \
-            | grep -oP '<!-- azdo-mirror:\K\d+' \
-            | head -1)
+            # Fetch GitHub PR review comments (inline code comments)
+            GH_REVIEW_COMMENTS=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${gh_num}/comments" --paginate 2>/dev/null || echo '[]')
 
-          if [ -z "$AZDO_PR_ID" ]; then
-            echo "No AzDO PR found in comments, skipping"
-            exit 0
-          fi
+            # Fetch GitHub PR reviews (review summaries)
+            GH_REVIEWS=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${gh_num}/reviews" --paginate 2>/dev/null || echo '[]')
 
-          curl -s -X PATCH \
-            "https://dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_apis/git/repositories/${AZDO_REPO}/pullrequests/${AZDO_PR_ID}?api-version=7.1" \
-            -H "Authorization: Bearer ${AZDO_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d '{"status": "active"}'
+            # Fetch existing AzDO threads to check what's already synced
+            AZDO_THREADS=$(curl -s \
+              "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
+              -H "Authorization: Bearer ${AZDO_TOKEN}" \
+              | jq '.value // []')
 
-          echo "Reactivated AzDO PR #${AZDO_PR_ID}"
+            # Extract already-synced GitHub comment IDs from AzDO thread content
+            SYNCED_IDS=$(echo "$AZDO_THREADS" | jq -r '.[].comments[]?.content // empty' | grep -oP '<!-- gh-comment:\K[^>]+(?= -->)' || true)
+
+            # Sync conversation comments
+            for comment in $(echo "$GH_COMMENTS" | jq -c '.[]'); do
+              comment_id=$(echo "$comment" | jq -r '.id')
+
+              # Skip if already synced or is the mirror link comment
+              if echo "$SYNCED_IDS" | grep -q "^comment-${comment_id}$"; then
+                continue
+              fi
+
+              body=$(echo "$comment" | jq -r '.body // ""')
+
+              # Skip our own mirror comments
+              if echo "$body" | grep -q '<!-- azdo-mirror:'; then
+                continue
+              fi
+
+              author=$(echo "$comment" | jq -r '.user.login')
+              created=$(echo "$comment" | jq -r '.created_at')
+              html_url=$(echo "$comment" | jq -r '.html_url')
+
+              echo "  Syncing comment #$comment_id from @$author"
+
+              content="<!-- gh-comment:comment-${comment_id} -->
+          **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}):
+
+          ---
+
+          ${body}"
+
+              curl -s -X POST \
+                "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+            done
+
+            # Sync review comments (inline code comments)
+            for comment in $(echo "$GH_REVIEW_COMMENTS" | jq -c '.[]'); do
+              comment_id=$(echo "$comment" | jq -r '.id')
+
+              if echo "$SYNCED_IDS" | grep -q "^review-comment-${comment_id}$"; then
+                continue
+              fi
+
+              body=$(echo "$comment" | jq -r '.body // ""')
+              author=$(echo "$comment" | jq -r '.user.login')
+              path=$(echo "$comment" | jq -r '.path')
+              line=$(echo "$comment" | jq -r '.line // .original_line // "?"')
+              html_url=$(echo "$comment" | jq -r '.html_url')
+
+              echo "  Syncing review comment #$comment_id from @$author on $path:$line"
+
+              content="<!-- gh-comment:review-comment-${comment_id} -->
+          **[@${author}](https://github.com/${author})** commented on [GitHub](${html_url}) (\`${path}:${line}\`):
+
+          ---
+
+          ${body}"
+
+              curl -s -X POST \
+                "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+            done
+
+            # Sync review summaries (approve/request changes/comment)
+            for review in $(echo "$GH_REVIEWS" | jq -c '.[]'); do
+              review_id=$(echo "$review" | jq -r '.id')
+
+              if echo "$SYNCED_IDS" | grep -q "^review-${review_id}$"; then
+                continue
+              fi
+
+              body=$(echo "$review" | jq -r '.body // ""')
+              state=$(echo "$review" | jq -r '.state')
+              author=$(echo "$review" | jq -r '.user.login')
+              html_url=$(echo "$review" | jq -r '.html_url')
+
+              # Skip empty reviews (just approvals without comment body)
+              if [ -z "$body" ] && [ "$state" != "CHANGES_REQUESTED" ]; then
+                continue
+              fi
+
+              case "$state" in
+                APPROVED) state_label="✅ Approved" ;;
+                CHANGES_REQUESTED) state_label="🔄 Changes Requested" ;;
+                COMMENTED) state_label="💬 Reviewed" ;;
+                DISMISSED) state_label="❌ Dismissed" ;;
+                *) state_label="📝 $state" ;;
+              esac
+
+              echo "  Syncing review #$review_id ($state) from @$author"
+
+              content="<!-- gh-comment:review-${review_id} -->
+          **[@${author}](https://github.com/${author})** ${state_label} on [GitHub](${html_url}):
+
+          ---
+
+          ${body}"
+
+              curl -s -X POST \
+                "${AZDO_API}/pullrequests/${azdo_id}/threads?api-version=7.1" \
+                -H "Authorization: Bearer ${AZDO_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n --arg content "$content" '{comments: [{parentCommentId: 0, content: $content, commentType: 1}], status: 1}')" > /dev/null
+            done
+          done
+
+          echo "Comment sync complete."
