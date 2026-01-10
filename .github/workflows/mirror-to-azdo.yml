@@ -1,0 +1,47 @@
+name: Mirror to Azure DevOps
+
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  delete:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'delete' && 'main' || github.ref }}
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_AZDO_MIRROR_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_AZDO_MIRROR_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Mirror to Azure DevOps
+        run: |
+          TOKEN=$(az account get-access-token \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query accessToken \
+            --output tsv)
+
+          echo "::add-mask::${TOKEN}"
+
+          git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/pedropaulovc/CodjiFlo/_git/CodjiFlo"
+
+          git fetch origin --prune
+          git push azdo --mirror
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
