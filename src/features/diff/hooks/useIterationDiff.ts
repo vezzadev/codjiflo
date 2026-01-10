@@ -7,10 +7,55 @@
 
 import { useMemo, useCallback } from 'react';
 import { useIterationStore, selectSelectedRange } from '@/features/iterations/stores';
-import type { FileContent as IterationFileContent, ReviewFileArtifact } from '@/features/iterations/types';
+import type { FileContent as IterationFileContent, ReviewFileArtifact, Iteration } from '@/features/iterations/types';
 import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff, FileContent } from '../types';
 import { computeLineDiff, enhanceWithWordDiffs, computeAlignment } from '../workers/diff-engine';
 import { detectLanguage } from '../utils';
+
+/**
+ * Detect if a rebase occurred between two snapshot indices.
+ * A rebase is detected when base_sha changes between iterations.
+ *
+ * @param iterations - All iterations in order
+ * @param fromSnapshotIndex - The earlier snapshot index
+ * @param toSnapshotIndex - The later snapshot index
+ * @returns true if base_sha changed between the iterations covering these snapshots
+ */
+function hasRebaseBetween(
+  iterations: Iteration[] | undefined,
+  fromSnapshotIndex: number,
+  toSnapshotIndex: number
+): boolean {
+  if (!iterations || iterations.length === 0) return false;
+
+  // Find which iterations span these snapshots
+  // Each iteration n covers snapshots [(n-1)*2, (n-1)*2+1]
+  const getIterationForSnapshot = (snapshotIndex: number): Iteration | undefined => {
+    // Snapshot 0-1 = iteration 1, snapshot 2-3 = iteration 2, etc.
+    const revision = Math.floor(snapshotIndex / 2) + 1;
+    return iterations.find(it => it.revision === revision);
+  };
+
+  // Get first iteration's base_sha (for snapshot 0, use iteration 1's base)
+  const fromIteration = getIterationForSnapshot(Math.max(0, fromSnapshotIndex));
+  const toIteration = getIterationForSnapshot(toSnapshotIndex);
+
+  if (!fromIteration || !toIteration) return false;
+
+  // Check if any iteration between them has a different base_sha
+  // This indicates a rebase occurred
+  const fromBaseSha = fromIteration.baseSha;
+
+  for (const iteration of iterations) {
+    if (iteration.revision > fromIteration.revision && iteration.revision <= toIteration.revision) {
+      if (iteration.baseSha !== fromBaseSha) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 interface IterationDiffResult {
   /** Whether iteration mode is active (non-degraded with valid range) */
@@ -30,7 +75,7 @@ interface IterationDiffResult {
  * Returns iteration-based diff data when available, otherwise returns empty results.
  */
 export function useIterationDiff(): IterationDiffResult {
-  const { client, isDegraded, artifacts } = useIterationStore();
+  const { client, isDegraded, artifacts, iterations } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const isIterationMode = useMemo(() => {
@@ -87,6 +132,10 @@ export function useIterationDiff(): IterationDiffResult {
    * was a left (even) snapshot. Left snapshots are always fetched from the PR base, so
    * content at snapshot 2, 4, etc. equals content at snapshot 0 for unchanged files.
    *
+   * IMPORTANT: Base equivalence does NOT apply across rebase boundaries. If the PR was
+   * rebased between the requested snapshot and the artifact's first snapshot, the base
+   * content has changed, so we cannot use the later snapshot's content as equivalent.
+   *
    * @param rangeEnd - The toSnapshot of the selected range. Used to determine if base
    *                   equivalence should apply (only if artifact overlaps with range).
    */
@@ -114,11 +163,15 @@ export function useIterationDiff(): IterationDiffResult {
         //   - Snapshot 1 content = snapshot 0 content = snapshot 2 content = PR base
         // IMPORTANT: Only apply if artifact overlaps with the selected range (firstSnapshotIndex <= rangeEnd).
         // Otherwise, files not modified in the selected range would incorrectly appear.
+        // IMPORTANT: Do NOT apply if a rebase occurred between the requested snapshot and the
+        // artifact's first snapshot - the base content has changed after rebase.
+        const rebaseOccurred = hasRebaseBetween(iterations, snapshotIndex, artifact.firstSnapshotIndex);
         const useBaseEquivalence =
           !existsAtSnapshot &&
           snapshotIndex < artifact.firstSnapshotIndex && // Looking before artifact starts
           artifact.firstSnapshotIndex % 2 === 0 && // First snapshot is a left snapshot (has base content)
-          artifact.firstSnapshotIndex <= rangeEnd; // Artifact overlaps with selected range
+          artifact.firstSnapshotIndex <= rangeEnd && // Artifact overlaps with selected range
+          !rebaseOccurred; // No rebase between requested and artifact's first snapshot
 
         if (!existsAtSnapshot && !useBaseEquivalence) {
           // File doesn't exist at this snapshot (added later or deleted earlier)
@@ -154,7 +207,7 @@ export function useIterationDiff(): IterationDiffResult {
 
       return bestContent;
     },
-    [client, pathToArtifacts]
+    [client, pathToArtifacts, iterations]
   );
 
   /**

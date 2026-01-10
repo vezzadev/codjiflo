@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useIterationDiff } from './useIterationDiff';
-import type { IterationRange, ReviewFileArtifact } from '@/features/iterations/types';
+import type { IterationRange, ReviewFileArtifact, Iteration } from '@/features/iterations/types';
 
 // Store state that tests can configure
 interface MockStoreState {
@@ -13,6 +13,7 @@ interface MockStoreState {
   selectedRange: IterationRange | null;
   isDegraded: boolean;
   artifacts: ReviewFileArtifact[];
+  iterations: Iteration[];
 }
 
 let currentMockState: MockStoreState;
@@ -43,8 +44,34 @@ function setupMockState(state: Partial<MockStoreState>) {
     selectedRange: null,
     isDegraded: false,
     artifacts: [],
+    iterations: [],
     ...state,
   };
+}
+
+// Helper to create mock iterations
+function createMockIterations(count: number, options?: { rebaseAtRevision?: number }): Iteration[] {
+  const iterations: Iteration[] = [];
+  let baseSha = 'base-sha-original';
+
+  for (let i = 1; i <= count; i++) {
+    // Change base SHA if rebase occurred at this revision
+    if (options?.rebaseAtRevision && i >= options.rebaseAtRevision) {
+      baseSha = 'base-sha-after-rebase';
+    }
+
+    iterations.push({
+      id: i,
+      revision: i,
+      headSha: `head-sha-${i}`,
+      baseSha,
+      beforeSha: i > 1 ? `head-sha-${i - 1}` : null,
+      author: 'test-user',
+      createdAt: new Date(`2024-01-0${i}T12:00:00Z`),
+    });
+  }
+
+  return iterations;
 }
 
 describe('useIterationDiff', () => {
@@ -632,6 +659,134 @@ describe('useIterationDiff', () => {
           expect(diff?.base).toBeNull();
           expect(diff?.head).toBeNull();
           expect(diff?.diffLines.length).toBe(0);
+        });
+
+        it('should NOT use base equivalence after rebase (Issue #151)', () => {
+          // Scenario: PR was rebased between iteration 2 and 3.
+          // File existed in PR base, first modified in iteration 3 (after rebase).
+          // Viewing from base (snapshot 0) to iteration 3 (snapshot 5).
+          //
+          // Before fix: base equivalence incorrectly used snapshot 4 content as
+          // equivalent to snapshot 0, even though base_sha changed after rebase.
+          //
+          // After fix: base equivalence should NOT apply because a rebase occurred,
+          // so the file should show as "added" (no base content, only head content).
+          const rebasedArtifact = {
+            id: 18,
+            changeTrackingId: 'rebased-file',
+            repoPaths: [null, null, null, null, 'src/rebased.ts', 'src/rebased.ts'],
+            firstSnapshotIndex: 4, // First captured in iteration 3 (after rebase)
+            lastSnapshotIndex: 5,
+          };
+
+          // Create iterations with rebase at iteration 3
+          const iterations = createMockIterations(3, { rebaseAtRevision: 3 });
+
+          setupMockState({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // Base to iteration 3
+            isDegraded: false,
+            artifacts: [rebasedArtifact],
+            iterations,
+          });
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            // Content only stored at snapshots 4 and 5 (iteration 3 after rebase)
+            if (snapshotIndex === 4) {
+              return {
+                artifactId,
+                snapshotIndex: 4,
+                // This is content from the NEW base (after rebase), NOT the original base
+                content: 'content from rebased base',
+                contentHash: 'hash-rebased-base',
+                sizeBytes: 25,
+              };
+            }
+            if (snapshotIndex === 5) {
+              return {
+                artifactId,
+                snapshotIndex: 5,
+                content: 'modified after rebase',
+                contentHash: 'hash-modified',
+                sizeBytes: 21,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('src/rebased.ts');
+
+          // After rebase, we should NOT use base equivalence.
+          // The file at snapshot 0 (original base) has different content than
+          // snapshot 4 (new rebased base). Since we can't find content at snapshot 0,
+          // the file should appear as "added" (no base, only head).
+          expect(diff).not.toBeNull();
+          expect(diff?.base).toBeNull(); // Key assertion: no base content due to rebase
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.head?.content).toBe('modified after rebase');
+          expect(diff?.diffLines.every(l => l.type === 'addition')).toBe(true);
+        });
+
+        it('should still use base equivalence when no rebase occurred', () => {
+          // Same scenario as Issue #151 test, but WITHOUT rebase.
+          // File existed in PR base, first modified in iteration 3 (NO rebase).
+          // Viewing from base (snapshot 0) to iteration 3 (snapshot 5).
+          //
+          // Base equivalence SHOULD apply: snapshot 4 content equals snapshot 0.
+          const noRebaseArtifact = {
+            id: 19,
+            changeTrackingId: 'no-rebase-file',
+            repoPaths: [null, null, null, null, 'src/no-rebase.ts', 'src/no-rebase.ts'],
+            firstSnapshotIndex: 4, // First captured in iteration 3
+            lastSnapshotIndex: 5,
+          };
+
+          // Create iterations WITHOUT rebase
+          const iterations = createMockIterations(3);
+
+          setupMockState({
+            client: mockClient,
+            selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // Base to iteration 3
+            isDegraded: false,
+            artifacts: [noRebaseArtifact],
+            iterations,
+          });
+
+          mockClient.getFileContent.mockImplementation((artifactId: number, snapshotIndex: number) => {
+            if (snapshotIndex === 4) {
+              return {
+                artifactId,
+                snapshotIndex: 4,
+                content: 'original base content', // Same as snapshot 0 (no rebase)
+                contentHash: 'hash-base',
+                sizeBytes: 21,
+              };
+            }
+            if (snapshotIndex === 5) {
+              return {
+                artifactId,
+                snapshotIndex: 5,
+                content: 'modified content',
+                contentHash: 'hash-modified',
+                sizeBytes: 16,
+              };
+            }
+            return undefined;
+          });
+
+          const { result } = renderHook(() => useIterationDiff());
+          const diff = result.current.getFileDiffByPath('src/no-rebase.ts');
+
+          // Without rebase, base equivalence SHOULD apply.
+          // File should show as "modified" (both base and head content).
+          expect(diff).not.toBeNull();
+          expect(diff?.base).not.toBeNull(); // Key assertion: base content found via equivalence
+          expect(diff?.base?.content).toBe('original base content');
+          expect(diff?.head).not.toBeNull();
+          expect(diff?.head?.content).toBe('modified content');
+          // Should show as modified, not added
+          expect(diff?.diffLines.some(l => l.type === 'deletion' || l.type === 'context')).toBe(true);
         });
       });
     });

@@ -699,3 +699,207 @@ on: [pull_request, workflow_dispatch]
     await expect(changeTypeIndicator).toHaveText("M");
   });
 });
+
+test.describe("Rebase Scenario - Issue #151", () => {
+  // This test validates that after a rebase, base equivalence does NOT apply.
+  // The fix for Issue #151 ensures that when base_sha changes between iterations,
+  // we recognize this as a rebase and don't use the post-rebase base content as
+  // equivalent to the pre-rebase base content.
+  //
+  // Scenario:
+  // - Iterations 1 and 2 have base_sha = "original-base"
+  // - Iteration 3 has base_sha = "rebased-base" (rebase occurred)
+  // - A file that exists in initialFiles (representing rebased base state) but was
+  //   ONLY modified in iteration 3 should show as "Added" when viewing base-to-iteration-3
+  //   because the file at snapshot 0 (original base) doesn't have this content
+
+  // Initial files represent the state of files AS THEY EXIST IN THE REBASED BASE.
+  // The file "src/rebased-feature.ts" exists here because it was added to main
+  // between PR creation and rebase.
+  const mockInitialFiles = {
+    "src/existing.ts": `// Original file
+export const value = 1;
+`,
+    // This file represents content that exists in the rebased base
+    // but NOT in the original base (it was added to main during rebase)
+    "src/rebased-feature.ts": `// This file exists in rebased base
+export function originalFunction() {
+  return 1;
+}
+`,
+  };
+
+  // Iteration 1: Modify existing file (rebased-feature.ts NOT touched)
+  const mockPatch1 = `From abc1111 Mon Sep 17 00:00:00 2001
+From: Test User <test@example.com>
+Date: Thu, 2 Jan 2026 10:00:00 +0000
+Subject: [PATCH] feat: Update existing
+
+diff --git a/src/existing.ts b/src/existing.ts
+--- a/src/existing.ts
++++ b/src/existing.ts
+@@ -1,2 +1,3 @@
+ // Original file
+ export const value = 1;
++export const extra = 2;
+`;
+
+  // Iteration 2: Another modification (rebased-feature.ts STILL not touched)
+  const mockPatch2 = `From def2222 Mon Sep 17 00:00:00 2001
+From: Test User <test@example.com>
+Date: Thu, 2 Jan 2026 11:00:00 +0000
+Subject: [PATCH] feat: More updates
+
+diff --git a/src/existing.ts b/src/existing.ts
+--- a/src/existing.ts
++++ b/src/existing.ts
+@@ -1,3 +1,4 @@
+ // Original file
+ export const value = 1;
+ export const extra = 2;
++export const another = 3;
+`;
+
+  // Iteration 3: After rebase, MODIFY the rebased-feature.ts file
+  // This is the key test - the file exists in initialFiles (rebased base)
+  // but was not modified until iteration 3 (after rebase)
+  const mockPatch3 = `From ghi3333 Mon Sep 17 00:00:00 2001
+From: Test User <test@example.com>
+Date: Thu, 2 Jan 2026 12:00:00 +0000
+Subject: [PATCH] feat: Enhance rebased feature
+
+diff --git a/src/rebased-feature.ts b/src/rebased-feature.ts
+--- a/src/rebased-feature.ts
++++ b/src/rebased-feature.ts
+@@ -1,4 +1,5 @@
+ // This file exists in rebased base
+ export function originalFunction() {
+   return 1;
+ }
++export function newFunction() { return 2; }
+`;
+
+  const mockPR: MockPR = {
+    id: 151,
+    number: 151,
+    title: "Test Issue #151 - Rebase scenario",
+    body: "Testing that diff viewer uses correct base after rebase",
+    state: "open",
+    merged: false,
+    draft: false,
+    user: { id: 1, login: "testuser" },
+    head: { ref: "feature/rebase-test", sha: "ghi3333" },
+    base: { ref: "main", sha: "rebased-base" }, // After rebase
+    html_url: "https://github.com/test/repo/pull/151",
+    created_at: "2026-01-02T10:00:00Z",
+    updated_at: "2026-01-02T12:00:00Z",
+  };
+
+  const mockFiles: MockFile[] = [
+    {
+      filename: "src/existing.ts",
+      status: "modified",
+      additions: 3,
+      deletions: 0,
+      changes: 3,
+      patch: "@@ -1,2 +1,4 @@\n // Original file\n export const value = 1;\n+export const extra = 2;\n+export const another = 3;",
+      baseContent: mockInitialFiles["src/existing.ts"],
+      headContent: `// Original file
+export const value = 1;
+export const extra = 2;
+export const another = 3;
+`,
+    },
+    {
+      filename: "src/rebased-feature.ts",
+      status: "modified", // Modified from rebased base perspective
+      additions: 1,
+      deletions: 0,
+      changes: 1,
+      patch: "@@ -1,4 +1,5 @@\n // This file exists in rebased base\n export function originalFunction() {\n   return 1;\n }\n+export function newFunction() { return 2; }",
+      baseContent: mockInitialFiles["src/rebased-feature.ts"],
+      headContent: `// This file exists in rebased base
+export function originalFunction() {
+  return 1;
+}
+export function newFunction() { return 2; }
+`,
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    test.skip(!isMockMode(), "Only runs in mock mode");
+
+    await setupAuthState(page);
+
+    const config = { owner: "test", repo: "repo", prNumber: 151 };
+
+    // Build mock iteration database with rebase at iteration 3
+    const mockDb = buildIterationDb({
+      initialFiles: mockInitialFiles,
+      patches: [mockPatch1, mockPatch2, mockPatch3],
+      baseSha: "original-base",
+      baseShaOverrides: { 3: "rebased-base" }, // Iteration 3 has new base
+    });
+
+    await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
+      pr: mockPR,
+      files: mockFiles,
+    });
+    await setupIterationArtifactMock(
+      page,
+      config.owner,
+      config.repo,
+      config.prNumber,
+      mockDb
+    );
+  });
+
+  test("File modified only after rebase shows as 'A' not 'M' (Issue #151)", async ({
+    page,
+  }) => {
+    // TEST FAILURE VALIDATION:
+    // Before the fix:
+    //   - changeTypeIndicator would show "M" (base equivalence incorrectly applied)
+    //   - The file would appear as "modified" because snapshot 4 content was used
+    //     as equivalent to snapshot 0, even though base_sha changed
+    // After the fix:
+    //   - changeTypeIndicator shows "A" (base equivalence blocked by rebase detection)
+    //   - The file correctly appears as "added" because we recognize that
+    //     snapshot 0 (original base) has different content than snapshot 4 (rebased base)
+
+    await page.goto("/test/repo/151");
+    await page.waitForLoadState("load");
+
+    // Wait for iterations to load
+    const selector = page.getByTestId("iteration-selector");
+    await expect(selector).toBeVisible();
+
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Select iteration 3 (the one after rebase)
+    const iteration3Tab = page.getByTestId("iteration-tab-3");
+    await iteration3Tab.click();
+    await expect(iteration3Tab).toHaveClass(/selected/);
+
+    // Find the rebased-feature.ts in the file list
+    const rebasedFileItem = fileList.locator(".tree-item.file").filter({
+      hasText: "rebased-feature.ts",
+    });
+
+    await expect(rebasedFileItem).toBeVisible();
+
+    // CRITICAL ASSERTION: The file should show as "A" (added), NOT "M" (modified)
+    // This is because after a rebase, we cannot use base equivalence.
+    // The file's content at snapshot 4 (rebased base) is NOT the same as
+    // what would be at snapshot 0 (original base - which didn't have this file).
+    const changeTypeIndicator = rebasedFileItem.locator(".change-type");
+    await expect(changeTypeIndicator).toHaveText("A");
+
+    // Also verify via aria-label
+    const ariaLabel = await rebasedFileItem.getAttribute("aria-label");
+    expect(ariaLabel).toContain("added");
+    expect(ariaLabel).not.toContain("modified");
+  });
+});

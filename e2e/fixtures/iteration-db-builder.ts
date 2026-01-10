@@ -80,6 +80,13 @@ export interface IterationDbBuilderOptions {
   patches: string[];
   /** Base SHA for all iterations (default: 'mock-base-sha') */
   baseSha?: string;
+  /**
+   * Per-iteration base SHAs (optional).
+   * Key is 1-based revision number, value is the base SHA for that iteration.
+   * Used to simulate rebase scenarios where base_sha changes.
+   * Example: { 3: 'new-base-sha' } means iteration 3 was captured after a rebase.
+   */
+  baseShaOverrides?: Record<number, string>;
   /** Default author if not in patch (default: 'test-user') */
   defaultAuthor?: string;
 }
@@ -109,6 +116,7 @@ export function buildIterationDb(
     initialFiles,
     patches,
     baseSha = "mock-base-sha",
+    baseShaOverrides = {},
     defaultAuthor = "test-user",
   } = options;
 
@@ -142,11 +150,13 @@ export function buildIterationDb(
       revision > 1 ? `mock-head-sha-${String(revision - 1)}` : null;
     const author = parsedPatch.author ?? defaultAuthor;
     const createdAt = parsedPatch.date ?? new Date().toISOString();
+    // Use override base SHA if provided (for rebase scenarios)
+    const iterationBaseSha = baseShaOverrides[revision] ?? baseSha;
 
     db.prepare(
       `INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
        VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(revision, headSha, baseSha, beforeSha, author, createdAt);
+    ).run(revision, headSha, iterationBaseSha, beforeSha, author, createdAt);
 
     // Get file state before applying this patch
     const previousFiles = { ...currentFiles };
@@ -252,6 +262,7 @@ export class IterationDbBuilder {
   private initialFiles: InitialFiles = {};
   private patches: string[] = [];
   private baseSha = "mock-base-sha";
+  private baseShaOverrides: Record<number, string> = {};
   private defaultAuthor = "test-user";
 
   withInitialFiles(files: InitialFiles): this {
@@ -269,6 +280,16 @@ export class IterationDbBuilder {
     return this;
   }
 
+  /**
+   * Set a different base SHA for a specific iteration (simulates rebase).
+   * @param revision - 1-based iteration number
+   * @param sha - The new base SHA after rebase
+   */
+  withRebaseAt(revision: number, sha: string): this {
+    this.baseShaOverrides[revision] = sha;
+    return this;
+  }
+
   withAuthor(author: string): this {
     this.defaultAuthor = author;
     return this;
@@ -279,6 +300,7 @@ export class IterationDbBuilder {
       initialFiles: this.initialFiles,
       patches: this.patches,
       baseSha: this.baseSha,
+      baseShaOverrides: this.baseShaOverrides,
       defaultAuthor: this.defaultAuthor,
     });
   }
