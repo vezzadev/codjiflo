@@ -40,6 +40,10 @@ jobs:
 
       - name: Mirror to Azure DevOps
         run: |
+          set -e
+
+          # 499b84ac-1321-427f-aa17-267ca6975798 is Azure DevOps Services resource ID
+          # (well-known AAD application ID for Azure DevOps)
           TOKEN=$(az account get-access-token \
             --resource 499b84ac-1321-427f-aa17-267ca6975798 \
             --query accessToken \
@@ -48,8 +52,6 @@ jobs:
           echo "::add-mask::${TOKEN}"
 
           git remote add azdo "https://oauth2:${TOKEN}@dev.azure.com/${AZDO_ORG}/${AZDO_PROJECT}/_git/${AZDO_REPO}"
-
-          git fetch origin --prune
 
           # Push branches and tags (not PR refs which AzDO rejects)
           git push azdo --all --prune
@@ -71,6 +73,8 @@ jobs:
       - name: Get Azure DevOps Token
         id: azdo-token
         run: |
+          set -e
+          # 499b84ac-1321-427f-aa17-267ca6975798 is Azure DevOps Services resource ID
           TOKEN=$(az account get-access-token \
             --resource 499b84ac-1321-427f-aa17-267ca6975798 \
             --query accessToken \
