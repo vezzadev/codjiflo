@@ -1,5 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/console-warnings";
 import { isMockMode, prodModeConfig } from "./fixtures/mode";
+
+// These tests don't set up iteration artifacts, so they run in degraded mode
+test.use({ expectDegradedMode: true });
 import {
   setupAuthState,
   setupFullPRMocks,
