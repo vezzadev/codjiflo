@@ -54,7 +54,7 @@ Backend abstraction layer supporting:
 6. **Region commenting** - Multi-line comment spanning
 
 ## Project Name
-CodjiFlo is a corrupted version (pt: [Corruptela](https://dicionario.priberam.org/corruptela)) of the word CodeFlow. Its pronunciation in English matches how a Brazilian with beginner level of proficience in English would say the word CodeFlow. It represents the fact that CodjiFlo is a "corrupted" version of the original CodeFlow and the author is Brazilian-American.
+CodjiFlo is a corrupted version (pt: [Corruptela](https://dicionario.priberam.org/corruptela)) of the word CodeFlow. Its pronunciation in English matches how a Brazilian with beginner level proficiency in English would say the word CodeFlow. It represents the fact that CodjiFlo is a "corrupted" version of the original CodeFlow and the author is Brazilian-American.
 
 ## Note
 This project is not associated or endorsed by Microsoft Corp. The [CodjiFlo specification](./spec/functional/index.md) was produced following a clean-room approach: the desired behavior was codified from research articles, interviews published by Microsoft, blog posts, linked in the spec, and the author's memory of how CodeFlow works.
