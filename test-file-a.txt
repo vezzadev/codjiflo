@@ -1,0 +1,2 @@
+This is file A - original content.
+Line 2 of file A.
