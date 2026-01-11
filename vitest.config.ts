@@ -23,18 +23,9 @@ export default defineConfig({
       reporter: ["text", "json", "json-summary", "html"],
       exclude: [
         "node_modules/",
-        "src/tests/",
-        "src/app/",
         "e2e/",
         "**/*.stories.tsx",
         "**/*.d.ts",
-        // Infrastructure layers require E2E tests, not unit tests
-        "src/lib/sqlite-wasm.ts",
-        "src/features/iterations/artifact-loader.ts",
-        "src/features/iterations/iteration-client.ts",
-        "src/features/iterations/application/**",
-        "src/features/iterations/infrastructure/**",
-        "src/features/iterations/stores/**",
         // Re-export files with no logic
         "**/index.ts",
       ],
