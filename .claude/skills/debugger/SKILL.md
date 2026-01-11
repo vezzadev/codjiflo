@@ -93,7 +93,7 @@ Follow these steps precisely, pausing for user confirmation at designated checkp
 18. **Update documentation**:
     - `spec/functional/` - Update if behavior expectations changed
     - `spec/stories/milestone-*.md` - Update if relevant to milestones
-    - `spec/tests/*` - Update if behavior expectations changed or there is no test that accurately covers the bug
+    - `spec/test/*` - Update if behavior expectations changed or there is no test that accurately covers the bug
     - Ensure accuracy and currency
 
 19. **Push changes** (documentation)
