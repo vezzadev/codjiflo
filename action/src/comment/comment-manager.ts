@@ -23,6 +23,8 @@ interface CommentData {
   artifactName: string;
   runId: number;
   timestamp: string;
+  baseCommitSha: string;
+  baseCommitDate: string | null;
 }
 
 // ============================================================================
@@ -116,6 +118,22 @@ export async function getArtifactNameFromComment(
  * Format the comment body with metadata.
  */
 function formatCommentBody(data: CommentData): string {
+  // Calculate age if base commit date is available
+  let ageInfo = '';
+  if (data.baseCommitDate) {
+    const baseDate = new Date(data.baseCommitDate);
+    const now = new Date();
+    const ageMs = now.getTime() - baseDate.getTime();
+    const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+    const ageHours = Math.floor((ageMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (ageDays > 0) {
+      ageInfo = `**Baseline commit age**: ${ageDays} day${ageDays !== 1 ? 's' : ''} ${ageHours} hour${ageHours !== 1 ? 's' : ''}\n`;
+    } else {
+      ageInfo = `**Baseline commit age**: ${ageHours} hour${ageHours !== 1 ? 's' : ''}\n`;
+    }
+  }
+
   return `${COMMENT_MARKER}
 ### CodjiFlo Iteration Tracking
 
@@ -123,7 +141,8 @@ function formatCommentBody(data: CommentData): string {
 **Last updated**: ${data.timestamp}
 **Artifact**: \`${data.artifactName}\`
 **Run ID**: ${data.runId}
-
+**Baseline commit**: \`${data.baseCommitSha.substring(0, 7)}\`
+${data.baseCommitDate ? `**Baseline commit date**: ${new Date(data.baseCommitDate).toISOString()}\n` : ''}${ageInfo}
 ---
 <details>
 <summary>What is this?</summary>

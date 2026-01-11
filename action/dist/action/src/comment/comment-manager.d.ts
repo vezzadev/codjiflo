@@ -9,6 +9,8 @@ interface CommentData {
     artifactName: string;
     runId: number;
     timestamp: string;
+    baseCommitSha: string;
+    baseCommitDate: string | null;
 }
 /**
  * Create or update the CodjiFlo data comment on the PR.

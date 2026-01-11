@@ -8,6 +8,7 @@ export interface IterationRow {
     revision: number;
     head_sha: string;
     base_sha: string;
+    base_commit_date: string | null;
     before_sha: string | null;
     author: string | null;
     created_at: string;

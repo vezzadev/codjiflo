@@ -5,7 +5,7 @@
  * content, and precomputed SpanTrackers.
  */
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA_SQL = `
 -- Schema metadata table
@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS iterations (
   revision INTEGER NOT NULL UNIQUE,
   head_sha TEXT NOT NULL,
   base_sha TEXT NOT NULL,
+  base_commit_date TEXT,
   before_sha TEXT,
   author TEXT,
   created_at TEXT NOT NULL

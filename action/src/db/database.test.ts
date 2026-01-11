@@ -51,6 +51,7 @@ describe('IterationDatabase', () => {
         revision: 1,
         head_sha: 'abc123',
         base_sha: 'def456',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: null,
         author: 'test-user',
         created_at: '2025-01-01T00:00:00Z',
@@ -64,6 +65,7 @@ describe('IterationDatabase', () => {
         revision: 1,
         head_sha: 'abc123',
         base_sha: 'def456',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: null,
         author: 'test-user',
         created_at: '2025-01-01T00:00:00Z',
@@ -73,6 +75,7 @@ describe('IterationDatabase', () => {
         revision: 2,
         head_sha: 'ghi789',
         base_sha: 'def456',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: 'abc123',
         author: 'test-user',
         created_at: '2025-01-02T00:00:00Z',
@@ -94,6 +97,7 @@ describe('IterationDatabase', () => {
         revision: 1,
         head_sha: 'abc123',
         base_sha: 'def456',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: null,
         author: 'user1',
         created_at: '2025-01-01T00:00:00Z',
@@ -103,6 +107,7 @@ describe('IterationDatabase', () => {
         revision: 2,
         head_sha: 'ghi789',
         base_sha: 'def456',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: 'abc123',
         author: 'user2',
         created_at: '2025-01-02T00:00:00Z',
@@ -124,6 +129,7 @@ describe('IterationDatabase', () => {
         revision: 1,
         head_sha: 'abc',
         base_sha: 'def',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: null,
         author: 'user',
         created_at: '2025-01-01T00:00:00Z',
@@ -133,6 +139,7 @@ describe('IterationDatabase', () => {
         revision: 2,
         head_sha: 'ghi',
         base_sha: 'def',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: 'abc',
         author: 'user',
         created_at: '2025-01-02T00:00:00Z',
@@ -316,6 +323,7 @@ describe('IterationDatabase', () => {
         revision: 1,
         head_sha: 'abc',
         base_sha: 'def',
+        base_commit_date: '2024-12-31T00:00:00Z',
         before_sha: null,
         author: 'user',
         created_at: '2025-01-01T00:00:00Z',
@@ -338,7 +346,7 @@ describe('IterationDatabase', () => {
     });
 
     it('should return current schema version constant', () => {
-      expect(SCHEMA_VERSION).toBe(2);
+      expect(SCHEMA_VERSION).toBe(3);
     });
   });
 });

@@ -18,6 +18,7 @@ export interface IterationRow {
   revision: number;
   head_sha: string;
   base_sha: string;
+  base_commit_date: string | null;
   before_sha: string | null;
   author: string | null;
   created_at: string;
@@ -94,8 +95,8 @@ export class IterationDatabase {
 
   insertIteration(data: Omit<IterationRow, 'id'>): number {
     const stmt = this.db.prepare(`
-      INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
-      VALUES (@revision, @head_sha, @base_sha, @before_sha, @author, @created_at)
+      INSERT INTO iterations (revision, head_sha, base_sha, base_commit_date, before_sha, author, created_at)
+      VALUES (@revision, @head_sha, @base_sha, @base_commit_date, @before_sha, @author, @created_at)
     `);
     const result = stmt.run(data);
     return result.lastInsertRowid as number;

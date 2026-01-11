@@ -43,11 +43,26 @@ export async function captureIteration(
   const iterationCount = db.getIterationCount();
   const revision = iterationCount + 1;
 
+  // Fetch base commit date
+  let baseCommitDate: string | null = null;
+  try {
+    const { data: commit } = await ctx.octokit.rest.repos.getCommit({
+      owner: ctx.owner,
+      repo: ctx.repo,
+      ref: ctx.baseSha,
+    });
+    baseCommitDate = commit.commit.committer?.date ?? null;
+  } catch (error) {
+    // If we can't fetch the commit, continue without the date
+    console.warn(`Failed to fetch base commit date: ${error}`);
+  }
+
   // Insert iteration record
   const iterationId = db.insertIteration({
     revision,
     head_sha: ctx.headSha,
     base_sha: ctx.baseSha,
+    base_commit_date: baseCommitDate,
     before_sha: ctx.beforeSha,
     author: github.context.actor,
     created_at: new Date().toISOString(),

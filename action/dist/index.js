@@ -38515,11 +38515,26 @@ const file_fetcher_1 = __nccwpck_require__(8472);
 async function captureIteration(db, ctx) {
     const iterationCount = db.getIterationCount();
     const revision = iterationCount + 1;
+    // Fetch base commit date
+    let baseCommitDate = null;
+    try {
+        const { data: commit } = await ctx.octokit.rest.repos.getCommit({
+            owner: ctx.owner,
+            repo: ctx.repo,
+            ref: ctx.baseSha,
+        });
+        baseCommitDate = commit.commit.committer?.date ?? null;
+    }
+    catch (error) {
+        // If we can't fetch the commit, continue without the date
+        console.warn(`Failed to fetch base commit date: ${error}`);
+    }
     // Insert iteration record
     const iterationId = db.insertIteration({
         revision,
         head_sha: ctx.headSha,
         base_sha: ctx.baseSha,
+        base_commit_date: baseCommitDate,
         before_sha: ctx.beforeSha,
         author: github.context.actor,
         created_at: new Date().toISOString(),
@@ -38701,6 +38716,21 @@ async function getArtifactNameFromComment(octokit, owner, repo, prNumber) {
  * Format the comment body with metadata.
  */
 function formatCommentBody(data) {
+    // Calculate age if base commit date is available
+    let ageInfo = '';
+    if (data.baseCommitDate) {
+        const baseDate = new Date(data.baseCommitDate);
+        const now = new Date();
+        const ageMs = now.getTime() - baseDate.getTime();
+        const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+        const ageHours = Math.floor((ageMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        if (ageDays > 0) {
+            ageInfo = `**Baseline commit age**: ${ageDays} day${ageDays !== 1 ? 's' : ''} ${ageHours} hour${ageHours !== 1 ? 's' : ''}\n`;
+        }
+        else {
+            ageInfo = `**Baseline commit age**: ${ageHours} hour${ageHours !== 1 ? 's' : ''}\n`;
+        }
+    }
     return `${COMMENT_MARKER}
 ### CodjiFlo Iteration Tracking
 
@@ -38708,7 +38738,8 @@ function formatCommentBody(data) {
 **Last updated**: ${data.timestamp}
 **Artifact**: \`${data.artifactName}\`
 **Run ID**: ${data.runId}
-
+**Baseline commit**: \`${data.baseCommitSha.substring(0, 7)}\`
+${data.baseCommitDate ? `**Baseline commit date**: ${new Date(data.baseCommitDate).toISOString()}\n` : ''}${ageInfo}
 ---
 <details>
 <summary>What is this?</summary>
@@ -38813,8 +38844,8 @@ class IterationDatabase {
     // --------------------------------------------------------------------------
     insertIteration(data) {
         const stmt = this.db.prepare(`
-      INSERT INTO iterations (revision, head_sha, base_sha, before_sha, author, created_at)
-      VALUES (@revision, @head_sha, @base_sha, @before_sha, @author, @created_at)
+      INSERT INTO iterations (revision, head_sha, base_sha, base_commit_date, before_sha, author, created_at)
+      VALUES (@revision, @head_sha, @base_sha, @base_commit_date, @before_sha, @author, @created_at)
     `);
         const result = stmt.run(data);
         return result.lastInsertRowid;
@@ -38988,7 +39019,7 @@ exports.IterationDatabase = IterationDatabase;
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SCHEMA_SQL = exports.SCHEMA_VERSION = void 0;
-exports.SCHEMA_VERSION = 2;
+exports.SCHEMA_VERSION = 3;
 exports.SCHEMA_SQL = `
 -- Schema metadata table
 -- Stores database version for migration compatibility
@@ -39007,6 +39038,7 @@ CREATE TABLE IF NOT EXISTS iterations (
   revision INTEGER NOT NULL UNIQUE,
   head_sha TEXT NOT NULL,
   base_sha TEXT NOT NULL,
+  base_commit_date TEXT,
   before_sha TEXT,
   author TEXT,
   created_at TEXT NOT NULL
@@ -39246,6 +39278,8 @@ async function run() {
                 artifactName,
                 runId: github.context.runId,
                 timestamp: new Date().toISOString(),
+                baseCommitSha: iteration.base_sha,
+                baseCommitDate: iteration.base_commit_date,
             });
             core.info('PR comment updated');
             // Update PR description with CodjiFlo link

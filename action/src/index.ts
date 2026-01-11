@@ -159,6 +159,8 @@ async function run(): Promise<void> {
         artifactName,
         runId: github.context.runId,
         timestamp: new Date().toISOString(),
+        baseCommitSha: iteration.base_sha,
+        baseCommitDate: iteration.base_commit_date,
       });
       core.info('PR comment updated');
 
