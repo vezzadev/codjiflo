@@ -23,16 +23,16 @@ export function useKeyboardShortcuts() {
     }
 
     switch (event.key) {
-      // j = Next change (within file)
+      // j = Previous change (within file)
       case 'j':
         event.preventDefault();
-        scrollToNextChange();
+        scrollToPreviousChange();
         break;
 
-      // k = Previous change (within file)
+      // k = Next change (within file)
       case 'k':
         event.preventDefault();
-        scrollToPreviousChange();
+        scrollToNextChange();
         break;
 
       // s = Next file
@@ -71,8 +71,8 @@ export function useKeyboardShortcuts() {
  */
 export function getShortcutsList(): { key: string; description: string }[] {
   return [
-    { key: 'j', description: 'Next change' },
-    { key: 'k', description: 'Previous change' },
+    { key: 'j', description: 'Previous change' },
+    { key: 'k', description: 'Next change' },
     { key: 's', description: 'Next file' },
     { key: 'w', description: 'Previous file' },
     { key: 'Space', description: 'Scroll down in diff view' },

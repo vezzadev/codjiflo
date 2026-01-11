@@ -381,23 +381,23 @@ export function DiffToolbar() {
           type="button"
           onClick={scrollToPreviousChange}
           disabled={!canGoPrevious}
-          aria-label="Previous change (K)"
-          title="Previous change (K)"
+          aria-label="Previous change (J)"
+          title="Previous change (J)"
           className="btn-toolbar btn-nav"
         >
           <ChevronUp className="w-4 h-4" aria-hidden />
-          <span className="btn-nav-hint">K</span>
+          <span className="btn-nav-hint">J</span>
         </button>
         <button
           type="button"
           onClick={scrollToNextChange}
           disabled={!canGoNext}
-          aria-label="Next change (J)"
-          title="Next change (J)"
+          aria-label="Next change (K)"
+          title="Next change (K)"
           className="btn-toolbar btn-nav"
         >
           <ChevronDown className="w-4 h-4" aria-hidden />
-          <span className="btn-nav-hint">J</span>
+          <span className="btn-nav-hint">K</span>
         </button>
       </div>
     </div>

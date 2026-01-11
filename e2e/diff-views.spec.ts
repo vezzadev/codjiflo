@@ -520,11 +520,11 @@ const baz = 'qux';
       // Focus the diff region for keyboard navigation
       await diffRegion.click();
 
-      // Press J to navigate to first change
-      // Note: Our mock diff has only 1 hunk, so after pressing J we're at the only change
-      await page.keyboard.press("j");
+      // Press K to navigate to first change
+      // Note: Our mock diff has only 1 hunk, so after pressing K we're at the only change
+      await page.keyboard.press("k");
 
-      // After pressing J, we're at index 0 (the first and only hunk)
+      // After pressing K, we're at index 0 (the first and only hunk)
       // Both buttons should be disabled since we're at both the start and end
       // (there's only 1 hunk group: deletion + additions are consecutive)
       await expect(prevChangeButton).toBeDisabled();
@@ -630,31 +630,31 @@ const baz = 'qux';
     // Focus the page body for keyboard navigation
     await page.locator("body").click();
 
-    // Press J to navigate to first change
-    await page.keyboard.press("j");
+    // Press K to navigate to first change
+    await page.keyboard.press("k");
 
-    // After first J press, we should be at index 0
+    // After first K press, we should be at index 0
     // Prev should still be disabled (at start), Next should be enabled (many more hunks)
     await expect(prevChangeButton).toBeDisabled();
     await expect(nextChangeButton).toBeEnabled();
 
-    // Press J a few more times to navigate through changes
-    await page.keyboard.press("j");
-    await page.keyboard.press("j");
+    // Press K a few more times to navigate through changes
+    await page.keyboard.press("k");
+    await page.keyboard.press("k");
 
     // Now we're at index 2, both buttons should be enabled
     await expect(prevChangeButton).toBeEnabled();
     await expect(nextChangeButton).toBeEnabled();
 
-    // Press K to go back
-    await page.keyboard.press("k");
+    // Press J to go back
+    await page.keyboard.press("j");
 
     // Still both enabled (we're at index 1)
     await expect(prevChangeButton).toBeEnabled();
     await expect(nextChangeButton).toBeEnabled();
 
     // Go back to start
-    await page.keyboard.press("k");
+    await page.keyboard.press("j");
 
     // Now at index 0, prev disabled
     await expect(prevChangeButton).toBeDisabled();

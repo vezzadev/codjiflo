@@ -47,22 +47,22 @@ describe('useKeyboardShortcuts', () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
   });
 
-  it('calls scrollToNextChange when j is pressed', () => {
+  it('calls scrollToPreviousChange when j is pressed', () => {
     renderHook(() => useKeyboardShortcuts());
 
     const event = new KeyboardEvent('keydown', { key: 'j' });
     window.dispatchEvent(event);
 
-    expect(mockScrollToNextChange).toHaveBeenCalledTimes(1);
+    expect(mockScrollToPreviousChange).toHaveBeenCalledTimes(1);
   });
 
-  it('calls scrollToPreviousChange when k is pressed', () => {
+  it('calls scrollToNextChange when k is pressed', () => {
     renderHook(() => useKeyboardShortcuts());
 
     const event = new KeyboardEvent('keydown', { key: 'k' });
     window.dispatchEvent(event);
 
-    expect(mockScrollToPreviousChange).toHaveBeenCalledTimes(1);
+    expect(mockScrollToNextChange).toHaveBeenCalledTimes(1);
   });
 
   it('calls selectNextFile when s is pressed', () => {
@@ -155,8 +155,8 @@ describe('getShortcutsList', () => {
     const shortcuts = getShortcutsList();
 
     expect(shortcuts).toEqual([
-      { key: 'j', description: 'Next change' },
-      { key: 'k', description: 'Previous change' },
+      { key: 'j', description: 'Previous change' },
+      { key: 'k', description: 'Next change' },
       { key: 's', description: 'Next file' },
       { key: 'w', description: 'Previous file' },
       { key: 'Space', description: 'Scroll down in diff view' },

@@ -449,12 +449,12 @@ diff --git a/src/app.ts b/src/app.ts
     // Initially, Previous should be disabled (index = -1)
     await expect(prevChangeBtn).toBeDisabled();
 
-    // Navigate forward twice with J to move index > 0
-    // First J: index -1 -> 0, Second J: index 0 -> 1
-    await page.keyboard.press("j");
-    await page.keyboard.press("j");
+    // Navigate forward twice with K to move index > 0
+    // First K: index -1 -> 0, Second K: index 0 -> 1
+    await page.keyboard.press("k");
+    await page.keyboard.press("k");
 
-    // After pressing J twice, Previous should be ENABLED (index > 0)
+    // After pressing K twice, Previous should be ENABLED (index > 0)
     await expect(prevChangeBtn).toBeEnabled();
 
     // Switch to first iteration (currently on last)
