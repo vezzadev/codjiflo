@@ -94,6 +94,7 @@ describe('useIterationStore', () => {
       isLoading: false,
       error: null,
       isDegraded: false,
+      degradedReason: null,
     });
 
     // Reset all mocks
