@@ -266,6 +266,21 @@ export async function setupFileContentsMock(
           });
         }
       );
+    } else if (file.headContent && file.status === "added") {
+      // For newly added files, return 404 for base version (file doesn't exist there)
+      await page.route(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(pr.base.sha)}`,
+        async (route) => {
+          await route.fulfill({
+            status: 404,
+            contentType: "application/json",
+            body: JSON.stringify({
+              message: "Not Found",
+              documentation_url: "https://docs.github.com/rest/repos/contents#get-repository-content",
+            }),
+          });
+        }
+      );
     }
 
     // Mock head version (modified)
