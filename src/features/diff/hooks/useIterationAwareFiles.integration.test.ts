@@ -22,8 +22,10 @@ vi.mock('../stores', () => ({
 interface MockIterationStoreState {
   client: MockIterationClient | null;
   isDegraded: boolean;
+  degradedReason?: string | null;
   artifacts: ReviewFileArtifact[];
   selectedRange: { fromSnapshot: number; toSnapshot: number } | null;
+  currentPrKey?: string | null;
 }
 
 let currentIterationStoreState: MockIterationStoreState;
@@ -194,6 +196,140 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(result.current.files[0]?.filename).toBe('src/file1.ts');
       expect(result.current.files[1]?.filename).toBe('src/file2.ts');
       expect(result.current.totalFilesInPR).toBe(2);
+    });
+  });
+
+  describe('Console warning for degraded mode (Issue #186)', () => {
+    it('should emit console warning once when entering degraded mode', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+      const files = [createMockFile('src/file1.ts')];
+
+      // Setup degraded mode with reason
+      currentIterationStoreState = {
+        client: null,
+        selectedRange: null,
+        isDegraded: true,
+        degradedReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
+        artifacts: [],
+        currentPrKey: 'https://github.com/test/repo/pull/123',
+      };
+
+      vi.mocked(useDiffStore).mockReturnValue({
+        files,
+        selectedFileIndex: 0,
+        isLoading: false,
+        viewConfig: { mode: 'unified', showWhitespace: false },
+        setFiles: vi.fn(),
+        selectFile: vi.fn(),
+        setLoading: vi.fn(),
+        setViewConfig: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      renderHook(() => useIterationAwareFiles());
+
+      // Verify warning was called once
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[CodjiFlo] Using GitHub API as fallback (degraded mode). ' +
+        'Reason: No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.. ' +
+        'Iteration tracking features are unavailable.'
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should not emit warning twice for same PR (deduplication)', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+      const files = [createMockFile('src/file1.ts')];
+
+      currentIterationStoreState = {
+        client: null,
+        selectedRange: null,
+        isDegraded: true,
+        degradedReason: 'Test reason',
+        artifacts: [],
+        currentPrKey: 'https://github.com/test/repo/pull/123',
+      };
+
+      vi.mocked(useDiffStore).mockReturnValue({
+        files,
+        selectedFileIndex: 0,
+        isLoading: false,
+        viewConfig: { mode: 'unified', showWhitespace: false },
+        setFiles: vi.fn(),
+        selectFile: vi.fn(),
+        setLoading: vi.fn(),
+        setViewConfig: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      // Render first time
+      const { rerender } = renderHook(() => useIterationAwareFiles());
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+
+      // Rerender with same PR key - should not warn again
+      rerender();
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(1); // Still 1, not 2
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should emit warning again for different PR', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+      const files = [createMockFile('src/file1.ts')];
+
+      // First PR
+      currentIterationStoreState = {
+        client: null,
+        selectedRange: null,
+        isDegraded: true,
+        degradedReason: 'Test reason',
+        artifacts: [],
+        currentPrKey: 'https://github.com/test/repo/pull/123',
+      };
+
+      vi.mocked(useDiffStore).mockReturnValue({
+        files,
+        selectedFileIndex: 0,
+        isLoading: false,
+        viewConfig: { mode: 'unified', showWhitespace: false },
+        setFiles: vi.fn(),
+        selectFile: vi.fn(),
+        setLoading: vi.fn(),
+        setViewConfig: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      const { unmount } = renderHook(() => useIterationAwareFiles());
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+
+      unmount();
+
+      // Different PR
+      currentIterationStoreState.currentPrKey = 'https://github.com/test/repo/pull/456';
+
+      renderHook(() => useIterationAwareFiles());
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(2); // Warning emitted for new PR
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should not emit warning when not in degraded mode', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+      const files = [createMockFile('src/file1.ts')];
+
+      // Setup iteration mode (not degraded)
+      setupMocks(files, [], { fromSnapshot: 0, toSnapshot: 1 });
+      currentIterationStoreState.isDegraded = false;
+      currentIterationStoreState.currentPrKey = 'https://github.com/test/repo/pull/123';
+
+      renderHook(() => useIterationAwareFiles());
+
+      // No warning should be emitted
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+
+      consoleWarnSpy.mockRestore();
     });
   });
 
