@@ -25,6 +25,7 @@ export default defineConfig({
         "node_modules/",
         "src/tests/",
         "src/app/",
+        "e2e/",
         "**/*.stories.tsx",
         "**/*.d.ts",
         // Infrastructure layers require E2E tests, not unit tests
