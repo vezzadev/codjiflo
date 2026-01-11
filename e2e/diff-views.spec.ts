@@ -504,8 +504,8 @@ const baz = 'qux';
       await expect(nextChangeButton).toBeVisible();
 
       // Verify buttons show keyboard shortcut hints
-      await expect(prevChangeButton).toContainText("K");
-      await expect(nextChangeButton).toContainText("J");
+      await expect(prevChangeButton).toContainText("J");
+      await expect(nextChangeButton).toContainText("K");
 
       // Get diff region
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
