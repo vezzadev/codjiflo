@@ -379,17 +379,6 @@ export function DiffToolbar() {
       <div className="btn-group-nav">
         <button
           type="button"
-          onClick={scrollToPreviousChange}
-          disabled={!canGoPrevious}
-          aria-label="Previous change (K)"
-          title="Previous change (K)"
-          className="btn-toolbar btn-nav"
-        >
-          <ChevronUp className="w-4 h-4" aria-hidden />
-          <span className="btn-nav-hint">K</span>
-        </button>
-        <button
-          type="button"
           onClick={scrollToNextChange}
           disabled={!canGoNext}
           aria-label="Next change (J)"
@@ -398,6 +387,17 @@ export function DiffToolbar() {
         >
           <ChevronDown className="w-4 h-4" aria-hidden />
           <span className="btn-nav-hint">J</span>
+        </button>
+        <button
+          type="button"
+          onClick={scrollToPreviousChange}
+          disabled={!canGoPrevious}
+          aria-label="Previous change (K)"
+          title="Previous change (K)"
+          className="btn-toolbar btn-nav"
+        >
+          <ChevronUp className="w-4 h-4" aria-hidden />
+          <span className="btn-nav-hint">K</span>
         </button>
       </div>
     </div>
