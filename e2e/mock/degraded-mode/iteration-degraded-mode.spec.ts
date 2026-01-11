@@ -90,4 +90,34 @@ test.describe("Iteration Management - Degraded Mode", () => {
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeHidden();
   });
+
+  test("Console warning is emitted when using GitHub API as fallback (Issue #186)", async ({ page }) => {
+    // This test validates that when no iteration artifact is available,
+    // a console warning is emitted to help with debugging and telemetry.
+
+    // Capture console warnings
+    const warnings: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "warning") {
+        warnings.push(msg.text());
+      }
+    });
+
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    // Wait for file list to ensure iteration loading has completed
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Verify the degraded mode warning was emitted
+    const degradedWarning = warnings.find((w) =>
+      w.includes("[CodjiFlo] Using GitHub API as fallback")
+    );
+    expect(degradedWarning).toBeDefined();
+
+    // Verify the warning includes the reason
+    expect(degradedWarning).toContain("Reason:");
+    expect(degradedWarning).toContain("CodjiFlo artifact");
+  });
 });
