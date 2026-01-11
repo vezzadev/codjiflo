@@ -57,7 +57,7 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
   },
   {
-    // E2E tests: Playwright recommended rules + prevent custom timeouts
+    // E2E tests: Playwright recommended rules + prevent custom timeouts + ban test.skip()
     files: ["e2e/**/*.spec.ts"],
     extends: [playwright.configs["flat/recommended"]],
     rules: {
@@ -68,6 +68,7 @@ export default tseslint.config(
           message: "Use global Playwright timeout config instead of custom timeouts in E2E tests",
         },
       ],
+      "playwright/no-skipped-test": "error",
     },
   },
   ...storybook.configs["flat/recommended"]

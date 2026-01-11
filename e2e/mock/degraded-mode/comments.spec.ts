@@ -1,15 +1,12 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
-
-// These tests don't set up iteration artifacts, so they run in degraded mode
-test.use({ expectDegradedMode: true });
+import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
   type MockComment,
-} from "./fixtures/github-mocks";
+} from "../../fixtures/github-mocks";
 
 test.describe("Inline comments flow (S-2.x)", () => {
   const mockPR: MockPR = {
