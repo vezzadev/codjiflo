@@ -549,6 +549,135 @@ describe('DiffView', () => {
     });
   });
 
+  describe('Change navigation in iteration mode (Issue #140)', () => {
+    // Issue #140: J/K navigation not working in iteration mode with full file view
+    // The bug was that isFullFileChange used PR-level file status, not iteration-level status
+
+    it('enables navigation for Added file with context lines in iteration diff', async () => {
+      // Scenario: File was added to PR overall, but in iteration mode it shows
+      // modifications (has context lines), so navigation should be enabled
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/new-file.ts',
+            status: FileChangeStatus.Added, // PR-level status: Added
+            additions: 100,
+            deletions: 0,
+            changes: 100,
+            patch: '@@ -0,0 +1,3 @@\n+line 1\n+line 2\n+line 3',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      // Mock iteration mode with diff that has context lines (file modified between iterations)
+      vi.mocked(useIterationDiff).mockReturnValue({
+        ...mockIterationDiff,
+        isIterationMode: true,
+        selectedRange: { fromSnapshot: 2, toSnapshot: 3 },
+        getFileDiffByPath: vi.fn(() => ({
+          diffLines: [
+            { type: 'context' as const, content: '// existing line', oldLineNumber: 1, newLineNumber: 1 },
+            { type: 'deletion' as const, content: '// old line', oldLineNumber: 2, newLineNumber: null },
+            { type: 'addition' as const, content: '// new line', oldLineNumber: null, newLineNumber: 2 },
+            { type: 'context' as const, content: '// another existing', oldLineNumber: 3, newLineNumber: 3 },
+          ],
+          alignedLines: [],
+          base: { path: 'src/new-file.ts', ref: 'base123', content: '// existing line\n// old line\n// another existing', lines: [], language: 'typescript' },
+          head: { path: 'src/new-file.ts', ref: 'head456', content: '// existing line\n// new line\n// another existing', lines: [], language: 'typescript' },
+        })),
+      });
+
+      render(<DiffView />);
+
+      // Should enable navigation (hunk count > 0) because iteration diff has context lines
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalled();
+        const lastCall = setTotalChangeCount.mock.calls[setTotalChangeCount.mock.calls.length - 1];
+        expect(lastCall?.[0]).toBeGreaterThan(0);
+      });
+    });
+
+    it('disables navigation for Added file with no context lines in iteration diff', async () => {
+      // Scenario: File was added in this iteration range (no context = entirely new)
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/brand-new-file.ts',
+            status: FileChangeStatus.Added,
+            additions: 50,
+            deletions: 0,
+            changes: 50,
+            patch: '@@ -0,0 +1,3 @@\n+line 1\n+line 2\n+line 3',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      // Mock iteration mode with diff that has NO context lines (file entirely added)
+      vi.mocked(useIterationDiff).mockReturnValue({
+        ...mockIterationDiff,
+        isIterationMode: true,
+        selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+        getFileDiffByPath: vi.fn(() => ({
+          diffLines: [
+            { type: 'addition' as const, content: '// line 1', oldLineNumber: null, newLineNumber: 1 },
+            { type: 'addition' as const, content: '// line 2', oldLineNumber: null, newLineNumber: 2 },
+            { type: 'addition' as const, content: '// line 3', oldLineNumber: null, newLineNumber: 3 },
+          ],
+          alignedLines: [],
+          base: null,
+          head: { path: 'src/brand-new-file.ts', ref: 'head456', content: '// line 1\n// line 2\n// line 3', lines: [], language: 'typescript' },
+        })),
+      });
+
+      render(<DiffView />);
+
+      // Should disable navigation (0 hunks) because entire file is added
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalledWith(0);
+      });
+    });
+
+    it('respects PR-level status when not in iteration mode', async () => {
+      // Verify original behavior still works: Added files disable navigation in non-iteration mode
+      const setTotalChangeCount = vi.fn();
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [
+          {
+            filename: 'src/new-file.ts',
+            status: FileChangeStatus.Added,
+            additions: 10,
+            deletions: 0,
+            changes: 10,
+            patch: '@@ -0,0 +1,3 @@\n+line 1\n+line 2\n+line 3',
+          },
+        ],
+        setTotalChangeCount,
+      });
+
+      // Not in iteration mode
+      vi.mocked(useIterationDiff).mockReturnValue({
+        ...mockIterationDiff,
+        isIterationMode: false,
+        selectedRange: null,
+        getFileDiffByPath: vi.fn(() => null),
+      });
+
+      render(<DiffView />);
+
+      // Should disable navigation based on PR-level Added status
+      await waitFor(() => {
+        expect(setTotalChangeCount).toHaveBeenCalledWith(0);
+      });
+    });
+  });
+
   describe('Change navigation reset on iteration switch', () => {
     it('calls resetChangeIndex when iteration selectedRange changes', async () => {
       const resetChangeIndex = vi.fn();

@@ -202,8 +202,18 @@ export function DiffView() {
   }, [selectedRange, resetChangeIndex]);
 
   // Disable change navigation for fully added/removed files (every line is a change, navigation is meaningless)
-  const isFullFileChange = selectedFile?.status === FileChangeStatus.Added ||
-                           selectedFile?.status === FileChangeStatus.Deleted;
+  // In iteration mode, check the iteration diff for context lines to determine if file is fully new/deleted
+  // This fixes Issue #140: J/K navigation not working in iteration mode with full file view
+  const isFullFileChange = useMemo(() => {
+    if (isIterationMode && iterationDiff) {
+      // If there are context lines, file existed in both snapshots (Modified, not fully Added/Deleted)
+      const hasContextLines = iterationDiff.diffLines.some(line => line.type === 'context');
+      return !hasContextLines;
+    }
+    // Non-iteration mode: use PR-level file status
+    return selectedFile?.status === FileChangeStatus.Added ||
+           selectedFile?.status === FileChangeStatus.Deleted;
+  }, [isIterationMode, iterationDiff, selectedFile?.status]);
 
   // Calculate hunk indices from data (works for both virtualized and non-virtualized views)
   // For side-by-side mode, use aligned lines; for inline mode, use diffLines

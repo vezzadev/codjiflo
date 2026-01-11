@@ -1003,13 +1003,16 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     updated_at: "2026-01-02T11:00:00Z",
   };
 
+  // IMPORTANT: status must be "added" to reproduce Issue #140
+  // The bug occurs when PR-level status is "added" (new file in PR)
+  // but iteration diff has context lines (file modified between iterations)
   const mockFiles: MockFile[] = [
     {
       filename: "src/large-file.ts",
-      status: "modified",
-      additions: 3,
-      deletions: 3,
-      changes: 6,
+      status: "added",
+      additions: 600,
+      deletions: 0,
+      changes: 600,
       patch: `@@ -48,5 +48,5 @@
  // Line 48
  // Line 49
