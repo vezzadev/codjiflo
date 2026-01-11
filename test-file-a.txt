@@ -1,3 +1,2 @@
-This is file A - MODIFIED in iteration 1.
-Line 2 of file A - also changed.
-New line 3 added.
+This is file A - original content.
+Line 2 of file A.
