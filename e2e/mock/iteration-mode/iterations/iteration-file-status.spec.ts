@@ -10,8 +10,7 @@ import { buildIterationDb } from "../../../fixtures/iteration-db-builder";
 
 test.describe("Iteration File Status", () => {
   // Test for bug fix: files first modified in later iterations should show as "modified" not "added"
-  // Mock mode: uses buildIterationDb to create mock iteration database
-  // Prod mode: uses PR #97 which has action.yml first modified in iteration 2
+  // Uses buildIterationDb to create mock iteration database
 
   // Mock data for file status tests
   // Simulates: action.yml exists in base, not modified in iter 1, modified in iter 2
