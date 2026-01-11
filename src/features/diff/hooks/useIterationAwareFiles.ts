@@ -110,6 +110,29 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
         continue;
       }
 
+      // Check if artifact stopped tracking before the end of selected range.
+      // This can happen for two reasons:
+      // 1. File was reverted to original state - action stops tracking (no changes vs base)
+      // 2. File was deleted - action stops tracking (file no longer exists)
+      //
+      // To distinguish: check WHEN the artifact stopped tracking relative to our range.
+      // - If artifact tracked until just before toSnapshot (lastSnapshotIndex === toSnapshot - 1),
+      //   something happened AT this exact iteration boundary → likely deletion
+      // - If artifact stopped tracking earlier (lastSnapshotIndex < toSnapshot - 1),
+      //   the file was stable for multiple snapshots → likely reverted to base state
+      const artifactStoppedTracking = artifact.lastSnapshotIndex < selectedRange.toSnapshot;
+      if (artifactStoppedTracking && diff.head === null && diff.base !== null) {
+        // Check if artifact stopped well before this iteration (revert) or just before (deletion)
+        const stoppedBeforeThisIteration = artifact.lastSnapshotIndex < selectedRange.toSnapshot - 1;
+        if (stoppedBeforeThisIteration) {
+          // File was tracked, then stopped being tracked before this iteration
+          // This indicates reversion to base state - skip it
+          continue;
+        }
+        // Otherwise, artifact tracked until just before toSnapshot - likely deletion
+        // Continue processing to show as Deleted
+      }
+
       // Count additions and deletions from the diff
       const stats = computeDiffStats(diff.diffLines);
 

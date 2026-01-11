@@ -982,39 +982,54 @@ describe('useIterationAwareFiles - Integration Tests', () => {
     });
 
     it('should hide file reverted to original in iteration 3 when viewing base→iter3', () => {
-      // PR #184 scenario:
-      // - Iteration 1: File A modified
-      // - Iteration 2: File B modified
-      // - Iteration 3: File A reverted to original
+      // PR #184 ACTUAL DATA STRUCTURE:
+      // File A artifact only has snapshots [0, 1, 2, 3] - NOT [4, 5]!
+      // The action didn't capture file A in iteration 3 because it was reverted.
       //
-      // When viewing iteration 3 (base→snapshot 5), file A should NOT appear
-      // because base content === iteration 3 content (reverted)
+      // Content hashes from real artifact:
+      // - Snapshot 0: 2a05101... (original - 2 lines)
+      // - Snapshot 1: c18b59d... (modified - 3 lines)
+      // - Snapshot 2: 2a05101... (original - before iter 2, which only touched B)
+      // - Snapshot 3: c18b59d... (modified - unchanged from iter 1)
+      //
+      // File B has snapshots [2, 3, 4, 5]
+      //
+      // When viewing iteration 3 (base→snapshot 5):
+      // - File A has no data at snapshot 5 → currently shows as "Deleted"
+      // - But file A's content at snapshot 0 === original content (reverted)
+      //   so it should be HIDDEN, not shown as deleted
       //
       // Expected: | Iteration 3 | B |
       const files = [createMockFile('test-file-b.txt', FileChangeStatus.Modified)];
 
-      // File A: modified in iter 1, reverted in iter 3
-      const artifactA = createMockArtifact(1, 'test-file-a.txt', [0, 1, 2, 3, 4, 5]);
-      // File B: modified in iter 2
+      // File A: ONLY has snapshots 0-3 (action didn't capture iter 3 reversion)
+      const artifactA = createMockArtifact(1, 'test-file-a.txt', [0, 1, 2, 3]);
+      // File B: has snapshots 2-5
       const artifactB = createMockArtifact(2, 'test-file-b.txt', [2, 3, 4, 5]);
 
       setupMocks(files, [artifactA, artifactB], { fromSnapshot: 0, toSnapshot: 5 });
 
-      // File A: base = iter 3 content (reverted)
-      mockClient.setContent(1, 0, 'original A content');
-      mockClient.setContent(1, 1, 'modified A in iter 1');
-      mockClient.setContent(1, 3, 'modified A in iter 1'); // Still modified in iter 2
-      mockClient.setContent(1, 5, 'original A content');   // REVERTED in iter 3
+      // File A: matches real PR #184 data
+      mockClient.setContent(1, 0, 'This is file A - original content.\nLine 2 of file A.');
+      mockClient.setContent(1, 1, 'This is file A - MODIFIED in iteration 1.\nLine 2 of file A - also changed.\nNew line 3 added.');
+      mockClient.setContent(1, 2, 'This is file A - original content.\nLine 2 of file A.'); // Same as snap 0
+      mockClient.setContent(1, 3, 'This is file A - MODIFIED in iteration 1.\nLine 2 of file A - also changed.\nNew line 3 added.'); // Same as snap 1
+      // NO content at snapshots 4, 5 - this is the reality!
 
-      // File B: modified in iter 2, unchanged in iter 3
-      mockClient.setContent(2, 2, 'original B content');
-      mockClient.setContent(2, 3, 'modified B in iter 2');
-      mockClient.setContent(2, 5, 'modified B in iter 2'); // Unchanged from iter 2
+      // File B: matches real PR #184 data
+      mockClient.setContent(2, 2, 'This is file B - original content.\nLine 2 of file B.');
+      mockClient.setContent(2, 3, 'This is file B - MODIFIED in iteration 2.\nLine 2 of file B - updated.');
+      mockClient.setContent(2, 4, 'This is file B - original content.\nLine 2 of file B.'); // Same as snap 2
+      mockClient.setContent(2, 5, 'This is file B - MODIFIED in iteration 2.\nLine 2 of file B - updated.'); // Same as snap 3
 
       const { result } = renderHook(() => useIterationAwareFiles());
 
       // Only file B should appear (has net change from base)
-      // File A should be hidden (base === iter 3 content)
+      // File A should be HIDDEN because:
+      // - It has no data at snapshot 5 (lastSnapshotIndex = 3)
+      // - Its content at base (snap 0) is the original content
+      // - The file was reverted, so base === current state
+      // Currently FAILS: shows file A as "Deleted" instead of hidden
       expect(result.current.files).toHaveLength(1);
       expect(result.current.files[0]?.filename).toBe('test-file-b.txt');
     });
