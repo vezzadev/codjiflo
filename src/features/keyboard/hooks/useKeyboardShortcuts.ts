@@ -1,15 +1,60 @@
 import { useEffect, useCallback } from 'react';
 import { useDiffStore } from '@/features/diff';
+import { useIterationAwareFiles } from '@/features/diff/hooks';
+import { PR_DESCRIPTION_INDEX } from '@/features/diff/stores';
 
 /**
  * Global keyboard shortcuts hook
  * S-1.5: AC-1.5.1 through AC-1.5.3
+ * M4: Iteration-aware file navigation (Issue #189)
  */
 export function useKeyboardShortcuts() {
-  const selectNextFile = useDiffStore((s) => s.selectNextFile);
-  const selectPreviousFile = useDiffStore((s) => s.selectPreviousFile);
+  const selectedFileIndex = useDiffStore((s) => s.selectedFileIndex);
+  const selectFile = useDiffStore((s) => s.selectFile);
   const scrollToNextChange = useDiffStore((s) => s.scrollToNextChange);
   const scrollToPreviousChange = useDiffStore((s) => s.scrollToPreviousChange);
+  const { files } = useIterationAwareFiles();
+
+  // Iteration-aware file navigation (Issue #189)
+  // Navigate through the same file list that FileList displays
+  const selectNextFile = useCallback(() => {
+    // If on PR description, go to first file
+    if (selectedFileIndex === PR_DESCRIPTION_INDEX) {
+      const firstFile = files[0];
+      if (firstFile) {
+        selectFile(firstFile.originalIndex);
+      }
+      return;
+    }
+
+    // Find current position in visible files
+    const currentPos = files.findIndex((f) => f.originalIndex === selectedFileIndex);
+
+    // If current file is found and not the last one, go to next
+    if (currentPos >= 0 && currentPos < files.length - 1) {
+      const nextFile = files[currentPos + 1];
+      if (nextFile) {
+        selectFile(nextFile.originalIndex);
+      }
+    }
+  }, [selectedFileIndex, files, selectFile]);
+
+  const selectPreviousFile = useCallback(() => {
+    // Find current position in visible files
+    const currentPos = files.findIndex((f) => f.originalIndex === selectedFileIndex);
+
+    if (currentPos > 0) {
+      // Go to previous file in the list
+      const prevFile = files[currentPos - 1];
+      if (prevFile) {
+        selectFile(prevFile.originalIndex);
+      }
+    } else if (currentPos === 0) {
+      // If at first file, go back to PR description
+      selectFile(PR_DESCRIPTION_INDEX);
+    }
+    // If selectedFileIndex is PR_DESCRIPTION_INDEX, do nothing (already at start)
+  }, [selectedFileIndex, files, selectFile]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // AC-1.5.3: Don't trigger if user is in an input field
@@ -35,13 +80,13 @@ export function useKeyboardShortcuts() {
         scrollToPreviousChange();
         break;
 
-      // s = Next file
+      // s = Next file (iteration-aware)
       case 's':
         event.preventDefault();
         selectNextFile();
         break;
 
-      // w = Previous file
+      // w = Previous file (iteration-aware)
       case 'w':
         event.preventDefault();
         selectPreviousFile();
