@@ -2,9 +2,12 @@
  * Hook for computing iteration-aware file list with filtering and stats
  *
  * When iteration mode is active, this hook:
+ * - Uses artifact as source of truth (not GitHub API)
  * - Filters out files with no changes in the selected range
  * - Computes additions/deletions from the iteration diff
  * - Derives file status from the iteration range
+ *
+ * GitHub API is only used as fallback when degraded (no artifact available).
  */
 
 import { useMemo } from 'react';
@@ -13,6 +16,7 @@ import { useIterationDiff } from './useIterationDiff';
 import type { FileChange } from '@/api/types';
 import { FileChangeStatus } from '@/api/types';
 import type { ParsedDiffLine } from '../types';
+import type { ReviewFileArtifact } from '@/features/iterations/types';
 
 export interface IterationAwareFile extends FileChange {
   /** Original GitHub index for file selection */
@@ -34,19 +38,32 @@ interface IterationAwareFilesResult {
  * Compute iteration-aware file list with filtering and updated stats.
  *
  * In iteration mode:
+ * - Artifact is source of truth (changedFiles from artifact database)
  * - Files with no changes in the selected range are hidden
  * - Lines added/removed reflect the iteration diff
  * - File status (Added, Modified, Deleted) is derived from iteration range
  *
- * In non-iteration mode:
+ * In non-iteration mode (degraded, no artifact):
  * - Returns original files from GitHub API unchanged
  */
 export function useIterationAwareFiles(): IterationAwareFilesResult {
   const { files: githubFiles } = useDiffStore();
-  const { isIterationMode, getFileDiffByPath, getArtifactByPath, selectedRange } = useIterationDiff();
+  const { isIterationMode, changedFiles, getFileDiffByPath, selectedRange } = useIterationDiff();
+
+  // Build lookup from GitHub files for originalIndex and previousFilename
+  const githubFileMap = useMemo(() => {
+    const map = new Map<string, { index: number; file: FileChange }>();
+    for (let i = 0; i < githubFiles.length; i++) {
+      const file = githubFiles[i];
+      if (file) {
+        map.set(file.filename, { index: i, file });
+      }
+    }
+    return map;
+  }, [githubFiles]);
 
   const result = useMemo((): IterationAwareFilesResult => {
-    // Non-iteration mode: return original files with indices
+    // Non-iteration mode (degraded): return original files from GitHub API
     if (!isIterationMode || !selectedRange) {
       return {
         files: githubFiles.map((file, index): IterationAwareFile => {
@@ -69,35 +86,22 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
       };
     }
 
-    // Iteration mode: filter and compute stats
+    // Iteration mode: use artifact as source of truth
     const iterationFiles: IterationAwareFile[] = [];
+    const processedPaths = new Set<string>();
 
-    for (let i = 0; i < githubFiles.length; i++) {
-      const file = githubFiles[i];
-      if (!file) continue;
+    // Process all artifacts that have changes in the selected range
+    // Deduplicate by path (multiple artifacts may exist for same file due to SHA changes)
+    for (const artifact of changedFiles) {
+      const path = getArtifactPath(artifact, selectedRange.toSnapshot);
+      if (!path) continue;
 
-      const artifact = getArtifactByPath(file.filename);
-
-      if (!artifact) {
-        // File not in artifact - shouldn't happen but include as-is
-        const fallback: IterationAwareFile = {
-          filename: file.filename,
-          status: file.status,
-          additions: file.additions,
-          deletions: file.deletions,
-          changes: file.changes,
-          patch: file.patch,
-          originalIndex: i,
-        };
-        if (file.previousFilename !== undefined) {
-          fallback.previousFilename = file.previousFilename;
-        }
-        iterationFiles.push(fallback);
-        continue;
-      }
+      // Skip if already processed (deduplicate by path)
+      if (processedPaths.has(path)) continue;
+      processedPaths.add(path);
 
       // Get diff for this file in the selected iteration range
-      const diff = getFileDiffByPath(file.filename);
+      const diff = getFileDiffByPath(path);
 
       if (!diff) {
         // No diff available - skip file
@@ -112,22 +116,29 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
         continue;
       }
 
+      // Look up GitHub file info for originalIndex and previousFilename
+      const githubInfo = githubFileMap.get(path);
+      const originalStatus = githubInfo?.file.status ?? FileChangeStatus.Modified;
+
       // Determine status based on iteration range
-      const status = computeIterationStatus(diff.base !== null, diff.head !== null, file.status);
+      const status = computeIterationStatus(diff.base !== null, diff.head !== null, originalStatus);
 
       const iterationFile: IterationAwareFile = {
-        filename: file.filename,
+        filename: path,
         status,
         additions: stats.additions,
         deletions: stats.deletions,
         changes: stats.additions + stats.deletions,
-        patch: file.patch,
-        originalIndex: i,
+        patch: githubInfo?.file.patch ?? '', // Empty string for artifact-only files
+        originalIndex: githubInfo?.index ?? -1, // -1 indicates not in GitHub file list
         artifactId: artifact.id,
       };
-      if (file.previousFilename !== undefined) {
-        iterationFile.previousFilename = file.previousFilename;
+
+      // Preserve previousFilename if available from GitHub
+      if (githubInfo?.file.previousFilename !== undefined) {
+        iterationFile.previousFilename = githubInfo.file.previousFilename;
       }
+
       iterationFiles.push(iterationFile);
     }
 
@@ -136,9 +147,33 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
       isIterationMode: true,
       totalFilesInPR: githubFiles.length,
     };
-  }, [githubFiles, isIterationMode, getFileDiffByPath, getArtifactByPath, selectedRange]);
+  }, [githubFiles, githubFileMap, isIterationMode, changedFiles, getFileDiffByPath, selectedRange]);
 
   return result;
+}
+
+/**
+ * Get the file path from an artifact at a given snapshot.
+ * Prefers the path at the exact snapshot, falling back to the last known path.
+ */
+function getArtifactPath(artifact: ReviewFileArtifact, snapshotIndex: number): string | null {
+  // Try exact snapshot first
+  const exactPath = artifact.repoPaths[snapshotIndex];
+  if (exactPath) return exactPath;
+
+  // Fall back to any known path (for deleted files, use the last known path)
+  for (let i = snapshotIndex; i >= 0; i--) {
+    const path = artifact.repoPaths[i];
+    if (path) return path;
+  }
+
+  // Try forward for newly added files
+  for (let i = snapshotIndex + 1; i < artifact.repoPaths.length; i++) {
+    const path = artifact.repoPaths[i];
+    if (path) return path;
+  }
+
+  return null;
 }
 
 interface DiffStats {

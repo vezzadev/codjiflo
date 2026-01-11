@@ -571,16 +571,17 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(result.current.files).toHaveLength(0); // No actual changes
     });
 
-    it('should handle file not in any artifact (fallback)', () => {
+    it('should not show file that is in GitHub but not in artifact (artifact is source of truth)', () => {
+      // In iteration mode, artifact is source of truth
+      // Files only in GitHub API but not in artifact are not shown
       const files = [createMockFile('src/unknown.ts')];
 
       setupMocks(files, [], { fromSnapshot: 0, toSnapshot: 1 });
 
       const { result } = renderHook(() => useIterationAwareFiles());
 
-      // File not in artifacts should be included as fallback
-      expect(result.current.files).toHaveLength(1);
-      expect(result.current.files[0]?.filename).toBe('src/unknown.ts');
+      // File not in artifacts should NOT be shown in iteration mode
+      expect(result.current.files).toHaveLength(0);
     });
 
     it('should preserve original index for file selection', () => {
@@ -799,6 +800,137 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       // Should have 25 files (every other file changed)
       expect(result.current.files).toHaveLength(25);
       expect(result.current.totalFilesInPR).toBe(50);
+    });
+  });
+
+  describe('Issue #183: Files in artifact but not in GitHub API', () => {
+    // GitHub API only returns files with net changes (base ≠ head).
+    // Files modified-then-reverted have zero net change and are excluded.
+    // In iteration mode, artifact is source of truth, not GitHub API.
+
+    it('should show file from artifact even when not in GitHub file list', () => {
+      // Scenario: File A modified in iteration 1, reverted in iteration 3
+      // GitHub API returns empty (no net change), but artifact has the data
+      const files: FileChange[] = []; // Empty - GitHub shows no files
+
+      // Artifact has file A with changes
+      const artifact = createMockArtifact(1, 'test-file-a.txt', [0, 1, 2, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      // Different content at snapshots 0 and 1 = file was modified
+      mockClient.setContent(1, 0, 'original content');
+      mockClient.setContent(1, 1, 'modified content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.isIterationMode).toBe(true);
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.filename).toBe('test-file-a.txt');
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Modified);
+    });
+
+    it('should include artifact files alongside GitHub files', () => {
+      // GitHub returns file B (has net change)
+      // Artifact has both A and B, both with changes in iteration 1
+      const files = [createMockFile('test-file-b.txt', FileChangeStatus.Modified)];
+
+      const artifactA = createMockArtifact(1, 'test-file-a.txt', [0, 1]);
+      const artifactB = createMockArtifact(2, 'test-file-b.txt', [0, 1]);
+
+      setupMocks(files, [artifactA, artifactB], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'A original');
+      mockClient.setContent(1, 1, 'A modified');
+      mockClient.setContent(2, 0, 'B original');
+      mockClient.setContent(2, 1, 'B modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(2);
+      const filenames = result.current.files.map(f => f.filename).sort();
+      expect(filenames).toEqual(['test-file-a.txt', 'test-file-b.txt']);
+    });
+
+    it('should not duplicate files that are in both GitHub and artifact', () => {
+      // File exists in both GitHub list and artifact - should appear once
+      const files = [createMockFile('shared-file.ts', FileChangeStatus.Modified)];
+      const artifact = createMockArtifact(1, 'shared-file.ts', [0, 1]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'original');
+      mockClient.setContent(1, 1, 'modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.filename).toBe('shared-file.ts');
+    });
+
+    it('should filter artifact-only files with no changes in range', () => {
+      // File in artifact but unchanged in selected range - should be hidden
+      const files: FileChange[] = [];
+      const artifact = createMockArtifact(1, 'unchanged.ts', [0, 1, 2, 3]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      // Same content = no changes
+      mockClient.setContent(1, 0, 'same content');
+      mockClient.setContent(1, 1, 'same content');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(0);
+    });
+
+    it('should compute correct stats for artifact-only files', () => {
+      const files: FileChange[] = [];
+      const artifact = createMockArtifact(1, 'new-lines.ts', [0, 1]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'line1\nline2\n');
+      mockClient.setContent(1, 1, 'line1\nline2\nline3\nline4\n');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      // File should have changes (exact counts depend on diff algorithm)
+      expect(result.current.files[0]?.changes).toBeGreaterThan(0);
+      expect(result.current.files[0]?.additions).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should show artifact-only file as Added when created in range', () => {
+      const files: FileChange[] = [];
+      // File first appears at snapshot 1 (right snapshot of iteration 1)
+      const artifact = createMockArtifact(1, 'brand-new.ts', [1]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 1, 'new file content\nline 2');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Added);
+      expect(result.current.files[0]?.additions).toBe(2);
+    });
+
+    it('should show artifact-only file as Deleted when removed in range', () => {
+      const files: FileChange[] = [];
+      // File exists at snapshot 0, deleted by snapshot 1
+      const artifact = createMockArtifact(1, 'deleted.ts', [0]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'content before deletion\nline 2\nline 3');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      expect(result.current.files[0]?.status).toBe(FileChangeStatus.Deleted);
+      expect(result.current.files[0]?.deletions).toBe(3);
     });
   });
 });
