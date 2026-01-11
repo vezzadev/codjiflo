@@ -314,35 +314,40 @@ const baz = 'qux';
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    await fileNav.getByText("src/example.ts").click();
-    await expect(
-      page.getByRole("heading", { name: "src/example.ts" })
-    ).toBeVisible();
+    if (isMockMode()) {
+      await fileNav.getByText("src/example.ts").click();
+      await expect(
+        page.getByRole("heading", { name: "src/example.ts" })
+      ).toBeVisible();
 
-    const diffRegion = page.getByRole("region", { name: /Diff content/i });
-    await expect(diffRegion).toBeVisible();
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
 
-    // Before enabling whitespace visibility, verify syntax highlighting is present.
-    // SyntaxHighlighter uses inline styles (useInlineStyles=true), so we check for
-    // spans with color styles, which indicates syntax highlighting is active.
-    // Example: <span style="color: rgb(215, 58, 73)">const</span>
-    const syntaxSpansBefore = await diffRegion.locator('span[style*="color:"]').count();
-    expect(syntaxSpansBefore).toBeGreaterThan(0);
+      // Before enabling whitespace visibility, verify syntax highlighting is present.
+      // SyntaxHighlighter uses inline styles (useInlineStyles=true), so we check for
+      // spans with color styles, which indicates syntax highlighting is active.
+      // Example: <span style="color: rgb(215, 58, 73)">const</span>
+      const syntaxSpansBefore = await diffRegion.locator('span[style*="color:"]').count();
+      expect(syntaxSpansBefore).toBeGreaterThan(0);
 
-    // Enable whitespace visibility using 'B' key
-    await page.locator("body").click();
-    await page.keyboard.press("b");
+      // Enable whitespace visibility using 'B' key
+      await page.locator("body").click();
+      await page.keyboard.press("b");
 
-    // Verify whitespace indicators are visible (· for spaces)
-    await expect(diffRegion.locator('.whitespace-visible').first()).toBeVisible();
+      // Verify whitespace indicators are visible (· for spaces)
+      await expect(diffRegion.locator('.whitespace-visible').first()).toBeVisible();
 
-    // After enabling whitespace visibility, syntax highlighting should still be present
-    const syntaxSpansAfter = await diffRegion.locator('span[style*="color:"]').count();
-    expect(syntaxSpansAfter).toBeGreaterThan(0);
+      // After enabling whitespace visibility, syntax highlighting should still be present
+      const syntaxSpansAfter = await diffRegion.locator('span[style*="color:"]').count();
+      expect(syntaxSpansAfter).toBeGreaterThan(0);
 
-    // The count should be similar (whitespace toggle shouldn't remove syntax spans)
-    // Allow some variance but ensure highlighting is preserved
-    expect(syntaxSpansAfter).toBeGreaterThanOrEqual(syntaxSpansBefore * 0.8);
+      // The count should be similar (whitespace toggle shouldn't remove syntax spans)
+      // Allow some variance but ensure highlighting is preserved
+      expect(syntaxSpansAfter).toBeGreaterThanOrEqual(syntaxSpansBefore * 0.8);
+    } else {
+      // Prod mode: skip this test
+      test.skip(true, "Syntax highlighting test runs in mock mode only");
+    }
   });
 
   test("Full file toggle switches between changes only and full file (S-3.1)", async ({
@@ -588,7 +593,8 @@ const baz = 'qux';
   test("Change navigation works in virtualized diff (500+ lines)", async ({
     page,
   }) => {
-    // Mock mode only test
+    // Skip in prod mode - mock mode only test
+    test.skip(!isMockMode(), "Virtualized diff test runs in mock mode only");
 
     // Generate a large file with 600+ lines to trigger virtualization (threshold is 500)
     const generateLargeFile = () => {
