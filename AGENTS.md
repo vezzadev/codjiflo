@@ -61,8 +61,12 @@ e2e/
 - Tests are organized by **mode** (mock/prod) and **artifact availability** (degraded/iteration)
 - Mode is determined by `E2E_DEPENDENCIES_MODE` environment variable
 - Playwright config automatically selects the appropriate directory based on mode
+- **One describe() per file** - each `.spec.ts` file contains exactly one `test.describe()` block at the top level
+  - Enforced by custom ESLint rule: `custom-rules/one-top-level-test-describe`
+  - Prevents both multiple top-level describes and nested describes
+  - Rule implementation: `eslint-rules/one-top-level-test-describe.js`
 - **No `test.skip()` calls** - tests are placed in their intended directory instead
-- ESLint enforces this with `"playwright/no-skipped-test": "error"`
+  - Enforced by ESLint: `"playwright/no-skipped-test": "error"`
 
 **Environment:**
 - `.env.local` - Created by running `npm run dev` (pulls from Vercel). Required for prod mode tests locally.
