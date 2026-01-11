@@ -75,6 +75,7 @@ test.describe("Redirect After Login", () => {
     page,
   }) => {
     // This test is mock-only since it needs controlled query params
+    test.skip(!isMockMode(), "Query param test only runs in mock mode");
 
     const owner = "test";
     const repo = "repo";
