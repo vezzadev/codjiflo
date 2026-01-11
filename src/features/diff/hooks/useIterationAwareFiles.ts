@@ -10,9 +10,10 @@
  * GitHub API is only used as fallback when degraded (no artifact available).
  */
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useDiffStore } from '../stores';
 import { useIterationDiff } from './useIterationDiff';
+import { useIterationStore } from '@/features/iterations/stores';
 import type { FileChange } from '@/api/types';
 import { FileChangeStatus } from '@/api/types';
 import type { ParsedDiffLine } from '../types';
@@ -49,6 +50,23 @@ interface IterationAwareFilesResult {
 export function useIterationAwareFiles(): IterationAwareFilesResult {
   const { files: githubFiles } = useDiffStore();
   const { isIterationMode, changedFiles, getFileDiffByPath, selectedRange } = useIterationDiff();
+  const { isDegraded, degradedReason, currentPrKey } = useIterationStore();
+
+  // Track if we've already warned for this PR to avoid duplicate warnings
+  const warnedForPrRef = useRef<string | null>(null);
+
+  // Emit warning when GitHub API is used as fallback in degraded mode
+  useEffect(() => {
+    // Only warn if we're in degraded mode and haven't warned for this PR yet
+    if (isDegraded && currentPrKey && warnedForPrRef.current !== currentPrKey) {
+      warnedForPrRef.current = currentPrKey;
+      console.warn(
+        `[CodjiFlo] Using GitHub API as fallback (degraded mode). ` +
+        `Reason: ${degradedReason ?? 'Unknown'}. ` +
+        `Iteration tracking features are unavailable.`
+      );
+    }
+  }, [isDegraded, degradedReason, currentPrKey]);
 
   // Build lookup from GitHub files for originalIndex and previousFilename
   const githubFileMap = useMemo(() => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/console-warnings";
 import { isMockMode, isProdMode, prodModeConfig } from "./fixtures/mode";
 import {
   setupAuthState,
@@ -10,6 +10,9 @@ import {
 import { buildIterationDb, buildRebaseIterationDb } from "./fixtures/iteration-db-builder";
 
 test.describe("Iteration Management (S-4 Milestone)", () => {
+  // These tests run without iteration artifacts (degraded mode)
+  test.use({ expectDegradedMode: true });
+
   // Mock PR data for iteration tests
   const mockPR: MockPR = {
     id: 1,
@@ -117,6 +120,40 @@ test.describe("Iteration Management (S-4 Milestone)", () => {
     // Iteration selector should NOT be visible when in degraded mode
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeHidden();
+  });
+
+  test("Console warning is emitted when using GitHub API as fallback (Issue #186)", async ({ page }) => {
+    // This test validates that when no iteration artifact is available,
+    // a console warning is emitted to help with debugging and telemetry.
+    // This test only runs in mock mode since we control the responses.
+    test.skip(!isMockMode(), "Only runs in mock mode");
+
+    const config = getTestConfig();
+
+    // Capture console warnings
+    const warnings: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "warning") {
+        warnings.push(msg.text());
+      }
+    });
+
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    // Wait for file list to ensure iteration loading has completed
+    const fileList = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+
+    // Verify the degraded mode warning was emitted
+    const degradedWarning = warnings.find((w) =>
+      w.includes("[CodjiFlo] Using GitHub API as fallback")
+    );
+    expect(degradedWarning).toBeDefined();
+
+    // Verify the warning includes the reason
+    expect(degradedWarning).toContain("Reason:");
+    expect(degradedWarning).toContain("CodjiFlo artifact");
   });
 });
 

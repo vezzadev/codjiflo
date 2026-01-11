@@ -74,6 +74,8 @@ interface IterationState {
   isLoading: boolean;
   error: string | null;
   isDegraded: boolean;
+  /** Reason for degraded mode (when isDegraded is true) */
+  degradedReason: string | null;
 
   // Actions
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
@@ -106,6 +108,7 @@ const initialState = {
   isLoading: false,
   error: null,
   isDegraded: false,
+  degradedReason: null,
 };
 
 // ============================================================================
@@ -130,6 +133,7 @@ export const useIterationStore = create<IterationState>()(
             set({
               isLoading: false,
               isDegraded: true,
+              degradedReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
               iterations: [],
               artifacts: [],
             });
@@ -200,6 +204,7 @@ export const useIterationStore = create<IterationState>()(
             spanTrackerService,
             isLoading: false,
             isDegraded: false,
+            degradedReason: null,
             error: null,
           });
         } catch (err) {
