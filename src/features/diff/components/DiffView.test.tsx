@@ -5,7 +5,7 @@ import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
-import { useIterationDiff } from '../hooks';
+import { useIterationDiff, useIterationAwareFiles } from '../hooks';
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -50,8 +50,17 @@ const mockIterationDiff = {
   changedFiles: [],
   getArtifactByPath: vi.fn(() => undefined),
 };
+
+// Mock useIterationAwareFiles hook
+const mockIterationAwareFiles = {
+  files: [],
+  isIterationMode: false,
+  totalFilesInPR: 0,
+};
+
 vi.mock('../hooks', () => ({
   useIterationDiff: vi.fn(() => mockIterationDiff),
+  useIterationAwareFiles: vi.fn(() => mockIterationAwareFiles),
 }));
 
 const mockDefaultCommentsState = {
@@ -783,6 +792,67 @@ describe('DiffView', () => {
       render(<DiffView />);
 
       expect(screen.getByText(/No PR data available/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Issue #183: Artifact-only files', () => {
+    // Files that exist in artifact but not in GitHub API (e.g., modified then reverted)
+    // should still display their diff when selected
+
+    it('should display diff for artifact-only file in iteration mode', async () => {
+      // GitHub files array is empty - file A was modified then reverted
+      vi.mocked(useDiffStore).mockReturnValue({
+        ...mockDefaultDiffState,
+        files: [], // No GitHub files
+        selectedFileIndex: 0, // Artifact-only file gets index 0
+      });
+
+      // Iteration mode is active with artifact-only file
+      vi.mocked(useIterationDiff).mockReturnValue({
+        isIterationMode: true,
+        getFileDiffByPath: vi.fn((path) => {
+          if (path === 'artifact-only.txt') {
+            return {
+              base: { path: 'artifact-only.txt', ref: 'abc123', content: 'original content', lines: ['original content'], language: 'text' },
+              head: { path: 'artifact-only.txt', ref: 'def456', content: 'modified content', lines: ['modified content'], language: 'text' },
+              diffLines: [
+                { type: 'context' as const, content: ' original content', oldLineNumber: 1, newLineNumber: null },
+                { type: 'addition' as const, content: '+modified content', oldLineNumber: null, newLineNumber: 1 },
+              ],
+              alignedLines: [],
+            };
+          }
+          return null;
+        }),
+        selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
+        changedFiles: [],
+        getArtifactByPath: vi.fn(() => undefined),
+      });
+
+      // Iteration-aware files includes the artifact-only file
+      vi.mocked(useIterationAwareFiles).mockReturnValue({
+        files: [
+          {
+            filename: 'artifact-only.txt',
+            status: FileChangeStatus.Modified,
+            additions: 1,
+            deletions: 1,
+            changes: 2,
+            patch: '',
+            originalIndex: 0,
+            artifactId: 1,
+          },
+        ],
+        isIterationMode: true,
+        totalFilesInPR: 0,
+      });
+
+      render(<DiffView />);
+
+      // Should show the diff content, not empty state
+      await waitFor(() => {
+        expect(screen.getByText(/modified content/)).toBeInTheDocument();
+      });
     });
   });
 });

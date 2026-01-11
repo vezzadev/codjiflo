@@ -932,5 +932,53 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(result.current.files[0]?.status).toBe(FileChangeStatus.Deleted);
       expect(result.current.files[0]?.deletions).toBe(3);
     });
+
+    it('should provide valid originalIndex for artifact-only files to enable selection', () => {
+      // Artifact-only files need a valid originalIndex so they can be selected
+      // in the UI. Using -1 breaks file selection since the store rejects it.
+      const files: FileChange[] = []; // Empty - GitHub shows no files
+      const artifact = createMockArtifact(1, 'artifact-only.txt', [0, 1]);
+
+      setupMocks(files, [artifact], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'original');
+      mockClient.setContent(1, 1, 'modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(1);
+      // originalIndex must be >= 0 for file selection to work
+      // -1 is reserved for PR description only
+      expect(result.current.files[0]?.originalIndex).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should assign sequential indices to artifact-only files after GitHub files', () => {
+      // When we have both GitHub files and artifact-only files,
+      // artifact-only files should get indices that come after GitHub files
+      const files = [createMockFile('github-file.ts', FileChangeStatus.Modified)];
+
+      const artifactGithub = createMockArtifact(1, 'github-file.ts', [0, 1]);
+      const artifactOnly = createMockArtifact(2, 'artifact-only.txt', [0, 1]);
+
+      setupMocks(files, [artifactGithub, artifactOnly], { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'github original');
+      mockClient.setContent(1, 1, 'github modified');
+      mockClient.setContent(2, 0, 'artifact original');
+      mockClient.setContent(2, 1, 'artifact modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(2);
+
+      // GitHub file keeps its original index
+      const githubFile = result.current.files.find(f => f.filename === 'github-file.ts');
+      expect(githubFile?.originalIndex).toBe(0);
+
+      // Artifact-only file gets next available index
+      const artifactFile = result.current.files.find(f => f.filename === 'artifact-only.txt');
+      expect(artifactFile?.originalIndex).toBeGreaterThanOrEqual(0);
+      expect(artifactFile?.originalIndex).not.toBe(githubFile?.originalIndex);
+    });
   });
 });
