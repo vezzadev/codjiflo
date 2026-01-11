@@ -8,6 +8,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import nextConfig from "eslint-config-next/core-web-vitals";
 import tseslint from "typescript-eslint";
 
+// Custom ESLint rules
+import oneTopLevelTestDescribe from "./eslint-rules/one-top-level-test-describe.js";
+
 export default tseslint.config(
   { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", "next-env.d.ts", "action/**/*"] },
   // Next.js recommended config (includes React, React Hooks, and Next.js rules)
@@ -57,9 +60,16 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
   },
   {
-    // E2E tests: Playwright recommended rules + prevent custom timeouts + ban test.skip()
+    // E2E tests: Playwright recommended rules + prevent custom timeouts + ban test.skip() + enforce single describe
     files: ["e2e/**/*.spec.ts"],
     extends: [playwright.configs["flat/recommended"]],
+    plugins: {
+      "custom-rules": {
+        rules: {
+          "one-top-level-test-describe": oneTopLevelTestDescribe,
+        },
+      },
+    },
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -69,6 +79,7 @@ export default tseslint.config(
         },
       ],
       "playwright/no-skipped-test": "error",
+      "custom-rules/one-top-level-test-describe": ["error", { filePattern: "\\.spec\\.ts$" }],
     },
   },
   ...storybook.configs["flat/recommended"]
