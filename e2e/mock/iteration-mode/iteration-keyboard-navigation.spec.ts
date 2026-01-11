@@ -5,16 +5,15 @@
  * not GitHub API files.
  */
 
-import { test, expect } from './fixtures/console-warnings';
-import { isMockMode } from './fixtures/mode';
+import { test, expect } from '../../fixtures/console-warnings';
 import {
   setupAuthState,
   setupFullPRMocks,
   setupIterationArtifactMock,
   type MockPR,
   type MockFile,
-} from './fixtures/github-mocks';
-import { buildIterationDb } from './fixtures/iteration-db-builder';
+} from '../../fixtures/github-mocks';
+import { buildIterationDb } from '../../fixtures/iteration-db-builder';
 
 test.describe('Iteration Keyboard Navigation (#189)', () => {
   // Mock PR data
@@ -109,8 +108,6 @@ index 3334567..cbcdefg 100644
   ];
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!isMockMode(), 'Only runs in mock mode');
-
     await setupAuthState(page);
 
     // Build mock iteration database with 2 iterations
