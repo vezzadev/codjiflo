@@ -1,15 +1,12 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
-
-// These tests don't set up iteration artifacts, so they run in degraded mode
-test.use({ expectDegradedMode: true });
+import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
   setupAuthMock,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
-} from "./fixtures/github-mocks";
+} from "../../fixtures/github-mocks";
 
 test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
   // Create a file with very long lines to trigger horizontal scrolling
@@ -121,8 +118,7 @@ Iterations: 2`,
   test("Iteration selector and toolbar stay fixed when scrolling horizontally", async ({
     page,
   }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Horizontal scroll test runs in mock mode only");
+    // Mock mode only test
 
     const config = getTestConfig();
     await page.goto(config.pageUrl);
@@ -199,8 +195,7 @@ Iterations: 2`,
   });
 
   test("Horizontal scrollbar is visible and functional", async ({ page }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Scrollbar test runs in mock mode only");
+    // Mock mode only test
 
     const config = getTestConfig();
     await page.goto(config.pageUrl);

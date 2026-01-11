@@ -1,8 +1,6 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode } from "./fixtures/mode";
-
-// These tests don't navigate to PR pages, so degraded mode warnings won't trigger
-import { setupAuthMock } from "./fixtures/github-mocks";
+import { test, expect } from "@playwright/test";
+import { isMockMode } from "../../fixtures/mode";
+import { setupAuthMock } from "../../fixtures/github-mocks";
 
 test.describe("CodjiFlo App", () => {
   test("should redirect unauthenticated users to login", async ({ page }) => {

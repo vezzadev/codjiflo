@@ -7,14 +7,10 @@
  * from the GitHub artifact. Mock mode doesn't include iteration data.
  */
 
-import { test, expect } from './fixtures/console-warnings';
-
-// These tests run in prod mode with real iteration artifacts (not degraded)
+import { test, expect } from '@playwright/test';
 
 test.describe('Iteration-aware File List (AC-4.8.11)', () => {
-  // Skip in both modes for now - PR #28 iteration data may be stale/expired
-  // TODO: Re-enable with a stable test PR that has fresh iteration artifacts
-  test.skip(() => true, 'Temporarily disabled - iteration artifacts may have expired');
+  // TODO: Re-enable with a stable test PR that has fresh iteration artifacts (PR #28 may have stale data)
 
   test('Latest preset hides unchanged files', async ({ page }) => {
     // Navigate to PR 28

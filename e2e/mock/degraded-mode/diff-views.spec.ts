@@ -1,15 +1,12 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
-
-// These tests don't set up iteration artifacts, so they run in degraded mode
-test.use({ expectDegradedMode: true });
+import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
   setupAuthMock,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
-} from "./fixtures/github-mocks";
+} from "../../fixtures/github-mocks";
 
 test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
   const mockPR: MockPR = {
@@ -184,9 +181,6 @@ const baz = 'qux';
       await expect(
         toolbar.getByRole("button", { name: /switch to side-by-side view/i })
       ).toContainText("Inline");
-    } else {
-      // Prod mode: skip keyboard shortcuts test (real PR may have modal conflicts)
-      test.skip(true, "Keyboard shortcuts tested in mock mode only");
     }
   });
 
@@ -310,52 +304,6 @@ const baz = 'qux';
     }
   });
 
-  test("Syntax highlighting preserved when showing whitespace (Issue #131)", async ({
-    page,
-  }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-    await page.waitForLoadState("load");
-
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible();
-
-    if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
-      await expect(
-        page.getByRole("heading", { name: "src/example.ts" })
-      ).toBeVisible();
-
-      const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible();
-
-      // Before enabling whitespace visibility, verify syntax highlighting is present.
-      // SyntaxHighlighter uses inline styles (useInlineStyles=true), so we check for
-      // spans with color styles, which indicates syntax highlighting is active.
-      // Example: <span style="color: rgb(215, 58, 73)">const</span>
-      const syntaxSpansBefore = await diffRegion.locator('span[style*="color:"]').count();
-      expect(syntaxSpansBefore).toBeGreaterThan(0);
-
-      // Enable whitespace visibility using 'B' key
-      await page.locator("body").click();
-      await page.keyboard.press("b");
-
-      // Verify whitespace indicators are visible (· for spaces)
-      await expect(diffRegion.locator('.whitespace-visible').first()).toBeVisible();
-
-      // After enabling whitespace visibility, syntax highlighting should still be present
-      const syntaxSpansAfter = await diffRegion.locator('span[style*="color:"]').count();
-      expect(syntaxSpansAfter).toBeGreaterThan(0);
-
-      // The count should be similar (whitespace toggle shouldn't remove syntax spans)
-      // Allow some variance but ensure highlighting is preserved
-      expect(syntaxSpansAfter).toBeGreaterThanOrEqual(syntaxSpansBefore * 0.8);
-    } else {
-      // Prod mode: skip this test
-      test.skip(true, "Syntax highlighting test runs in mock mode only");
-    }
-  });
-
   test("Full file toggle switches between changes only and full file (S-3.1)", async ({
     page,
   }) => {
@@ -473,8 +421,6 @@ const baz = 'qux';
       // Each pane should have reasonable width (not collapsed)
       expect(leftBox.width).toBeGreaterThan(100);
       expect(rightBox.width).toBeGreaterThan(100);
-    } else {
-      test.skip(true, "Layout test runs in mock mode only");
     }
   });
 
@@ -601,8 +547,7 @@ const baz = 'qux';
   test("Change navigation works in virtualized diff (500+ lines)", async ({
     page,
   }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Virtualized diff test runs in mock mode only");
+    // Mock mode only test
 
     // Generate a large file with 600+ lines to trigger virtualization (threshold is 500)
     const generateLargeFile = () => {

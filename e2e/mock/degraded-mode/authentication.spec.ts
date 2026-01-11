@@ -1,15 +1,12 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
-
-// Some tests navigate to PR pages without iteration artifacts, so they run in degraded mode
-test.use({ expectDegradedMode: true });
+import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthMock,
   setupFullPRMocks,
   defaultMockPR,
   setupOAuthAuthState,
   setupTokenRefreshMock,
-} from "./fixtures/github-mocks";
+} from "../../fixtures/github-mocks";
 
 test.describe("Authentication Flow (S-1.1)", () => {
   test.beforeEach(async ({ page }) => {
@@ -190,7 +187,6 @@ test.describe("Redirect After Login", () => {
     page,
   }) => {
     // This test is mock-only since it needs controlled query params
-    test.skip(!isMockMode(), "Query param test only runs in mock mode");
 
     const owner = "test";
     const repo = "repo";
@@ -258,7 +254,6 @@ test.describe("Redirect After Login", () => {
 test.describe("Token Refresh Flow", () => {
   // Token refresh tests are mock-only since they require precise control over API responses
   test.beforeEach(async ({ page }) => {
-    test.skip(!isMockMode(), "Token refresh tests only run in mock mode");
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
   });

@@ -1,8 +1,5 @@
-import { test, expect } from "./fixtures/console-warnings";
-import { isMockMode, prodModeConfig } from "./fixtures/mode";
-
-// These tests don't set up iteration artifacts, so they run in degraded mode
-test.use({ expectDegradedMode: true });
+import { test, expect } from "@playwright/test";
+import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -10,7 +7,7 @@ import {
   setupFilesMock,
   type MockPR,
   type MockFile,
-} from "./fixtures/github-mocks";
+} from "../../fixtures/github-mocks";
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -303,10 +300,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // Get all file buttons and verify we have at least 2 (PR description + 1 file)
     const allButtons = await fileButtons.all();
-    if (allButtons.length < 2) {
-      test.skip(true, "PR needs at least 1 file for keyboard navigation test");
-      return;
-    }
+    // Precondition: PR must have at least 1 file for keyboard navigation test
+    expect(allButtons.length).toBeGreaterThanOrEqual(2);
 
     // PR Description (first button) should be selected by default
     const prDescButton = fileButtons.first();

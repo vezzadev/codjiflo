@@ -20,8 +20,13 @@ if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
   );
 }
 
+// Determine test directory based on mode
+//  Mock mode runs: e2e/mock/**/*.spec.ts
+// Prod mode runs: e2e/prod/**/*.spec.ts
+const testDir = isProdMode ? "./e2e/prod" : "./e2e/mock";
+
 export default defineConfig({
-  testDir: "./e2e",
+  testDir,
   testMatch: "**/*.spec.ts",
   fullyParallel: true,
   forbidOnly: isCI,

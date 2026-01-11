@@ -28,22 +28,41 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
 | Integration | `*.integration.test.tsx` | Use `data-testid`, helpers in `src/tests/helpers/`. Test happy AND unhappy paths |
-| E2E | `e2e/**/*.spec.ts` | Playwright. Critical flows only. Supports mock/prod modes |
+| E2E | `e2e/{mock\|prod}/{degraded\|iteration}-mode/**/*.spec.ts` | Playwright. Critical flows only. Organized by mode and artifact availability |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
 Tests that have never failed even once are USELESS. This applies to all test types, especially integration and E2E tests. You absolutely MUST confirm that the test is actually testing what you intend, either by following TDD and writing your test code before your product code, or by writing your changes, writing your test, temporarily removing your code changes, confirming that the test fails as expected, and then restoring the product code changes. You WILL be asked to demonstrate a commit where your new test fails, followed by a second commit where you include your code fixes that make the test pass. Include the test failure validation in the commit message.
 
-### E2E Test Modes
+### E2E Test Modes and Organization
 
-E2E tests support two modes:
+E2E tests support two modes and are organized by mode and artifact availability:
 
 | Mode | Command | Target | GitHub API |
 |------|---------|--------|------------|
 | Mock | `npm run test:e2e` | `localhost:<dynamic port>` | Mocked via Playwright routes |
 | Prod | `npm run test:e2e:prod` | `localhost:<dynamic port>` | Real API with PAT |
 
-Both E2E test modes start a test server automatically. It is NOT necessary to start a separate dev server. 
+Both E2E test modes start a test server automatically. It is NOT necessary to start a separate dev server.
+
+**Test Directory Structure:**
+```
+e2e/
+├── mock/
+│   ├── degraded-mode/     # Tests without iteration artifacts
+│   └── iteration-mode/    # Tests with iteration artifacts (mocked)
+├── prod/
+│   ├── degraded-mode/     # Prod tests without iteration artifacts
+│   └── iteration-mode/    # Prod tests with real iteration artifacts
+└── fixtures/              # Shared test fixtures
+```
+
+**Organizational Principles:**
+- Tests are organized by **mode** (mock/prod) and **artifact availability** (degraded/iteration)
+- Mode is determined by `E2E_DEPENDENCIES_MODE` environment variable
+- Playwright config automatically selects the appropriate directory based on mode
+- **No `test.skip()` calls** - tests are placed in their intended directory instead
+- ESLint enforces this with `"playwright/no-skipped-test": "error"`
 
 **Environment:**
 - `.env.local` - Created by running `npm run dev` (pulls from Vercel). Required for prod mode tests locally.
@@ -52,6 +71,7 @@ Both E2E test modes start a test server automatically. It is NOT necessary to st
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
 - `e2e/fixtures/github-mocks.ts` - Centralized mock handlers
+- `e2e/fixtures/iteration-db-builder.ts` - Iteration artifact builders for mock mode
 
 ### E2E Test Debugging
 
