@@ -30,12 +30,15 @@ export function useKeyboardShortcuts() {
     // Find current position in visible files
     const currentPos = files.findIndex((f) => f.originalIndex === selectedFileIndex);
 
-    // If current file is found and not the last one, go to next
     if (currentPos >= 0 && currentPos < files.length - 1) {
+      // Current file found and not the last one - go to next
       const nextFile = files[currentPos + 1];
       if (nextFile) {
         selectFile(nextFile.originalIndex);
       }
+    } else if (currentPos === -1 && selectedFileIndex !== PR_DESCRIPTION_INDEX) {
+      // Current file filtered out (e.g., iteration switch) - go to PR description
+      selectFile(PR_DESCRIPTION_INDEX);
     }
   }, [selectedFileIndex, files, selectFile]);
 
@@ -49,8 +52,8 @@ export function useKeyboardShortcuts() {
       if (prevFile) {
         selectFile(prevFile.originalIndex);
       }
-    } else if (currentPos === 0) {
-      // If at first file, go back to PR description
+    } else if (currentPos === 0 || (currentPos === -1 && selectedFileIndex !== PR_DESCRIPTION_INDEX)) {
+      // If at first file OR current file filtered out - go to PR description
       selectFile(PR_DESCRIPTION_INDEX);
     }
     // If selectedFileIndex is PR_DESCRIPTION_INDEX, do nothing (already at start)
