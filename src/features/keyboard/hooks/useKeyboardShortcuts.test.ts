@@ -15,14 +15,6 @@ vi.mock('@/features/diff/hooks', () => ({
   useIterationAwareFiles: vi.fn(),
 }));
 
-vi.mock('@/features/diff/stores', async () => {
-  const actual = await vi.importActual('@/features/diff/stores');
-  return {
-    ...actual,
-    useDiffStore: vi.fn(),
-  };
-});
-
 describe('useKeyboardShortcuts', () => {
   const mockSelectFile = vi.fn();
   const mockScrollToNextChange = vi.fn();
@@ -267,6 +259,48 @@ describe('useKeyboardShortcuts', () => {
 
       // Should not navigate (no files available)
       expect(mockSelectFile).not.toHaveBeenCalled();
+    });
+
+    it('navigates to PR description when s is pressed and current file is filtered out', () => {
+      // Simulate a file that was selected but is now filtered out in iteration mode
+      vi.mocked(useDiffStore).mockImplementation((selector) => {
+        const state = {
+          selectedFileIndex: 99, // File not in iteration-aware files list
+          selectFile: mockSelectFile,
+          scrollToNextChange: mockScrollToNextChange,
+          scrollToPreviousChange: mockScrollToPreviousChange,
+        };
+        return selector(state as never);
+      });
+
+      renderHook(() => useKeyboardShortcuts());
+
+      const event = new KeyboardEvent('keydown', { key: 's' });
+      window.dispatchEvent(event);
+
+      // Should navigate to PR description as a safe fallback
+      expect(mockSelectFile).toHaveBeenCalledWith(PR_DESCRIPTION_INDEX);
+    });
+
+    it('navigates to PR description when w is pressed and current file is filtered out', () => {
+      // Simulate a file that was selected but is now filtered out in iteration mode
+      vi.mocked(useDiffStore).mockImplementation((selector) => {
+        const state = {
+          selectedFileIndex: 99, // File not in iteration-aware files list
+          selectFile: mockSelectFile,
+          scrollToNextChange: mockScrollToNextChange,
+          scrollToPreviousChange: mockScrollToPreviousChange,
+        };
+        return selector(state as never);
+      });
+
+      renderHook(() => useKeyboardShortcuts());
+
+      const event = new KeyboardEvent('keydown', { key: 'w' });
+      window.dispatchEvent(event);
+
+      // Should navigate to PR description as a safe fallback
+      expect(mockSelectFile).toHaveBeenCalledWith(PR_DESCRIPTION_INDEX);
     });
   });
 
