@@ -162,10 +162,12 @@ describe('useDiffStore', () => {
       expect(useDiffStore.getState().selectedFileIndex).toBe(0);
     });
 
-    it('does not select invalid index (out of bounds)', () => {
+    it('allows any non-negative index (supports artifact-only files in iteration mode)', () => {
+      // Issue #183: In iteration mode, artifact-only files may have indices >= files.length
+      // DiffView handles missing files gracefully via useIterationAwareFiles
       useDiffStore.getState().selectFile(10);
 
-      expect(useDiffStore.getState().selectedFileIndex).toBe(0);
+      expect(useDiffStore.getState().selectedFileIndex).toBe(10);
     });
   });
 

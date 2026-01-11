@@ -89,6 +89,8 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
     // Iteration mode: use artifact as source of truth
     const iterationFiles: IterationAwareFile[] = [];
     const processedPaths = new Set<string>();
+    // Next available index for artifact-only files (after GitHub files)
+    let nextArtifactIndex = githubFiles.length;
 
     // Process all artifacts that have changes in the selected range
     // Deduplicate by path (multiple artifacts may exist for same file due to SHA changes)
@@ -123,6 +125,9 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
       // Determine status based on iteration range
       const status = computeIterationStatus(diff.base !== null, diff.head !== null, originalStatus);
 
+      // Assign index: use GitHub index if available, otherwise assign next available
+      const fileIndex = githubInfo?.index ?? nextArtifactIndex++;
+
       const iterationFile: IterationAwareFile = {
         filename: path,
         status,
@@ -130,7 +135,7 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
         deletions: stats.deletions,
         changes: stats.additions + stats.deletions,
         patch: githubInfo?.file.patch ?? '', // Empty string for artifact-only files
-        originalIndex: githubInfo?.index ?? -1, // -1 indicates not in GitHub file list
+        originalIndex: fileIndex,
         artifactId: artifact.id,
       };
 

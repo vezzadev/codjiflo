@@ -11,7 +11,7 @@ import {
   calculateHunkIndices,
   calculateAlignedHunkIndices,
 } from '../utils';
-import { useIterationDiff } from '../hooks';
+import { useIterationDiff, useIterationAwareFiles } from '../hooks';
 import { DiffLine } from './DiffLine';
 import { DiffToolbar } from './DiffToolbar';
 import { SideBySideDiffView } from './SideBySideDiffView';
@@ -50,6 +50,8 @@ export function DiffView() {
 
   // Iteration-based diff for cross-iteration comparison
   const { isIterationMode, getFileDiffByPath, selectedRange } = useIterationDiff();
+  // Iteration-aware file list (includes artifact-only files not in GitHub API)
+  const { files: iterationAwareFiles } = useIterationAwareFiles();
   const {
     threads,
     isLoading: isLoadingComments,
@@ -83,9 +85,17 @@ export function DiffView() {
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
+  // In iteration mode, get selected file from iteration-aware files (includes artifact-only files)
+  // This handles files that exist in artifact but not in GitHub API (Issue #183)
+  const iterationSelectedFile = useMemo(() => {
+    if (!isIterationMode) return null;
+    return iterationAwareFiles.find(f => f.originalIndex === selectedFileIndex) ?? null;
+  }, [isIterationMode, iterationAwareFiles, selectedFileIndex]);
+
   // Parse the patch and detect language
-  const patch = selectedFile?.patch;
-  const filename = selectedFile?.filename;
+  // In iteration mode, prefer filename from iteration-aware files
+  const patch = selectedFile?.patch ?? iterationSelectedFile?.patch;
+  const filename = iterationSelectedFile?.filename ?? selectedFile?.filename;
 
   // Get iteration-based diff when in iteration mode
   // selectedRange is accessed via getFileDiffByPath closure, so changes to it will
@@ -454,7 +464,11 @@ export function DiffView() {
     );
   }
 
-  if (!selectedFile) {
+  // In iteration mode, we may have artifact-only files (not in GitHub API)
+  // Check both selectedFile (GitHub) and iterationSelectedFile (artifact)
+  const hasSelectedFile = selectedFile ?? iterationSelectedFile;
+
+  if (!hasSelectedFile) {
     return (
       <div className="diff-empty-state">
         Select a file to view diff
@@ -462,7 +476,9 @@ export function DiffView() {
     );
   }
 
-  if (!selectedFile.patch) {
+  // For patch check, only apply to GitHub files (artifact-only files don't have patch)
+  // In iteration mode with artifact-only file, we'll get diff from iteration diff
+  if (!isIterationMode && selectedFile && !selectedFile.patch) {
     return (
       <div className="diff-empty-state">
         <p>No diff available</p>
@@ -485,8 +501,8 @@ export function DiffView() {
         </div>
         {/* Filename and toolbar */}
         <div className="diff-header-toolbar">
-          <h2 className="diff-filename" title={selectedFile.filename}>
-            {selectedFile.filename}
+          <h2 className="diff-filename" title={filename}>
+            {filename}
           </h2>
           <DiffToolbar />
         </div>
@@ -515,7 +531,7 @@ export function DiffView() {
           ref={containerRefCallback}
           className="diff-content-area"
           role="region"
-          aria-label={`Diff content for ${selectedFile.filename}`}
+          aria-label={`Diff content for ${filename}`}
           tabIndex={0}
         >
           {diffLines.length > VIRTUALIZATION_THRESHOLD ? (
@@ -584,7 +600,7 @@ export function DiffView() {
           ref={containerRefCallback}
           className="diff-content-area"
           role="region"
-          aria-label={`Diff content for ${selectedFile.filename}`}
+          aria-label={`Diff content for ${filename}`}
           tabIndex={0}
         >
           <VirtualizedSideBySideDiffView

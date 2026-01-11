@@ -50,9 +50,10 @@ export const useDiffStore = create<DiffState>()(
       },
 
       selectFile: (index) => {
-        const { files } = get();
-        // Allow -1 for PR description, or valid file indices
-        if (index === PR_DESCRIPTION_INDEX || (index >= 0 && index < files.length)) {
+        // Allow -1 for PR description, or any non-negative index
+        // Note: In iteration mode, artifact-only files may have indices >= GitHub files.length
+        // DiffView handles missing files gracefully via useIterationAwareFiles
+        if (index === PR_DESCRIPTION_INDEX || index >= 0) {
           set({ selectedFileIndex: index, currentChangeIndex: -1 });
         }
       },
