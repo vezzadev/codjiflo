@@ -660,4 +660,189 @@ const baz = 'qux';
     await expect(prevChangeButton).toBeDisabled();
     await expect(nextChangeButton).toBeEnabled();
   });
+
+  test("J/K navigation works in full file mode with virtualized diff (Issue #140)", async ({
+    page,
+  }) => {
+    // This test verifies J/K keyboard shortcuts work when:
+    // 1. Full file mode is enabled (showing all lines, not just changes)
+    // 2. The diff becomes virtualized (500+ lines)
+    //
+    // TEST FAILURE VALIDATION:
+    // Without fix: After pressing J, Previous button stays disabled (scroll not happening)
+    // With fix: After pressing J, Previous button should stay disabled (index 0) but
+    //           Next button reflects we're at first change (not last)
+
+    // Generate a file with 600+ lines total but only 3 change hunks spread out
+    // Patch shows only the hunks (small), but full file will have 600+ lines
+    const generateLargeFileWithScatteredChanges = () => {
+      // Generate patch with 3 scattered changes
+      const lines: string[] = [];
+      lines.push("@@ -50,3 +50,4 @@");
+      lines.push(" // Line 49");
+      lines.push("-// Old line 50");
+      lines.push("+// New line 50");
+      lines.push("+// Added line");
+      lines.push(" // Line 51");
+      lines.push("@@ -250,3 +251,3 @@");
+      lines.push(" // Line 249");
+      lines.push("-// Old line 250");
+      lines.push("+// New line 250");
+      lines.push(" // Line 251");
+      lines.push("@@ -450,3 +451,3 @@");
+      lines.push(" // Line 449");
+      lines.push("-// Old line 450");
+      lines.push("+// New line 450");
+      lines.push(" // Line 451");
+      return lines.join("\n");
+    };
+
+    // Generate base and head content for full file mode (600 lines)
+    const generateFullFileContent = (version: "base" | "head") => {
+      const lines: string[] = [];
+      for (let i = 1; i <= 600; i++) {
+        if (i === 50) {
+          lines.push(version === "base" ? "// Old line 50" : "// New line 50");
+          if (version === "head") {
+            lines.push("// Added line");
+          }
+        } else if (i === 250) {
+          lines.push(version === "base" ? "// Old line 250" : "// New line 250");
+        } else if (i === 450) {
+          lines.push(version === "base" ? "// Old line 450" : "// New line 450");
+        } else {
+          lines.push(`// Line ${String(i)}`);
+        }
+      }
+      return lines.join("\n");
+    };
+
+    const smallPatch = generateLargeFileWithScatteredChanges();
+    const baseContent = generateFullFileContent("base");
+    const headContent = generateFullFileContent("head");
+
+    // Override the mock to use our file
+    await page.route(
+      "**/repos/test/repo/pulls/123/files*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              sha: "abc123",
+              filename: "src/large-file.ts",
+              status: "modified",
+              additions: 4,
+              deletions: 3,
+              changes: 7,
+              patch: smallPatch,
+            },
+          ]),
+        });
+      }
+    );
+
+    // Mock the file contents for full file mode
+    await page.route(
+      "**/repos/test/repo/contents/src/large-file.ts?ref=def456",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            type: "file",
+            encoding: "base64",
+            content: Buffer.from(baseContent).toString("base64"),
+            path: "src/large-file.ts",
+            sha: "def456",
+          }),
+        });
+      }
+    );
+
+    await page.route(
+      "**/repos/test/repo/contents/src/large-file.ts?ref=abc123",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            type: "file",
+            encoding: "base64",
+            content: Buffer.from(headContent).toString("base64"),
+            path: "src/large-file.ts",
+            sha: "abc123",
+          }),
+        });
+      }
+    );
+
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    // Click on the file
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("src/large-file.ts").click();
+
+    // Wait for diff to render
+    await expect(
+      page.getByRole("heading", { name: "src/large-file.ts" })
+    ).toBeVisible();
+
+    // Get toolbar and navigation buttons
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar).toBeVisible();
+
+    const prevChangeButton = toolbar.getByRole("button", {
+      name: /Previous change/i,
+    });
+    const nextChangeButton = toolbar.getByRole("button", {
+      name: /Next change/i,
+    });
+
+    // Verify we're NOT virtualized yet (small patch = few lines)
+    // Next button should be enabled (3 changes detected)
+    await expect(nextChangeButton).toBeEnabled();
+    await expect(prevChangeButton).toBeDisabled();
+
+    // Toggle to full file mode (F key) - this should trigger virtualization (600+ lines)
+    await page.locator("body").click();
+    await page.keyboard.press("f");
+
+    // Wait for full file content to load
+    const fullFileButton = toolbar.getByRole("button", {
+      name: /show changes only/i,
+    });
+    await expect(fullFileButton).toContainText("Full");
+
+    // After switching to full file mode, wait for the hunk count to be recalculated
+    // The Next button should still be enabled (3 hunks exist)
+    await expect(nextChangeButton).toBeEnabled();
+    await expect(prevChangeButton).toBeDisabled();
+
+    // Press J to navigate to first change
+    await page.keyboard.press("j");
+
+    // After pressing J once, we're at index 0 (first hunk)
+    // Prev should still be disabled (at start), Next should be enabled (2 more hunks)
+    await expect(prevChangeButton).toBeDisabled();
+    await expect(nextChangeButton).toBeEnabled();
+
+    // Press J again to move to second change
+    await page.keyboard.press("j");
+
+    // Now at index 1, both buttons should be enabled
+    await expect(prevChangeButton).toBeEnabled();
+    await expect(nextChangeButton).toBeEnabled();
+
+    // Press K to go back to first change
+    await page.keyboard.press("k");
+
+    // Now at index 0, prev disabled again
+    await expect(prevChangeButton).toBeDisabled();
+    await expect(nextChangeButton).toBeEnabled();
+  });
 });
