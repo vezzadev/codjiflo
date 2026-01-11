@@ -6,8 +6,53 @@ import type { ParsedDiffLine } from '../types';
 // Mock react-syntax-highlighter - factory must use inline function
 vi.mock('react-syntax-highlighter', async () => {
   const React = await import('react');
-  const MockComponent = ({ children }: { children: string }) =>
-    React.createElement('span', { 'data-testid': 'syntax-highlighter' }, children);
+
+  interface MockRendererNode {
+    type: 'element' | 'text';
+    value?: string | number;
+    tagName?: string;
+    properties?: { className?: string[]; style?: React.CSSProperties };
+    children?: MockRendererNode[];
+  }
+
+  interface MockRendererProps {
+    rows: MockRendererNode[];
+    stylesheet: Record<string, React.CSSProperties>;
+    useInlineStyles: boolean;
+  }
+
+  type MockRenderer = (props: MockRendererProps) => React.ReactNode;
+
+  // Build a simple AST from the content (simulates what hljs would produce)
+  function buildMockAst(content: string): MockRendererNode[] {
+    return [{
+      type: 'element',
+      tagName: 'span',
+      properties: { className: [] },
+      children: [{ type: 'text', value: content }],
+    }];
+  }
+
+  interface MockProps {
+    children: string;
+    renderer?: MockRenderer;
+    style?: Record<string, React.CSSProperties>;
+    useInlineStyles?: boolean;
+  }
+
+  const MockComponent = ({ children, renderer, style = {}, useInlineStyles = true }: MockProps) => {
+    // If a custom renderer is provided, use it (this is key for the whitespace fix!)
+    if (renderer) {
+      const rows = buildMockAst(children);
+      return React.createElement(
+        'span',
+        { 'data-testid': 'syntax-highlighter' },
+        renderer({ rows, stylesheet: style, useInlineStyles })
+      );
+    }
+    // Fallback: just render children
+    return React.createElement('span', { 'data-testid': 'syntax-highlighter' }, children);
+  };
   MockComponent.registerLanguage = vi.fn();
   return { Light: MockComponent };
 });

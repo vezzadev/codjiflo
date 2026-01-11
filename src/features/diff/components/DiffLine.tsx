@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
@@ -10,6 +11,24 @@ import markdown from 'react-syntax-highlighter/dist/esm/languages/hljs/markdown'
 import type { ParsedDiffLine, WordDiffSegment } from '../types';
 import { Button } from '@/components';
 import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
+
+// Type for syntax highlighter renderer node (from @types/react-syntax-highlighter)
+interface RendererNode {
+  type: 'element' | 'text';
+  value?: string | number;
+  tagName?: keyof React.JSX.IntrinsicElements | React.ComponentType<unknown>;
+  properties?: { className?: string[]; style?: React.CSSProperties; [key: string]: unknown };
+  children?: RendererNode[];
+}
+
+interface RendererProps {
+  rows: RendererNode[];
+  stylesheet: Record<string, React.CSSProperties>;
+  useInlineStyles: boolean;
+}
+
+// Custom renderer type to match react-syntax-highlighter's expectations
+type CustomRenderer = (props: RendererProps) => React.ReactNode;
 
 // Register languages for syntax highlighting
 SyntaxHighlighter.registerLanguage('typescript', typescript);
@@ -119,6 +138,155 @@ const codeStyle: React.CSSProperties = {
   whiteSpace: 'pre',
   overflow: 'visible',
 };
+
+/**
+ * Create a React element from a renderer node, preserving inline styles.
+ * This is the core rendering function used by createWhitespaceRenderer.
+ */
+function createElementFromNode(
+  node: RendererNode,
+  stylesheet: Record<string, React.CSSProperties>,
+  useInlineStyles: boolean,
+  key: string | number
+): React.ReactNode {
+  if (node.type === 'text') {
+    return node.value;
+  }
+
+  const { tagName, properties, children } = node;
+  if (!tagName) return null;
+
+  // Build style from classNames if using inline styles (for syntax highlighting)
+  let style = properties?.style ?? {};
+  const classNames = properties?.className ?? [];
+
+  // Check if this is a custom whitespace-visible element (not from syntax highlighter)
+  const isWhitespaceElement = classNames.includes('whitespace-visible');
+
+  if (useInlineStyles && classNames.length > 0 && !isWhitespaceElement) {
+    // Only apply stylesheet mapping for syntax highlighter classes, not our custom classes
+    const classStyles = classNames
+      .map((className: string) => stylesheet[className])
+      .filter((s): s is React.CSSProperties => Boolean(s));
+    style = classStyles.reduce<React.CSSProperties>(
+      (acc, classStyle) => ({ ...acc, ...classStyle }),
+      { ...style }
+    );
+  }
+
+  const elementProps: Record<string, unknown> = {
+    key,
+    style: useInlineStyles && !isWhitespaceElement ? style : undefined,
+    // Always include className for whitespace elements; otherwise only when not using inline styles
+    className: isWhitespaceElement || !useInlineStyles ? classNames.join(' ') || undefined : undefined,
+  };
+
+  const childElements = children?.map((child, i) =>
+    createElementFromNode(child, stylesheet, useInlineStyles, `${String(key)}-${String(i)}`)
+  );
+
+  return createElement(tagName as string, elementProps, childElements);
+}
+
+/**
+ * Transform a text node to include visible whitespace markers.
+ * Returns an array of nodes: text nodes for regular content, element nodes for whitespace.
+ */
+function transformTextNodeForWhitespace(text: string): RendererNode[] {
+  const result: RendererNode[] = [];
+  let i = 0;
+  let nonWsStart = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+
+    if (char === ' ' || char === '\t') {
+      // Push any accumulated non-whitespace text
+      if (i > nonWsStart) {
+        result.push({
+          type: 'text',
+          value: text.slice(nonWsStart, i),
+        });
+      }
+
+      // Add visible whitespace element
+      result.push({
+        type: 'element',
+        tagName: 'span',
+        properties: { className: ['whitespace-visible'] },
+        children: [
+          {
+            type: 'text',
+            value: char === ' ' ? '·' : '→   ',
+          },
+        ],
+      });
+
+      nonWsStart = i + 1;
+    }
+    i++;
+  }
+
+  // Push remaining non-whitespace text
+  if (nonWsStart < text.length) {
+    result.push({
+      type: 'text',
+      value: text.slice(nonWsStart),
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Recursively transform a node tree to include visible whitespace.
+ * Text nodes are transformed; element nodes recurse into children.
+ */
+function transformNodeForWhitespace(node: RendererNode): RendererNode[] {
+  if (node.type === 'text') {
+    const text = String(node.value ?? '');
+    return transformTextNodeForWhitespace(text);
+  }
+
+  // Element node: recursively transform children
+  if (node.children && node.children.length > 0) {
+    const transformedChildren: RendererNode[] = [];
+    for (const child of node.children) {
+      transformedChildren.push(...transformNodeForWhitespace(child));
+    }
+    return [{
+      ...node,
+      children: transformedChildren,
+    }];
+  }
+
+  return [node];
+}
+
+/**
+ * Create a custom renderer that shows visible whitespace while preserving syntax highlighting.
+ * This is used with react-syntax-highlighter's renderer prop.
+ */
+function createWhitespaceRenderer(showWhitespace: boolean): CustomRenderer {
+  return ({ rows, stylesheet, useInlineStyles }: RendererProps) => {
+    return rows.map((row, rowIndex) => {
+      // If whitespace visibility is off, use standard rendering
+      let transformedRow = row;
+      if (showWhitespace) {
+        // Transform the row to include visible whitespace
+        const transformed = transformNodeForWhitespace(row);
+        transformedRow = transformed[0] ?? row;
+      }
+
+      return createElementFromNode(
+        transformedRow,
+        stylesheet,
+        useInlineStyles,
+        `code-segment-${String(rowIndex)}`
+      );
+    });
+  };
+}
 
 /**
  * Render content with word-level diff highlighting (S-3.4)
@@ -233,10 +401,6 @@ export function DiffLine({
           <pre className="diff-code">{line.content}</pre>
         ) : hasWordDiff && line.wordDiff ? (
           <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
-        ) : showWhitespace ? (
-          <span className="diff-code">
-            {renderVisibleWhitespace(line.content)}
-          </span>
         ) : (
           <SyntaxHighlighter
             language={language}
@@ -245,6 +409,7 @@ export function DiffLine({
             customStyle={codeStyle}
             PreTag="span"
             CodeTag="span"
+            renderer={createWhitespaceRenderer(showWhitespace) as never}
           >
             {line.content}
           </SyntaxHighlighter>
