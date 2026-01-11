@@ -1,2 +1,2 @@
-This is file B - original content.
-Line 2 of file B.
+This is file B - MODIFIED in iteration 2.
+Line 2 of file B - updated.
