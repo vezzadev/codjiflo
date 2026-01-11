@@ -699,8 +699,7 @@ export function suppressWarnings() {
   test("displays newly added file content without error when full file is enabled (Issue #195)", async ({
     page,
   }) => {
-    // Skip in prod mode - mock mode only test
-    test.skip(!isMockMode(), "Issue #195 test runs in mock mode only");
+    // Mock mode only test
 
     await setupAuthState(page);
     await setupAuthMock(page);
