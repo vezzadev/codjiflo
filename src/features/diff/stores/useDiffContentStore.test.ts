@@ -43,7 +43,6 @@ describe('useDiffContentStore', () => {
       contentCache: new Map(),
       fullFileDiffs: new Map(),
       isLoadingContent: false,
-      contentError: null,
     });
     vi.clearAllMocks();
   });
@@ -116,8 +115,6 @@ describe('useDiffContentStore', () => {
       await expect(
         useDiffContentStore.getState().fetchFileContent('owner', 'repo', 'missing.ts', 'main')
       ).rejects.toThrow('File not found at this version');
-
-      expect(useDiffContentStore.getState().contentError).toBe('File not found at this version');
     });
 
     it('handles 413 error with file too large message', async () => {
@@ -128,10 +125,6 @@ describe('useDiffContentStore', () => {
       await expect(
         useDiffContentStore.getState().fetchFileContent('owner', 'repo', 'large.bin', 'main')
       ).rejects.toThrow('File too large to display full content');
-
-      expect(useDiffContentStore.getState().contentError).toBe(
-        'File too large to display full content'
-      );
     });
 
     it('handles other API errors', async () => {
@@ -142,8 +135,6 @@ describe('useDiffContentStore', () => {
       await expect(
         useDiffContentStore.getState().fetchFileContent('owner', 'repo', 'file.ts', 'main')
       ).rejects.toThrow('Server error');
-
-      expect(useDiffContentStore.getState().contentError).toBe('Server error');
     });
 
     it('handles generic errors', async () => {
@@ -152,8 +143,6 @@ describe('useDiffContentStore', () => {
       await expect(
         useDiffContentStore.getState().fetchFileContent('owner', 'repo', 'file.ts', 'main')
       ).rejects.toThrow('Network failure');
-
-      expect(useDiffContentStore.getState().contentError).toBe('Network failure');
     });
 
     it('sets isLoadingContent during fetch', async () => {
@@ -322,15 +311,6 @@ describe('useDiffContentStore', () => {
 
       expect(useDiffContentStore.getState().contentCache.size).toBe(0);
       expect(useDiffContentStore.getState().fullFileDiffs.size).toBe(0);
-      expect(useDiffContentStore.getState().contentError).toBeNull();
-    });
-
-    it('clears error state', () => {
-      useDiffContentStore.setState({ contentError: 'Some error' });
-
-      useDiffContentStore.getState().clearCache();
-
-      expect(useDiffContentStore.getState().contentError).toBeNull();
     });
   });
 });

@@ -46,7 +46,7 @@ export function DiffView() {
 
   const { files, selectedFileIndex, isLoading, viewConfig, currentChangeIndex, setTotalChangeCount, resetChangeIndex } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
-  const { computeFullFileDiff, isLoadingContent, contentError } = useDiffContentStore();
+  const { computeFullFileDiff, isLoadingContent } = useDiffContentStore();
 
   // Iteration-based diff for cross-iteration comparison
   const { isIterationMode, getFileDiffByPath, selectedRange } = useIterationDiff();
@@ -509,9 +509,9 @@ export function DiffView() {
       </div>
 
       {/* Error and loading states */}
-      {(fullFileError ?? contentError) && (
+      {fullFileError && (
         <div className="diff-error-banner">
-          {fullFileError ?? contentError}
+          {fullFileError}
         </div>
       )}
       {commentsError && (

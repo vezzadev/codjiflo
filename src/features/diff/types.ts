@@ -120,7 +120,6 @@ export interface DiffContentState {
   /** Cache of computed full file diffs keyed by `${path}@${baseSHA}:${headSHA}` */
   fullFileDiffs: Map<string, FullFileDiff>;
   isLoadingContent: boolean;
-  contentError: string | null;
 
   fetchFileContent: (
     owner: string,

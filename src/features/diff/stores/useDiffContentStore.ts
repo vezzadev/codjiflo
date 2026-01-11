@@ -29,7 +29,6 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
   contentCache: new Map(),
   fullFileDiffs: new Map(),
   isLoadingContent: false,
-  contentError: null,
 
   /**
    * Fetch file content at a specific ref (AC-3.1.1)
@@ -43,7 +42,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
       return cached;
     }
 
-    set({ isLoadingContent: true, contentError: null });
+    set({ isLoadingContent: true });
 
     try {
       const rawContent = await githubBackends.file.getFileContent(owner, repo, path, ref);
@@ -82,7 +81,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
         message = err.message;
       }
 
-      set({ contentError: message, isLoadingContent: false });
+      set({ isLoadingContent: false });
       throw new Error(message);
     }
   },
@@ -99,7 +98,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
       return cached;
     }
 
-    set({ isLoadingContent: true, contentError: null });
+    set({ isLoadingContent: true });
 
     try {
       // Fetch both versions in parallel
@@ -168,8 +167,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
 
       return fullFileDiff;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to compute diff';
-      set({ contentError: message, isLoadingContent: false });
+      set({ isLoadingContent: false });
       throw err;
     }
   },
@@ -181,7 +179,6 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
     set({
       contentCache: new Map(),
       fullFileDiffs: new Map(),
-      contentError: null,
     });
   },
 }));

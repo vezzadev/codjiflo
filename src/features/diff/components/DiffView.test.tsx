@@ -10,7 +10,6 @@ import { useIterationDiff, useIterationAwareFiles } from '../hooks';
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
   isLoadingContent: false,
-  contentError: null,
 };
 
 vi.mock('../stores', () => ({
