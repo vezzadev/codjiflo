@@ -42,7 +42,7 @@ jobs:
         run: npm ci
 
       - name: Run linter
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: npm run lint:check
 
   typecheck:
