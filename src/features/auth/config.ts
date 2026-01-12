@@ -10,21 +10,23 @@ export const oauthConfig = {
 
   /**
    * OAuth callback URL
-   * Set via NEXT_PUBLIC_APP_URL environment variable
-   * Defaults to localhost:3000 in development
+   * In development: uses browser's actual origin to support any port
+   * In production: uses NEXT_PUBLIC_APP_URL environment variable
    */
   get redirectUri(): string {
-    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL;
-    let appUrl = envAppUrl;
+    let appUrl: string | undefined;
 
-    if (!appUrl && process.env.NODE_ENV === 'development') {
-      // In development, use browser's actual origin to support any port
+    if (process.env.NODE_ENV === 'development') {
+      // In development, prefer browser's actual origin to support any port
       if (typeof window !== 'undefined') {
         appUrl = window.location.origin;
       } else {
-        // Server-side fallback during dev
-        appUrl = 'http://localhost:3000';
+        // Server-side fallback during dev - use env var or default
+        appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
       }
+    } else {
+      // In production, require the environment variable
+      appUrl = process.env.NEXT_PUBLIC_APP_URL;
     }
 
     if (!appUrl) {
