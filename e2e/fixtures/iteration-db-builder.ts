@@ -11,14 +11,14 @@ import { createHash } from "crypto";
 import { computeLineDiff, lineDiffsToSpanMappings } from "@codjiflo/diff-engine";
 import { parsePatch, applyPatch as applyParsedPatch } from "./patch-parser";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 // Load schema from SQL file to avoid duplication
 // This matches action/src/db/schema.sql
 const SCHEMA_VERSION = 2;
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(__filename, '..');
+const __dirname = dirname(__filename);
 // Path from e2e/fixtures/ to action/src/db/schema.sql
 const SCHEMA_FILE_PATH = join(__dirname, '..', '..', 'action', 'src', 'db', 'schema.sql');
 const schemaTemplate = readFileSync(SCHEMA_FILE_PATH, 'utf-8');

@@ -134,7 +134,7 @@ src/
 ├── index.ts               # Entry point
 ├── db/
 │   ├── schema.sql         # SQLite DDL (source of truth)
-│   ├── schema.generated.ts# Auto-generated from schema.sql
+│   ├── schema.generated.ts # Auto-generated from schema.sql
 │   ├── schema.ts          # Schema version and exports
 │   └── database.ts        # Query operations
 ├── capture/
