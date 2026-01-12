@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import posthog from 'posthog-js';
 import { githubClient, GitHubAPIError } from '@/api/github/github-client';
 import type { GitHubReviewComment } from '@/api/github/types';
 import type { Comment, CommentAuthor, CommentSide, ReviewThread } from '../types';
@@ -165,9 +166,26 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
           ? { ...thread, comments: [...thread.comments, newComment] }
           : thread
       );
+
+      // PostHog: Track comment posted (to existing thread)
+      posthog.capture('comment_posted', {
+        comment_type: 'reply_to_thread',
+        file_path: path,
+        line_number: line,
+        side,
+      });
+
       set({ threads: updatedThreads, announcement: 'Comment posted.' });
       return Promise.resolve();
     }
+
+    // PostHog: Track comment posted (new thread)
+    posthog.capture('comment_posted', {
+      comment_type: 'new_thread',
+      file_path: path,
+      line_number: line,
+      side,
+    });
 
     set({
       threads: [
@@ -188,24 +206,33 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
 
   addReply: (threadId, body) => {
     const { threads, currentUser } = get();
-    const updatedThreads = threads.map((thread) => {
-      if (thread.id !== threadId) {
-        return thread;
+    const thread = threads.find((t) => t.id === threadId);
+    const updatedThreads = threads.map((t) => {
+      if (t.id !== threadId) {
+        return t;
       }
-      const lastComment = thread.comments[thread.comments.length - 1];
+      const lastComment = t.comments[t.comments.length - 1];
       const newComment: Comment = {
         id: createLocalId(),
         body,
         author: currentUser,
         createdAt: new Date(),
         updatedAt: new Date(),
-        path: thread.path,
-        line: thread.line,
-        side: thread.side,
+        path: t.path,
+        line: t.line,
+        side: t.side,
         position: lastComment?.position ?? null,
         ...(lastComment?.id ? { inReplyTo: lastComment.id } : {}),
       };
-      return { ...thread, comments: [...thread.comments, newComment] };
+      return { ...t, comments: [...t.comments, newComment] };
+    });
+
+    // PostHog: Track reply posted
+    posthog.capture('comment_posted', {
+      comment_type: 'reply',
+      file_path: thread?.path ?? null,
+      line_number: thread?.line ?? null,
+      side: thread?.side ?? null,
     });
 
     set({ threads: updatedThreads, announcement: 'Reply posted.' });

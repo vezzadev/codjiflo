@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import posthog from 'posthog-js';
 import { ArtifactLoader } from '../artifact-loader';
 import { IterationClient } from '../iteration-client';
 import { SpanTrackerService } from '../application';
@@ -227,6 +228,13 @@ export const useIterationStore = create<IterationState>()(
           return;
         }
 
+        // PostHog: Track iteration range change
+        posthog.capture('iteration_range_changed', {
+          from_snapshot: fromSnapshot,
+          to_snapshot: toSnapshot,
+          selection_type: 'manual',
+        });
+
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, { fromSnapshot, toSnapshot }),
         });
@@ -291,6 +299,14 @@ export const useIterationStore = create<IterationState>()(
           default:
             return;
         }
+
+        // PostHog: Track iteration range change via preset
+        posthog.capture('iteration_range_changed', {
+          from_snapshot: newRange.fromSnapshot,
+          to_snapshot: newRange.toSnapshot,
+          selection_type: 'preset',
+          preset,
+        });
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, newRange),

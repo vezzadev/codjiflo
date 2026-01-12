@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 interface TokenRequest {
   code: string;
@@ -97,11 +98,35 @@ export async function POST(req: Request): Promise<Response> {
     const data = await response.json() as GitHubTokenResponse;
 
     if (data.error) {
+      // PostHog: Track server-side OAuth token exchange failure
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: 'anonymous',
+        event: 'server_oauth_token_exchange_failed',
+        properties: {
+          error: data.error,
+          error_description: data.error_description,
+        },
+      });
+
       return NextResponse.json(
         { error: data.error, error_description: data.error_description },
         { status: 400 }
       );
     }
+
+    // PostHog: Track server-side OAuth token exchange success
+    // Note: We don't have user ID at this point, but we track the event for analytics
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: 'oauth_exchange', // Generic ID since we don't know the user yet
+      event: 'server_oauth_token_exchanged',
+      properties: {
+        has_refresh_token: !!data.refresh_token,
+        token_type: data.token_type,
+        scope: data.scope,
+      },
+    });
 
     return NextResponse.json({
       access_token: data.access_token,
@@ -113,6 +138,18 @@ export async function POST(req: Request): Promise<Response> {
     });
   } catch (error) {
     console.error('Token exchange error:', error);
+
+    // PostHog: Track server-side OAuth token exchange exception
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: 'anonymous',
+      event: 'server_oauth_token_exchange_failed',
+      properties: {
+        error: 'exception',
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+      },
+    });
+
     return NextResponse.json(
       { error: 'Failed to exchange token' },
       { status: 500 }
