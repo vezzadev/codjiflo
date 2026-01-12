@@ -76,7 +76,6 @@
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@types/react-window": "^2.0.0",
     "@types/sql.js": "^1.4.9",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "@vitest/browser-playwright": "^4.0.16",
