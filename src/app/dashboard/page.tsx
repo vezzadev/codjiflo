@@ -3,7 +3,6 @@
 import { useState, FormEvent, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
-import posthog from 'posthog-js';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { parseGitHubPRUrl } from '@/features/pr';
@@ -28,19 +27,10 @@ function DashboardContent() {
       return;
     }
 
-    // PostHog: Track PR URL submission
-    posthog.capture('pr_url_submitted', {
-      owner: parsed.owner,
-      repo: parsed.repo,
-      pr_number: parsed.number,
-    });
-
     router.push(`/${parsed.owner}/${parsed.repo}/${String(parsed.number)}`);
   };
 
   const handleLogout = () => {
-    // PostHog: Track logout action
-    posthog.capture('logout');
     logout();
     router.replace('/login');
   };

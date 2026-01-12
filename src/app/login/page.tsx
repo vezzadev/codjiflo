@@ -3,7 +3,6 @@
 import { useState, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import posthog from 'posthog-js';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useOAuthFlow, useRedirectIfAuthenticated } from '@/features/auth/hooks';
 import { isValidReturnPath } from '@/features/auth/utils/pkce';
@@ -24,17 +23,11 @@ function LoginContent() {
   const router = useRouter();
 
   const handleOAuthLogin = () => {
-    // PostHog: Track OAuth login initiation
-    posthog.capture('oauth_login_initiated');
     initiateOAuth();
   };
 
   const handlePATSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // PostHog: Track PAT login initiation
-    posthog.capture('pat_login_initiated');
-
     void (async () => {
       const success = await validateToken(tokenInput);
       if (success) {

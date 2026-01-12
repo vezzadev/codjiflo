@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Keyboard } from 'lucide-react';
-import posthog from 'posthog-js';
 import { usePRStore, useDocumentTitle } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
@@ -55,10 +54,6 @@ function PullRequestContent({ params }: PRPageProps) {
           !target.isContentEditable
         ) {
           e.preventDefault();
-          // PostHog: Track keyboard shortcuts modal opened via keyboard
-          posthog.capture('keyboard_shortcuts_opened', {
-            trigger: 'keyboard',
-          });
           setShowShortcuts(true);
         }
       }
@@ -177,13 +172,7 @@ function PullRequestContent({ params }: PRPageProps) {
         }
         rightContent={
           <button
-            onClick={() => {
-              // PostHog: Track keyboard shortcuts modal opened via button
-              posthog.capture('keyboard_shortcuts_opened', {
-                trigger: 'button',
-              });
-              setShowShortcuts(true);
-            }}
+            onClick={() => setShowShortcuts(true)}
             className="btn-nav"
             aria-label="Show keyboard shortcuts"
             style={{ marginRight: '8px' }}
