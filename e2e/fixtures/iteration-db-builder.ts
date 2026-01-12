@@ -10,62 +10,20 @@ import Database from "better-sqlite3";
 import { createHash } from "crypto";
 import { computeLineDiff, lineDiffsToSpanMappings } from "@codjiflo/diff-engine";
 import { parsePatch, applyPatch as applyParsedPatch } from "./patch-parser";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
-// Inline schema to avoid import resolution issues with Playwright
-// This matches action/src/db/schema.ts SCHEMA_SQL
-const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS schema_meta (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
+// Load schema from SQL file to avoid duplication
+// This matches action/src/db/schema.sql
+const SCHEMA_VERSION = 2;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const schemaTemplate = readFileSync(
+  join(dirname(dirname(__dirname)), 'action', 'src', 'db', 'schema.sql'),
+  'utf-8'
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('version', '2');
-CREATE TABLE IF NOT EXISTS iterations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  revision INTEGER NOT NULL UNIQUE,
-  head_sha TEXT NOT NULL,
-  base_sha TEXT NOT NULL,
-  before_sha TEXT,
-  author TEXT,
-  created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS file_artifacts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  change_tracking_id TEXT NOT NULL UNIQUE
-);
-CREATE TABLE IF NOT EXISTS content_blobs (
-  content_hash TEXT PRIMARY KEY,
-  content TEXT NOT NULL,
-  size_bytes INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS artifact_snapshots (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),
-  snapshot_index INTEGER NOT NULL,
-  file_path TEXT,
-  content_hash TEXT REFERENCES content_blobs(content_hash),
-  UNIQUE(artifact_id, snapshot_index)
-);
-CREATE TABLE IF NOT EXISTS span_trackers (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),
-  left_snapshot_index INTEGER NOT NULL,
-  right_snapshot_index INTEGER NOT NULL,
-  UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)
-);
-CREATE TABLE IF NOT EXISTS span_mappings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tracker_id INTEGER NOT NULL REFERENCES span_trackers(id),
-  left_line_start INTEGER,
-  left_line_end INTEGER,
-  right_line_start INTEGER,
-  right_line_end INTEGER,
-  mapping_type TEXT NOT NULL CHECK(mapping_type IN ('unchanged', 'modified', 'deleted', 'added'))
-);
-CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots(artifact_id);
-CREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);
-CREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);
-CREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);
-`;
+const SCHEMA_SQL = schemaTemplate.replace('{{SCHEMA_VERSION}}', String(SCHEMA_VERSION));
 
 // ============================================================================
 // Types
