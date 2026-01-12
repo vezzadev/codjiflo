@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import posthog from 'posthog-js';
 import { githubBackends, GitHubAPIError } from '@/api';
 import type { DiffState, DiffViewConfig } from '../types';
 
@@ -55,17 +54,6 @@ export const useDiffStore = create<DiffState>()(
         // Note: In iteration mode, artifact-only files may have indices >= GitHub files.length
         // DiffView handles missing files gracefully via useIterationAwareFiles
         if (index === PR_DESCRIPTION_INDEX || index >= 0) {
-          const { files } = get();
-          const file = index >= 0 && index < files.length ? files[index] : null;
-
-          // PostHog: Track file selection
-          posthog.capture('file_selected', {
-            file_index: index,
-            is_pr_description: index === PR_DESCRIPTION_INDEX,
-            filename: file?.filename ?? null,
-            change_type: file?.status ?? null,
-          });
-
           set({ selectedFileIndex: index, currentChangeIndex: -1 });
         }
       },
@@ -88,11 +76,6 @@ export const useDiffStore = create<DiffState>()(
 
       // View configuration actions (S-3.3)
       setViewMode: (mode) => {
-        // PostHog: Track diff view mode change
-        posthog.capture('diff_view_mode_changed', {
-          view_mode: mode,
-        });
-
         set((state) => ({
           viewConfig: { ...state.viewConfig, mode },
         }));
