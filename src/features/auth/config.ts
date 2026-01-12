@@ -15,9 +15,17 @@ export const oauthConfig = {
    */
   get redirectUri(): string {
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const appUrl =
-      envAppUrl ??
-      (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined);
+    let appUrl = envAppUrl;
+
+    if (!appUrl && process.env.NODE_ENV === 'development') {
+      // In development, use browser's actual origin to support any port
+      if (typeof window !== 'undefined') {
+        appUrl = window.location.origin;
+      } else {
+        // Server-side fallback during dev
+        appUrl = 'http://localhost:3000';
+      }
+    }
 
     if (!appUrl) {
       throw new Error(
