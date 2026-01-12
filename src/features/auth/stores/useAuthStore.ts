@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import posthog from 'posthog-js';
 import { oauthConfig } from '../config';
 
 type AuthMethod = 'oauth' | 'pat' | null;
@@ -83,14 +84,19 @@ export const useAuthStore = create<AuthState>()(
                 authMethod: 'pat',
             }),
 
-            logout: () => set({
-                token: null,
-                refreshToken: null,
-                tokenExpiresAt: null,
-                authMethod: null,
-                isAuthenticated: false,
-                error: null,
-            }),
+            logout: () => {
+                // PostHog: Reset user identity on logout
+                posthog.reset();
+
+                set({
+                    token: null,
+                    refreshToken: null,
+                    tokenExpiresAt: null,
+                    authMethod: null,
+                    isAuthenticated: false,
+                    error: null,
+                });
+            },
 
             clearError: () => set({ error: null }),
 
@@ -115,12 +121,25 @@ export const useAuthStore = create<AuthState>()(
                         isValidating: false,
                         authMethod: 'pat',
                     });
+
+                    // PostHog: Track successful PAT login
+                    posthog.capture('login_success', {
+                        auth_method: 'pat',
+                    });
+
                     return true;
                 } else {
                     set({
                         error: 'Authentication failed. Please check your token.',
                         isValidating: false,
                     });
+
+                    // PostHog: Track failed PAT login
+                    posthog.capture('login_failed', {
+                        auth_method: 'pat',
+                        failure_reason: 'invalid_token',
+                    });
+
                     return false;
                 }
             },
@@ -147,6 +166,13 @@ export const useAuthStore = create<AuthState>()(
                             error: data.error_description ?? data.error,
                             isValidating: false,
                         });
+
+                        // PostHog: Track failed OAuth login
+                        posthog.capture('login_failed', {
+                            auth_method: 'oauth',
+                            failure_reason: data.error,
+                        });
+
                         return false;
                     }
 
@@ -155,6 +181,13 @@ export const useAuthStore = create<AuthState>()(
                             error: 'No access token received',
                             isValidating: false,
                         });
+
+                        // PostHog: Track failed OAuth login
+                        posthog.capture('login_failed', {
+                            auth_method: 'oauth',
+                            failure_reason: 'no_access_token',
+                        });
+
                         return false;
                     }
 
@@ -171,9 +204,22 @@ export const useAuthStore = create<AuthState>()(
                         isValidating: false,
                     });
 
+                    // PostHog: Track successful OAuth login
+                    posthog.capture('login_success', {
+                        auth_method: 'oauth',
+                    });
+
                     return true;
                 } catch (err) {
                     console.error('OAuth callback error:', err);
+
+                    // PostHog: Track OAuth error and capture exception
+                    posthog.capture('login_failed', {
+                        auth_method: 'oauth',
+                        failure_reason: 'exception',
+                    });
+                    posthog.captureException(err);
+
                     set({
                         error: 'Failed to complete authentication',
                         isValidating: false,

@@ -33,6 +33,8 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "next": "^16.1.1",
+    "posthog-js": "^1.318.1",
+    "posthog-node": "^5.20.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
