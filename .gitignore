@@ -154,3 +154,6 @@ storybook-static/
 .env*.local
 # SQL.js WASM files (copied from node_modules at build time)
 public/sql-wasm/
+
+# Claude Code temporary files
+tmpclaude-*
