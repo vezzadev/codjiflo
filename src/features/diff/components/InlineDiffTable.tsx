@@ -35,7 +35,7 @@ export interface InlineDiffTableProps {
 }
 
 /**
- * Renders a inline diff view as a table.
+ * Renders an inline diff view as a table.
  *
  * Features:
  * - Content filtering (left/both/right)
