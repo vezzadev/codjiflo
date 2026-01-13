@@ -62,7 +62,7 @@ const mockDiffPipeline = {
   diffLines: [],
   alignedLines: [],
   language: 'typescript',
-  viewMode: 'unified' as const,
+  viewMode: 'inline' as const,
   showWhitespace: false,
   contentFilter: 'both' as const,
   lineNumberMode: 'both' as const,
@@ -122,7 +122,7 @@ const mockDefaultCommentsState = {
 
 // Default viewConfig for all tests
 const mockDefaultViewConfig = {
-  mode: 'unified' as const,
+  mode: 'inline' as const,
   filter: 'both' as const,
   showFullFile: false,
   showWhitespace: false,

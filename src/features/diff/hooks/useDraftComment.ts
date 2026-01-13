@@ -97,7 +97,7 @@ export function useDraftComment(): UseDraftCommentReturn {
       let targetLine: ParsedDiffLine | null = null;
       let lineNumber: number | null = null;
 
-      if (viewMode === 'unified') {
+      if (viewMode === 'inline') {
         targetLine = diffLines[draftLineIndex] ?? null;
         lineNumber =
           draftSide === 'LEFT'

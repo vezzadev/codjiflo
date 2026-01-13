@@ -11,7 +11,7 @@ import type { DiffDisplayOutput, DiffSideFilterOutput } from './types';
 import type { ParsedDiffLine, AlignedDiffLine, ContentFilter } from '../../types';
 
 /**
- * Filter unified diff lines by content filter.
+ * Filter inline diff lines by content filter.
  * - left: show only deletions (keep headers and context)
  * - right: show only additions (keep headers and context)
  * - both: no filtering
@@ -62,7 +62,7 @@ function filterAlignedLines(
 export function useDiffSideFilter(display: DiffDisplayOutput): DiffSideFilterOutput {
   const { diffLines, alignedLines, contentFilter } = display;
 
-  // Filter diff lines for unified view
+  // Filter diff lines for inline view
   const filteredDiffLines = useMemo(
     () => filterDiffLines(diffLines, contentFilter),
     [diffLines, contentFilter]

@@ -1,7 +1,7 @@
 import type { ParsedDiffLine } from '../types';
 
 /**
- * Parses a git unified diff patch into structured lines
+ * Parses a git inline diff patch into structured lines
  * @param patch - The patch string from GitHub API
  * @returns Array of parsed diff lines with line numbers and types
  */

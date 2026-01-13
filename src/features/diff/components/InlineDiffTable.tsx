@@ -1,7 +1,7 @@
 /**
- * Unified Diff Table Component
+ * Inline Diff Table Component
  *
- * Renders a non-virtualized unified diff view (for files under 500 lines).
+ * Renders a non-virtualized inline diff view (for files under 500 lines).
  * Supports content filtering, comments, and line-level interactions.
  */
 
@@ -11,7 +11,7 @@ import { CommentEditor, CommentThread } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
 import type { ParsedDiffLine, ContentFilter } from '../types';
 
-export interface UnifiedDiffTableProps {
+export interface InlineDiffTableProps {
   diffLines: ParsedDiffLine[];
   language: string;
   threadsByLineAndSide: Map<string, ReviewThread[]>;
@@ -35,7 +35,7 @@ export interface UnifiedDiffTableProps {
 }
 
 /**
- * Renders a unified diff view as a table.
+ * Renders a inline diff view as a table.
  *
  * Features:
  * - Content filtering (left/both/right)
@@ -43,7 +43,7 @@ export interface UnifiedDiffTableProps {
  * - Draft comment editor
  * - Whitespace visibility toggle
  */
-export function UnifiedDiffTable({
+export function InlineDiffTable({
   diffLines,
   language,
   threadsByLineAndSide,
@@ -62,7 +62,7 @@ export function UnifiedDiffTable({
   onSubmitDraft,
   showWhitespace,
   contentFilter,
-}: UnifiedDiffTableProps) {
+}: InlineDiffTableProps) {
   // Filter lines based on content filter (AC-3.3.11-13)
   const filteredLines = useMemo(() => {
     if (contentFilter === 'both') return diffLines;

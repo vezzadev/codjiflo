@@ -41,7 +41,7 @@ export function useDiffNavigation(display: DiffDisplayOutput): DiffNavigationOut
       // Use aligned lines for side-by-side mode
       return calculateAlignedHunkIndices(display.alignedLines);
     } else {
-      // Use diffLines for inline/unified mode
+      // Use diffLines for inline/inline mode
       return calculateHunkIndices(display.diffLines);
     }
   }, [isShowingDescription, display.isFullFileChange, display.viewMode, display.diffLines, display.alignedLines]);

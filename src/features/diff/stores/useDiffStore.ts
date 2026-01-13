@@ -8,7 +8,7 @@ export const PR_DESCRIPTION_INDEX = -1;
 
 /** Default view configuration */
 const DEFAULT_VIEW_CONFIG: DiffViewConfig = {
-  mode: 'unified',
+  mode: 'inline',
   filter: 'both',
   showFullFile: false,
   showWhitespace: false,

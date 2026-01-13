@@ -4,7 +4,7 @@ import type { FileChange } from '@/api/types';
 // View Mode Types (S-3.3)
 // ============================================================================
 
-export type DiffViewMode = 'unified' | 'split';
+export type DiffViewMode = 'inline' | 'split';
 export type ContentFilter = 'both' | 'left' | 'right';
 
 export interface DiffViewConfig {

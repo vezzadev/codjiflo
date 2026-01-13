@@ -30,8 +30,8 @@ import {
  *
  *   if (pipeline._isLoadingFullFile) return <Loading />;
  *
- *   return pipeline.viewMode === 'unified'
- *     ? <UnifiedDiffTable diffLines={pipeline.diffLines} ... />
+ *   return pipeline.viewMode === 'inline'
+ *     ? <InlineDiffTable diffLines={pipeline.diffLines} ... />
  *     : <SideBySideDiffView alignedLines={pipeline.alignedLines} ... />;
  * }
  * ```
@@ -43,7 +43,7 @@ export function useDiffPipeline(): DiffPipelineOutput {
   // Stage 2: Apply content filter (full file vs changes only)
   const filtered = useDiffFilter(source);
 
-  // Stage 3: Shape data for view mode (unified vs split)
+  // Stage 3: Shape data for view mode (inline vs split)
   const shaped = useDiffShape(filtered);
 
   // Stage 4: Apply display preferences (whitespace, content filter)

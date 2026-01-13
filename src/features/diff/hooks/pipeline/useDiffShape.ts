@@ -1,8 +1,8 @@
 /**
  * Pipeline Stage 3: View Shape
  *
- * Shapes data for unified vs side-by-side rendering:
- * - Unified: Returns diffLines as-is
+ * Shapes data for inline vs side-by-side rendering:
+ * - Inline: Returns diffLines as-is
  * - Split: Computes alignedLines for side-by-side view
  */
 
@@ -15,7 +15,7 @@ import type { DiffFilterOutput, DiffShapeOutput } from './types';
  * Hook to shape diff data for the current view mode.
  *
  * Branches:
- * - Unified: Single column view, uses diffLines directly
+ * - Inline: Single column view, uses diffLines directly
  * - Split: Side-by-side view, computes or uses pre-computed alignedLines
  */
 export function useDiffShape(filtered: DiffFilterOutput): DiffShapeOutput {
@@ -23,7 +23,7 @@ export function useDiffShape(filtered: DiffFilterOutput): DiffShapeOutput {
 
   // Compute aligned lines for side-by-side view
   const alignedLines = useMemo(() => {
-    // Not needed for unified mode
+    // Not needed for inline mode
     if (viewConfig.mode !== 'split') {
       return [];
     }
