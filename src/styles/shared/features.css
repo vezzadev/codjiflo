@@ -58,6 +58,19 @@
   font-size: 13px;
 }
 
+.pr-description {
+  padding: 16px;
+}
+
+.pr-description-empty {
+  color: var(--control-disabled-fg);
+  font-style: italic;
+}
+
+.pr-description-content {
+  color: var(--main-fg);
+}
+
 /* ============================================
    DIFF TABLE (Unified/Inline mode)
    ============================================ */
