@@ -71,10 +71,10 @@ export interface DiffFilterOutput {
 
 /**
  * Output of useDiffShape hook
- * Branches: unified (single column) vs split (aligned left/right)
+ * Branches: inline (single column) vs split (aligned left/right)
  */
 export interface DiffShapeOutput extends DiffFilterOutput {
-  /** Aligned line pairs for side-by-side view (empty in unified mode) */
+  /** Aligned line pairs for side-by-side view (empty in inline mode) */
   alignedLines: AlignedDiffLine[];
   /** Current view mode */
   viewMode: DiffViewMode;

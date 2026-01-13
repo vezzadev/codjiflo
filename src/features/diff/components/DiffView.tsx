@@ -2,7 +2,7 @@
  * Main Diff View Component
  *
  * Orchestrates diff rendering using the pipeline architecture.
- * S-1.4: Unified view
+ * S-1.4: Inline view
  * S-3.2: Side-by-side view
  * S-3.3: View mode toggles
  */
@@ -17,9 +17,9 @@ import {
 } from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
 import { SideBySideDiffView } from './SideBySideDiffView';
-import { VirtualizedDiffTable } from './VirtualizedDiffTable';
+import { VirtualizedInlineDiffTable } from './VirtualizedInlineDiffTable';
 import { VirtualizedSideBySideDiffView } from './VirtualizedSideBySideDiffView';
-import { UnifiedDiffTable } from './UnifiedDiffTable';
+import { InlineDiffTable } from './InlineDiffTable';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { useCommentsStore } from '@/features/comments';
@@ -31,7 +31,7 @@ import { IterationSelector } from '@/features/iterations';
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
 /**
- * Main diff view component with support for unified and side-by-side modes.
+ * Main diff view component with support for inline and side-by-side modes.
  */
 export function DiffView() {
   const { files, selectedFileIndex, isLoading, currentChangeIndex, resetChangeIndex, setTotalChangeCount } = useDiffStore();
@@ -128,8 +128,8 @@ export function DiffView() {
     return () => cancelAnimationFrame(frameId);
   }, [currentChangeIndex, isShowingDescription, pipeline.isVirtualized, scrollContainerRef]);
 
-  // Handler for starting comment (unified view only shows RIGHT side)
-  const handleStartCommentUnified = useCallback(
+  // Handler for starting comment (inline view only shows RIGHT side)
+  const handleStartCommentInline = useCallback(
     (index: number) => {
       const targetLine = pipeline.diffLines[index];
       const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
@@ -218,7 +218,7 @@ export function DiffView() {
       )}
 
       {/* Diff content */}
-      {pipeline.viewMode === 'unified' ? (
+      {pipeline.viewMode === 'inline' ? (
         <div
           ref={containerRefCallback}
           className="diff-content-area"
@@ -227,7 +227,7 @@ export function DiffView() {
           tabIndex={0}
         >
           {pipeline.isVirtualized ? (
-            <VirtualizedDiffTable
+            <VirtualizedInlineDiffTable
               key={pipeline.filename ?? 'diff-table-virtualized'}
               diffLines={pipeline.diffLines}
               language={pipeline.language}
@@ -242,7 +242,7 @@ export function DiffView() {
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={handleStartCommentUnified}
+              onStartComment={handleStartCommentInline}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
@@ -251,7 +251,7 @@ export function DiffView() {
               scrollToRowIndex={pipeline.scrollToRowIndex}
             />
           ) : (
-            <UnifiedDiffTable
+            <InlineDiffTable
               key={pipeline.filename ?? 'diff-table'}
               diffLines={pipeline.diffLines}
               language={pipeline.language}
@@ -265,7 +265,7 @@ export function DiffView() {
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={handleStartCommentUnified}
+              onStartComment={handleStartCommentInline}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}

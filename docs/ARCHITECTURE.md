@@ -261,7 +261,7 @@ Source → Filter → Shape → Display → SideFilter → Navigation → Commen
 |-------|------|----------------|
 | 1 | `useDiffSource` | Get raw diff from GitHub API or iteration artifact |
 | 2 | `useDiffFilter` | Apply full-file vs changes-only filtering |
-| 3 | `useDiffShape` | Shape data for unified vs side-by-side |
+| 3 | `useDiffShape` | Shape data for inline vs side-by-side |
 | 4 | `useDiffDisplay` | Apply display options (whitespace, line numbers) |
 | 5 | `useDiffSideFilter` | Filter by side (left/right/both) |
 | 6 | `useDiffNavigation` | Calculate hunk indices and scroll targets |

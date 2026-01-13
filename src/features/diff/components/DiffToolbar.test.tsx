@@ -22,7 +22,7 @@ describe('DiffToolbar', () => {
     // Reset store to defaults
     useDiffStore.setState({
       viewConfig: {
-        mode: 'unified',
+        mode: 'inline',
         filter: 'both',
         showFullFile: false,
         showWhitespace: false,
@@ -65,7 +65,7 @@ describe('DiffToolbar', () => {
   });
 
   describe('view mode toggle', () => {
-    it('toggles to split mode when clicking button in unified mode', async () => {
+    it('toggles to split mode when clicking button in inline mode', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
@@ -86,7 +86,7 @@ describe('DiffToolbar', () => {
       const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
       await user.click(toggleButton);
 
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
     it('shows SxS label when in split mode', () => {
@@ -100,7 +100,7 @@ describe('DiffToolbar', () => {
   });
 
   describe('content filter radiogroup', () => {
-    it('shows content filter in unified mode', () => {
+    it('shows content filter in inline mode', () => {
       render(<DiffToolbar />);
       expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
@@ -218,7 +218,7 @@ describe('DiffToolbar', () => {
 
       fireEvent.keyDown(window, { key: 'i' });
 
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
     it('pressing X switches to split mode', () => {
@@ -241,7 +241,7 @@ describe('DiffToolbar', () => {
       input.focus();
       fireEvent.keyDown(input, { key: 'x' });
 
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
     it('ignores keyboard shortcuts when typing in textarea', () => {
@@ -256,20 +256,20 @@ describe('DiffToolbar', () => {
       textarea.focus();
       fireEvent.keyDown(textarea, { key: 'x' });
 
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
     it('ignores keyboard shortcuts with modifier keys', () => {
       render(<DiffToolbar />);
 
       fireEvent.keyDown(window, { key: 'x', ctrlKey: true });
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
 
       fireEvent.keyDown(window, { key: 'x', metaKey: true });
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
 
       fireEvent.keyDown(window, { key: 'x', altKey: true });
-      expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+      expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
   });
 

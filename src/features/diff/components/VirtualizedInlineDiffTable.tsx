@@ -16,7 +16,7 @@ const LINE_HEIGHT = 23;
 /** Number of rows to render outside the visible area */
 const OVERSCAN_COUNT = 10;
 
-interface VirtualizedDiffTableProps {
+interface VirtualizedInlineDiffTableProps {
   diffLines: ParsedDiffLine[];
   language: string;
   containerHeight: number;
@@ -155,7 +155,7 @@ function DiffRow({
  * Virtualized diff table using react-window
  * Used when diff has more than 500 lines for better performance
  */
-export function VirtualizedDiffTable({
+export function VirtualizedInlineDiffTable({
   diffLines,
   language,
   containerHeight,
@@ -176,7 +176,7 @@ export function VirtualizedDiffTable({
   showWhitespace,
   lineNumberMode,
   scrollToRowIndex,
-}: VirtualizedDiffTableProps) {
+}: VirtualizedInlineDiffTableProps) {
   const listRef = useListRef(null);
 
   // Scroll to row when scrollToRowIndex changes (J/K navigation)

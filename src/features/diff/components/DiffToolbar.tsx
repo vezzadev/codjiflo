@@ -268,7 +268,7 @@ export function DiffToolbar() {
         // View mode shortcuts
         case 'i':
           event.preventDefault();
-          setViewMode('unified');
+          setViewMode('inline');
           break;
         case 'x':
           // X for "switch" to side-by-side view
@@ -321,9 +321,9 @@ export function DiffToolbar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Toggle between unified and split view
+  // Toggle between inline and split view
   const handleViewModeToggle = useCallback(() => {
-    setViewMode(viewConfig.mode === 'unified' ? 'split' : 'unified');
+    setViewMode(viewConfig.mode === 'inline' ? 'split' : 'inline');
   }, [viewConfig.mode, setViewMode]);
 
   return (

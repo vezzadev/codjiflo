@@ -6,7 +6,7 @@ describe('parsePatch', () => {
     expect(parsePatch('')).toEqual([]);
   });
 
-  it('parses a simple unified diff', () => {
+  it('parses a simple inline diff', () => {
     const patch = `@@ -1,3 +1,4 @@
  line 1
 -removed line

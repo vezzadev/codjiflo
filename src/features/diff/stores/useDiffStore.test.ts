@@ -293,7 +293,7 @@ describe('useDiffStore', () => {
       });
 
       it('normalizes out-of-range index after view mode change', () => {
-        // Simulate: user navigated to index 5 in unified mode, then switched to split mode with only 3 hunks
+        // Simulate: user navigated to index 5 in inline mode, then switched to split mode with only 3 hunks
         useDiffStore.setState({ currentChangeIndex: 5, totalChangeCount: 3 });
 
         useDiffStore.getState().scrollToNextChange();
@@ -329,7 +329,7 @@ describe('useDiffStore', () => {
       });
 
       it('normalizes out-of-range index after view mode change', () => {
-        // Simulate: user navigated to index 5 in unified mode, then switched to split mode with only 3 hunks
+        // Simulate: user navigated to index 5 in inline mode, then switched to split mode with only 3 hunks
         useDiffStore.setState({ currentChangeIndex: 5, totalChangeCount: 3 });
 
         useDiffStore.getState().scrollToPreviousChange();
@@ -365,7 +365,7 @@ describe('useDiffStore', () => {
       // Reset to defaults
       useDiffStore.setState({
         viewConfig: {
-          mode: 'unified',
+          mode: 'inline',
           filter: 'both',
           showFullFile: false,
           showWhitespace: false,
@@ -379,18 +379,18 @@ describe('useDiffStore', () => {
         expect(useDiffStore.getState().viewConfig.mode).toBe('split');
       });
 
-      it('sets view mode to unified', () => {
+      it('sets view mode to inline', () => {
         useDiffStore.setState({
           viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
         });
-        useDiffStore.getState().setViewMode('unified');
-        expect(useDiffStore.getState().viewConfig.mode).toBe('unified');
+        useDiffStore.getState().setViewMode('inline');
+        expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
       });
 
       it('preserves other viewConfig properties', () => {
         useDiffStore.setState({
           viewConfig: {
-            mode: 'unified',
+            mode: 'inline',
             filter: 'left',
             showFullFile: true,
             showWhitespace: true,

@@ -352,7 +352,7 @@ describe('DiffLine', () => {
       expect(screen.queryByText('5')).not.toBeInTheDocument();
     });
 
-    it('shows both line numbers in unified mode (no side prop)', () => {
+    it('shows both line numbers in inline mode (no side prop)', () => {
       const line: ParsedDiffLine = {
         type: 'context',
         content: 'unchanged',
