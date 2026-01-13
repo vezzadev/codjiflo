@@ -5,7 +5,7 @@ import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
-import { useIterationDiff, useIterationAwareFiles } from '../hooks';
+import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight } from '../hooks';
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -57,9 +57,53 @@ const mockIterationAwareFiles = {
   totalFilesInPR: 0,
 };
 
+// Mock useDiffPipeline hook
+const mockDiffPipeline = {
+  diffLines: [],
+  alignedLines: [],
+  language: 'typescript',
+  viewMode: 'unified' as const,
+  showWhitespace: false,
+  contentFilter: 'both' as const,
+  lineNumberMode: 'both' as const,
+  hunkIndices: [],
+  scrollToRowIndex: undefined,
+  isVirtualized: false,
+  isFullFileChange: false,
+  threadsByLineAndSide: new Map(),
+  filename: undefined as string | undefined,
+  isIterationMode: false,
+  sourceAlignedLines: null,
+  _isLoadingFullFile: false,
+  _fullFileError: null as string | null,
+};
+
+// Mock useDraftComment hook
+const mockDraftComment = {
+  draftLineIndex: null as number | null,
+  draftSide: null as 'LEFT' | 'RIGHT' | null,
+  draftBody: '',
+  isSubmitting: false,
+  submitError: null as string | null,
+  startComment: vi.fn(),
+  cancelDraft: vi.fn(),
+  setDraftBody: vi.fn(),
+  submitComment: vi.fn().mockResolvedValue(undefined),
+};
+
+// Mock useContainerHeight hook
+const mockContainerHeight = {
+  containerHeight: 600,
+  containerRefCallback: vi.fn(),
+  scrollContainerRef: { current: null },
+};
+
 vi.mock('../hooks', () => ({
   useIterationDiff: vi.fn(() => mockIterationDiff),
   useIterationAwareFiles: vi.fn(() => mockIterationAwareFiles),
+  useDiffPipeline: vi.fn(() => mockDiffPipeline),
+  useDraftComment: vi.fn(() => mockDraftComment),
+  useContainerHeight: vi.fn(() => mockContainerHeight),
 }));
 
 const mockDefaultCommentsState = {
@@ -104,6 +148,12 @@ describe('DiffView', () => {
       currentPR: null,
       isLoading: false,
     });
+    // Reset pipeline hooks to defaults
+    vi.mocked(useDiffPipeline).mockReturnValue({ ...mockDiffPipeline });
+    vi.mocked(useDraftComment).mockReturnValue({ ...mockDraftComment });
+    vi.mocked(useContainerHeight).mockReturnValue({ ...mockContainerHeight });
+    vi.mocked(useIterationDiff).mockReturnValue({ ...mockIterationDiff });
+    vi.mocked(useIterationAwareFiles).mockReturnValue({ ...mockIterationAwareFiles });
   });
 
   it('shows loading state', () => {
@@ -163,6 +213,15 @@ describe('DiffView', () => {
       ],
     });
 
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+    });
+
     render(<DiffView />);
 
     expect(screen.getByRole('heading', { name: 'src/index.ts' })).toBeInTheDocument();
@@ -182,6 +241,12 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
+    });
+
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [{ type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 }],
     });
 
     vi.mocked(useCommentsStore).mockReturnValue({
@@ -209,6 +274,12 @@ describe('DiffView', () => {
       ],
     });
 
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [{ type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 }],
+    });
+
     vi.mocked(useCommentsStore).mockReturnValue({
       ...mockDefaultCommentsState,
       error: 'Failed to load comments',
@@ -234,6 +305,12 @@ describe('DiffView', () => {
       ],
     });
 
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [{ type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 }],
+    });
+
     vi.mocked(useCommentsStore).mockReturnValue({
       ...mockDefaultCommentsState,
       announcement: 'Comment posted.',
@@ -245,6 +322,7 @@ describe('DiffView', () => {
   });
 
   it('opens comment editor when clicking add comment button', async () => {
+    const mockStartComment = vi.fn();
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -257,6 +335,20 @@ describe('DiffView', () => {
           patch: '@@ -1,3 +1,4 @@\n context\n+added line',
         },
       ],
+    });
+
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+    });
+
+    vi.mocked(useDraftComment).mockReturnValue({
+      ...mockDraftComment,
+      startComment: mockStartComment,
     });
 
     render(<DiffView />);
@@ -270,14 +362,14 @@ describe('DiffView', () => {
       fireEvent.click(firstButton);
     }
 
-    // CommentEditor should now be visible
+    // Draft hook should have been called to start comment
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(mockStartComment).toHaveBeenCalled();
     });
   });
 
   it('submits a comment successfully', async () => {
-    const mockAddComment = vi.fn().mockResolvedValue(undefined);
+    const mockSubmitComment = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -292,34 +384,36 @@ describe('DiffView', () => {
       ],
     });
 
-    vi.mocked(useCommentsStore).mockReturnValue({
-      ...mockDefaultCommentsState,
-      addComment: mockAddComment,
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+    });
+
+    vi.mocked(useDraftComment).mockReturnValue({
+      ...mockDraftComment,
+      draftLineIndex: 1,
+      draftSide: 'RIGHT',
+      draftBody: 'Test comment',
+      submitComment: mockSubmitComment,
     });
 
     render(<DiffView />);
 
-    // Click add comment button on a code line (index 1), not header
-    const addCommentButtons = screen.getAllByRole('button', { name: /add comment/i });
-    const codeLineButton = addCommentButtons[1];
-    if (codeLineButton) {
-      fireEvent.click(codeLineButton);
-    }
-
-    // Type a comment
-    const textarea = await screen.findByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Test comment' } });
-
-    // Submit the comment (button is named "Comment")
+    // Submit button should be visible when draft is active
     const submitButton = screen.getByRole('button', { name: /^comment$/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockAddComment).toHaveBeenCalled();
+      expect(mockSubmitComment).toHaveBeenCalled();
     });
   });
 
   it('cancels comment editing', async () => {
+    const mockCancelDraft = vi.fn();
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -334,16 +428,26 @@ describe('DiffView', () => {
       ],
     });
 
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+    });
+
+    vi.mocked(useDraftComment).mockReturnValue({
+      ...mockDraftComment,
+      draftLineIndex: 1,
+      draftSide: 'RIGHT',
+      draftBody: '',
+      cancelDraft: mockCancelDraft,
+    });
+
     render(<DiffView />);
 
-    // Click add comment button
-    const addCommentButtons = screen.getAllByRole('button', { name: /add comment/i });
-    const firstButton = addCommentButtons[0];
-    if (firstButton) {
-      fireEvent.click(firstButton);
-    }
-
-    // Wait for editor to appear
+    // With draft active, editor should be showing
     const textarea = await screen.findByRole('textbox');
     expect(textarea).toBeInTheDocument();
 
@@ -351,14 +455,13 @@ describe('DiffView', () => {
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
     fireEvent.click(cancelButton);
 
-    // Editor should be gone
+    // Should call cancelDraft
     await waitFor(() => {
-      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(mockCancelDraft).toHaveBeenCalled();
     });
   });
 
   it('handles comment submission error', async () => {
-    const mockAddComment = vi.fn().mockRejectedValue(new Error('Network error'));
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -373,34 +476,54 @@ describe('DiffView', () => {
       ],
     });
 
-    vi.mocked(useCommentsStore).mockReturnValue({
-      ...mockDefaultCommentsState,
-      addComment: mockAddComment,
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+    });
+
+    // Configure draft with an error state
+    vi.mocked(useDraftComment).mockReturnValue({
+      ...mockDraftComment,
+      draftLineIndex: 1,
+      draftSide: 'RIGHT',
+      draftBody: 'Test comment',
+      submitError: 'Network error',
     });
 
     render(<DiffView />);
 
-    // Click add comment button
-    const addCommentButtons = screen.getAllByRole('button', { name: /add comment/i });
-    const codeLineButton = addCommentButtons[1];
-    if (codeLineButton) {
-      fireEvent.click(codeLineButton);
-    }
-
-    // Type and submit a comment
-    const textarea = await screen.findByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Test comment' } });
-
-    const submitButton = screen.getByRole('button', { name: /^comment$/i });
-    fireEvent.click(submitButton);
-
-    // Error message should appear
+    // Error message should appear in the comment editor
     await waitFor(() => {
       expect(screen.getByText(/Network error/i)).toBeInTheDocument();
     });
   });
 
   it('renders existing comment threads', () => {
+    const thread = {
+      id: 'thread-1',
+      path: 'src/index.ts',
+      line: 2,
+      side: 'RIGHT' as const,
+      isResolved: false,
+      comments: [
+        {
+          id: 'comment-1',
+          body: 'This is a test comment',
+          author: { id: 'user-1', login: 'testuser', avatarUrl: 'https://example.com/avatar.png' },
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          path: 'src/index.ts',
+          line: 2,
+          side: 'RIGHT' as const,
+          position: 1,
+        },
+      ],
+    };
+
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -415,30 +538,23 @@ describe('DiffView', () => {
       ],
     });
 
+    // Configure pipeline with thread mapped to the correct line index
+    const threadMap = new Map<string, typeof thread[]>();
+    threadMap.set('1-RIGHT', [thread]); // index 1 is the addition line
+
+    vi.mocked(useDiffPipeline).mockReturnValue({
+      ...mockDiffPipeline,
+      filename: 'src/index.ts',
+      diffLines: [
+        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
+      ],
+      threadsByLineAndSide: threadMap,
+    });
+
     vi.mocked(useCommentsStore).mockReturnValue({
       ...mockDefaultCommentsState,
-      threads: [
-        {
-          id: 'thread-1',
-          path: 'src/index.ts',
-          line: 2,
-          side: 'RIGHT' as const,
-          isResolved: false,
-          comments: [
-            {
-              id: 'comment-1',
-              body: 'This is a test comment',
-              author: { id: 'user-1', login: 'testuser', avatarUrl: 'https://example.com/avatar.png' },
-              createdAt: new Date('2024-01-01'),
-              updatedAt: new Date('2024-01-01'),
-              path: 'src/index.ts',
-              line: 2,
-              side: 'RIGHT' as const,
-              position: 1,
-            },
-          ],
-        },
-      ],
+      threads: [thread],
     });
 
     render(<DiffView />);
@@ -546,6 +662,18 @@ describe('DiffView', () => {
         setTotalChangeCount,
       });
 
+      // Pipeline has hunkIndices for a modified file
+      vi.mocked(useDiffPipeline).mockReturnValue({
+        ...mockDiffPipeline,
+        filename: 'src/index.ts',
+        diffLines: [
+          { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
+          { type: 'deletion', content: '-old line', oldLineNumber: 2, newLineNumber: null },
+          { type: 'addition', content: '+new line', oldLineNumber: null, newLineNumber: 2 },
+        ],
+        hunkIndices: [1], // One hunk starting at index 1
+      });
+
       render(<DiffView />);
 
       // Should be called with a positive number (the actual hunk count)
@@ -596,6 +724,20 @@ describe('DiffView', () => {
           base: { path: 'src/new-file.ts', ref: 'base123', content: '// existing line\n// old line\n// another existing', lines: [], language: 'typescript' },
           head: { path: 'src/new-file.ts', ref: 'head456', content: '// existing line\n// new line\n// another existing', lines: [], language: 'typescript' },
         })),
+      });
+
+      // Pipeline configured for iteration mode with hunks enabled
+      vi.mocked(useDiffPipeline).mockReturnValue({
+        ...mockDiffPipeline,
+        filename: 'src/new-file.ts',
+        isIterationMode: true,
+        diffLines: [
+          { type: 'context', content: '// existing line', oldLineNumber: 1, newLineNumber: 1 },
+          { type: 'deletion', content: '// old line', oldLineNumber: 2, newLineNumber: null },
+          { type: 'addition', content: '// new line', oldLineNumber: null, newLineNumber: 2 },
+          { type: 'context', content: '// another existing', oldLineNumber: 3, newLineNumber: 3 },
+        ],
+        hunkIndices: [1], // One hunk starting at index 1 (the deletion/addition)
       });
 
       render(<DiffView />);
@@ -844,6 +986,17 @@ describe('DiffView', () => {
         ],
         isIterationMode: true,
         totalFilesInPR: 0,
+      });
+
+      // Configure pipeline with the artifact-only file's diff
+      vi.mocked(useDiffPipeline).mockReturnValue({
+        ...mockDiffPipeline,
+        filename: 'artifact-only.txt',
+        isIterationMode: true,
+        diffLines: [
+          { type: 'context', content: ' original content', oldLineNumber: 1, newLineNumber: null },
+          { type: 'addition', content: '+modified content', oldLineNumber: null, newLineNumber: 1 },
+        ],
       });
 
       render(<DiffView />);

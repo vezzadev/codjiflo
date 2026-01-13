@@ -1,59 +1,43 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { useDiffStore, useDiffContentStore, PR_DESCRIPTION_INDEX } from '../stores';
+/**
+ * Main Diff View Component
+ *
+ * Orchestrates diff rendering using the pipeline architecture.
+ * S-1.4: Unified view
+ * S-3.2: Side-by-side view
+ * S-3.3: View mode toggles
+ */
+
+import { useCallback, useEffect } from 'react';
+import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
-  parsePatch,
-  detectLanguage,
-  getDiffLinePosition,
-  alignDiffLines,
-  filterToChangesOnly,
-  filterAlignedToChangesOnly,
-  calculateHunkIndices,
-  calculateAlignedHunkIndices,
-} from '../utils';
-import { useIterationDiff, useIterationAwareFiles } from '../hooks';
-import { DiffLine } from './DiffLine';
+  useDiffPipeline,
+  useDraftComment,
+  useContainerHeight,
+  useIterationDiff,
+} from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
 import { SideBySideDiffView } from './SideBySideDiffView';
 import { VirtualizedDiffTable } from './VirtualizedDiffTable';
 import { VirtualizedSideBySideDiffView } from './VirtualizedSideBySideDiffView';
-import { Skeleton } from '@/components/ui';
-import { CommentEditor, CommentThread, useCommentsStore } from '@/features/comments';
-import type { ReviewThread } from '@/features/comments';
+import { UnifiedDiffTable } from './UnifiedDiffTable';
+import { DiffLoadingState } from './DiffLoadingState';
+import { DiffEmptyState } from './DiffEmptyState';
+import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
-import type { ParsedDiffLine, AlignedDiffLine, FullFileDiff } from '../types';
-import { FileChangeStatus } from '@/api/types';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
-/** Threshold for enabling virtualization (AC-3.1.12) */
-const VIRTUALIZATION_THRESHOLD = 500;
-
 /**
- * Main diff view component with support for unified and side-by-side modes
- * S-1.4: AC-1.4.1 through AC-1.4.10 (Unified view)
- * S-3.2: AC-3.2.1 through AC-3.2.9 (Side-by-side view)
- * S-3.3: AC-3.3.1 through AC-3.3.16 (View mode toggles)
+ * Main diff view component with support for unified and side-by-side modes.
  */
 export function DiffView() {
-  // useParams returns object with owner/repo from route, may be empty object in tests
-  const params = useParams<{ owner: string; repo: string }>();
-  const owner = (params as Record<string, string | undefined>).owner ?? '';
-  const repo = (params as Record<string, string | undefined>).repo ?? '';
-
-  const { files, selectedFileIndex, isLoading, viewConfig, currentChangeIndex, setTotalChangeCount, resetChangeIndex } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, currentChangeIndex, resetChangeIndex, setTotalChangeCount } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
-  const { computeFullFileDiff, isLoadingContent } = useDiffContentStore();
-
-  // Iteration-based diff for cross-iteration comparison
-  const { isIterationMode, getFileDiffByPath, selectedRange } = useIterationDiff();
-  // Iteration-aware file list (includes artifact-only files not in GitHub API)
-  const { files: iterationAwareFiles } = useIterationAwareFiles();
+  const { selectedRange } = useIterationDiff();
   const {
-    threads,
     isLoading: isLoadingComments,
     error: commentsError,
     announcement,
@@ -66,129 +50,19 @@ export function DiffView() {
     clearAnnouncement,
   } = useCommentsStore();
 
-  // Full file diff state
-  const [fullFileDiff, setFullFileDiff] = useState<FullFileDiff | null>(null);
-  const [fullFileError, setFullFileError] = useState<string | null>(null);
+  // Pipeline: all diff computation in one composable hook
+  const pipeline = useDiffPipeline();
 
-  // Draft comment state (shared between unified and SxS views)
-  const [draftLineIndex, setDraftLineIndex] = useState<number | null>(null);
-  const [draftSide, setDraftSide] = useState<'LEFT' | 'RIGHT' | null>(null);
-  const [draftBody, setDraftBody] = useState('');
-  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const isSubmittingRef = useRef(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Draft comment management
+  const draft = useDraftComment();
 
-  // Container height for virtualization
-  const [containerHeight, setContainerHeight] = useState(600);
+  // Virtualization support
+  const { containerHeight, containerRefCallback, scrollContainerRef } = useContainerHeight();
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
-  // In iteration mode, get selected file from iteration-aware files (includes artifact-only files)
-  // This handles files that exist in artifact but not in GitHub API (Issue #183)
-  const iterationSelectedFile = useMemo(() => {
-    if (!isIterationMode) return null;
-    return iterationAwareFiles.find(f => f.originalIndex === selectedFileIndex) ?? null;
-  }, [isIterationMode, iterationAwareFiles, selectedFileIndex]);
-
-  // Parse the patch and detect language
-  // In iteration mode, prefer filename from iteration-aware files
-  const patch = selectedFile?.patch ?? iterationSelectedFile?.patch;
-  const filename = iterationSelectedFile?.filename ?? selectedFile?.filename;
-
-  // Get iteration-based diff when in iteration mode
-  // selectedRange is accessed via getFileDiffByPath closure, so changes to it will
-  // trigger recomputation through the hook's internal memoization
-  const iterationDiff = useMemo((): FullFileDiff | null => {
-    if (!isIterationMode || !filename) {
-      return null;
-    }
-
-    return getFileDiffByPath(filename);
-  }, [isIterationMode, filename, getFileDiffByPath]);
-
-  const { diffLines, language } = useMemo(() => {
-    // Priority 1: Use iteration diff when in iteration mode (S-4.8)
-    if (isIterationMode && iterationDiff) {
-      // In iteration mode, respect the showFullFile toggle
-      // When showFullFile=false, filter to show only changes with context
-      const lines = viewConfig.showFullFile
-        ? iterationDiff.diffLines
-        : filterToChangesOnly(iterationDiff.diffLines);
-
-      return {
-        diffLines: lines,
-        language: detectLanguage(filename ?? ''),
-      };
-    }
-
-    // Priority 2: Use full file diff when available (AC-3.1.3-6)
-    if (viewConfig.showFullFile && fullFileDiff) {
-      return {
-        diffLines: fullFileDiff.diffLines,
-        language: detectLanguage(filename ?? ''),
-      };
-    }
-
-    // Fall back to patch-based diff
-    if (!patch) {
-      return { diffLines: [] as ParsedDiffLine[], language: 'plaintext' };
-    }
-
-    return {
-      diffLines: parsePatch(patch),
-      language: detectLanguage(filename ?? ''),
-    };
-  }, [patch, filename, viewConfig.showFullFile, fullFileDiff, isIterationMode, iterationDiff]);
-
-  // Compute aligned lines for side-by-side view (S-3.2)
-  const alignedLines = useMemo((): AlignedDiffLine[] => {
-    if (viewConfig.mode !== 'split') return [];
-
-    // Priority 1: Use iteration diff aligned lines
-    if (isIterationMode && iterationDiff) {
-      // In iteration mode, respect the showFullFile toggle
-      // When showFullFile=false, filter to show only changes with context
-      return viewConfig.showFullFile
-        ? iterationDiff.alignedLines
-        : filterAlignedToChangesOnly(iterationDiff.alignedLines);
-    }
-
-    // Priority 2: Use full file aligned lines when available (AC-3.1.7-9)
-    if (viewConfig.showFullFile && fullFileDiff) {
-      return fullFileDiff.alignedLines;
-    }
-
-    return alignDiffLines(diffLines);
-  }, [diffLines, viewConfig.mode, viewConfig.showFullFile, fullFileDiff, isIterationMode, iterationDiff]);
-
-  const threadsForFile = useMemo(() => {
-    if (!filename) return [];
-    return threads
-      .filter(
-        (thread) =>
-          thread.path === filename &&
-          thread.comments.length > 0 &&
-          thread.comments[0]?.createdAt != null
-      )
-      .sort((a, b) => {
-        const aTime = a.comments[0]?.createdAt.getTime() ?? 0;
-        const bTime = b.comments[0]?.createdAt.getTime() ?? 0;
-        return aTime - bTime;
-      });
-  }, [threads, filename]);
-
-  const threadsByLineAndSide = useMemo(() => {
-    const map = new Map<string, ReviewThread[]>();
-    threadsForFile.forEach((thread) => {
-      const key = `${String(thread.line)}-${thread.side}`;
-      const existing = map.get(key) ?? [];
-      map.set(key, [...existing, thread]);
-    });
-    return map;
-  }, [threadsForFile]);
-
+  // Clear announcement after timeout
   useEffect(() => {
     if (!announcement) return;
     const timer = window.setTimeout(() => {
@@ -197,76 +71,26 @@ export function DiffView() {
     return () => window.clearTimeout(timer);
   }, [announcement, clearAnnouncement]);
 
-  // Clear draft when switching files
-  useEffect(() => {
-    setDraftLineIndex(null);
-    setDraftSide(null);
-    setDraftBody('');
-    setSubmitError(null);
-  }, [selectedFileIndex]);
-
   // Reset change navigation when iteration selection changes
-  // This ensures J/K navigation works correctly after switching iterations
   useEffect(() => {
     resetChangeIndex();
   }, [selectedRange, resetChangeIndex]);
 
-  // Disable change navigation for fully added/removed files (every line is a change, navigation is meaningless)
-  // In iteration mode, check the iteration diff for context lines to determine if file is fully new/deleted
-  // This fixes Issue #140: J/K navigation not working in iteration mode with full file view
-  const isFullFileChange = useMemo(() => {
-    if (isIterationMode && iterationDiff) {
-      // If there are context lines, file existed in both snapshots (Modified, not fully Added/Deleted)
-      const hasContextLines = iterationDiff.diffLines.some(line => line.type === 'context');
-      return !hasContextLines;
-    }
-    // Non-iteration mode: use PR-level file status
-    return selectedFile?.status === FileChangeStatus.Added ||
-           selectedFile?.status === FileChangeStatus.Deleted;
-  }, [isIterationMode, iterationDiff, selectedFile?.status]);
-
-  // Calculate hunk indices from data (works for both virtualized and non-virtualized views)
-  // For side-by-side mode, use aligned lines; for inline mode, use diffLines
-  const hunkIndices = useMemo(() => {
-    if (isShowingDescription || isFullFileChange) {
-      return [];
-    }
-
-    if (viewConfig.mode === 'split') {
-      // Use aligned lines for side-by-side mode
-      return calculateAlignedHunkIndices(alignedLines);
-    } else {
-      // Use diffLines for inline/unified mode
-      return calculateHunkIndices(diffLines);
-    }
-  }, [isShowingDescription, isFullFileChange, viewConfig.mode, diffLines, alignedLines]);
-
-  // Update total hunk count when hunkIndices changes
+  // Sync hunk count to store for navigation controls
   useEffect(() => {
-    setTotalChangeCount(hunkIndices.length);
-  }, [hunkIndices.length, setTotalChangeCount]);
+    setTotalChangeCount(pipeline.hunkIndices.length);
+  }, [pipeline.hunkIndices.length, setTotalChangeCount]);
 
-  // Get the row index to scroll to for the current change (for virtualized views)
-  const scrollToRowIndex = useMemo(() => {
-    if (currentChangeIndex < 0 || currentChangeIndex >= hunkIndices.length) {
-      return undefined;
-    }
-    return hunkIndices[currentChangeIndex];
-  }, [currentChangeIndex, hunkIndices]);
-
-  // Check if we're using virtualized rendering
-  const isVirtualized = diffLines.length > VIRTUALIZATION_THRESHOLD;
-
-  // Scroll to specific hunk when currentChangeIndex changes (for non-virtualized views)
+  // Scroll to specific hunk when currentChangeIndex changes (non-virtualized views only)
   // Virtualized views handle scrolling via scrollToRowIndex prop
   useEffect(() => {
-    if (isShowingDescription || currentChangeIndex < 0 || isVirtualized) return;
+    if (isShowingDescription || currentChangeIndex < 0 || pipeline.isVirtualized) return;
 
     const frameId = requestAnimationFrame(() => {
       const scrollContainer = scrollContainerRef.current;
       if (!scrollContainer) return;
 
-      // Query DOM for the target element (non-virtualized views render all rows)
+      // Query DOM for the target element
       const allRows = Array.from(scrollContainer.querySelectorAll('[data-line-type]'));
       let hunkCount = 0;
       let inHunk = false;
@@ -302,151 +126,39 @@ export function DiffView() {
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [currentChangeIndex, isShowingDescription, isVirtualized]);
+  }, [currentChangeIndex, isShowingDescription, pipeline.isVirtualized, scrollContainerRef]);
 
-  // Fetch full file content when showFullFile is enabled (AC-3.1.1-2)
-  useEffect(() => {
-    if (!viewConfig.showFullFile || !filename || !currentPR || !owner || !repo) {
-      setFullFileDiff(null);
-      setFullFileError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setFullFileError(null);
-
-    computeFullFileDiff(
-      owner,
-      repo,
-      filename,
-      currentPR.baseSha,
-      currentPR.headSha
-    )
-      .then((result) => {
-        if (!cancelled) {
-          setFullFileDiff(result);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Failed to load full file';
-          setFullFileError(message);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [viewConfig.showFullFile, filename, currentPR, owner, repo, computeFullFileDiff]);
-
-  // Track container height for virtualization using callback ref pattern
-  const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
-    // Also store in the existing ref for other uses
-    (scrollContainerRef).current = node;
-
-    if (!node) return;
-
-    const updateHeight = () => {
-      const newHeight = node.clientHeight;
-      // Ignore height 0 - this happens during re-renders when container is briefly hidden
-      if (newHeight === 0) return;
-      setContainerHeight(newHeight);
-    };
-
-    // Initial height with slight delay to ensure layout is complete
-    requestAnimationFrame(updateHeight);
-
-    // Watch for resize
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(node);
-
-    // Cleanup will happen automatically when the element unmounts
-    // and the callback is called with null
-  }, []);
-
-  // Handle comment submission for both unified and SxS views
-  const handleSubmitComment = useCallback(
-    async (index: number, side: 'LEFT' | 'RIGHT', body: string) => {
-      if (isSubmittingRef.current) return;
-
-      // For unified view, get line from diffLines
-      // For SxS view, get line from alignedLines
-      let targetLine: ParsedDiffLine | null = null;
-      let lineNumber: number | null = null;
-
-      if (viewConfig.mode === 'unified') {
-        targetLine = diffLines[index] ?? null;
-        lineNumber =
-          side === 'LEFT' ? targetLine?.oldLineNumber ?? null : targetLine?.newLineNumber ?? null;
-      } else {
-        const pair = alignedLines[index];
-        targetLine = (side === 'LEFT' ? pair?.left : pair?.right) ?? null;
-        lineNumber = side === 'LEFT' ? targetLine?.oldLineNumber ?? null : targetLine?.newLineNumber ?? null;
-      }
-
-      const position = getDiffLinePosition(diffLines, index);
-
-      if (!targetLine || !lineNumber || !filename) {
-        return;
-      }
-
-      isSubmittingRef.current = true;
-      setIsSubmittingDraft(true);
-      setSubmitError(null);
-
-      try {
-        await addComment({
-          path: filename,
-          line: lineNumber,
-          side,
-          body: body.trim(),
-          position,
-        });
-        setDraftLineIndex(null);
-        setDraftSide(null);
-        setDraftBody('');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to post comment';
-        setSubmitError(message);
-      } finally {
-        isSubmittingRef.current = false;
-        setIsSubmittingDraft(false);
-      }
+  // Handler for starting comment (unified view only shows RIGHT side)
+  const handleStartCommentUnified = useCallback(
+    (index: number) => {
+      const targetLine = pipeline.diffLines[index];
+      const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
+      draft.startComment(index, side);
     },
-    [addComment, diffLines, alignedLines, filename, viewConfig.mode]
+    [pipeline.diffLines, draft]
   );
 
-  const handleStartComment = useCallback((index: number, side: 'LEFT' | 'RIGHT') => {
-    setDraftLineIndex(index);
-    setDraftSide(side);
-    setDraftBody('');
-    setSubmitError(null);
-  }, []);
+  // Handler for submitting draft
+  const handleSubmitDraft = useCallback(() => {
+    if (draft.draftLineIndex !== null && draft.draftSide !== null && pipeline.filename) {
+      void draft.submitComment(
+        pipeline.diffLines,
+        pipeline.alignedLines,
+        pipeline.filename,
+        pipeline.viewMode
+      );
+    }
+  }, [draft, pipeline]);
 
-  const handleCancelDraft = useCallback(() => {
-    setDraftLineIndex(null);
-    setDraftSide(null);
-    setDraftBody('');
-    setSubmitError(null);
-  }, []);
-
-  // Loading state (includes full file content loading AC-3.1.13)
-  const isLoadingFullFile = viewConfig.showFullFile && isLoadingContent && !fullFileDiff;
-  if (isLoading || (isShowingDescription && isPRLoading) || isLoadingFullFile) {
-    return (
-      <div className="diff-loading" role="status" aria-label="Loading diff">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <Skeleton key={i} className="skeleton-line" />
-        ))}
-      </div>
-    );
+  // Loading state
+  if (isLoading || (isShowingDescription && isPRLoading) || pipeline._isLoadingFullFile) {
+    return <DiffLoadingState />;
   }
 
-  // Show PR metadata and description when selected
+  // PR description view
   if (isShowingDescription) {
     return (
       <div className="diff-description-view">
-        {/* Iteration tabs above PR description */}
         <div className="diff-header-iterations">
           <IterationSelector />
         </div>
@@ -458,349 +170,167 @@ export function DiffView() {
             </div>
           </>
         ) : (
-          <div className="diff-empty-state">No PR data available</div>
+          <DiffEmptyState variant="no-pr" />
         )}
       </div>
     );
   }
 
-  // In iteration mode, we may have artifact-only files (not in GitHub API)
-  // Check both selectedFile (GitHub) and iterationSelectedFile (artifact)
-  const hasSelectedFile = selectedFile ?? iterationSelectedFile;
-
-  if (!hasSelectedFile) {
-    return (
-      <div className="diff-empty-state">
-        Select a file to view diff
-      </div>
-    );
+  // No file selected
+  if (!selectedFile && !pipeline.filename) {
+    return <DiffEmptyState variant="no-file" />;
   }
 
-  // For patch check, only apply to GitHub files (artifact-only files don't have patch)
-  // In iteration mode with artifact-only file, we'll get diff from iteration diff
-  if (!isIterationMode && selectedFile && !selectedFile.patch) {
-    return (
-      <div className="diff-empty-state">
-        <p>No diff available</p>
-        <p className="diff-empty-subtext">(binary file or too large)</p>
-      </div>
-    );
+  // No patch available (binary file or too large)
+  if (!pipeline.isIterationMode && selectedFile && !selectedFile.patch) {
+    return <DiffEmptyState variant="no-patch" />;
   }
 
   return (
     <div className="diff-view-container">
+      {/* Screen reader announcements */}
       <div className="sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
 
-      {/* Sticky file header with toolbar (S-3.3) */}
+      {/* Sticky file header with toolbar */}
       <div className="diff-header">
-        {/* Iteration tabs above filename */}
         <div className="diff-header-iterations">
           <IterationSelector />
         </div>
-        {/* Filename and toolbar */}
         <div className="diff-header-toolbar">
-          <h2 className="diff-filename" title={filename}>
-            {filename}
+          <h2 className="diff-filename" title={pipeline.filename}>
+            {pipeline.filename}
           </h2>
           <DiffToolbar />
         </div>
       </div>
 
-      {/* Error and loading states */}
-      {fullFileError && (
-        <div className="diff-error-banner">
-          {fullFileError}
-        </div>
+      {/* Error and loading banners */}
+      {pipeline._fullFileError && (
+        <div className="diff-error-banner">{pipeline._fullFileError}</div>
       )}
       {commentsError && (
-        <div className="diff-error-banner">
-          {commentsError}
-        </div>
+        <div className="diff-error-banner">{commentsError}</div>
       )}
       {isLoadingComments && (
-        <div className="diff-loading-banner">
-          Loading comments...
-        </div>
+        <div className="diff-loading-banner">Loading comments...</div>
       )}
 
-      {/* Diff content - conditional rendering based on view mode and virtualization */}
-      {viewConfig.mode === 'unified' ? (
+      {/* Diff content */}
+      {pipeline.viewMode === 'unified' ? (
         <div
           ref={containerRefCallback}
           className="diff-content-area"
           role="region"
-          aria-label={`Diff content for ${filename}`}
+          aria-label={`Diff content for ${pipeline.filename}`}
           tabIndex={0}
         >
-          {diffLines.length > VIRTUALIZATION_THRESHOLD ? (
+          {pipeline.isVirtualized ? (
             <VirtualizedDiffTable
-              key={filename ?? 'diff-table-virtualized'}
-              diffLines={diffLines}
-              language={language}
+              key={pipeline.filename ?? 'diff-table-virtualized'}
+              diffLines={pipeline.diffLines}
+              language={pipeline.language}
               containerHeight={containerHeight}
-              threadsByLineAndSide={threadsByLineAndSide}
+              threadsByLineAndSide={pipeline.threadsByLineAndSide}
               currentUserLogin={currentUser.login}
               addReply={addReply}
               editComment={editComment}
               deleteComment={deleteComment}
               toggleResolved={toggleResolved}
-              draftLineIndex={draftLineIndex}
-              draftBody={draftBody}
-              isSubmittingDraft={isSubmittingDraft}
-              submitError={submitError}
-              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
-              onCancelDraft={handleCancelDraft}
-              onChangeDraftBody={setDraftBody}
-              onSubmitDraft={() => {
-                if (draftLineIndex !== null) {
-                  const targetLine = diffLines[draftLineIndex];
-                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                  void handleSubmitComment(draftLineIndex, side, draftBody);
-                }
-              }}
-              showWhitespace={viewConfig.showWhitespace}
-              lineNumberMode={viewConfig.filter === 'left' ? 'left' : viewConfig.filter === 'right' ? 'right' : 'both'}
-              scrollToRowIndex={scrollToRowIndex}
+              draftLineIndex={draft.draftLineIndex}
+              draftBody={draft.draftBody}
+              isSubmittingDraft={draft.isSubmitting}
+              submitError={draft.submitError}
+              onStartComment={handleStartCommentUnified}
+              onCancelDraft={draft.cancelDraft}
+              onChangeDraftBody={draft.setDraftBody}
+              onSubmitDraft={handleSubmitDraft}
+              showWhitespace={pipeline.showWhitespace}
+              lineNumberMode={pipeline.lineNumberMode}
+              scrollToRowIndex={pipeline.scrollToRowIndex}
             />
           ) : (
             <UnifiedDiffTable
-              key={filename ?? 'diff-table'}
-              diffLines={diffLines}
-              language={language}
-              filename={filename ?? ''}
-              threadsByLineAndSide={threadsByLineAndSide}
+              key={pipeline.filename ?? 'diff-table'}
+              diffLines={pipeline.diffLines}
+              language={pipeline.language}
+              threadsByLineAndSide={pipeline.threadsByLineAndSide}
               currentUserLogin={currentUser.login}
               addReply={addReply}
               editComment={editComment}
               deleteComment={deleteComment}
               toggleResolved={toggleResolved}
-              draftLineIndex={draftLineIndex}
-              draftBody={draftBody}
-              isSubmittingDraft={isSubmittingDraft}
-              submitError={submitError}
-              onStartComment={(index) => handleStartComment(index, 'RIGHT')}
-              onCancelDraft={handleCancelDraft}
-              onChangeDraftBody={setDraftBody}
-              onSubmitDraft={() => {
-                if (draftLineIndex !== null) {
-                  const targetLine = diffLines[draftLineIndex];
-                  const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-                  void handleSubmitComment(draftLineIndex, side, draftBody);
-                }
-              }}
-              showWhitespace={viewConfig.showWhitespace}
-              contentFilter={viewConfig.filter}
+              draftLineIndex={draft.draftLineIndex}
+              draftBody={draft.draftBody}
+              isSubmittingDraft={draft.isSubmitting}
+              submitError={draft.submitError}
+              onStartComment={handleStartCommentUnified}
+              onCancelDraft={draft.cancelDraft}
+              onChangeDraftBody={draft.setDraftBody}
+              onSubmitDraft={handleSubmitDraft}
+              showWhitespace={pipeline.showWhitespace}
+              contentFilter={pipeline.contentFilter}
             />
           )}
         </div>
-      ) : diffLines.length > VIRTUALIZATION_THRESHOLD ? (
+      ) : pipeline.isVirtualized ? (
         <div
           ref={containerRefCallback}
           className="diff-content-area"
           role="region"
-          aria-label={`Diff content for ${filename}`}
+          aria-label={`Diff content for ${pipeline.filename}`}
           tabIndex={0}
         >
           <VirtualizedSideBySideDiffView
-            alignedLines={alignedLines}
-            language={language}
+            alignedLines={pipeline.alignedLines}
+            language={pipeline.language}
             containerHeight={containerHeight}
-            threadsByLineAndSide={threadsByLineAndSide}
+            threadsByLineAndSide={pipeline.threadsByLineAndSide}
             currentUserLogin={currentUser.login}
             addReply={addReply}
             editComment={editComment}
             deleteComment={deleteComment}
             toggleResolved={toggleResolved}
-            contentFilter={viewConfig.filter}
-            draftLineIndex={draftLineIndex}
-            draftSide={draftSide}
-            draftBody={draftBody}
-            isSubmittingDraft={isSubmittingDraft}
-            submitError={submitError}
-            onStartComment={handleStartComment}
-            onCancelDraft={handleCancelDraft}
-            onChangeDraftBody={setDraftBody}
-            onSubmitDraft={() => {
-              if (draftLineIndex !== null && draftSide !== null) {
-                void handleSubmitComment(draftLineIndex, draftSide, draftBody);
-              }
-            }}
-            showWhitespace={viewConfig.showWhitespace}
-            scrollToRowIndex={scrollToRowIndex}
+            contentFilter={pipeline.contentFilter}
+            draftLineIndex={draft.draftLineIndex}
+            draftSide={draft.draftSide}
+            draftBody={draft.draftBody}
+            isSubmittingDraft={draft.isSubmitting}
+            submitError={draft.submitError}
+            onStartComment={draft.startComment}
+            onCancelDraft={draft.cancelDraft}
+            onChangeDraftBody={draft.setDraftBody}
+            onSubmitDraft={handleSubmitDraft}
+            showWhitespace={pipeline.showWhitespace}
+            scrollToRowIndex={pipeline.scrollToRowIndex}
           />
         </div>
       ) : (
         <SideBySideDiffView
           containerRef={scrollContainerRef}
-          alignedLines={alignedLines}
-          language={language}
-          threadsByLineAndSide={threadsByLineAndSide}
+          alignedLines={pipeline.alignedLines}
+          language={pipeline.language}
+          threadsByLineAndSide={pipeline.threadsByLineAndSide}
           currentUserLogin={currentUser.login}
           addComment={addComment}
           addReply={addReply}
           editComment={editComment}
           deleteComment={deleteComment}
           toggleResolved={toggleResolved}
-          contentFilter={viewConfig.filter}
-          draftLineIndex={draftLineIndex}
-          draftSide={draftSide}
-          draftBody={draftBody}
-          isSubmittingDraft={isSubmittingDraft}
-          submitError={submitError}
-          onStartComment={handleStartComment}
-          onCancelDraft={handleCancelDraft}
-          onChangeDraftBody={setDraftBody}
-          onSubmitDraft={() => {
-            if (draftLineIndex !== null && draftSide !== null) {
-              void handleSubmitComment(draftLineIndex, draftSide, draftBody);
-            }
-          }}
-          showWhitespace={viewConfig.showWhitespace}
+          contentFilter={pipeline.contentFilter}
+          draftLineIndex={draft.draftLineIndex}
+          draftSide={draft.draftSide}
+          draftBody={draft.draftBody}
+          isSubmittingDraft={draft.isSubmitting}
+          submitError={draft.submitError}
+          onStartComment={draft.startComment}
+          onCancelDraft={draft.cancelDraft}
+          onChangeDraftBody={draft.setDraftBody}
+          onSubmitDraft={handleSubmitDraft}
+          showWhitespace={pipeline.showWhitespace}
         />
       )}
     </div>
-  );
-}
-
-// ============================================================================
-// Unified Diff Table (extracted for clarity)
-// ============================================================================
-
-interface UnifiedDiffTableProps {
-  diffLines: ParsedDiffLine[];
-  language: string;
-  filename: string;
-  threadsByLineAndSide: Map<string, ReviewThread[]>;
-  currentUserLogin: string;
-  addReply: (threadId: string, body: string) => Promise<void>;
-  editComment: (commentId: string, body: string) => Promise<void>;
-  deleteComment: (commentId: string) => Promise<void>;
-  toggleResolved: (threadId: string) => void;
-  draftLineIndex: number | null;
-  draftBody: string;
-  isSubmittingDraft: boolean;
-  submitError: string | null;
-  onStartComment: (index: number) => void;
-  onCancelDraft: () => void;
-  onChangeDraftBody: (body: string) => void;
-  onSubmitDraft: () => void;
-  /** Show whitespace characters visibly */
-  showWhitespace: boolean;
-  /** Content filter: left (original), both, or right (modified) - AC-3.3.11-15 */
-  contentFilter: 'left' | 'both' | 'right';
-}
-
-function UnifiedDiffTable({
-  diffLines,
-  language,
-  threadsByLineAndSide,
-  currentUserLogin,
-  addReply,
-  editComment,
-  deleteComment,
-  toggleResolved,
-  draftLineIndex,
-  draftBody,
-  isSubmittingDraft,
-  submitError,
-  onStartComment,
-  onCancelDraft,
-  onChangeDraftBody,
-  onSubmitDraft,
-  showWhitespace,
-  contentFilter,
-}: UnifiedDiffTableProps) {
-  // Filter lines based on content filter (AC-3.3.11-13)
-  const filteredLines = useMemo(() => {
-    if (contentFilter === 'both') return diffLines;
-
-    return diffLines.filter((line) => {
-      // Always show headers
-      if (line.type === 'header') return true;
-      // Context lines shown in all modes
-      if (line.type === 'context') return true;
-
-      if (contentFilter === 'left') {
-        // Left: show deletions, hide additions
-        return line.type === 'deletion';
-      } else {
-        // Right: show additions, hide deletions
-        return line.type === 'addition';
-      }
-    });
-  }, [diffLines, contentFilter]);
-
-  // Determine line number display mode based on content filter (AC-3.3.14-15)
-  const lineNumberMode = contentFilter === 'left' ? 'left' : contentFilter === 'right' ? 'right' : 'both';
-
-  return (
-    <table className="diff-table">
-      <tbody>
-        {filteredLines.map((line, index) => {
-          const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
-          const rightKey = line.newLineNumber != null ? `${String(line.newLineNumber)}-RIGHT` : null;
-          const lineThreads = [
-            ...(leftKey ? threadsByLineAndSide.get(leftKey) ?? [] : []),
-            ...(rightKey ? threadsByLineAndSide.get(rightKey) ?? [] : []),
-          ];
-          const showCommentButton = line.type !== 'header';
-
-          // Use line numbers for stable keys when available, fall back to index
-          const lineKey =
-            line.oldLineNumber != null || line.newLineNumber != null
-              ? `${String(line.oldLineNumber ?? 'n')}-${String(line.newLineNumber ?? 'n')}-${line.type}`
-              : `${String(index)}-${line.type}`;
-
-          // colSpan depends on line number mode: both = 4 (2 line nums + marker + content), left/right = 3 (1 line num + marker + content)
-          const colSpan = lineNumberMode === 'both' ? 4 : 3;
-
-          return (
-            <Fragment key={lineKey}>
-              <DiffLine
-                line={line}
-                language={language}
-                showCommentButton={showCommentButton}
-                onStartComment={() => onStartComment(index)}
-                showWhitespace={showWhitespace}
-                lineNumberMode={lineNumberMode}
-              />
-              {draftLineIndex === index && (
-                <tr>
-                  <td colSpan={colSpan} className="diff-comment-cell">
-                    {submitError && (
-                      <div className="diff-comment-error">{submitError}</div>
-                    )}
-                    <CommentEditor
-                      value={draftBody}
-                      onChange={onChangeDraftBody}
-                      onSubmit={onSubmitDraft}
-                      onCancel={onCancelDraft}
-                      isSubmitting={isSubmittingDraft}
-                      label="Add comment"
-                    />
-                  </td>
-                </tr>
-              )}
-              {lineThreads.map((thread) => (
-                <tr key={`thread-${thread.id}`}>
-                  <td colSpan={colSpan} className="diff-comment-cell">
-                    <CommentThread
-                      thread={thread}
-                      currentUserLogin={currentUserLogin}
-                      onReply={addReply}
-                      onEdit={editComment}
-                      onDelete={deleteComment}
-                      onToggleResolved={toggleResolved}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </Fragment>
-          );
-        })}
-      </tbody>
-    </table>
   );
 }
