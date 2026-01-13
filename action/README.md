@@ -107,6 +107,7 @@ When a new Node.js version is released:
 npm install
 
 # Build (required before committing changes)
+# This also generates schema.generated.ts from schema.sql
 npm run build
 
 # Test
@@ -116,13 +117,25 @@ npm test
 npm run typecheck
 ```
 
+### SQL Schema
+
+The database schema is defined in `src/db/schema.sql`. This file is the source of truth for the SQLite schema.
+
+- **Edit SQL**: Modify `src/db/schema.sql` directly
+- **Auto-generated**: `src/db/schema.generated.ts` is generated from the SQL file by the build script
+- **Build process**: `npm run build` automatically regenerates the TypeScript file before bundling
+
+The SQL file uses `{{SCHEMA_VERSION}}` as a placeholder that gets replaced with the current version number during build.
+
 ## Architecture
 
 ```
 src/
 ├── index.ts               # Entry point
 ├── db/
-│   ├── schema.ts          # SQLite DDL
+│   ├── schema.sql         # SQLite DDL (source of truth)
+│   ├── schema.generated.ts # Auto-generated from schema.sql
+│   ├── schema.ts          # Schema version and exports
 │   └── database.ts        # Query operations
 ├── capture/
 │   ├── iteration-capture.ts

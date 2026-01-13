@@ -4,6 +4,7 @@
   "description": "GitHub Action for CodjiFlo iteration tracking",
   "main": "dist/index.js",
   "scripts": {
+    "prebuild": "node ../scripts/generate-schema.cjs",
     "build": "ncc build src/index.ts -o dist --license licenses.txt",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
