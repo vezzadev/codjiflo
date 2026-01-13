@@ -6,7 +6,7 @@ CodjiFlo is a code review tool inspired by Microsoft's CodeFlow, used by ~40,000
 
 ### Advanced Commenting
 
-- **Character-level precision** - Mark specific characters within a line, not just entire lines
+- **Character-level precision** - Comment on specific characters within a line, not just entire lines
 - **Region spanning** - Attach comments to multiple lines simultaneously
 - **Floating bubbles** - Comments are visual objects with lasso connectors to code
 - **Threading & states** - Organize discussions with status tracking (pending, won't fix, fixed, resolved)
