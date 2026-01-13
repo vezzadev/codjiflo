@@ -9,12 +9,13 @@ interface TitlebarProps {
   title?: string;
   leftContent?: ReactNode;
   rightContent?: ReactNode;
+  githubUrl?: string | undefined;
 }
 
 /**
  * Header bar with logo, title, and navigation
  */
-export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent }: TitlebarProps) {
+export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent, githubUrl }: TitlebarProps) {
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 
   return (
@@ -35,6 +36,16 @@ export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent }: Titl
 
       <div className="titlebar-center">
         <span className="window-title">{title}</span>
+        {githubUrl && (
+          <a
+            href={githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="titlebar-github-link"
+          >
+            (View on GitHub)
+          </a>
+        )}
       </div>
 
       <div className="titlebar-right">

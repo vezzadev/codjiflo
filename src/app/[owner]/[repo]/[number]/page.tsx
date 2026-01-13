@@ -160,6 +160,7 @@ function PullRequestContent({ params }: PRPageProps) {
     <AppShell>
       <Titlebar
         title={prTitle}
+        githubUrl={currentPR?.htmlUrl}
         leftContent={
           <button
             onClick={handleBackToDashboard}
