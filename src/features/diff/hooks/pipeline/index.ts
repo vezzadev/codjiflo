@@ -5,13 +5,14 @@
  * branches for variants, and outputs a consistent shape.
  *
  * Pipeline flow:
- * Source → Filter → Shape → Display → Navigation → Comments → render
+ * Source → Filter → Shape → Display → SideFilter → Navigation → Comments → render
  */
 
 export { useDiffSource } from './useDiffSource';
 export { useDiffFilter } from './useDiffFilter';
 export { useDiffShape } from './useDiffShape';
 export { useDiffDisplay } from './useDiffDisplay';
+export { useDiffSideFilter } from './useDiffSideFilter';
 export { useDiffNavigation } from './useDiffNavigation';
 export { useDiffComments } from './useDiffComments';
 
@@ -20,6 +21,7 @@ export type {
   DiffFilterOutput,
   DiffShapeOutput,
   DiffDisplayOutput,
+  DiffSideFilterOutput,
   DiffNavigationOutput,
   DiffCommentsOutput,
   DiffPipelineOutput,

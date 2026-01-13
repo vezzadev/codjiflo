@@ -5,7 +5,7 @@
  * one concern, branches for variants, and outputs a consistent shape.
  *
  * Pipeline flow:
- * Source → Filter → Shape → Display → Navigation → Comments → render
+ * Source → Filter → Shape → Display → SideFilter → Navigation → Comments → render
  */
 
 import type { FileChangeStatus } from '@/api/types';
@@ -98,13 +98,27 @@ export interface DiffDisplayOutput extends DiffShapeOutput {
 }
 
 // ============================================================================
+// Stage 4.5: Side Filter
+// ============================================================================
+
+/**
+ * Output of useDiffSideFilter hook
+ * Applies left/both/right content filter to diffLines and alignedLines.
+ * Filtering happens before navigation so hunk indices are correct for filtered view.
+ */
+export interface DiffSideFilterOutput extends DiffDisplayOutput {
+  // diffLines and alignedLines are inherited but now filtered by contentFilter
+  // No additional fields - the filtering happens in place
+}
+
+// ============================================================================
 // Stage 5: Navigation
 // ============================================================================
 
 /**
  * Output of useDiffNavigation hook
  */
-export interface DiffNavigationOutput extends DiffDisplayOutput {
+export interface DiffNavigationOutput extends DiffSideFilterOutput {
   /** Indices of first line in each hunk (change group) */
   hunkIndices: number[];
   /** Row index to scroll to for current change (undefined if no target) */
