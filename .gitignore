@@ -157,6 +157,3 @@ public/sql-wasm/
 
 # Claude Code temporary files
 tmpclaude-*
-
-# Generated SQL schema TypeScript file
-action/src/db/schema.generated.ts
