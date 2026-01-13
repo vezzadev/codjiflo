@@ -1,5 +1,5 @@
 /**
- * Pipeline Stage 6: Comment Thread Positioning
+ * Pipeline Stage 7: Comment Thread Positioning
  *
  * Maps comment threads to diff line positions for rendering:
  * - Groups threads by "lineNumber-side" key

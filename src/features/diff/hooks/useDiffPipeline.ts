@@ -49,13 +49,13 @@ export function useDiffPipeline(): DiffPipelineOutput {
   // Stage 4: Apply display preferences (whitespace, content filter)
   const display = useDiffDisplay(shaped);
 
-  // Stage 4.5: Apply side filter (left/both/right) to diff content
+  // Stage 5: Apply side filter (left/both/right) to diff content
   const sideFiltered = useDiffSideFilter(display);
 
-  // Stage 5: Calculate navigation (hunk indices, scroll targets)
+  // Stage 6: Calculate navigation (hunk indices, scroll targets)
   const navigation = useDiffNavigation(sideFiltered);
 
-  // Stage 6: Map comment threads to positions
+  // Stage 7: Map comment threads to positions
   const comments = useDiffComments(navigation);
 
   return comments;

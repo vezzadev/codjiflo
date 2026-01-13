@@ -1,5 +1,5 @@
 /**
- * Pipeline Stage 5: Hunk Navigation
+ * Pipeline Stage 6: Hunk Navigation
  *
  * Calculates navigation indices and scroll targets:
  * - Hunk indices for J/K navigation

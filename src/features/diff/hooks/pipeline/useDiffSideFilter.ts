@@ -1,5 +1,5 @@
 /**
- * Pipeline Stage 4.5: Side Filter
+ * Pipeline Stage 5: Side Filter
  *
  * Applies left/both/right content filter to diffLines and alignedLines.
  * This stage runs BEFORE navigation so hunk indices are calculated on
