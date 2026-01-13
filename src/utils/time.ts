@@ -1,3 +1,16 @@
+/**
+ * Time Utilities
+ *
+ * Pure utility functions for time formatting.
+ */
+
+/**
+ * Format a date as a human-readable relative time string.
+ * Examples: "just now", "5 minutes ago", "2 hours ago", "3 days ago"
+ *
+ * @param date - The date to format
+ * @returns A human-readable string representing time elapsed since the date
+ */
 export function formatTimeAgo(date: Date): string {
   const now = Date.now();
   const diffMs = now - date.getTime();

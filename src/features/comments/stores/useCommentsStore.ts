@@ -1,3 +1,10 @@
+/**
+ * Comments Store
+ *
+ * Manages comment state for pull request review threads.
+ * Handles loading, adding, editing, deleting comments and thread resolution.
+ */
+
 import { create } from 'zustand';
 import { githubClient, GitHubAPIError } from '@/api/github/github-client';
 import type { GitHubReviewComment } from '@/api/github/types';
