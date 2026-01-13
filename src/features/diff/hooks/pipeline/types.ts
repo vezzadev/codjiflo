@@ -105,11 +105,10 @@ export interface DiffDisplayOutput extends DiffShapeOutput {
  * Output of useDiffSideFilter hook
  * Applies left/both/right content filter to diffLines and alignedLines.
  * Filtering happens before navigation so hunk indices are correct for filtered view.
+ *
+ * Type alias for DiffDisplayOutput since filtering modifies inherited fields in place.
  */
-export interface DiffSideFilterOutput extends DiffDisplayOutput {
-  // diffLines and alignedLines are inherited but now filtered by contentFilter
-  // No additional fields - the filtering happens in place
-}
+export type DiffSideFilterOutput = DiffDisplayOutput;
 
 // ============================================================================
 // Stage 6: Navigation

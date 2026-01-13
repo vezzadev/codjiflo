@@ -28,9 +28,16 @@ const DEFAULT_HEIGHT = 600;
 export function useContainerHeight(): UseContainerHeightReturn {
   const [containerHeight, setContainerHeight] = useState(DEFAULT_HEIGHT);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // Callback ref that sets up ResizeObserver
   const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
+    // Clean up previous observer
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+      resizeObserverRef.current = null;
+    }
+
     // Store in ref for imperative access
     scrollContainerRef.current = node;
 
@@ -49,10 +56,7 @@ export function useContainerHeight(): UseContainerHeightReturn {
     // Watch for resize
     const resizeObserver = new ResizeObserver(updateHeight);
     resizeObserver.observe(node);
-
-    // Note: Cleanup happens automatically when the element unmounts
-    // and the callback is called with null. The ResizeObserver will
-    // be garbage collected when the node is removed.
+    resizeObserverRef.current = resizeObserver;
   }, []);
 
   return {
