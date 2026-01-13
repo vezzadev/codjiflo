@@ -252,4 +252,91 @@ test.describe("Side filter with view modes", () => {
     expect(counts.additions).toBeGreaterThan(0);
     expect(counts.deletions).toBe(0);
   });
+
+  // ============================================================================
+  // Side-by-Side View Tests (split view with virtualization)
+  // These tests verify the bug fix in VirtualizedSideBySideDiffView
+  // ============================================================================
+
+  // Helper to toggle side-by-side view
+  async function setSideBySideView(page: import("@playwright/test").Page) {
+    await page.locator("body").click();
+    await page.keyboard.press("s"); // 's' for side-by-side
+  }
+
+  test("left filter shows only deletions in side-by-side changes view", async ({ page }) => {
+    const diffRegion = await navigateToFile(page, "src/small.ts");
+
+    // Switch to side-by-side view
+    await setSideBySideView(page);
+
+    // Set filter to left (deletions only)
+    await setFilter(page, "left");
+
+    // Verify filter is applied
+    const counts = await countLineTypes(diffRegion);
+    expect(counts.deletions).toBeGreaterThan(0);
+    expect(counts.additions).toBe(0);
+  });
+
+  test("left filter shows only deletions in side-by-side full file view", async ({ page }) => {
+    // Use large file to trigger virtualization
+    const diffRegion = await navigateToFile(page, "src/large.ts");
+
+    // Switch to side-by-side view
+    await setSideBySideView(page);
+
+    // Enable full file view
+    await setFullFileView(page, true);
+
+    // Wait for full file content to load
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Full")).toBeVisible();
+
+    // Set filter to left (deletions only)
+    await setFilter(page, "left");
+
+    // Verify filter is applied in virtualized side-by-side full file view
+    const counts = await countLineTypes(diffRegion);
+    expect(counts.deletions).toBeGreaterThan(0);
+    expect(counts.additions).toBe(0);
+  });
+
+  test("right filter shows only additions in side-by-side changes view", async ({ page }) => {
+    const diffRegion = await navigateToFile(page, "src/small.ts");
+
+    // Switch to side-by-side view
+    await setSideBySideView(page);
+
+    // Set filter to right (additions only)
+    await setFilter(page, "right");
+
+    // Verify filter is applied
+    const counts = await countLineTypes(diffRegion);
+    expect(counts.additions).toBeGreaterThan(0);
+    expect(counts.deletions).toBe(0);
+  });
+
+  test("right filter shows only additions in side-by-side full file view", async ({ page }) => {
+    // Use large file to trigger virtualization
+    const diffRegion = await navigateToFile(page, "src/large.ts");
+
+    // Switch to side-by-side view
+    await setSideBySideView(page);
+
+    // Enable full file view
+    await setFullFileView(page, true);
+
+    // Wait for full file content to load
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Full")).toBeVisible();
+
+    // Set filter to right (additions only)
+    await setFilter(page, "right");
+
+    // Verify filter is applied in virtualized side-by-side full file view
+    const counts = await countLineTypes(diffRegion);
+    expect(counts.additions).toBeGreaterThan(0);
+    expect(counts.deletions).toBe(0);
+  });
 });
