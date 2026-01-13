@@ -215,6 +215,10 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 
 See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
 
+### 1.7 Diff Pipeline Architecture
+
+Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#diff-pipeline-architecture).
+
 ## 2. Milestone Architectural Plans
 
 ### [Milestone 1: SPA Foundation](spec/stories/milestone-1-spa-github-data.md)
