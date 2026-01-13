@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
+    "pretest": "node scripts/generate-schema.cjs",
     "dev": "node scripts/ensure-env.js && next dev --turbopack",
     "build": "next build",
     "start": "next start",
