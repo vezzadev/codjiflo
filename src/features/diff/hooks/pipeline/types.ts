@@ -98,7 +98,7 @@ export interface DiffDisplayOutput extends DiffShapeOutput {
 }
 
 // ============================================================================
-// Stage 4.5: Side Filter
+// Stage 5: Side Filter
 // ============================================================================
 
 /**
@@ -112,7 +112,7 @@ export interface DiffSideFilterOutput extends DiffDisplayOutput {
 }
 
 // ============================================================================
-// Stage 5: Navigation
+// Stage 6: Navigation
 // ============================================================================
 
 /**
@@ -128,7 +128,7 @@ export interface DiffNavigationOutput extends DiffSideFilterOutput {
 }
 
 // ============================================================================
-// Stage 6: Comments
+// Stage 7: Comments
 // ============================================================================
 
 /**
