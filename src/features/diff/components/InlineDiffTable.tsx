@@ -5,13 +5,14 @@
  * Supports content filtering, comments, and line-level interactions.
  */
 
-import { Fragment, useMemo } from 'react';
+import { Fragment } from 'react';
 import { DiffLine } from './DiffLine';
 import { CommentEditor, CommentThread } from '@/features/comments';
 import type { ReviewThread } from '@/features/comments';
-import type { ParsedDiffLine, ContentFilter } from '../types';
+import type { ParsedDiffLine } from '../types';
 
 export interface InlineDiffTableProps {
+  /** Pre-filtered diff lines from pipeline */
   diffLines: ParsedDiffLine[];
   language: string;
   threadsByLineAndSide: Map<string, ReviewThread[]>;
@@ -30,8 +31,8 @@ export interface InlineDiffTableProps {
   onSubmitDraft: () => void;
   /** Show whitespace characters visibly */
   showWhitespace: boolean;
-  /** Content filter: left (original), both, or right (modified) - AC-3.3.11-15 */
-  contentFilter: ContentFilter;
+  /** Line number display mode: left (old only), right (new only), both */
+  lineNumberMode: 'left' | 'both' | 'right';
 }
 
 /**
@@ -61,35 +62,15 @@ export function InlineDiffTable({
   onChangeDraftBody,
   onSubmitDraft,
   showWhitespace,
-  contentFilter,
+  lineNumberMode,
 }: InlineDiffTableProps) {
-  // Filter lines based on content filter (AC-3.3.11-13)
-  const filteredLines = useMemo(() => {
-    if (contentFilter === 'both') return diffLines;
-
-    return diffLines.filter((line) => {
-      // Always show headers
-      if (line.type === 'header') return true;
-      // Context lines shown in all modes
-      if (line.type === 'context') return true;
-
-      if (contentFilter === 'left') {
-        // Left: show deletions, hide additions
-        return line.type === 'deletion';
-      } else {
-        // Right: show additions, hide deletions
-        return line.type === 'addition';
-      }
-    });
-  }, [diffLines, contentFilter]);
-
-  // Determine line number display mode based on content filter (AC-3.3.14-15)
-  const lineNumberMode = contentFilter === 'left' ? 'left' : contentFilter === 'right' ? 'right' : 'both';
+  // colSpan depends on line number mode: both = 4 (2 line nums + marker + content), left/right = 3
+  const colSpan = lineNumberMode === 'both' ? 4 : 3;
 
   return (
     <table className="diff-table">
       <tbody>
-        {filteredLines.map((line, index) => {
+        {diffLines.map((line, index) => {
           const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
           const rightKey = line.newLineNumber != null ? `${String(line.newLineNumber)}-RIGHT` : null;
           const lineThreads = [
@@ -103,9 +84,6 @@ export function InlineDiffTable({
             line.oldLineNumber != null || line.newLineNumber != null
               ? `${String(line.oldLineNumber ?? 'n')}-${String(line.newLineNumber ?? 'n')}-${line.type}`
               : `${String(index)}-${line.type}`;
-
-          // colSpan depends on line number mode: both = 4 (2 line nums + marker + content), left/right = 3 (1 line num + marker + content)
-          const colSpan = lineNumberMode === 'both' ? 4 : 3;
 
           return (
             <Fragment key={lineKey}>

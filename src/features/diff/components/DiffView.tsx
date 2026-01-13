@@ -270,7 +270,7 @@ export function DiffView() {
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
               showWhitespace={pipeline.showWhitespace}
-              contentFilter={pipeline.contentFilter}
+              lineNumberMode={pipeline.lineNumberMode}
             />
           )}
         </div>
