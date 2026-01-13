@@ -6,7 +6,7 @@
  * a consistent shape for the next stage.
  *
  * Pipeline flow:
- * Source → Filter → Shape → Display → Navigation → Comments
+ * Source → Filter → Shape → Display → SideFilter → Navigation → Comments
  */
 
 import {
@@ -14,6 +14,7 @@ import {
   useDiffFilter,
   useDiffShape,
   useDiffDisplay,
+  useDiffSideFilter,
   useDiffNavigation,
   useDiffComments,
   type DiffPipelineOutput,
@@ -48,8 +49,11 @@ export function useDiffPipeline(): DiffPipelineOutput {
   // Stage 4: Apply display preferences (whitespace, content filter)
   const display = useDiffDisplay(shaped);
 
+  // Stage 4.5: Apply side filter (left/both/right) to diff content
+  const sideFiltered = useDiffSideFilter(display);
+
   // Stage 5: Calculate navigation (hunk indices, scroll targets)
-  const navigation = useDiffNavigation(display);
+  const navigation = useDiffNavigation(sideFiltered);
 
   // Stage 6: Map comment threads to positions
   const comments = useDiffComments(navigation);
