@@ -1,0 +1,59 @@
+/**
+ * Pipeline Stage 6: Comment Thread Positioning
+ *
+ * Maps comment threads to diff line positions for rendering:
+ * - Groups threads by "lineNumber-side" key
+ * - Will expand to support lasso positioning, floating bubbles (M5)
+ */
+
+import { useMemo } from 'react';
+import { useCommentsStore, type ReviewThread } from '@/features/comments';
+import type { DiffNavigationOutput, DiffCommentsOutput } from './types';
+
+/**
+ * Hook to map comment threads to diff line positions.
+ *
+ * This stage will grow as comment features expand:
+ * - M5: floating bubbles, lasso positioning
+ */
+export function useDiffComments(navigation: DiffNavigationOutput): DiffCommentsOutput {
+  const { threads } = useCommentsStore();
+
+  // Filter threads for current file
+  const threadsForFile = useMemo(() => {
+    if (!navigation.filename) return [];
+
+    return threads
+      .filter(
+        (thread) =>
+          thread.path === navigation.filename &&
+          thread.comments.length > 0 &&
+          thread.comments[0]?.createdAt != null
+      )
+      .sort((a, b) => {
+        const aTime = a.comments[0]?.createdAt.getTime() ?? 0;
+        const bTime = b.comments[0]?.createdAt.getTime() ?? 0;
+        return aTime - bTime;
+      });
+  }, [threads, navigation.filename]);
+
+  // Group threads by line number and side for quick lookup during render
+  // Key format: "lineNumber-side" → "42-RIGHT", "17-LEFT"
+  const threadsByLineAndSide = useMemo(() => {
+    const map = new Map<string, ReviewThread[]>();
+
+    threadsForFile.forEach((thread) => {
+      const key = `${String(thread.line)}-${thread.side}`;
+      const existing = map.get(key) ?? [];
+      map.set(key, [...existing, thread]);
+    });
+
+    return map;
+  }, [threadsForFile]);
+
+  return {
+    ...navigation,
+    threadsByLineAndSide,
+    // Future: lassoPositions, floatingBubbleCoords, etc.
+  };
+}
