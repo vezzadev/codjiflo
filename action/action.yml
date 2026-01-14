@@ -16,12 +16,15 @@ inputs:
     required: false
 
 outputs:
-  artifact-id:
-    description: 'ID of the uploaded artifact'
   artifact-name:
     description: 'Name of the uploaded artifact'
+    value: ${{ steps.capture.outputs.artifact-name }}
   iteration-count:
     description: 'Number of iterations captured'
+    value: ${{ steps.capture.outputs.iteration-count }}
+  work-dir:
+    description: 'Working directory containing iteration data'
+    value: ${{ steps.capture.outputs.work-dir }}
 
 runs:
   using: 'composite'
