@@ -14,7 +14,6 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { DefaultArtifactClient } from '@actions/artifact';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import AdmZip from 'adm-zip';
@@ -143,44 +142,22 @@ async function run(): Promise<void> {
       const dbBuffer = db.export();
       db.close();
 
-      // Write to file for artifact upload
+      // Write to file for artifact upload (handled by workflow)
       writeFileSync(dbPath, dbBuffer);
       core.info(`Database written to ${dbPath}`);
 
-      // Upload artifact and get artifact ID
-      core.info('Uploading artifact...');
-      const artifactClient = new DefaultArtifactClient();
-      const uploadResult = await artifactClient.uploadArtifact(artifactName, [dbPath], workDir, {
-        retentionDays: 90,
-      });
-      if (!uploadResult.id) {
-        throw new Error('Artifact upload failed: no artifact ID returned');
-      }
-      core.info(`Artifact uploaded: ${artifactName} (ID: ${uploadResult.id})`);
-
-      // Set outputs
+      // Set outputs for workflow to use
       core.setOutput('db-path', dbPath);
       core.setOutput('artifact-name', artifactName);
-      core.setOutput('artifact-id', uploadResult.id);
       core.setOutput('iteration-count', iteration.revision);
       core.setOutput('work-dir', workDir);
-
-      // Update PR comment with artifact ID
-      core.info('Updating PR comment...');
-      await updatePRComment(octokit, owner, repo, prNumber, {
-        iterationCount: iteration.revision,
-        runId: github.context.runId,
-        timestamp: new Date().toISOString(),
-        artifactId: uploadResult.id,
-      });
-      core.info('PR comment updated');
 
       // Update PR description with CodjiFlo link
       core.info('Updating PR description with CodjiFlo link...');
       await updatePRDescription(octokit, owner, repo, prNumber);
       core.info('PR description updated');
 
-      core.info('Done!');
+      core.info('Done! Artifact upload and comment update handled by workflow.');
     } catch (error) {
       db.close();
       throw error;
