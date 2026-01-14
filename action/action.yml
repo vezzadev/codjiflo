@@ -1,5 +1,5 @@
 name: 'CodjiFlo Iteration Tracker'
-description: 'Captures PR iterations, uploads artifact, and updates PR comment'
+description: 'Captures PR iterations for force-push resilient code review'
 author: 'CodjiFlo'
 
 branding:
