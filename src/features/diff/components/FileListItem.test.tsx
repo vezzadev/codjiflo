@@ -53,7 +53,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={true} onClick={noop} />);
 
-    const item = screen.getByRole('listitem');
+    const item = screen.getByRole('treeitem');
     expect(item).toHaveAttribute('aria-current', 'location');
     expect(item).toHaveClass('selected');
   });
@@ -65,7 +65,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-    await user.click(screen.getByRole('listitem'));
+    await user.click(screen.getByRole('treeitem'));
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });
@@ -81,7 +81,7 @@ describe('FileListItem', () => {
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
     expect(
-      screen.getByRole('listitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
+      screen.getByRole('treeitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
     ).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard('{Enter}');
 
@@ -107,7 +107,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard(' ');
 
@@ -121,7 +121,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard('a');
 
@@ -133,7 +133,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       expect(item).toHaveAttribute('tabindex', '0');
     });
   });

@@ -127,7 +127,7 @@ Iterations: 2`,
     // Click on the file with long lines
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("src/long-lines.ts").click();
+    await fileNav.getByText("long-lines.ts").click();
 
     // Wait for diff to render
     await expect(
@@ -204,7 +204,7 @@ Iterations: 2`,
     // Click on the file with long lines
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("src/long-lines.ts").click();
+    await fileNav.getByText("long-lines.ts").click();
 
     // Wait for diff to render
     await expect(

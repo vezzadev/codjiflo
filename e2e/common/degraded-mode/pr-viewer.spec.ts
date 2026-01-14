@@ -155,7 +155,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileNav).toBeVisible();
 
     // PR Description should be the first entry in the file list
-    const prDescButton = fileNav.getByRole("listitem", { name: /Pull Request Description/i });
+    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
     await expect(prDescButton).toBeVisible();
 
     // PR Description should be selected by default
@@ -183,12 +183,12 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileNav).toBeVisible();
 
     // Verify PR Description is selected initially
-    const prDescButton = fileNav.getByRole("listitem", { name: /Pull Request Description/i });
+    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
 
     if (isMockMode()) {
       // Click on a file to switch to diff view
-      await fileNav.getByText("src/components/Button.tsx").click();
+      await fileNav.getByText("Button.tsx").click();
 
       // Diff view should show the file header
       await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
@@ -200,11 +200,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
       await expect(diffRegion).toBeVisible();
     } else {
-      // Real mode: click first actual file
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      // Real mode: click first actual file (using CSS selector to exclude folder headers)
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         // PR Description should no longer be selected
         await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
       }
@@ -221,15 +221,15 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     if (isMockMode()) {
       // Click on a file first to show the diff (PR description is default)
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await fileNav.getByText("src/components/Button.tsx").click();
+      await fileNav.getByText("Button.tsx").click();
 
       // Wait for specific mock file header
       await expect(page.getByRole("heading", { name: "src/components/Button.tsx" })).toBeVisible();
 
       // [S-1.3] Wait for files to load
-      await expect(fileNav.getByText("src/components/Button.tsx")).toBeVisible();
-      await expect(fileNav.getByText("src/index.ts")).toBeVisible();
-      await expect(fileNav.getByText("src/old-file.ts")).toBeVisible();
+      await expect(fileNav.getByText("Button.tsx")).toBeVisible();
+      await expect(fileNav.getByText("index.ts")).toBeVisible();
+      await expect(fileNav.getByText("old-file.ts")).toBeVisible();
 
       // [AC-1.3.3] Stats are displayed
       await expect(page.getByText("+50")).toBeVisible();
@@ -254,7 +254,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     if (isMockMode()) {
       // Click on a file to show diff
-      await fileNav.getByText("src/components/Button.tsx").click();
+      await fileNav.getByText("Button.tsx").click();
 
       // [S-1.4] Diff region should be visible
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
@@ -266,11 +266,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       // [AC-1.4.1] Code is displayed
       await expect(page.getByText(/import React from/)).toBeVisible();
     } else {
-      // Real mode: click first actual file
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      // Real mode: click first actual file (using CSS selector to exclude folder headers)
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
       }
@@ -294,18 +294,16 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    // Wait for at least 2 buttons to be visible (PR description + at least 1 file)
-    const fileButtons = fileNav.getByRole("listitem");
-    await expect(fileButtons.first()).toBeVisible();
+    // Get PR Description button
+    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    await expect(prDescButton).toBeVisible();
 
-    // Get all file buttons and verify we have at least 2 (PR description + 1 file)
-    const allButtons = await fileButtons.all();
-    // Precondition: PR must have at least 1 file for keyboard navigation test
-    expect(allButtons.length).toBeGreaterThanOrEqual(2);
+    // Wait for file items to be visible
+    const fileItems = fileNav.locator(".tree-item.file");
+    await expect(fileItems.first()).toBeVisible();
 
-    // PR Description (first button) should be selected by default
-    const prDescButton = fileButtons.first();
-    await expect(prDescButton).toHaveAttribute("aria-current", "location", );
+    // PR Description should be selected by default
+    await expect(prDescButton).toHaveAttribute("aria-current", "location");
 
     // Focus on the page body to ensure keyboard events work
     await page.locator("body").click();
@@ -313,11 +311,13 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.waitForFunction(() => document.activeElement === document.body);
 
     // [AC-1.5.1] Press s to go to first file (next file)
+    // Note: keyboard navigation follows original file index order (from GitHub API),
+    // not the visual folder-grouped order shown in the tree
     await page.keyboard.press("s");
 
-    // First file (second button) should be selected
-    const firstFile = fileButtons.nth(1);
-    await expect(firstFile).toHaveAttribute("aria-current", "location");
+    // The file at original index 0 should be selected (Button.tsx in mock data)
+    const firstFileByIndex = fileNav.getByRole("treeitem", { name: /src\/components\/Button\.tsx/ });
+    await expect(firstFileByIndex).toHaveAttribute("aria-current", "location");
 
     // [AC-1.5.1] Press w to go back to PR Description (previous file)
     await page.keyboard.press("w");

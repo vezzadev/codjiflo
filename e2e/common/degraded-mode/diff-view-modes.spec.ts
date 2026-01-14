@@ -97,7 +97,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -140,10 +140,10 @@ const baz = 'qux';
       ).toContainText("Inline");
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
       }
@@ -159,7 +159,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -193,7 +193,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -246,10 +246,10 @@ const baz = 'qux';
       ).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
       }
@@ -267,7 +267,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -294,10 +294,10 @@ const baz = 'qux';
       await expect(whitespaceButton).toHaveAttribute("aria-pressed", "false");
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
       }
@@ -315,7 +315,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -354,10 +354,10 @@ const baz = 'qux';
       await expect(diffRegion.getByText("@@")).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
 
@@ -382,7 +382,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -433,7 +433,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -459,10 +459,10 @@ const baz = 'qux';
       await expect(rightPane.locator("table")).toBeVisible();
     } else {
       // Prod mode: verify structure
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
       }
@@ -480,7 +480,7 @@ const baz = 'qux';
     await expect(fileNav).toBeVisible();
 
     if (isMockMode()) {
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
       await expect(
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
@@ -529,10 +529,10 @@ const baz = 'qux';
       await expect(diffRegion).toBeVisible();
     } else {
       // Prod mode: verify toolbar buttons exist
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
         const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
         await expect(
           toolbar.getByRole("button", { name: /Previous change/i })
