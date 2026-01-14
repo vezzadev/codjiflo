@@ -226,7 +226,7 @@ jobs:
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codjiflo-${{ github.run_id }}
+          name: codjiflo-pr-${{ env.PR_NUMBER }}-${{ github.run_id }}
           path: codjiflo-data/
           retention-days: 90
 

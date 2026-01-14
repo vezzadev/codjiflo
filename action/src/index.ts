@@ -57,8 +57,8 @@ async function run(): Promise<void> {
     const dbPath = join(workDir, 'iterations.db');
     const currentRunId = github.context.runId;
 
-    // Artifact name is just run ID - the actual artifact ID will be updated in comment after upload
-    const artifactName = `codjiflo-${currentRunId}`;
+    // Artifact name includes PR number for fallback filtering
+    const artifactName = `codjiflo-pr-${prNumber}-${currentRunId}`;
 
     // Get artifact ID from PR comment (if exists)
     core.info('Checking for previous artifact...');

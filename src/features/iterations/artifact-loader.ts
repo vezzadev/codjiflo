@@ -122,7 +122,14 @@ export class ArtifactLoader {
     const iterationCountMatch = /\*\*Iterations captured\*\*:\s*(\d+)/.exec(body);
     const timestampMatch = /\*\*Last updated\*\*:\s*([^\s]+)/.exec(body);
     const artifactMatch = /\*\*Artifact\*\*:\s*`(\d+)`/.exec(body);
+    const pendingMatch = /\*\*Artifact\*\*:\s*`pending`/.exec(body);
     const runIdMatch = /\*\*Run ID\*\*:\s*(\d+)/.exec(body);
+
+    // Check if artifact is still pending (workflow hasn't finished uploading)
+    if (pendingMatch) {
+      console.warn('Artifact upload still pending, falling back to degraded mode');
+      return null;
+    }
 
     const iterationCountValue = iterationCountMatch?.[1];
     const timestampValue = timestampMatch?.[1];
@@ -172,11 +179,7 @@ export class ArtifactLoader {
       const zipBlob = await response.blob();
       return await this.extractSQLiteFromZip(zipBlob);
     } catch (error) {
-      if (error instanceof GitHubAPIError && error.status === 410) {
-        // Artifact expired (90-day retention)
-        console.warn('Artifact expired:', reference.artifactId);
-        return null;
-      }
+      // Re-throw to trigger degraded mode
       throw error;
     }
   }
