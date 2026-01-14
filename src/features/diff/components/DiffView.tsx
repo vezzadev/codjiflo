@@ -7,7 +7,7 @@
  * S-3.3: View mode toggles
  */
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   useDiffPipeline,
@@ -22,6 +22,7 @@ import { VirtualizedSideBySideDiffView } from './VirtualizedSideBySideDiffView';
 import { InlineDiffTable } from './InlineDiffTable';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
+import { ShikiTokensProvider } from './ShikiTokensContext';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
@@ -150,6 +151,11 @@ export function DiffView() {
     }
   }, [draft, pipeline]);
 
+  // Extract line contents for context-aware syntax highlighting (multi-line comment support)
+  const lineContents = useMemo(() => {
+    return pipeline.diffLines.map(line => line.content);
+  }, [pipeline.diffLines]);
+
   // Loading state
   if (isLoading || (isShowingDescription && isPRLoading) || pipeline._isLoadingFullFile) {
     return <DiffLoadingState />;
@@ -217,17 +223,18 @@ export function DiffView() {
         <div className="diff-loading-banner">Loading comments...</div>
       )}
 
-      {/* Diff content */}
-      {pipeline.viewMode === 'inline' ? (
-        <div
-          ref={containerRefCallback}
-          className="diff-content-area"
-          role="region"
-          aria-label={`Diff content for ${pipeline.filename}`}
-          tabIndex={0}
-        >
-          {pipeline.isVirtualized ? (
-            <VirtualizedInlineDiffTable
+      {/* Diff content - wrapped with ShikiTokensProvider for multi-line comment support */}
+      <ShikiTokensProvider lines={lineContents} language={pipeline.language}>
+        {pipeline.viewMode === 'inline' ? (
+          <div
+            ref={containerRefCallback}
+            className="diff-content-area"
+            role="region"
+            aria-label={`Diff content for ${pipeline.filename}`}
+            tabIndex={0}
+          >
+            {pipeline.isVirtualized ? (
+              <VirtualizedInlineDiffTable
               key={pipeline.filename ?? 'diff-table-virtualized'}
               diffLines={pipeline.diffLines}
               language={pipeline.language}
@@ -330,7 +337,8 @@ export function DiffView() {
           onSubmitDraft={handleSubmitDraft}
           showWhitespace={pipeline.showWhitespace}
         />
-      )}
+        )}
+      </ShikiTokensProvider>
     </div>
   );
 }

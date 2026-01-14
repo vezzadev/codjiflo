@@ -94,6 +94,7 @@ export function InlineDiffTable({
                 onStartComment={() => onStartComment(index)}
                 showWhitespace={showWhitespace}
                 lineNumberMode={lineNumberMode}
+                lineIndex={index}
               />
               {draftLineIndex === index && (
                 <tr>

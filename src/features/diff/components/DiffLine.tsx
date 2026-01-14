@@ -15,6 +15,8 @@ interface DiffLineProps {
   showWhitespace?: boolean;
   /** Line number display mode for inline view with content filter (AC-3.3.14-15) */
   lineNumberMode?: 'left' | 'both' | 'right';
+  /** Line index for context-aware syntax highlighting (multi-line comment support) */
+  lineIndex?: number;
 }
 
 const LINE_TYPE_CLASSES: Record<string, string> = {
@@ -128,6 +130,7 @@ export function DiffLine({
   singleLineNumber = false,
   showWhitespace = false,
   lineNumberMode = 'both',
+  lineIndex,
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
@@ -206,6 +209,7 @@ export function DiffLine({
             code={line.content}
             language={language}
             showWhitespace={showWhitespace}
+            {...(lineIndex !== undefined && { lineIndex })}
           />
         )}
       </td>
