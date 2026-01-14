@@ -83,22 +83,25 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
   const result = useMemo((): IterationAwareFilesResult => {
     // Non-iteration mode (degraded): return original files from GitHub API
     if (!isIterationMode || !selectedRange) {
+      const files = githubFiles.map((file, index): IterationAwareFile => {
+        const result: IterationAwareFile = {
+          filename: file.filename,
+          status: file.status,
+          additions: file.additions,
+          deletions: file.deletions,
+          changes: file.changes,
+          patch: file.patch,
+          originalIndex: index,
+        };
+        if (file.previousFilename !== undefined) {
+          result.previousFilename = file.previousFilename;
+        }
+        return result;
+      });
+      // Sort files alphabetically by filename
+      files.sort((a, b) => a.filename.localeCompare(b.filename));
       return {
-        files: githubFiles.map((file, index): IterationAwareFile => {
-          const result: IterationAwareFile = {
-            filename: file.filename,
-            status: file.status,
-            additions: file.additions,
-            deletions: file.deletions,
-            changes: file.changes,
-            patch: file.patch,
-            originalIndex: index,
-          };
-          if (file.previousFilename !== undefined) {
-            result.previousFilename = file.previousFilename;
-          }
-          return result;
-        }),
+        files,
         isIterationMode: false,
         totalFilesInPR: githubFiles.length,
       };
@@ -187,6 +190,9 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
 
       iterationFiles.push(iterationFile);
     }
+
+    // Sort files alphabetically by filename
+    iterationFiles.sort((a, b) => a.filename.localeCompare(b.filename));
 
     return {
       files: iterationFiles,

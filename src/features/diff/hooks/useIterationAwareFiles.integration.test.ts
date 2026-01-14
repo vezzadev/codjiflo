@@ -197,6 +197,27 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(result.current.files[1]?.filename).toBe('src/file2.ts');
       expect(result.current.totalFilesInPR).toBe(2);
     });
+
+    it('should return files sorted alphabetically by filename (case-insensitive)', () => {
+      // Files in unsorted order from GitHub API
+      const files = [
+        createMockFile('src/zebra.ts'),
+        createMockFile('src/alpha.ts'),
+        createMockFile('README.md'),
+        createMockFile('package.json'),
+      ];
+
+      setupMocks(files, [], null);
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.files).toHaveLength(4);
+      // Files should be sorted alphabetically (case-insensitive: p < r < s)
+      expect(result.current.files[0]?.filename).toBe('package.json');
+      expect(result.current.files[1]?.filename).toBe('README.md');
+      expect(result.current.files[2]?.filename).toBe('src/alpha.ts');
+      expect(result.current.files[3]?.filename).toBe('src/zebra.ts');
+    });
   });
 
   describe('Console warning for degraded mode (Issue #186)', () => {
@@ -330,6 +351,41 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
+    });
+  });
+
+  describe('Iteration mode file sorting', () => {
+    it('should return files sorted alphabetically by filename in iteration mode', () => {
+      // Files in unsorted order from GitHub API
+      const files = [
+        createMockFile('src/zebra.ts'),
+        createMockFile('src/alpha.ts'),
+        createMockFile('README.md'),
+      ];
+
+      const artifacts = [
+        createMockArtifact(1, 'src/zebra.ts', [0, 1]),
+        createMockArtifact(2, 'src/alpha.ts', [0, 1]),
+        createMockArtifact(3, 'README.md', [0, 1]),
+      ];
+
+      setupMocks(files, artifacts, { fromSnapshot: 0, toSnapshot: 1 });
+
+      mockClient.setContent(1, 0, 'zebra original');
+      mockClient.setContent(1, 1, 'zebra modified');
+      mockClient.setContent(2, 0, 'alpha original');
+      mockClient.setContent(2, 1, 'alpha modified');
+      mockClient.setContent(3, 0, 'readme original');
+      mockClient.setContent(3, 1, 'readme modified');
+
+      const { result } = renderHook(() => useIterationAwareFiles());
+
+      expect(result.current.isIterationMode).toBe(true);
+      expect(result.current.files).toHaveLength(3);
+      // Files should be sorted alphabetically
+      expect(result.current.files[0]?.filename).toBe('README.md');
+      expect(result.current.files[1]?.filename).toBe('src/alpha.ts');
+      expect(result.current.files[2]?.filename).toBe('src/zebra.ts');
     });
   });
 
