@@ -22,11 +22,28 @@
 .titlebar-center {
   flex: 1;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .window-title {
   color: var(--titlebar-text);
   font-size: 12px;
+}
+
+.titlebar-github-link {
+  font-size: 11px;
+  color: var(--hyperlink);
+  text-decoration: none;
+  white-space: nowrap;
+  /* Allow dragging in this area when running as Electron/desktop app */
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-github-link:hover {
+  text-decoration: underline;
 }
 
 .window-inactive .window-title {
