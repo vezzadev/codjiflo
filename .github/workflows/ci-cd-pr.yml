@@ -217,8 +217,55 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Capture PR iteration
+        id: capture
         uses: ./action
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ env.PR_NUMBER }}
+
+      - name: Upload iteration artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: codjiflo-pr-${{ env.PR_NUMBER }}-${{ github.run_id }}
+          path: codjiflo-data/
+          retention-days: 90
+
+      - name: Update PR comment with artifact ID
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARTIFACT_ID="${{ steps.upload.outputs.artifact-id }}"
+          ITERATION_COUNT="${{ steps.capture.outputs.iteration-count }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
+          # Create comment body
+          BODY="<!-- codjiflo-data -->
+          ### CodjiFlo Iteration Tracking
+
+          **Iterations captured**: ${ITERATION_COUNT}
+          **Last updated**: ${TIMESTAMP}
+          **Artifact**: \`${ARTIFACT_ID}\`
+          **Run ID**: ${{ github.run_id }}
+
+          ---
+          <details>
+          <summary>What is this?</summary>
+
+          This comment is automatically updated by the [CodjiFlo GitHub Action](https://github.com/codjiflo/action) to enable force-push resilient code review with iteration tracking.
+
+          The artifact referenced above contains iteration data that the CodjiFlo frontend uses to:
+          - Track code changes across force-pushes
+          - Enable comment persistence across code modifications
+          - Allow comparison between any two iterations
+
+          </details>"
+
+          # Find existing comment or create new one
+          COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments --jq '.[] | select(.body | contains("<!-- codjiflo-data -->")) | .id')
+          if [ -n "$COMMENT_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X PATCH -f body="$BODY"
+          else
+            gh api repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments -f body="$BODY"
+          fi
 
