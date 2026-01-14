@@ -29,7 +29,7 @@ interface ShikiTokensContextValue {
 
   /**
    * Legacy method for array-index based lookup (fallback mode).
-   * @deprecated Use getLineTokens with side parameter instead.
+   * Prefer getLineTokens with lineNumber and side when full content is available.
    */
   getLineTokensByIndex: (index: number) => ThemedToken[] | null;
 
@@ -122,7 +122,12 @@ export function ShikiTokensProvider({
       if (hasFullContent) {
         // Full content mode: tokenize old and new versions separately
         const tokenizeContent = (content: string | undefined): TokensByLineNumber | null => {
-          if (!content) return null;
+          if (content === undefined) return null;
+
+          // Handle empty content (returns empty map, but still "ready")
+          if (content === '') {
+            return new Map<number, ThemedToken[]>();
+          }
 
           if (!isSupported) {
             // For unsupported languages, create simple tokens

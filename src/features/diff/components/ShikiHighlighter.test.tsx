@@ -19,8 +19,10 @@ vi.mock('./ShikiTokensContext', () => ({
 // Mock the shiki module
 const mockHighlighter = {
   getLoadedLanguages: vi.fn(() => ['typescript', 'javascript', 'python']),
-  codeToTokens: vi.fn((code: string, _options?: { lang: string; theme: string }) => ({
+  codeToTokens: vi.fn((code: string, options: { lang: string; theme: string }) => ({
     tokens: [[{ content: code, color: '#ff0000', offset: 0 }]],
+    // Use options to prevent unused variable warning
+    lang: options.lang,
   })),
 };
 
@@ -101,6 +103,7 @@ describe('ShikiHighlighter', () => {
     it('renders whitespace markers in highlighted tokens when enabled', async () => {
       mockHighlighter.codeToTokens.mockReturnValueOnce({
         tokens: [[{ content: 'const x', color: '#ff0000', offset: 0 }]],
+        lang: 'typescript',
       });
 
       render(
@@ -131,7 +134,7 @@ describe('ShikiHighlighter', () => {
       await waitFor(() => {
         // codeToTokens should not be called
         const calls = mockHighlighter.codeToTokens.mock.calls.filter(
-          (call) => call[1]?.lang === 'unsupported-lang'
+          (call) => call[1].lang === 'unsupported-lang'
         );
         expect(calls).toHaveLength(0);
       });
