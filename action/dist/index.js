@@ -38259,7 +38259,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.findLatestArtifact = findLatestArtifact;
 exports.downloadArtifact = downloadArtifact;
 exports.downloadPreviousArtifact = downloadPreviousArtifact;
-exports.findNewestArtifactForPR = findNewestArtifactForPR;
+exports.downloadArtifactById = downloadArtifactById;
+exports.findNewestCodjifloArtifactForPR = findNewestCodjifloArtifactForPR;
 exports.downloadArtifactWithFallback = downloadArtifactWithFallback;
 // ============================================================================
 // Functions
@@ -38326,18 +38327,48 @@ async function downloadPreviousArtifact(octokit, owner, repo, artifactName, curr
     };
 }
 /**
- * Find the newest artifact matching a PR pattern.
- * Used as fallback when the specific artifact from comment is not found.
+ * Download artifact directly by ID.
+ * Returns null if artifact not found or expired.
  */
-async function findNewestArtifactForPR(octokit, owner, repo, prNumber) {
-    // List all artifacts and filter by PR pattern
+async function downloadArtifactById(octokit, owner, repo, artifactId) {
+    try {
+        // Get artifact info first
+        const { data: artifact } = await octokit.rest.actions.getArtifact({
+            owner,
+            repo,
+            artifact_id: artifactId,
+        });
+        if (artifact.expired) {
+            return null;
+        }
+        const artifactInfo = {
+            id: artifact.id,
+            name: artifact.name,
+            created_at: artifact.created_at ?? '',
+            workflow_run_id: artifact.workflow_run?.id ?? 0,
+        };
+        const data = await downloadArtifact(octokit, owner, repo, artifactInfo);
+        return { data, artifactInfo };
+    }
+    catch {
+        // Artifact not found or expired
+        return null;
+    }
+}
+/**
+ * Find the newest codjiflo artifact for a specific PR.
+ * Used as fallback when the specific artifact ID is not valid.
+ */
+async function findNewestCodjifloArtifactForPR(octokit, owner, repo, prNumber) {
+    // List all artifacts matching codjiflo pattern for this PR
     const { data } = await octokit.rest.actions.listArtifactsForRepo({
         owner,
         repo,
         per_page: 100,
     });
-    const prPattern = new RegExp(`^codjiflo-pr-${prNumber}(-run-\\d+)?$`);
-    // Find the first matching, non-expired artifact
+    // Pattern: codjiflo-pr-{prNumber}-{runId}
+    const prPattern = new RegExp(`^codjiflo-pr-${prNumber}-\\d+$`);
+    // Find the first matching, non-expired artifact (list is sorted by created_at desc)
     for (const artifact of data.artifacts) {
         if (artifact.expired) {
             continue;
@@ -38355,28 +38386,21 @@ async function findNewestArtifactForPR(octokit, owner, repo, prNumber) {
 }
 /**
  * Download artifact with fallback logic:
- * 1. Try to download specific artifact by name (from PR comment)
- * 2. If not found/expired, fall back to newest artifact for the PR
+ * 1. Try to download specific artifact by ID (from PR comment)
+ * 2. If not found/expired, fall back to newest artifact for this PR
  *
  * Returns null if no artifact exists at all.
  */
-async function downloadArtifactWithFallback(octokit, owner, repo, prNumber, specificArtifactName) {
-    // Strategy 1: Try specific artifact from PR comment
-    if (specificArtifactName) {
-        const specificArtifact = await findLatestArtifact(octokit, owner, repo, specificArtifactName);
-        if (specificArtifact) {
-            try {
-                const data = await downloadArtifact(octokit, owner, repo, specificArtifact);
-                return { data, artifactInfo: specificArtifact };
-            }
-            catch {
-                // Artifact may have been deleted or expired since we found it
-                // Fall through to strategy 2
-            }
+async function downloadArtifactWithFallback(octokit, owner, repo, prNumber, specificArtifactId) {
+    // Strategy 1: Try specific artifact by ID from PR comment
+    if (specificArtifactId) {
+        const result = await downloadArtifactById(octokit, owner, repo, specificArtifactId);
+        if (result) {
+            return result;
         }
     }
     // Strategy 2: Find newest artifact for this PR (fallback)
-    const newestArtifact = await findNewestArtifactForPR(octokit, owner, repo, prNumber);
+    const newestArtifact = await findNewestCodjifloArtifactForPR(octokit, owner, repo, prNumber);
     if (newestArtifact) {
         try {
             const data = await downloadArtifact(octokit, owner, repo, newestArtifact);
@@ -38629,13 +38653,13 @@ async function getCaptureContext(octokit) {
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updatePRComment = updatePRComment;
-exports.getArtifactNameFromComment = getArtifactNameFromComment;
+exports.getArtifactIdFromComment = getArtifactIdFromComment;
 exports.updatePRDescription = updatePRDescription;
 // ============================================================================
 // Constants
 // ============================================================================
 const COMMENT_MARKER = '<!-- codjiflo-data -->';
-const ARTIFACT_NAME_PATTERN = /\*\*Artifact\*\*: `([^`]+)`/;
+const ARTIFACT_ID_PATTERN = /\*\*Artifact\*\*: `(\d+)`/;
 const PR_DESCRIPTION_MARKER = '<!-- codjiflo-link -->';
 // ============================================================================
 // Comment Management
@@ -38683,22 +38707,23 @@ async function findExistingComment(octokit, owner, repo, prNumber) {
     return null;
 }
 /**
- * Get the artifact name from the existing PR comment.
- * Returns null if no comment exists or artifact name is not found.
+ * Get the artifact ID from the existing PR comment.
+ * Returns null if no comment exists or artifact ID is not found.
  */
-async function getArtifactNameFromComment(octokit, owner, repo, prNumber) {
+async function getArtifactIdFromComment(octokit, owner, repo, prNumber) {
     const existingComment = await findExistingComment(octokit, owner, repo, prNumber);
     if (!existingComment) {
         return null;
     }
-    const match = existingComment.body.match(ARTIFACT_NAME_PATTERN);
+    const match = existingComment.body.match(ARTIFACT_ID_PATTERN);
     if (match && match[1]) {
-        return match[1];
+        return parseInt(match[1], 10);
     }
     return null;
 }
 /**
  * Format the comment body with metadata.
+ * Note: Artifact field starts as 'pending' and is updated by workflow after upload.
  */
 function formatCommentBody(data) {
     return `${COMMENT_MARKER}
@@ -38706,7 +38731,7 @@ function formatCommentBody(data) {
 
 **Iterations captured**: ${data.iterationCount}
 **Last updated**: ${data.timestamp}
-**Artifact**: \`${data.artifactName}\`
+**Artifact**: \`pending\`
 **Run ID**: ${data.runId}
 
 ---
@@ -38986,7 +39011,7 @@ exports.IterationDatabase = IterationDatabase;
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SCHEMA_SQL_TEMPLATE = void 0;
-exports.SCHEMA_SQL_TEMPLATE = "-- Schema metadata table\n-- Stores database version for migration compatibility\nCREATE TABLE IF NOT EXISTS schema_meta (\n  key TEXT PRIMARY KEY,\n  value TEXT NOT NULL\n);\n\n-- Insert schema version (ignore if already exists)\nINSERT OR IGNORE INTO schema_meta (key, value) VALUES ('version', '{{SCHEMA_VERSION}}');\n\n-- Iterations table\n-- Each row represents a PR revision (synchronize event)\nCREATE TABLE IF NOT EXISTS iterations (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  revision INTEGER NOT NULL UNIQUE,\n  head_sha TEXT NOT NULL,\n  base_sha TEXT NOT NULL,\n  before_sha TEXT,\n  author TEXT,\n  created_at TEXT NOT NULL\n);\n\n-- File artifacts table\n-- Tracks a file's identity across iterations (handles renames)\nCREATE TABLE IF NOT EXISTS file_artifacts (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  change_tracking_id TEXT NOT NULL UNIQUE\n);\n\n-- Content blobs table (deduplicated storage)\n-- Each unique content is stored only once, keyed by SHA-1 hash\nCREATE TABLE IF NOT EXISTS content_blobs (\n  content_hash TEXT PRIMARY KEY,\n  content TEXT NOT NULL,\n  size_bytes INTEGER NOT NULL\n);\n\n-- Artifact snapshots table\n-- Maps artifact ID to file path and content at each snapshot\n-- null path means file doesn't exist at that snapshot\n-- null content_hash means file was deleted\nCREATE TABLE IF NOT EXISTS artifact_snapshots (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),\n  snapshot_index INTEGER NOT NULL,\n  file_path TEXT,\n  content_hash TEXT REFERENCES content_blobs(content_hash),\n  UNIQUE(artifact_id, snapshot_index)\n);\n\n-- SpanTrackers table\n-- Precomputed line mappings between snapshots\nCREATE TABLE IF NOT EXISTS span_trackers (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),\n  left_snapshot_index INTEGER NOT NULL,\n  right_snapshot_index INTEGER NOT NULL,\n  UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)\n);\n\n-- Span mappings table (normalized, not BLOB)\n-- Line-by-line mappings for SpanTracker\nCREATE TABLE IF NOT EXISTS span_mappings (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  tracker_id INTEGER NOT NULL REFERENCES span_trackers(id),\n  left_line_start INTEGER,\n  left_line_end INTEGER,\n  right_line_start INTEGER,\n  right_line_end INTEGER,\n  mapping_type TEXT NOT NULL CHECK(mapping_type IN ('unchanged', 'modified', 'deleted', 'added'))\n);\n\n-- Indexes for common queries\nCREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots(artifact_id);\nCREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);\nCREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);\nCREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);\n";
+exports.SCHEMA_SQL_TEMPLATE = "-- Schema metadata table\r\n-- Stores database version for migration compatibility\r\nCREATE TABLE IF NOT EXISTS schema_meta (\r\n  key TEXT PRIMARY KEY,\r\n  value TEXT NOT NULL\r\n);\r\n\r\n-- Insert schema version (ignore if already exists)\r\nINSERT OR IGNORE INTO schema_meta (key, value) VALUES ('version', '{{SCHEMA_VERSION}}');\r\n\r\n-- Iterations table\r\n-- Each row represents a PR revision (synchronize event)\r\nCREATE TABLE IF NOT EXISTS iterations (\r\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n  revision INTEGER NOT NULL UNIQUE,\r\n  head_sha TEXT NOT NULL,\r\n  base_sha TEXT NOT NULL,\r\n  before_sha TEXT,\r\n  author TEXT,\r\n  created_at TEXT NOT NULL\r\n);\r\n\r\n-- File artifacts table\r\n-- Tracks a file's identity across iterations (handles renames)\r\nCREATE TABLE IF NOT EXISTS file_artifacts (\r\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n  change_tracking_id TEXT NOT NULL UNIQUE\r\n);\r\n\r\n-- Content blobs table (deduplicated storage)\r\n-- Each unique content is stored only once, keyed by SHA-1 hash\r\nCREATE TABLE IF NOT EXISTS content_blobs (\r\n  content_hash TEXT PRIMARY KEY,\r\n  content TEXT NOT NULL,\r\n  size_bytes INTEGER NOT NULL\r\n);\r\n\r\n-- Artifact snapshots table\r\n-- Maps artifact ID to file path and content at each snapshot\r\n-- null path means file doesn't exist at that snapshot\r\n-- null content_hash means file was deleted\r\nCREATE TABLE IF NOT EXISTS artifact_snapshots (\r\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),\r\n  snapshot_index INTEGER NOT NULL,\r\n  file_path TEXT,\r\n  content_hash TEXT REFERENCES content_blobs(content_hash),\r\n  UNIQUE(artifact_id, snapshot_index)\r\n);\r\n\r\n-- SpanTrackers table\r\n-- Precomputed line mappings between snapshots\r\nCREATE TABLE IF NOT EXISTS span_trackers (\r\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n  artifact_id INTEGER NOT NULL REFERENCES file_artifacts(id),\r\n  left_snapshot_index INTEGER NOT NULL,\r\n  right_snapshot_index INTEGER NOT NULL,\r\n  UNIQUE(artifact_id, left_snapshot_index, right_snapshot_index)\r\n);\r\n\r\n-- Span mappings table (normalized, not BLOB)\r\n-- Line-by-line mappings for SpanTracker\r\nCREATE TABLE IF NOT EXISTS span_mappings (\r\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n  tracker_id INTEGER NOT NULL REFERENCES span_trackers(id),\r\n  left_line_start INTEGER,\r\n  left_line_end INTEGER,\r\n  right_line_start INTEGER,\r\n  right_line_end INTEGER,\r\n  mapping_type TEXT NOT NULL CHECK(mapping_type IN ('unchanged', 'modified', 'deleted', 'added'))\r\n);\r\n\r\n-- Indexes for common queries\r\nCREATE INDEX IF NOT EXISTS idx_artifact_snapshots_artifact ON artifact_snapshots(artifact_id);\r\nCREATE INDEX IF NOT EXISTS idx_artifact_snapshots_hash ON artifact_snapshots(content_hash);\r\nCREATE INDEX IF NOT EXISTS idx_span_trackers_artifact ON span_trackers(artifact_id);\r\nCREATE INDEX IF NOT EXISTS idx_span_mappings_tracker ON span_mappings(tracker_id);\r\n";
 
 
 /***/ }),
@@ -39105,23 +39130,23 @@ async function run() {
         }
         const dbPath = (0, path_1.join)(workDir, 'iterations.db');
         const currentRunId = github.context.runId;
-        // New artifact name includes run ID for uniqueness
-        const artifactName = `codjiflo-pr-${prNumber}-run-${currentRunId}`;
-        // Get artifact name from PR comment (if exists)
+        // Artifact name includes PR number for fallback filtering
+        const artifactName = `codjiflo-pr-${prNumber}-${currentRunId}`;
+        // Get artifact ID from PR comment (if exists)
         core.info('Checking for previous artifact...');
-        const previousArtifactName = await (0, comment_manager_1.getArtifactNameFromComment)(octokit, owner, repo, prNumber);
-        if (previousArtifactName) {
-            core.info(`PR comment references artifact: ${previousArtifactName}`);
+        const previousArtifactId = await (0, comment_manager_1.getArtifactIdFromComment)(octokit, owner, repo, prNumber);
+        if (previousArtifactId) {
+            core.info(`PR comment references artifact ID: ${previousArtifactId}`);
         }
         // Download previous artifact with fallback logic
-        const previousArtifact = await (0, artifact_download_1.downloadArtifactWithFallback)(octokit, owner, repo, prNumber, previousArtifactName);
+        const previousArtifact = await (0, artifact_download_1.downloadArtifactWithFallback)(octokit, owner, repo, prNumber, previousArtifactId);
         if (previousArtifact) {
-            const usedFallback = previousArtifactName && previousArtifact.artifactInfo.name !== previousArtifactName;
+            const usedFallback = previousArtifactId && previousArtifact.artifactInfo.id !== previousArtifactId;
             if (usedFallback) {
-                core.info(`Referenced artifact not found, using fallback: ${previousArtifact.artifactInfo.name}`);
+                core.info(`Referenced artifact not found, using fallback: ${previousArtifact.artifactInfo.id}`);
             }
             else {
-                core.info(`Found previous artifact: ${previousArtifact.artifactInfo.name}`);
+                core.info(`Found previous artifact: ${previousArtifact.artifactInfo.id}`);
             }
             // Extract the database from the ZIP
             const zip = new adm_zip_1.default(Buffer.from(previousArtifact.data));
@@ -39179,11 +39204,10 @@ async function run() {
             core.setOutput('artifact-name', artifactName);
             core.setOutput('iteration-count', iteration.revision);
             core.setOutput('work-dir', workDir);
-            // Update PR comment
+            // Update PR comment (artifact ID will be added by workflow after upload)
             core.info('Updating PR comment...');
             await (0, comment_manager_1.updatePRComment)(octokit, owner, repo, prNumber, {
                 iterationCount: iteration.revision,
-                artifactName,
                 runId: github.context.runId,
                 timestamp: new Date().toISOString(),
             });
