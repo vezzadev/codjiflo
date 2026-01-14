@@ -118,7 +118,7 @@ export enum FileChangeType {
 
 export interface ArtifactReference {
   runId: number;
-  artifactName: string;
+  artifactId: number;
   timestamp: string; // ISO 8601
   iterationCount: number;
 }

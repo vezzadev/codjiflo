@@ -11,7 +11,7 @@ import * as github from '@actions/github';
 // ============================================================================
 
 const COMMENT_MARKER = '<!-- codjiflo-data -->';
-const ARTIFACT_NAME_PATTERN = /\*\*Artifact\*\*: `([^`]+)`/;
+const ARTIFACT_ID_PATTERN = /\*\*Artifact\*\*: `(\d+)`/;
 const PR_DESCRIPTION_MARKER = '<!-- codjiflo-link -->';
 
 // ============================================================================
@@ -20,7 +20,6 @@ const PR_DESCRIPTION_MARKER = '<!-- codjiflo-link -->';
 
 interface CommentData {
   iterationCount: number;
-  artifactName: string;
   runId: number;
   timestamp: string;
 }
@@ -89,24 +88,24 @@ async function findExistingComment(
 }
 
 /**
- * Get the artifact name from the existing PR comment.
- * Returns null if no comment exists or artifact name is not found.
+ * Get the artifact ID from the existing PR comment.
+ * Returns null if no comment exists or artifact ID is not found.
  */
-export async function getArtifactNameFromComment(
+export async function getArtifactIdFromComment(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
   repo: string,
   prNumber: number
-): Promise<string | null> {
+): Promise<number | null> {
   const existingComment = await findExistingComment(octokit, owner, repo, prNumber);
 
   if (!existingComment) {
     return null;
   }
 
-  const match = existingComment.body.match(ARTIFACT_NAME_PATTERN);
+  const match = existingComment.body.match(ARTIFACT_ID_PATTERN);
   if (match && match[1]) {
-    return match[1];
+    return parseInt(match[1], 10);
   }
 
   return null;
@@ -114,6 +113,7 @@ export async function getArtifactNameFromComment(
 
 /**
  * Format the comment body with metadata.
+ * Note: Artifact field starts as 'pending' and is updated by workflow after upload.
  */
 function formatCommentBody(data: CommentData): string {
   return `${COMMENT_MARKER}
@@ -121,7 +121,7 @@ function formatCommentBody(data: CommentData): string {
 
 **Iterations captured**: ${data.iterationCount}
 **Last updated**: ${data.timestamp}
-**Artifact**: \`${data.artifactName}\`
+**Artifact**: \`pending\`
 **Run ID**: ${data.runId}
 
 ---

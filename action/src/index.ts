@@ -21,7 +21,7 @@ import AdmZip from 'adm-zip';
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
-import { updatePRComment, getArtifactNameFromComment, updatePRDescription } from './comment/comment-manager';
+import { updatePRComment, getArtifactIdFromComment, updatePRDescription } from './comment/comment-manager';
 import { downloadArtifactWithFallback } from './artifact/artifact-download';
 
 // ============================================================================
@@ -57,14 +57,14 @@ async function run(): Promise<void> {
     const dbPath = join(workDir, 'iterations.db');
     const currentRunId = github.context.runId;
 
-    // New artifact name includes run ID for uniqueness
-    const artifactName = `codjiflo-pr-${prNumber}-run-${currentRunId}`;
+    // Artifact name is just run ID - the actual artifact ID will be updated in comment after upload
+    const artifactName = `codjiflo-${currentRunId}`;
 
-    // Get artifact name from PR comment (if exists)
+    // Get artifact ID from PR comment (if exists)
     core.info('Checking for previous artifact...');
-    const previousArtifactName = await getArtifactNameFromComment(octokit, owner, repo, prNumber);
-    if (previousArtifactName) {
-      core.info(`PR comment references artifact: ${previousArtifactName}`);
+    const previousArtifactId = await getArtifactIdFromComment(octokit, owner, repo, prNumber);
+    if (previousArtifactId) {
+      core.info(`PR comment references artifact ID: ${previousArtifactId}`);
     }
 
     // Download previous artifact with fallback logic
@@ -73,15 +73,15 @@ async function run(): Promise<void> {
       owner,
       repo,
       prNumber,
-      previousArtifactName
+      previousArtifactId
     );
 
     if (previousArtifact) {
-      const usedFallback = previousArtifactName && previousArtifact.artifactInfo.name !== previousArtifactName;
+      const usedFallback = previousArtifactId && previousArtifact.artifactInfo.id !== previousArtifactId;
       if (usedFallback) {
-        core.info(`Referenced artifact not found, using fallback: ${previousArtifact.artifactInfo.name}`);
+        core.info(`Referenced artifact not found, using fallback: ${previousArtifact.artifactInfo.id}`);
       } else {
-        core.info(`Found previous artifact: ${previousArtifact.artifactInfo.name}`);
+        core.info(`Found previous artifact: ${previousArtifact.artifactInfo.id}`);
       }
       // Extract the database from the ZIP
       const zip = new AdmZip(Buffer.from(previousArtifact.data));
@@ -152,11 +152,10 @@ async function run(): Promise<void> {
       core.setOutput('iteration-count', iteration.revision);
       core.setOutput('work-dir', workDir);
 
-      // Update PR comment
+      // Update PR comment (artifact ID will be added by workflow after upload)
       core.info('Updating PR comment...');
       await updatePRComment(octokit, owner, repo, prNumber, {
         iterationCount: iteration.revision,
-        artifactName,
         runId: github.context.runId,
         timestamp: new Date().toISOString(),
       });

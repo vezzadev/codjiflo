@@ -73,7 +73,7 @@ function createMockArtifacts(): ReviewFileArtifact[] {
 function createMockReference(): ArtifactReference {
   return {
     runId: 123,
-    artifactName: 'codjiflo-iterations',
+    artifactId: 456789,
     timestamp: '2024-01-01T00:00:00Z',
     iterationCount: 2,
   };
