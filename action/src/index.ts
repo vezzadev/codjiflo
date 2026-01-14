@@ -21,7 +21,7 @@ import AdmZip from 'adm-zip';
 import { IterationDatabase } from './db/database';
 import { captureIteration, getCaptureContext } from './capture/iteration-capture';
 import { computeSpanTrackers, prepareSpanTrackerInputs } from './spantracker/tracker';
-import { updatePRComment, getArtifactIdFromComment, updatePRDescription } from './comment/comment-manager';
+import { getArtifactIdFromComment, updatePRDescription } from './comment/comment-manager';
 import { downloadArtifactWithFallback } from './artifact/artifact-download';
 
 // ============================================================================
