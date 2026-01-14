@@ -72,10 +72,12 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(diffRegion).toBeVisible();
 
     // Before enabling whitespace visibility, verify syntax highlighting is present.
-    // SyntaxHighlighter uses inline styles (useInlineStyles=true), so we check for
-    // spans with color styles, which indicates syntax highlighting is active.
+    // Shiki uses inline styles, so we check for spans with color styles.
+    // Wait for Shiki to finish async loading and render highlighted code.
     // Example: <span style="color: rgb(215, 58, 73)">const</span>
-    const syntaxSpansBefore = await diffRegion.locator('span[style*="color:"]').count();
+    const syntaxSpanLocator = diffRegion.locator('span[style*="color"]');
+    await expect(syntaxSpanLocator.first()).toBeVisible();
+    const syntaxSpansBefore = await syntaxSpanLocator.count();
     expect(syntaxSpansBefore).toBeGreaterThan(0);
 
     // Enable whitespace visibility using 'B' key

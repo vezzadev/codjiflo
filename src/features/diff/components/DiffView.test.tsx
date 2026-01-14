@@ -41,6 +41,13 @@ vi.mock('next/navigation', () => ({
   useParams: vi.fn(() => ({ owner: 'testowner', repo: 'testrepo' })),
 }));
 
+// Mock ShikiHighlighter to avoid async loading issues and act() warnings
+vi.mock('./ShikiHighlighter', () => ({
+  ShikiHighlighter: ({ code }: { code: string }) => (
+    <span className="diff-code" data-testid="shiki-highlighter">{code}</span>
+  ),
+}));
+
 // Mock useIterationDiff hook for iteration switch tests
 const mockIterationDiff = {
   isIterationMode: false,

@@ -10,94 +10,104 @@ describe('useSyntaxTheme', () => {
     });
   });
 
-  it('returns atom-one-dark style for dark theme', () => {
+  it('returns github-dark theme for dark theme with github scheme', () => {
     const { result } = renderHook(() => useSyntaxTheme());
-
-    expect(result.current.hljs).toBeDefined();
-    expect(result.current.hljs?.background).toBe('transparent');
+    expect(result.current).toBe('github-dark');
   });
 
-  it('returns github style for light theme', () => {
+  it('returns github-light theme for light theme with github scheme', () => {
     act(() => {
-      useThemeStore.setState({ theme: 'light' });
+      useThemeStore.setState({ theme: 'light', diffColorScheme: 'github' });
     });
     const { result } = renderHook(() => useSyntaxTheme());
-
-    expect(result.current.hljs).toBeDefined();
-    expect(result.current.hljs?.background).toBe('transparent');
+    expect(result.current).toBe('github-light');
   });
 
-  it('returns atom-one-dark style for black theme', () => {
+  it('returns github-dark theme for black theme', () => {
     act(() => {
-      useThemeStore.setState({ theme: 'black' });
+      useThemeStore.setState({ theme: 'black', diffColorScheme: 'github' });
     });
     const { result } = renderHook(() => useSyntaxTheme());
-
-    expect(result.current.hljs).toBeDefined();
-    expect(result.current.hljs?.background).toBe('transparent');
+    expect(result.current).toBe('github-dark');
   });
 
-  it('returns a11y-dark style for high-contrast theme', () => {
+  it('returns github-dark-high-contrast theme for high-contrast theme', () => {
     act(() => {
       useThemeStore.setState({ theme: 'high-contrast' });
     });
     const { result } = renderHook(() => useSyntaxTheme());
-
-    expect(result.current.hljs).toBeDefined();
-    expect(result.current.hljs?.background).toBe('transparent');
+    expect(result.current).toBe('github-dark-high-contrast');
   });
 
-  it('sets transparent background for all themes', () => {
-    const themes = ['light', 'dark', 'black', 'high-contrast'] as const;
-
-    for (const theme of themes) {
-      act(() => {
-        useThemeStore.setState({ theme });
-      });
-      const { result } = renderHook(() => useSyntaxTheme());
-
-      expect(result.current.hljs?.background).toBe('transparent');
-      expect(result.current.hljs?.padding).toBe(0);
-      expect(result.current.hljs?.margin).toBe(0);
-    }
-  });
-
-  it('updates style when theme changes', () => {
+  it('returns light-plus theme for light theme with visual-studio scheme', () => {
     act(() => {
-      useThemeStore.setState({ theme: 'light' });
+      useThemeStore.setState({ theme: 'light', diffColorScheme: 'visual-studio' });
+    });
+    const { result } = renderHook(() => useSyntaxTheme());
+    expect(result.current).toBe('light-plus');
+  });
+
+  it('returns dark-plus theme for dark theme with visual-studio scheme', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'dark', diffColorScheme: 'visual-studio' });
+    });
+    const { result } = renderHook(() => useSyntaxTheme());
+    expect(result.current).toBe('dark-plus');
+  });
+
+  it('returns light-plus theme for light theme with codeflow-classic scheme', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'light', diffColorScheme: 'codeflow-classic' });
+    });
+    const { result } = renderHook(() => useSyntaxTheme());
+    expect(result.current).toBe('light-plus');
+  });
+
+  it('returns dark-plus theme for dark theme with codeflow-redgreen scheme', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'dark', diffColorScheme: 'codeflow-redgreen' });
+    });
+    const { result } = renderHook(() => useSyntaxTheme());
+    expect(result.current).toBe('dark-plus');
+  });
+
+  it('returns dark-plus theme for black theme with visual-studio scheme', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'black', diffColorScheme: 'visual-studio' });
+    });
+    const { result } = renderHook(() => useSyntaxTheme());
+    expect(result.current).toBe('dark-plus');
+  });
+
+  it('updates theme when UI theme changes', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'light', diffColorScheme: 'github' });
     });
     const { result, rerender } = renderHook(() => useSyntaxTheme());
 
-    const lightStyle = result.current;
+    expect(result.current).toBe('github-light');
 
     act(() => {
       useThemeStore.setState({ theme: 'dark' });
     });
     rerender();
 
-    const darkStyle = result.current;
-
-    expect(lightStyle).not.toBe(darkStyle);
+    expect(result.current).toBe('github-dark');
   });
 
-  it('returns style object with hljs-keyword defined', () => {
-    const { result } = renderHook(() => useSyntaxTheme());
+  it('updates theme when diff color scheme changes', () => {
+    act(() => {
+      useThemeStore.setState({ theme: 'dark', diffColorScheme: 'github' });
+    });
+    const { result, rerender } = renderHook(() => useSyntaxTheme());
 
-    // All hljs themes should have keyword styling
-    expect(result.current['hljs-keyword']).toBeDefined();
-  });
+    expect(result.current).toBe('github-dark');
 
-  it('returns style object with hljs-string defined', () => {
-    const { result } = renderHook(() => useSyntaxTheme());
+    act(() => {
+      useThemeStore.setState({ diffColorScheme: 'visual-studio' });
+    });
+    rerender();
 
-    // All hljs themes should have string styling
-    expect(result.current['hljs-string']).toBeDefined();
-  });
-
-  it('returns style object with hljs-comment defined', () => {
-    const { result } = renderHook(() => useSyntaxTheme());
-
-    // All hljs themes should have comment styling
-    expect(result.current['hljs-comment']).toBeDefined();
+    expect(result.current).toBe('dark-plus');
   });
 });

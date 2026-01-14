@@ -1,63 +1,46 @@
 import { useMemo } from 'react';
 import { useThemeStore, type Theme, type DiffColorScheme } from '@/features/theme';
-import github from 'react-syntax-highlighter/dist/esm/styles/hljs/github';
-import atomOneDark from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark';
-import a11yDark from 'react-syntax-highlighter/dist/esm/styles/hljs/a11y-dark';
-import vs from 'react-syntax-highlighter/dist/esm/styles/hljs/vs';
-import vs2015 from 'react-syntax-highlighter/dist/esm/styles/hljs/vs2015';
+import type { ShikiTheme } from '@/lib/shiki';
 
-type HljsStyle = typeof github;
 type W = '*';
 type ThemePattern = Theme | W;
 type SchemePattern = DiffColorScheme | W;
 
-// Pattern matching: [theme, colorScheme] -> style (first match wins)
-const STYLE_PATTERNS: [ThemePattern, SchemePattern, HljsStyle][] = [
-  // High contrast always uses a11y-dark
-  ['high-contrast', '*', a11yDark],
-  // CodeFlow and Visual Studio schemes use VS syntax themes
-  ['light', 'codeflow-classic', vs],
-  ['light', 'codeflow-redgreen', vs],
-  ['light', 'visual-studio', vs],
-  ['dark', 'codeflow-classic', vs2015],
-  ['dark', 'codeflow-redgreen', vs2015],
-  ['dark', 'visual-studio', vs2015],
-  ['black', 'codeflow-classic', vs2015],
-  ['black', 'codeflow-redgreen', vs2015],
-  ['black', 'visual-studio', vs2015],
-  // Default: GitHub schemes use GitHub/Atom themes
-  ['light', '*', github],
-  ['dark', '*', atomOneDark],
-  ['black', '*', atomOneDark],
+// Pattern matching: [theme, colorScheme] -> Shiki theme name (first match wins)
+const THEME_PATTERNS: [ThemePattern, SchemePattern, ShikiTheme][] = [
+  // High contrast always uses github-dark-high-contrast
+  ['high-contrast', '*', 'github-dark-high-contrast'],
+  // CodeFlow and Visual Studio schemes use VS Code themes
+  ['light', 'codeflow-classic', 'light-plus'],
+  ['light', 'codeflow-redgreen', 'light-plus'],
+  ['light', 'visual-studio', 'light-plus'],
+  ['dark', 'codeflow-classic', 'dark-plus'],
+  ['dark', 'codeflow-redgreen', 'dark-plus'],
+  ['dark', 'visual-studio', 'dark-plus'],
+  ['black', 'codeflow-classic', 'dark-plus'],
+  ['black', 'codeflow-redgreen', 'dark-plus'],
+  ['black', 'visual-studio', 'dark-plus'],
+  // Default: GitHub schemes use GitHub themes
+  ['light', '*', 'github-light'],
+  ['dark', '*', 'github-dark'],
+  ['black', '*', 'github-dark'],
 ];
 
-function matchStyle(theme: Theme, scheme: DiffColorScheme): HljsStyle {
-  const match = STYLE_PATTERNS.find(
+function matchTheme(theme: Theme, scheme: DiffColorScheme): ShikiTheme {
+  const match = THEME_PATTERNS.find(
     ([t, s]) => (t === '*' || t === theme) && (s === '*' || s === scheme)
   );
-  return match?.[2] ?? github;
+  return match?.[2] ?? 'github-light';
 }
 
 /**
- * Returns an hljs syntax highlighting style that matches the current UI theme.
- * The background is set to transparent so the diff line background shows through.
+ * Returns a Shiki theme name that matches the current UI theme and diff color scheme.
  */
-export function useSyntaxTheme(): HljsStyle {
+export function useSyntaxTheme(): ShikiTheme {
   const theme = useThemeStore((state) => state.theme);
   const diffColorScheme = useThemeStore((state) => state.diffColorScheme);
 
   return useMemo(() => {
-    const baseStyle = matchStyle(theme, diffColorScheme);
-    return {
-      ...baseStyle,
-      hljs: {
-        ...baseStyle.hljs,
-        background: 'transparent',
-        padding: 0,
-        margin: 0,
-        display: 'inline',
-        overflow: 'visible',
-      },
-    };
+    return matchTheme(theme, diffColorScheme);
   }, [theme, diffColorScheme]);
 }
