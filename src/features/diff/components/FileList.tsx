@@ -1,7 +1,51 @@
+import { useState, useMemo } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
-import { useIterationAwareFiles } from '../hooks';
+import { useIterationAwareFiles, type IterationAwareFile } from '../hooks';
 import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
+
+interface FileGroup {
+  folder: string;
+  files: IterationAwareFile[];
+}
+
+/**
+ * Get parent directory path from a filename
+ */
+function getParentPath(filename: string): string {
+  const lastSlash = filename.lastIndexOf('/');
+  if (lastSlash === -1) return '/';
+  return '/' + filename.substring(0, lastSlash);
+}
+
+/**
+ * Get basename from a filename
+ */
+function getBasename(filename: string): string {
+  const lastSlash = filename.lastIndexOf('/');
+  if (lastSlash === -1) return filename;
+  return filename.substring(lastSlash + 1);
+}
+
+/**
+ * Group files by their parent directory
+ */
+export function groupFilesByFolder(files: IterationAwareFile[]): FileGroup[] {
+  const groups = new Map<string, IterationAwareFile[]>();
+  for (const file of files) {
+    const folder = getParentPath(file.filename);
+    const existing = groups.get(folder);
+    if (existing) {
+      existing.push(file);
+    } else {
+      groups.set(folder, [file]);
+    }
+  }
+  // Sort folders alphabetically, root "/" first
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => (a === '/' ? -1 : b === '/' ? 1 : a.localeCompare(b)))
+    .map(([folder, files]) => ({ folder, files }));
+}
 
 /**
  * List of changed files in the PR
@@ -11,6 +55,18 @@ import { Skeleton } from '@/components/ui';
 export function FileList() {
   const { selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
   const { files } = useIterationAwareFiles();
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+
+  const groupedFiles = useMemo(() => groupFilesByFolder(files), [files]);
+
+  const toggleFolder = (folder: string) => {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folder)) next.delete(folder);
+      else next.add(folder);
+      return next;
+    });
+  };
 
   if (error) {
     return (
@@ -42,11 +98,11 @@ export function FileList() {
   return (
     <nav aria-label="Changed files">
       {/* AC-1.3.7: File list is keyboard navigable */}
-      <div className="file-tree" role="list">
+      <div className="file-tree" role="tree">
         {/* PR Description entry */}
         <div
           className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
-          role="listitem"
+          role="treeitem"
           onClick={() => selectFile(PR_DESCRIPTION_INDEX)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -63,14 +119,42 @@ export function FileList() {
           </span>
           <span className="tree-label">Pull Request Description</span>
         </div>
-        {files.map((file) => (
-          <FileListItem
-            key={file.filename}
-            file={file}
-            isSelected={file.originalIndex === selectedFileIndex}
-            onClick={() => selectFile(file.originalIndex)}
-          />
-        ))}
+        {groupedFiles.map(({ folder, files: folderFiles }) => {
+          const isCollapsed = collapsedFolders.has(folder);
+          return (
+            <div key={folder} role="group" aria-label={`Folder ${folder}`}>
+              {/* Folder header */}
+              <div
+                className={`tree-item folder ${!isCollapsed ? 'expanded' : ''}`}
+                role="treeitem"
+                aria-expanded={!isCollapsed}
+                onClick={() => toggleFolder(folder)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleFolder(folder);
+                  }
+                }}
+                tabIndex={0}
+              >
+                <span className="tree-toggle" aria-hidden="true" />
+                <span className="tree-label">{folder}</span>
+              </div>
+              {/* Files in folder */}
+              {!isCollapsed &&
+                folderFiles.map((file) => (
+                  <FileListItem
+                    key={file.filename}
+                    file={file}
+                    isSelected={file.originalIndex === selectedFileIndex}
+                    onClick={() => selectFile(file.originalIndex)}
+                    displayName={getBasename(file.filename)}
+                    indent={1}
+                  />
+                ))}
+            </div>
+          );
+        })}
       </div>
     </nav>
   );
