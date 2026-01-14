@@ -113,6 +113,7 @@ function DiffRow({
             onStartComment={() => onStartComment(index)}
             showWhitespace={showWhitespace}
             lineNumberMode={lineNumberMode}
+            lineIndex={index}
           />
           {showDraftHere && (
             <tr>

@@ -2,11 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import type { ThemedToken } from 'shiki';
 import { getHighlighter, type ShikiLanguage } from '@/lib/shiki';
 import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
+import { useShikiTokens } from './ShikiTokensContext';
 
 interface ShikiHighlighterProps {
   code: string;
   language: string;
   showWhitespace?: boolean;
+  /**
+   * Line index for context-aware highlighting.
+   * When provided and ShikiTokensProvider is available, uses pre-tokenized lines
+   * which correctly handle multi-line constructs like block comments.
+   */
+  lineIndex?: number;
 }
 
 /**
@@ -82,14 +89,24 @@ export function ShikiHighlighter({
   code,
   language,
   showWhitespace = false,
+  lineIndex,
 }: ShikiHighlighterProps) {
   const theme = useSyntaxTheme();
+  const tokensContext = useShikiTokens();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
 
   // Use ref for cancellation check after async operations
   const cancelledRef = useRef(false);
 
+  // Try to get pre-tokenized tokens from context (for multi-line comment support)
+  const contextTokens = lineIndex !== undefined ? tokensContext?.getLineTokens(lineIndex) : null;
+
   useEffect(() => {
+    // Skip independent tokenization if we have context tokens
+    if (contextTokens) {
+      return;
+    }
+
     cancelledRef.current = false;
 
     void (async () => {
@@ -123,13 +140,22 @@ export function ShikiHighlighter({
     return () => {
       cancelledRef.current = true;
     };
-  }, [code, language, theme]);
+  }, [code, language, theme, contextTokens]);
 
   // Handle empty lines consistently to maintain line height
   if (code === '') {
     return (
       <span className="diff-code" data-testid="shiki-highlighter">
         &nbsp;
+      </span>
+    );
+  }
+
+  // Use context tokens if available (handles multi-line constructs correctly)
+  if (contextTokens) {
+    return (
+      <span className="diff-code" data-testid="shiki-highlighter">
+        {renderTokens([contextTokens], showWhitespace)}
       </span>
     );
   }
