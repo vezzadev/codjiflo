@@ -72,7 +72,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/diff-match-patch": "^1.0.36",
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.0.8",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
