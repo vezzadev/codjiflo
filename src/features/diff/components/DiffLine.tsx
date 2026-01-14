@@ -17,8 +17,8 @@ interface DiffLineProps {
   /** Line number display mode for inline view with content filter (AC-3.3.14-15) */
   lineNumberMode?: 'left' | 'both' | 'right';
   /**
-   * @deprecated Use lineIndex as fallback only. Prefer full content mode.
-   * Line index for context-aware syntax highlighting (fallback mode)
+   * Line index for context-aware syntax highlighting (fallback mode).
+   * Only used when hasFullContent is false.
    */
   lineIndex?: number;
   /**

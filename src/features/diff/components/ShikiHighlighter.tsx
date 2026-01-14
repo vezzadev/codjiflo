@@ -20,8 +20,8 @@ interface ShikiHighlighterProps {
    */
   side?: TokenSide;
   /**
-   * @deprecated Use lineNumber + side instead.
    * Fallback line index for array-based lookup (when full content unavailable).
+   * Used only when lineNumber/side are not provided.
    */
   lineIndex?: number;
 }
