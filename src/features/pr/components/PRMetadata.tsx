@@ -13,21 +13,10 @@ interface PRMetadataProps {
 export function PRMetadata({ pr }: PRMetadataProps) {
   return (
     <div className="pr-metadata">
-      {/* Title with GitHub link - H1 per AC-1.2.8 */}
-      <div className="pr-title-row">
-        <h1 className="pr-title">
-          {pr.title}
-        </h1>
-        {/* Link to GitHub - AC-1.2.6, AC-1.2.10 */}
-        <a
-          href={pr.htmlUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="pr-title-github-link"
-        >
-          (View on GitHub)
-        </a>
-      </div>
+      {/* Title - H1 per AC-1.2.8 */}
+      <h1 className="pr-title">
+        {pr.title}
+      </h1>
 
       <div className="pr-meta-row">
         {/* Author avatar and name - AC-1.2.3 */}
