@@ -155,7 +155,8 @@ diff --git a/src/app.ts b/src/app.ts
     await expect(selector).toBeVisible();
 
     // Click on the file (second item after PR description)
-    const fileItems = fileList.getByRole("listitem");
+    // Use .tree-item.file to exclude folder headers from count
+    const fileItems = fileList.locator(".tree-item.file");
     await fileItems.nth(1).click();
 
     // Wait for diff toolbar
