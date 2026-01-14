@@ -32,10 +32,6 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
-        # Required for @actions/artifact to work
-        ACTIONS_RUNTIME_TOKEN: ${{ github.token }}
-        ACTIONS_RUNTIME_URL: ${{ env.ACTIONS_RUNTIME_URL }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
       run: |
         echo "::debug::Action path: ${{ github.action_path }}"
         echo "::debug::Workspace: ${GITHUB_WORKSPACE}"
