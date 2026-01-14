@@ -153,35 +153,30 @@ export class ArtifactLoader {
    * Download artifact from GitHub Actions using artifact ID directly.
    */
   private async downloadArtifact(reference: ArtifactReference): Promise<ArrayBuffer | null> {
-    try {
-      // Download the artifact ZIP directly using artifact ID (no metadata fetch needed)
-      const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${reference.artifactId}/zip`;
+    // Download the artifact ZIP directly using artifact ID (no metadata fetch needed)
+    const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${reference.artifactId}/zip`;
 
-      // GitHub Actions artifact download returns a ZIP file
-      // We need to use fetch directly with the token because it returns binary data
-      const response = await fetch(`https://api.github.com${downloadUrl}`, {
-        headers: {
-          Authorization: `Bearer ${this.getToken()}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-      });
+    // GitHub Actions artifact download returns a ZIP file
+    // We need to use fetch directly with the token because it returns binary data
+    const response = await fetch(`https://api.github.com${downloadUrl}`, {
+      headers: {
+        Authorization: `Bearer ${this.getToken()}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
 
-      if (!response.ok) {
-        if (response.status === 410) {
-          // Artifact expired (90-day retention)
-          console.warn('Artifact expired:', reference.artifactId);
-          return null;
-        }
-        throw new GitHubAPIError(response.status, response.statusText, 'Failed to download artifact');
+    if (!response.ok) {
+      if (response.status === 410) {
+        // Artifact expired (90-day retention)
+        console.warn('Artifact expired:', reference.artifactId);
+        return null;
       }
-
-      // Extract SQLite file from ZIP
-      const zipBlob = await response.blob();
-      return await this.extractSQLiteFromZip(zipBlob);
-    } catch (error) {
-      // Re-throw to trigger degraded mode
-      throw error;
+      throw new GitHubAPIError(response.status, response.statusText, 'Failed to download artifact');
     }
+
+    // Extract SQLite file from ZIP
+    const zipBlob = await response.blob();
+    return await this.extractSQLiteFromZip(zipBlob);
   }
 
   /**
