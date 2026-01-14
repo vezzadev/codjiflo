@@ -121,8 +121,12 @@ describe('SideBySideDiffView', () => {
 
       render(<SideBySideDiffView {...defaultProps} alignedLines={alignedLines} />);
 
-      // Should render content on both sides (in shiki-highlighter elements)
-      expect(screen.getAllByTestId('shiki-highlighter')).toHaveLength(2);
+      // Should render content on both sides (mock renders code as text content)
+      const highlighters = screen.getAllByTestId('shiki-highlighter');
+      expect(highlighters).toHaveLength(2);
+      // Verify actual content is passed through (mock renders {code} directly)
+      expect(highlighters[0]).toHaveTextContent('unchanged content');
+      expect(highlighters[1]).toHaveTextContent('unchanged content');
     });
 
     it('renders deletion on left with spacer on right', () => {

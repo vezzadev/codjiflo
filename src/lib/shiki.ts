@@ -30,7 +30,7 @@ const REQUIRED_THEMES: BundledTheme[] = [
   'github-dark-high-contrast',
 ];
 
-// Languages to preload (matching detectLanguage() output in parse-patch.ts)
+// Languages to preload (superset of detectLanguage() output for better coverage)
 const REQUIRED_LANGUAGES: BundledLanguage[] = [
   'typescript',
   'tsx',
@@ -39,7 +39,6 @@ const REQUIRED_LANGUAGES: BundledLanguage[] = [
   'python',
   'json',
   'css',
-  'scss',
   'html',
   'xml',
   'bash',
