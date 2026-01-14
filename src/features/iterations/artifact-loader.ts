@@ -30,16 +30,6 @@ interface IssueComment {
   updated_at: string;
 }
 
-interface ArtifactResponse {
-  id: number;
-  name: string;
-  archive_download_url: string;
-}
-
-interface ArtifactsListResponse {
-  artifacts: ArtifactResponse[];
-}
-
 interface CachedArtifact {
   data: ArrayBuffer;
   timestamp: string;
@@ -126,20 +116,20 @@ export class ArtifactLoader {
     // ### CodjiFlo Iteration Tracking
     // **Iterations captured**: 3
     // **Last updated**: 2025-01-15T10:30:00Z
-    // **Artifact**: `codjiflo-pr-123`
+    // **Artifact**: `1234567890` (artifact ID)
     // **Run ID**: 9876543210
 
     const iterationCountMatch = /\*\*Iterations captured\*\*:\s*(\d+)/.exec(body);
     const timestampMatch = /\*\*Last updated\*\*:\s*([^\s]+)/.exec(body);
-    const artifactMatch = /\*\*Artifact\*\*:\s*`([^`]+)`/.exec(body);
+    const artifactMatch = /\*\*Artifact\*\*:\s*`(\d+)`/.exec(body);
     const runIdMatch = /\*\*Run ID\*\*:\s*(\d+)/.exec(body);
 
     const iterationCountValue = iterationCountMatch?.[1];
     const timestampValue = timestampMatch?.[1];
-    const artifactValue = artifactMatch?.[1];
+    const artifactIdValue = artifactMatch?.[1];
     const runIdValue = runIdMatch?.[1];
 
-    if (!iterationCountValue || !timestampValue || !artifactValue || !runIdValue) {
+    if (!iterationCountValue || !timestampValue || !artifactIdValue || !runIdValue) {
       console.warn('Could not parse CodjiFlo comment:', body);
       return null;
     }
@@ -147,29 +137,18 @@ export class ArtifactLoader {
     return {
       iterationCount: parseInt(iterationCountValue, 10),
       timestamp: timestampValue,
-      artifactName: artifactValue,
+      artifactId: parseInt(artifactIdValue, 10),
       runId: parseInt(runIdValue, 10),
     };
   }
 
   /**
-   * Download artifact from GitHub Actions.
+   * Download artifact from GitHub Actions using artifact ID directly.
    */
   private async downloadArtifact(reference: ArtifactReference): Promise<ArrayBuffer | null> {
     try {
-      // List artifacts for the repository
-      const artifactsResponse = await githubClient.fetch<ArtifactsListResponse>(
-        `/repos/${this.owner}/${this.repo}/actions/artifacts?name=${encodeURIComponent(reference.artifactName)}`
-      );
-
-      const artifact = artifactsResponse.artifacts.find((a) => a.name === reference.artifactName);
-      if (!artifact) {
-        console.warn(`Artifact not found: ${reference.artifactName}`);
-        return null;
-      }
-
-      // Download the artifact ZIP
-      const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${artifact.id}/zip`;
+      // Download the artifact ZIP directly using artifact ID (no metadata fetch needed)
+      const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${reference.artifactId}/zip`;
 
       // GitHub Actions artifact download returns a ZIP file
       // We need to use fetch directly with the token because it returns binary data
@@ -181,6 +160,11 @@ export class ArtifactLoader {
       });
 
       if (!response.ok) {
+        if (response.status === 410) {
+          // Artifact expired (90-day retention)
+          console.warn('Artifact expired:', reference.artifactId);
+          return null;
+        }
         throw new GitHubAPIError(response.status, response.statusText, 'Failed to download artifact');
       }
 
@@ -190,7 +174,7 @@ export class ArtifactLoader {
     } catch (error) {
       if (error instanceof GitHubAPIError && error.status === 410) {
         // Artifact expired (90-day retention)
-        console.warn('Artifact expired:', reference.artifactName);
+        console.warn('Artifact expired:', reference.artifactId);
         return null;
       }
       throw error;

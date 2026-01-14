@@ -223,9 +223,23 @@ jobs:
           pr-number: ${{ env.PR_NUMBER }}
 
       - name: Upload iteration artifact
+        id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codjiflo-pr-${{ env.PR_NUMBER }}-run-${{ github.run_id }}
+          name: codjiflo-${{ github.run_id }}
           path: codjiflo-data/
           retention-days: 90
+
+      - name: Update PR comment with artifact ID
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find existing CodjiFlo comment and update with artifact ID
+          COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments --jq '.[] | select(.body | contains("<!-- codjiflo-data -->")) | .id')
+          if [ -n "$COMMENT_ID" ]; then
+            CURRENT_BODY=$(gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID --jq '.body')
+            # Replace the Artifact line with one that includes the ID
+            NEW_BODY=$(echo "$CURRENT_BODY" | sed 's/\*\*Artifact\*\*: `[^`]*`/**Artifact**: `${{ steps.upload-artifact.outputs.artifact-id }}`/')
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X PATCH -f body="$NEW_BODY"
+          fi
 

@@ -124,31 +124,67 @@ export async function downloadPreviousArtifact(
 }
 
 /**
- * Find the newest artifact matching a PR pattern.
- * Used as fallback when the specific artifact from comment is not found.
+ * Download artifact directly by ID.
+ * Returns null if artifact not found or expired.
  */
-export async function findNewestArtifactForPR(
+export async function downloadArtifactById(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
   repo: string,
-  prNumber: number
+  artifactId: number
+): Promise<DownloadResult | null> {
+  try {
+    // Get artifact info first
+    const { data: artifact } = await octokit.rest.actions.getArtifact({
+      owner,
+      repo,
+      artifact_id: artifactId,
+    });
+
+    if (artifact.expired) {
+      return null;
+    }
+
+    const artifactInfo: ArtifactInfo = {
+      id: artifact.id,
+      name: artifact.name,
+      created_at: artifact.created_at ?? '',
+      workflow_run_id: artifact.workflow_run?.id ?? 0,
+    };
+
+    const data = await downloadArtifact(octokit, owner, repo, artifactInfo);
+    return { data, artifactInfo };
+  } catch {
+    // Artifact not found or expired
+    return null;
+  }
+}
+
+/**
+ * Find the newest codjiflo artifact in the repo.
+ * Used as fallback when the specific artifact ID is not valid.
+ */
+export async function findNewestCodjifloArtifact(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string
 ): Promise<ArtifactInfo | null> {
-  // List all artifacts and filter by PR pattern
+  // List all artifacts matching codjiflo pattern
   const { data } = await octokit.rest.actions.listArtifactsForRepo({
     owner,
     repo,
     per_page: 100,
   });
 
-  const prPattern = new RegExp(`^codjiflo-pr-${prNumber}(-run-\\d+)?$`);
+  const codjifloPattern = /^codjiflo-\d+$/;
 
-  // Find the first matching, non-expired artifact
+  // Find the first matching, non-expired artifact (list is sorted by created_at desc)
   for (const artifact of data.artifacts) {
     if (artifact.expired) {
       continue;
     }
 
-    if (prPattern.test(artifact.name)) {
+    if (codjifloPattern.test(artifact.name)) {
       return {
         id: artifact.id,
         name: artifact.name,
@@ -163,8 +199,8 @@ export async function findNewestArtifactForPR(
 
 /**
  * Download artifact with fallback logic:
- * 1. Try to download specific artifact by name (from PR comment)
- * 2. If not found/expired, fall back to newest artifact for the PR
+ * 1. Try to download specific artifact by ID (from PR comment)
+ * 2. If not found/expired, fall back to newest codjiflo artifact
  *
  * Returns null if no artifact exists at all.
  */
@@ -172,31 +208,19 @@ export async function downloadArtifactWithFallback(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
   repo: string,
-  prNumber: number,
-  specificArtifactName: string | null
+  _prNumber: number,
+  specificArtifactId: number | null
 ): Promise<DownloadResult | null> {
-  // Strategy 1: Try specific artifact from PR comment
-  if (specificArtifactName) {
-    const specificArtifact = await findLatestArtifact(
-      octokit,
-      owner,
-      repo,
-      specificArtifactName
-    );
-
-    if (specificArtifact) {
-      try {
-        const data = await downloadArtifact(octokit, owner, repo, specificArtifact);
-        return { data, artifactInfo: specificArtifact };
-      } catch {
-        // Artifact may have been deleted or expired since we found it
-        // Fall through to strategy 2
-      }
+  // Strategy 1: Try specific artifact by ID from PR comment
+  if (specificArtifactId) {
+    const result = await downloadArtifactById(octokit, owner, repo, specificArtifactId);
+    if (result) {
+      return result;
     }
   }
 
-  // Strategy 2: Find newest artifact for this PR (fallback)
-  const newestArtifact = await findNewestArtifactForPR(octokit, owner, repo, prNumber);
+  // Strategy 2: Find newest codjiflo artifact (fallback)
+  const newestArtifact = await findNewestCodjifloArtifact(octokit, owner, repo);
 
   if (newestArtifact) {
     try {
