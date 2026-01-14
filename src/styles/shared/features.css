@@ -4,7 +4,7 @@
    PR METADATA
    ============================================ */
 .pr-metadata {
-  padding: 16px;
+  padding: 16px 16px 8px 16px;
 }
 
 .pr-title {
@@ -59,7 +59,7 @@
 }
 
 .pr-description {
-  padding: 16px;
+  padding: 8px 16px 16px 16px;
 }
 
 .pr-description-empty {
