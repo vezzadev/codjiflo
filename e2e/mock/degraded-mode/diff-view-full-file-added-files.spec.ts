@@ -65,7 +65,7 @@ export function suppressWarnings() {
     // Click on the newly added file
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("e2e/fixtures/console-warnings.ts").click();
+    await fileNav.getByText("console-warnings.ts").click();
 
     // Verify file is selected
     await expect(
