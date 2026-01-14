@@ -113,6 +113,11 @@
   background: transparent;
 }
 
+.tree-item.folder {
+  background-color: var(--file-explorer-header);
+  box-shadow: var(--folder-shadow);
+}
+
 .tree-item.folder .tree-toggle::before {
   content: '';
   display: block;

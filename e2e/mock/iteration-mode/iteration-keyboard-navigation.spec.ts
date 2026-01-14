@@ -143,13 +143,14 @@ index 3334567..cbcdefg 100644
     // Wait for file list to update
     await expect(fileList.locator('.skeleton')).toHaveCount(0);
 
-    // In iteration 1, only file-a.txt should be visible
-    const fileItems = fileList.getByRole('listitem');
-    // Should have 2 items: PR description + file-a.txt
+    // In iteration 1, only file-a.txt should be visible (plus PR description)
+    // Use .tree-item.file to exclude folder headers from count
+    const fileItems = fileList.locator('.tree-item.file');
     const visibleFileCount = await fileItems.count();
+    // Should have 2 items: PR description + file-a.txt
     expect(visibleFileCount).toBe(2);
 
-    // Click on file-a.txt (second item after PR description)
+    // Click on file-a.txt (second file item after PR description)
     await fileItems.nth(1).click();
     await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
 
@@ -185,7 +186,8 @@ index 3334567..cbcdefg 100644
     await expect(fileList.locator('.skeleton')).toHaveCount(0);
 
     // In iteration 2, file-b.txt and file-c.txt should be visible
-    const fileItems = fileList.getByRole('listitem');
+    // Use .tree-item.file to exclude folder headers from count
+    const fileItems = fileList.locator('.tree-item.file');
     // Should have 3 items: PR description + file-b.txt + file-c.txt
     const visibleFileCount = await fileItems.count();
     expect(visibleFileCount).toBe(3);
@@ -231,7 +233,8 @@ index 3334567..cbcdefg 100644
     await expect(selector).toBeVisible();
 
     // Default view shows iteration 2 (latest), which has file-b.txt and file-c.txt
-    const fileItems = fileList.getByRole('listitem');
+    // Use .tree-item.file to exclude folder headers from count
+    const fileItems = fileList.locator('.tree-item.file');
     // Should have 3 items: PR description + file-b.txt + file-c.txt
     const visibleFileCount = await fileItems.count();
     expect(visibleFileCount).toBe(3);

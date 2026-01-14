@@ -102,18 +102,18 @@ test.describe("Inline comments flow (S-2.x)", () => {
       // Wait for the file navigation to be fully loaded
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });
       await expect(fileNav).toBeVisible();
-      await expect(fileNav.getByText("src/example.ts")).toBeVisible();
+      await expect(fileNav.getByText("example.ts")).toBeVisible();
 
       // PR Description is selected by default, click on the file to show diff
-      await fileNav.getByText("src/example.ts").click();
+      await fileNav.getByText("example.ts").click();
 
       // Wait for page to load - check the diff heading as a stable indicator
       await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
 
       // Wait for the file list item to be visible and selected
-      const fileListItem = page.getByRole("listitem", { name: /src\/example\.ts/ });
+      const fileListItem = page.getByRole("treeitem", { name: /src\/example\.ts/ });
       await expect(fileListItem).toBeVisible();
-      await expect(fileListItem).toHaveAttribute("aria-current", "location", );
+      await expect(fileListItem).toHaveAttribute("aria-current", "location");
 
       // The diff content should be rendered in a table
       const diffTable = page.locator('table');
@@ -128,10 +128,10 @@ test.describe("Inline comments flow (S-2.x)", () => {
       await expect(fileNav).toBeVisible();
 
       // Click first file to show diff (PR description is default)
-      const fileButtons = fileNav.getByRole("listitem");
-      const allButtons = await fileButtons.all();
-      if (allButtons.length > 1) {
-        await allButtons[1]?.click();
+      const fileItems = fileNav.locator(".tree-item.file.indent-1");
+      const allFileItems = await fileItems.all();
+      if (allFileItems.length > 0) {
+        await allFileItems[0]?.click();
       }
 
       const diffRegion = page.getByRole("region", { name: /Diff content/i });

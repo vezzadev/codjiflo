@@ -53,7 +53,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={true} onClick={noop} />);
 
-    const item = screen.getByRole('listitem');
+    const item = screen.getByRole('treeitem');
     expect(item).toHaveAttribute('aria-current', 'location');
     expect(item).toHaveClass('selected');
   });
@@ -65,7 +65,7 @@ describe('FileListItem', () => {
 
     render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-    await user.click(screen.getByRole('listitem'));
+    await user.click(screen.getByRole('treeitem'));
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });
@@ -81,7 +81,7 @@ describe('FileListItem', () => {
     render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
     expect(
-      screen.getByRole('listitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
+      screen.getByRole('treeitem', { name: /test.ts, modified, 5 additions, 3 deletions/i })
     ).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard('{Enter}');
 
@@ -107,7 +107,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard(' ');
 
@@ -121,7 +121,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={onClick} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       item.focus();
       await user.keyboard('a');
 
@@ -133,7 +133,7 @@ describe('FileListItem', () => {
 
       render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
-      const item = screen.getByRole('listitem');
+      const item = screen.getByRole('treeitem');
       expect(item).toHaveAttribute('tabindex', '0');
     });
   });
@@ -145,6 +145,75 @@ describe('FileListItem', () => {
       render(<FileListItem file={file} isSelected={false} onClick={noop} />);
 
       expect(screen.getByText('R')).toBeInTheDocument();
+    });
+  });
+
+  describe('displayName and indent props', () => {
+    it('displays displayName instead of full path when provided', () => {
+      const file = createMockFileChange({ filename: 'src/components/Button.tsx' });
+
+      render(
+        <FileListItem
+          file={file}
+          isSelected={false}
+          onClick={noop}
+          displayName="Button.tsx"
+        />
+      );
+
+      expect(screen.getByText('Button.tsx')).toBeInTheDocument();
+      expect(screen.queryByText('src/components/Button.tsx')).not.toBeInTheDocument();
+    });
+
+    it('displays full path when displayName is not provided', () => {
+      const file = createMockFileChange({ filename: 'src/components/Button.tsx' });
+
+      render(<FileListItem file={file} isSelected={false} onClick={noop} />);
+
+      expect(screen.getByText('src/components/Button.tsx')).toBeInTheDocument();
+    });
+
+    it('applies indent-1 class when indent is 1', () => {
+      const file = createMockFileChange();
+
+      render(
+        <FileListItem file={file} isSelected={false} onClick={noop} indent={1} />
+      );
+
+      const item = screen.getByRole('treeitem');
+      expect(item).toHaveClass('indent-1');
+    });
+
+    it('does not apply indent class when indent is not provided', () => {
+      const file = createMockFileChange();
+
+      render(<FileListItem file={file} isSelected={false} onClick={noop} />);
+
+      const item = screen.getByRole('treeitem');
+      expect(item).not.toHaveClass('indent-1');
+    });
+
+    it('preserves full path in aria-label when displayName is used', () => {
+      const file = createMockFileChange({
+        filename: 'src/components/Button.tsx',
+        status: FileChangeStatus.Added,
+        additions: 10,
+        deletions: 0,
+      });
+
+      render(
+        <FileListItem
+          file={file}
+          isSelected={false}
+          onClick={noop}
+          displayName="Button.tsx"
+        />
+      );
+
+      // aria-label should contain full path for accessibility
+      expect(
+        screen.getByRole('treeitem', { name: /src\/components\/Button\.tsx/i })
+      ).toBeInTheDocument();
     });
   });
 });

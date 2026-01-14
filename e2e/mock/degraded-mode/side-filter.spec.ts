@@ -152,7 +152,7 @@ test.describe("Side filter with view modes", () => {
   // ============================================================================
 
   test("left filter shows only deletions in changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "src/small.ts");
+    const diffRegion = await navigateToFile(page, "small.ts");
 
     // Set filter to left (deletions only)
     await setFilter(page, "left");
@@ -164,7 +164,7 @@ test.describe("Side filter with view modes", () => {
   });
 
   test("both filter shows additions and deletions in changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "src/small.ts");
+    const diffRegion = await navigateToFile(page, "small.ts");
 
     // Default is 'both', but set it explicitly
     await setFilter(page, "both");
@@ -176,7 +176,7 @@ test.describe("Side filter with view modes", () => {
   });
 
   test("right filter shows only additions in changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "src/small.ts");
+    const diffRegion = await navigateToFile(page, "small.ts");
 
     // Set filter to right (additions only)
     await setFilter(page, "right");
@@ -195,7 +195,7 @@ test.describe("Side filter with view modes", () => {
 
   test("left filter shows only deletions in full file view", async ({ page }) => {
     // Use large file (600+ lines) to trigger virtualization
-    const diffRegion = await navigateToFile(page, "src/large.ts");
+    const diffRegion = await navigateToFile(page, "large.ts");
 
     // Enable full file view
     await setFullFileView(page, true);
@@ -215,7 +215,7 @@ test.describe("Side filter with view modes", () => {
 
   test("both filter shows additions and deletions in full file view", async ({ page }) => {
     // Use large file (600+ lines) to trigger virtualization
-    const diffRegion = await navigateToFile(page, "src/large.ts");
+    const diffRegion = await navigateToFile(page, "large.ts");
 
     // Enable full file view
     await setFullFileView(page, true);
@@ -235,7 +235,7 @@ test.describe("Side filter with view modes", () => {
 
   test("right filter shows only additions in full file view", async ({ page }) => {
     // Use large file (600+ lines) to trigger virtualization
-    const diffRegion = await navigateToFile(page, "src/large.ts");
+    const diffRegion = await navigateToFile(page, "large.ts");
 
     // Enable full file view
     await setFullFileView(page, true);
@@ -265,7 +265,7 @@ test.describe("Side filter with view modes", () => {
   }
 
   test("left filter shows only deletions in side-by-side changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "src/small.ts");
+    const diffRegion = await navigateToFile(page, "small.ts");
 
     // Switch to side-by-side view
     await setSideBySideView(page);
@@ -281,7 +281,7 @@ test.describe("Side filter with view modes", () => {
 
   test("left filter shows only deletions in side-by-side full file view", async ({ page }) => {
     // Use large file to trigger virtualization
-    const diffRegion = await navigateToFile(page, "src/large.ts");
+    const diffRegion = await navigateToFile(page, "large.ts");
 
     // Switch to side-by-side view
     await setSideBySideView(page);
@@ -303,7 +303,7 @@ test.describe("Side filter with view modes", () => {
   });
 
   test("right filter shows only additions in side-by-side changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "src/small.ts");
+    const diffRegion = await navigateToFile(page, "small.ts");
 
     // Switch to side-by-side view
     await setSideBySideView(page);
@@ -319,7 +319,7 @@ test.describe("Side filter with view modes", () => {
 
   test("right filter shows only additions in side-by-side full file view", async ({ page }) => {
     // Use large file to trigger virtualization
-    const diffRegion = await navigateToFile(page, "src/large.ts");
+    const diffRegion = await navigateToFile(page, "large.ts");
 
     // Switch to side-by-side view
     await setSideBySideView(page);

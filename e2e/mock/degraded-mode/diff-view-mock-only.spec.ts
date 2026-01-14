@@ -63,7 +63,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    await fileNav.getByText("src/example.ts").click();
+    await fileNav.getByText("example.ts").click();
     await expect(
       page.getByRole("heading", { name: "src/example.ts" })
     ).toBeVisible();
@@ -145,7 +145,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     // Click on the large file
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("src/large-file.ts").click();
+    await fileNav.getByText("large-file.ts").click();
 
     // Wait for diff to render
     await expect(

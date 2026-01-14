@@ -26,21 +26,30 @@ interface FileListItemProps {
   file: FileChange;
   isSelected: boolean;
   onClick: () => void;
+  /** Display name (basename) to show instead of full path */
+  displayName?: string;
+  /** Indentation level (1 = under folder) */
+  indent?: number;
 }
 
 /**
  * Single file item in the file list
  * S-1.3: AC-1.3.1 through AC-1.3.5
  */
-export function FileListItem({ file, isSelected, onClick }: FileListItemProps) {
-  const itemClasses = ['tree-item', 'file', isSelected ? 'selected' : '']
+export function FileListItem({ file, isSelected, onClick, displayName, indent }: FileListItemProps) {
+  const itemClasses = [
+    'tree-item',
+    'file',
+    isSelected ? 'selected' : '',
+    indent ? `indent-${indent}` : '',
+  ]
     .filter(Boolean)
     .join(' ');
 
   return (
     <div
       className={itemClasses}
-      role="listitem"
+      role="treeitem"
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -54,7 +63,7 @@ export function FileListItem({ file, isSelected, onClick }: FileListItemProps) {
     >
       {/* Filename - AC-1.3.1 */}
       <span className="tree-label" title={file.filename}>
-        {file.filename}
+        {displayName ?? file.filename}
       </span>
 
       {/* Line counts - AC-1.3.3 */}

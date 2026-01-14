@@ -68,7 +68,7 @@ test.describe("Redirect After Login", () => {
 
     // PR content should be visible (indicates successful load)
     // Check for the file explorer header which is always present on the PR page
-    await expect(page.getByRole("listitem", { name: /Pull Request Description/i })).toBeVisible();
+    await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
   });
 
   test("should redirect to dashboard when accessing login directly and logging in", async ({
