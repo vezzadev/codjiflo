@@ -14,6 +14,7 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { DefaultArtifactClient } from '@actions/artifact';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import AdmZip from 'adm-zip';
@@ -146,18 +147,31 @@ async function run(): Promise<void> {
       writeFileSync(dbPath, dbBuffer);
       core.info(`Database written to ${dbPath}`);
 
-      // Set outputs for subsequent steps
+      // Upload artifact and get artifact ID
+      core.info('Uploading artifact...');
+      const artifactClient = new DefaultArtifactClient();
+      const uploadResult = await artifactClient.uploadArtifact(artifactName, [dbPath], workDir, {
+        retentionDays: 90,
+      });
+      if (!uploadResult.id) {
+        throw new Error('Artifact upload failed: no artifact ID returned');
+      }
+      core.info(`Artifact uploaded: ${artifactName} (ID: ${uploadResult.id})`);
+
+      // Set outputs
       core.setOutput('db-path', dbPath);
       core.setOutput('artifact-name', artifactName);
+      core.setOutput('artifact-id', uploadResult.id);
       core.setOutput('iteration-count', iteration.revision);
       core.setOutput('work-dir', workDir);
 
-      // Update PR comment (artifact ID will be added by workflow after upload)
+      // Update PR comment with artifact ID
       core.info('Updating PR comment...');
       await updatePRComment(octokit, owner, repo, prNumber, {
         iterationCount: iteration.revision,
         runId: github.context.runId,
         timestamp: new Date().toISOString(),
+        artifactId: uploadResult.id,
       });
       core.info('PR comment updated');
 
@@ -166,7 +180,7 @@ async function run(): Promise<void> {
       await updatePRDescription(octokit, owner, repo, prNumber);
       core.info('PR description updated');
 
-      core.info('Done! Artifact upload will be handled by action.yml');
+      core.info('Done!');
     } catch (error) {
       db.close();
       throw error;
