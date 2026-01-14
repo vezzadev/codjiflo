@@ -48,6 +48,12 @@ vi.mock('./ShikiHighlighter', () => ({
   ),
 }));
 
+// Mock ShikiTokensContext to avoid async loading issues and act() warnings
+vi.mock('./ShikiTokensContext', () => ({
+  ShikiTokensProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useShikiTokens: () => null,
+}));
+
 // Mock useIterationDiff hook for iteration switch tests
 const mockIterationDiff = {
   isIterationMode: false,

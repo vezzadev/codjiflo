@@ -34,26 +34,37 @@ describe('ShikiHighlighter', () => {
   });
 
   describe('empty lines', () => {
-    it('renders &nbsp; for empty code to maintain line height', () => {
+    it('renders &nbsp; for empty code to maintain line height', async () => {
       render(<ShikiHighlighter code="" language="typescript" />);
 
       const highlighter = screen.getByTestId('shiki-highlighter');
       expect(highlighter).toBeInTheDocument();
       // &nbsp; is rendered as \u00A0
       expect(highlighter.innerHTML).toBe('&nbsp;');
+
+      // Wait for any pending async operations to complete
+      await waitFor(() => {
+        // Empty code short-circuits before async, so this just ensures test cleanup
+        expect(highlighter).toBeInTheDocument();
+      });
     });
   });
 
   describe('loading state', () => {
-    it('shows unhighlighted code while loading', () => {
+    it('shows unhighlighted code while loading', async () => {
       render(<ShikiHighlighter code="const x = 1;" language="typescript" />);
 
       // Initially shows loading state with raw code
       const highlighter = screen.getByTestId('shiki-highlighter');
       expect(highlighter).toHaveTextContent('const x = 1;');
+
+      // Wait for highlighting to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(mockHighlighter.codeToTokens).toHaveBeenCalled();
+      });
     });
 
-    it('shows whitespace markers in loading state when enabled', () => {
+    it('shows whitespace markers in loading state when enabled', async () => {
       render(
         <ShikiHighlighter code="const x = 1;" language="typescript" showWhitespace />
       );
@@ -61,6 +72,11 @@ describe('ShikiHighlighter', () => {
       const highlighter = screen.getByTestId('shiki-highlighter');
       // Should have whitespace markers
       expect(highlighter.querySelector('.whitespace-visible')).toBeInTheDocument();
+
+      // Wait for highlighting to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(mockHighlighter.codeToTokens).toHaveBeenCalled();
+      });
     });
   });
 
@@ -127,7 +143,7 @@ describe('ShikiHighlighter', () => {
   });
 
   describe('tab handling', () => {
-    it('renders tab characters as arrow markers', () => {
+    it('renders tab characters as arrow markers', async () => {
       render(
         <ShikiHighlighter code={'\tindented'} language="typescript" showWhitespace />
       );
@@ -136,6 +152,11 @@ describe('ShikiHighlighter', () => {
       const marker = highlighter.querySelector('.whitespace-visible');
       expect(marker).toBeInTheDocument();
       expect(marker).toHaveTextContent('→');
+
+      // Wait for highlighting to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(mockHighlighter.codeToTokens).toHaveBeenCalled();
+      });
     });
   });
 });
