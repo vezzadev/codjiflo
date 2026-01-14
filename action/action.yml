@@ -1,5 +1,5 @@
 name: 'CodjiFlo Iteration Tracker'
-description: 'Captures PR iterations for force-push resilient code review'
+description: 'Captures PR iterations, uploads artifact, and updates PR comment'
 author: 'CodjiFlo'
 
 branding:
@@ -16,48 +16,29 @@ inputs:
     required: false
 
 outputs:
+  artifact-id:
+    description: 'ID of the uploaded artifact'
   artifact-name:
     description: 'Name of the uploaded artifact'
-    value: codjiflo-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+  iteration-count:
+    description: 'Number of iterations captured'
 
 runs:
   using: 'composite'
   steps:
-    # Note: Previous artifact is downloaded via GitHub API in the action code
-    # because actions/download-artifact@v4 only works for the current run
-
-    - name: Capture iteration
+    - name: Capture and upload iteration
       id: capture
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
+        # Required for @actions/artifact to work
+        ACTIONS_RUNTIME_TOKEN: ${{ github.token }}
+        ACTIONS_RUNTIME_URL: ${{ env.ACTIONS_RUNTIME_URL }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
       run: |
         echo "::debug::Action path: ${{ github.action_path }}"
         echo "::debug::Workspace: ${GITHUB_WORKSPACE}"
         echo "::debug::PR number: ${PR_NUMBER}"
         echo "::debug::Run ID: ${{ github.run_id }}"
-        echo "Starting iteration capture for PR #${PR_NUMBER}"
         node ${{ github.action_path }}/dist/bootstrap.js
-        echo "Iteration captured successfully"
-
-        # Export outputs for subsequent steps
-        echo "artifact-name=codjiflo-pr-${PR_NUMBER}-${{ github.run_id }}" >> $GITHUB_OUTPUT
-
-    - name: Verify database
-      shell: bash
-      run: |
-        CODJIFLO_DIR="${GITHUB_WORKSPACE}/codjiflo-data"
-        echo "::debug::Checking directory: ${CODJIFLO_DIR}"
-        echo "::group::Database verification"
-        ls -la "${CODJIFLO_DIR}/" 2>/dev/null || echo "::warning::Directory not found"
-        if [ -f "${CODJIFLO_DIR}/iterations.db" ]; then
-          DB_SIZE=$(stat -c%s "${CODJIFLO_DIR}/iterations.db")
-          echo "::debug::Database path: ${CODJIFLO_DIR}/iterations.db"
-          echo "::debug::Database verified: ${DB_SIZE} bytes"
-        else
-          echo "::error::Database file not found!"
-          exit 1
-        fi
-        echo "::endgroup::"
-

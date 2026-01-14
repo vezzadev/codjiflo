@@ -22,6 +22,7 @@ interface CommentData {
   iterationCount: number;
   runId: number;
   timestamp: string;
+  artifactId: number;
 }
 
 // ============================================================================
@@ -113,7 +114,6 @@ export async function getArtifactIdFromComment(
 
 /**
  * Format the comment body with metadata.
- * Note: Artifact field starts as 'pending' and is updated by workflow after upload.
  */
 function formatCommentBody(data: CommentData): string {
   return `${COMMENT_MARKER}
@@ -121,7 +121,7 @@ function formatCommentBody(data: CommentData): string {
 
 **Iterations captured**: ${data.iterationCount}
 **Last updated**: ${data.timestamp}
-**Artifact**: \`pending\`
+**Artifact**: \`${data.artifactId}\`
 **Run ID**: ${data.runId}
 
 ---

@@ -8,6 +8,7 @@ interface CommentData {
     iterationCount: number;
     runId: number;
     timestamp: string;
+    artifactId: number;
 }
 /**
  * Create or update the CodjiFlo data comment on the PR.
