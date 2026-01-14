@@ -161,22 +161,24 @@ export async function downloadArtifactById(
 }
 
 /**
- * Find the newest codjiflo artifact in the repo.
+ * Find the newest codjiflo artifact for a specific PR.
  * Used as fallback when the specific artifact ID is not valid.
  */
-export async function findNewestCodjifloArtifact(
+export async function findNewestCodjifloArtifactForPR(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
-  repo: string
+  repo: string,
+  prNumber: number
 ): Promise<ArtifactInfo | null> {
-  // List all artifacts matching codjiflo pattern
+  // List all artifacts matching codjiflo pattern for this PR
   const { data } = await octokit.rest.actions.listArtifactsForRepo({
     owner,
     repo,
     per_page: 100,
   });
 
-  const codjifloPattern = /^codjiflo-\d+$/;
+  // Pattern: codjiflo-pr-{prNumber}-{runId}
+  const prPattern = new RegExp(`^codjiflo-pr-${prNumber}-\\d+$`);
 
   // Find the first matching, non-expired artifact (list is sorted by created_at desc)
   for (const artifact of data.artifacts) {
@@ -184,7 +186,7 @@ export async function findNewestCodjifloArtifact(
       continue;
     }
 
-    if (codjifloPattern.test(artifact.name)) {
+    if (prPattern.test(artifact.name)) {
       return {
         id: artifact.id,
         name: artifact.name,
@@ -200,7 +202,7 @@ export async function findNewestCodjifloArtifact(
 /**
  * Download artifact with fallback logic:
  * 1. Try to download specific artifact by ID (from PR comment)
- * 2. If not found/expired, fall back to newest codjiflo artifact
+ * 2. If not found/expired, fall back to newest artifact for this PR
  *
  * Returns null if no artifact exists at all.
  */
@@ -208,7 +210,7 @@ export async function downloadArtifactWithFallback(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
   repo: string,
-  _prNumber: number,
+  prNumber: number,
   specificArtifactId: number | null
 ): Promise<DownloadResult | null> {
   // Strategy 1: Try specific artifact by ID from PR comment
@@ -219,8 +221,8 @@ export async function downloadArtifactWithFallback(
     }
   }
 
-  // Strategy 2: Find newest codjiflo artifact (fallback)
-  const newestArtifact = await findNewestCodjifloArtifact(octokit, owner, repo);
+  // Strategy 2: Find newest artifact for this PR (fallback)
+  const newestArtifact = await findNewestCodjifloArtifactForPR(octokit, owner, repo, prNumber);
 
   if (newestArtifact) {
     try {

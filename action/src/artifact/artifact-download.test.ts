@@ -10,7 +10,7 @@ import {
   findLatestArtifact,
   downloadArtifact,
   downloadPreviousArtifact,
-  findNewestCodjifloArtifact,
+  findNewestCodjifloArtifactForPR,
   downloadArtifactById,
   downloadArtifactWithFallback,
   type ArtifactInfo,
@@ -244,32 +244,33 @@ describe('downloadPreviousArtifact', () => {
   });
 });
 
-describe('findNewestCodjifloArtifact', () => {
+describe('findNewestCodjifloArtifactForPR', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should find artifact matching codjiflo pattern', async () => {
+  it('should find artifact matching PR-specific pattern', async () => {
     mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
       data: {
         total_count: 3,
         artifacts: [
-          { id: 100, name: 'codjiflo-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
-          { id: 99, name: 'codjiflo-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
-          { id: 98, name: 'other-artifact', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
+          { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
+          { id: 99, name: 'codjiflo-pr-28-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
+          { id: 98, name: 'codjiflo-pr-27-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
       },
     });
 
-    const result = await findNewestCodjifloArtifact(
+    const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
       'owner',
-      'repo'
+      'repo',
+      28
     );
 
     expect(result).toEqual({
       id: 100,
-      name: 'codjiflo-1000',
+      name: 'codjiflo-pr-28-1000',
       created_at: '2025-01-03T10:00:00Z',
       workflow_run_id: 1000,
     });
@@ -280,35 +281,37 @@ describe('findNewestCodjifloArtifact', () => {
       data: {
         total_count: 2,
         artifacts: [
-          { id: 100, name: 'codjiflo-1000', created_at: '2025-01-03T10:00:00Z', expired: true, workflow_run: { id: 1000 } },
-          { id: 99, name: 'codjiflo-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
+          { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: true, workflow_run: { id: 1000 } },
+          { id: 99, name: 'codjiflo-pr-28-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
         ],
       },
     });
 
-    const result = await findNewestCodjifloArtifact(
+    const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
       'owner',
-      'repo'
+      'repo',
+      28
     );
 
     expect(result?.id).toBe(99);
   });
 
-  it('should return null when no matching artifact exists', async () => {
+  it('should return null when no matching artifact exists for PR', async () => {
     mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
       data: {
         total_count: 1,
         artifacts: [
-          { id: 98, name: 'other-artifact', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
+          { id: 98, name: 'codjiflo-pr-27-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
       },
     });
 
-    const result = await findNewestCodjifloArtifact(
+    const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
       'owner',
-      'repo'
+      'repo',
+      28
     );
 
     expect(result).toBeNull();
@@ -395,16 +398,16 @@ describe('downloadArtifactWithFallback', () => {
     expect(result?.data).toBe(mockZipData);
   });
 
-  it('should fall back to newest artifact when specific ID is not found', async () => {
+  it('should fall back to newest PR artifact when specific ID is not found', async () => {
     const mockZipData = new ArrayBuffer(100);
     // First call for specific artifact ID fails
     mockOctokit.rest.actions.getArtifact.mockRejectedValue(new Error('Not found'));
-    // Fallback call lists all artifacts
+    // Fallback call lists all artifacts (PR-specific pattern)
     mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
       data: {
         total_count: 1,
         artifacts: [
-          { id: 99, name: 'codjiflo-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
+          { id: 99, name: 'codjiflo-pr-28-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
       },
     });
@@ -429,7 +432,7 @@ describe('downloadArtifactWithFallback', () => {
       data: {
         total_count: 1,
         artifacts: [
-          { id: 100, name: 'codjiflo-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
+          { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
         ],
       },
     });
