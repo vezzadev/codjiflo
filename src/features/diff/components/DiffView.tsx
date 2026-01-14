@@ -37,7 +37,7 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 export function DiffView() {
   const { files, selectedFileIndex, isLoading, currentChangeIndex, resetChangeIndex, setTotalChangeCount } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
-  const { selectedRange } = useIterationDiff();
+  const { selectedRange, getFileDiffByPath, isIterationMode } = useIterationDiff();
   const {
     isLoading: isLoadingComments,
     error: commentsError,
@@ -151,10 +151,25 @@ export function DiffView() {
     }
   }, [draft, pipeline]);
 
-  // Extract line contents for context-aware syntax highlighting (multi-line comment support)
-  const lineContents = useMemo(() => {
+  // Get full file content from iteration diff for accurate multi-line syntax highlighting
+  const fullFileContent = useMemo(() => {
+    if (!isIterationMode || !pipeline.filename) {
+      return { oldContent: undefined, newContent: undefined };
+    }
+    const iterationDiff = getFileDiffByPath(pipeline.filename);
+    return {
+      oldContent: iterationDiff?.base?.content,
+      newContent: iterationDiff?.head?.content,
+    };
+  }, [isIterationMode, pipeline.filename, getFileDiffByPath]);
+
+  const hasFullContent = fullFileContent.oldContent !== undefined || fullFileContent.newContent !== undefined;
+
+  // Fallback: extract line contents for non-iteration mode (multi-line comment support)
+  const visibleLines = useMemo(() => {
+    if (hasFullContent) return undefined;
     return pipeline.diffLines.map(line => line.content);
-  }, [pipeline.diffLines]);
+  }, [pipeline.diffLines, hasFullContent]);
 
   // Loading state
   if (isLoading || (isShowingDescription && isPRLoading) || pipeline._isLoadingFullFile) {
@@ -224,7 +239,12 @@ export function DiffView() {
       )}
 
       {/* Diff content - wrapped with ShikiTokensProvider for multi-line comment support */}
-      <ShikiTokensProvider lines={lineContents} language={pipeline.language}>
+      <ShikiTokensProvider
+        {...(fullFileContent.oldContent !== undefined && { oldContent: fullFileContent.oldContent })}
+        {...(fullFileContent.newContent !== undefined && { newContent: fullFileContent.newContent })}
+        {...(visibleLines !== undefined && { visibleLines })}
+        language={pipeline.language}
+      >
         {pipeline.viewMode === 'inline' ? (
           <div
             ref={containerRefCallback}
@@ -256,6 +276,7 @@ export function DiffView() {
               showWhitespace={pipeline.showWhitespace}
               lineNumberMode={pipeline.lineNumberMode}
               scrollToRowIndex={pipeline.scrollToRowIndex}
+              hasFullContent={hasFullContent}
             />
           ) : (
             <InlineDiffTable
@@ -278,6 +299,7 @@ export function DiffView() {
               onSubmitDraft={handleSubmitDraft}
               showWhitespace={pipeline.showWhitespace}
               lineNumberMode={pipeline.lineNumberMode}
+              hasFullContent={hasFullContent}
             />
           )}
         </div>

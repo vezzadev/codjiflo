@@ -2,16 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import type { ThemedToken } from 'shiki';
 import { getHighlighter, type ShikiLanguage } from '@/lib/shiki';
 import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
-import { useShikiTokens } from './ShikiTokensContext';
+import { useShikiTokens, type TokenSide } from './ShikiTokensContext';
 
 interface ShikiHighlighterProps {
   code: string;
   language: string;
   showWhitespace?: boolean;
   /**
-   * Line index for context-aware highlighting.
-   * When provided and ShikiTokensProvider is available, uses pre-tokenized lines
-   * which correctly handle multi-line constructs like block comments.
+   * Line number for context-aware highlighting (1-based).
+   * When provided with `side` and ShikiTokensProvider has full content,
+   * uses pre-tokenized lines which correctly handle multi-line constructs.
+   */
+  lineNumber?: number;
+  /**
+   * Side of the diff for token lookup.
+   * 'old' for deletions/left side, 'new' for additions/right side.
+   */
+  side?: TokenSide;
+  /**
+   * @deprecated Use lineNumber + side instead.
+   * Fallback line index for array-based lookup (when full content unavailable).
    */
   lineIndex?: number;
 }
@@ -89,6 +99,8 @@ export function ShikiHighlighter({
   code,
   language,
   showWhitespace = false,
+  lineNumber,
+  side,
   lineIndex,
 }: ShikiHighlighterProps) {
   const theme = useSyntaxTheme();
@@ -98,8 +110,20 @@ export function ShikiHighlighter({
   // Use ref for cancellation check after async operations
   const cancelledRef = useRef(false);
 
-  // Try to get pre-tokenized tokens from context (for multi-line comment support)
-  const contextTokens = lineIndex !== undefined ? tokensContext?.getLineTokens(lineIndex) : null;
+  // Try to get pre-tokenized tokens from context
+  // Priority: lineNumber+side (full content mode) > lineIndex (fallback mode)
+  let contextTokens: ThemedToken[] | null = null;
+
+  if (tokensContext) {
+    if (lineNumber !== undefined && side !== undefined) {
+      // Full content mode: use line number and side
+      contextTokens = tokensContext.getLineTokens(lineNumber, side);
+    } else if (lineIndex !== undefined) {
+      // Fallback mode: use array index
+      // In fallback mode, getLineTokens with 'new' side uses the fallback array
+      contextTokens = tokensContext.getLineTokensByIndex(lineIndex);
+    }
+  }
 
   useEffect(() => {
     // Skip independent tokenization if we have context tokens

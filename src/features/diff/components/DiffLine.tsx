@@ -1,6 +1,7 @@
 import type { ParsedDiffLine, WordDiffSegment } from '../types';
 import { Button } from '@/components';
 import { ShikiHighlighter } from './ShikiHighlighter';
+import type { TokenSide } from './ShikiTokensContext';
 
 interface DiffLineProps {
   line: ParsedDiffLine;
@@ -15,8 +16,16 @@ interface DiffLineProps {
   showWhitespace?: boolean;
   /** Line number display mode for inline view with content filter (AC-3.3.14-15) */
   lineNumberMode?: 'left' | 'both' | 'right';
-  /** Line index for context-aware syntax highlighting (multi-line comment support) */
+  /**
+   * @deprecated Use lineIndex as fallback only. Prefer full content mode.
+   * Line index for context-aware syntax highlighting (fallback mode)
+   */
   lineIndex?: number;
+  /**
+   * Whether full file content is available for accurate token lookup.
+   * When true, tokens are looked up by actual line number instead of array index.
+   */
+  hasFullContent?: boolean;
 }
 
 const LINE_TYPE_CLASSES: Record<string, string> = {
@@ -131,8 +140,26 @@ export function DiffLine({
   showWhitespace = false,
   lineNumberMode = 'both',
   lineIndex,
+  hasFullContent = false,
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
+
+  // Determine token lookup parameters based on line type
+  // For deletions: use old line number and 'old' side
+  // For additions/context: use new line number and 'new' side
+  let tokenLineNumber: number | undefined;
+  let tokenSide: TokenSide | undefined;
+
+  if (hasFullContent) {
+    if (line.type === 'deletion') {
+      tokenLineNumber = line.oldLineNumber ?? undefined;
+      tokenSide = 'old';
+    } else {
+      // additions and context use new side
+      tokenLineNumber = line.newLineNumber ?? undefined;
+      tokenSide = 'new';
+    }
+  }
 
   // For side-by-side, show the appropriate line number
   const displayLineNumber = side === 'left'
@@ -209,6 +236,10 @@ export function DiffLine({
             code={line.content}
             language={language}
             showWhitespace={showWhitespace}
+            {...(tokenLineNumber !== undefined && tokenSide !== undefined && {
+              lineNumber: tokenLineNumber,
+              side: tokenSide,
+            })}
             {...(lineIndex !== undefined && { lineIndex })}
           />
         )}
