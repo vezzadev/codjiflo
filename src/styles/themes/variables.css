@@ -152,6 +152,7 @@
   /* File explorer */
   --file-explorer-bg: #E0E0E0;
   --file-explorer-header: #D0D0D0;
+  --folder-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   --file-explorer-header-hover: rgba(0, 0, 0, 0.1);
   --file-explorer-header-hover-fg: #1E1E1E;
   --file-explorer-change-underlay: rgba(0, 0, 0, 0.05);
@@ -309,6 +310,7 @@
 
   --file-explorer-bg: #303030;
   --file-explorer-header: #444444;
+  --folder-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --file-explorer-header-hover: rgba(255, 255, 255, 0.2);
   --file-explorer-header-hover-fg: #DDDDDD;
   --file-explorer-change-underlay: rgba(102, 102, 102, 0.13);
@@ -459,6 +461,7 @@
 
   --file-explorer-bg: #0F0F0F;
   --file-explorer-header: #080808;
+  --folder-shadow: 0 1px 3px rgba(255, 255, 255, 0.15);
   --file-explorer-header-hover: #313131;
   --file-explorer-header-hover-fg: #DDDDDD;
   --file-explorer-change-underlay: rgba(85, 85, 85, 0.13);
@@ -610,6 +613,7 @@
 
   --file-explorer-bg: #000000;
   --file-explorer-header: #000000;
+  --folder-shadow: none;
   --file-explorer-header-hover: #1AEBFF;
   --file-explorer-header-hover-fg: #000000;
   --file-explorer-change-underlay: #1AEBFF;
