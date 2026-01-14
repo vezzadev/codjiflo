@@ -38,6 +38,8 @@ interface VirtualizedInlineDiffTableProps {
   lineNumberMode: 'left' | 'both' | 'right';
   /** Row index to scroll to (for J/K navigation) */
   scrollToRowIndex?: number | undefined;
+  /** Whether full file content is available for accurate token lookup */
+  hasFullContent?: boolean;
 }
 
 interface RowData {
@@ -59,6 +61,7 @@ interface RowData {
   onSubmitDraft: () => void;
   showWhitespace: boolean;
   lineNumberMode: 'left' | 'both' | 'right';
+  hasFullContent: boolean;
 }
 
 /**
@@ -85,6 +88,7 @@ function DiffRow({
   onSubmitDraft,
   showWhitespace,
   lineNumberMode,
+  hasFullContent,
 }: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
@@ -114,6 +118,7 @@ function DiffRow({
             showWhitespace={showWhitespace}
             lineNumberMode={lineNumberMode}
             lineIndex={index}
+            hasFullContent={hasFullContent}
           />
           {showDraftHere && (
             <tr>
@@ -177,6 +182,7 @@ export function VirtualizedInlineDiffTable({
   showWhitespace,
   lineNumberMode,
   scrollToRowIndex,
+  hasFullContent = false,
 }: VirtualizedInlineDiffTableProps) {
   const listRef = useListRef(null);
 
@@ -217,6 +223,7 @@ export function VirtualizedInlineDiffTable({
       onSubmitDraft,
       showWhitespace,
       lineNumberMode,
+      hasFullContent,
     }),
     [
       diffLines,
@@ -237,6 +244,7 @@ export function VirtualizedInlineDiffTable({
       onSubmitDraft,
       showWhitespace,
       lineNumberMode,
+      hasFullContent,
     ]
   );
 

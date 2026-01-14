@@ -33,6 +33,8 @@ export interface InlineDiffTableProps {
   showWhitespace: boolean;
   /** Line number display mode: left (old only), right (new only), both */
   lineNumberMode: 'left' | 'both' | 'right';
+  /** Whether full file content is available for accurate token lookup */
+  hasFullContent?: boolean;
 }
 
 /**
@@ -63,6 +65,7 @@ export function InlineDiffTable({
   onSubmitDraft,
   showWhitespace,
   lineNumberMode,
+  hasFullContent = false,
 }: InlineDiffTableProps) {
   // colSpan depends on line number mode: both = 4 (2 line nums + marker + content), left/right = 3
   const colSpan = lineNumberMode === 'both' ? 4 : 3;
@@ -95,6 +98,7 @@ export function InlineDiffTable({
                 showWhitespace={showWhitespace}
                 lineNumberMode={lineNumberMode}
                 lineIndex={index}
+                hasFullContent={hasFullContent}
               />
               {draftLineIndex === index && (
                 <tr>
