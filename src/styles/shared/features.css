@@ -7,29 +7,11 @@
   padding: 16px;
 }
 
-.pr-title-row {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
 .pr-title {
-  margin: 0;
+  margin: 0 0 12px 0;
   font-size: 24px;
   font-weight: 600;
   color: var(--main-fg);
-}
-
-.pr-title-github-link {
-  font-size: 14px;
-  color: var(--hyperlink);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.pr-title-github-link:hover {
-  text-decoration: underline;
 }
 
 .pr-meta-row {

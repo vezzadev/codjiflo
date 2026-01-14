@@ -51,18 +51,4 @@ describe('PRMetadata', () => {
     expect(screen.getByText('develop')).toBeInTheDocument();
     expect(screen.getByText('into')).toBeInTheDocument();
   });
-
-  it('displays link to GitHub next to title', () => {
-    const pr = createMockReview({
-      htmlUrl: 'https://github.com/test/repo/pull/42',
-    });
-
-    render(<PRMetadata pr={pr} />);
-
-    const link = screen.getByRole('link', { name: /View on GitHub/i });
-    expect(link).toHaveTextContent('(View on GitHub)');
-    expect(link).toHaveAttribute('href', 'https://github.com/test/repo/pull/42');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-  });
 });
