@@ -84,14 +84,16 @@ describe('parsePatch', () => {
 });
 
 describe('detectLanguage', () => {
-  it('detects TypeScript files', () => {
+  it('detects TypeScript and TSX files', () => {
     expect(detectLanguage('file.ts')).toBe('typescript');
-    expect(detectLanguage('component.tsx')).toBe('typescript');
+    // TSX must return 'tsx' (not 'typescript') to enable JSX grammar in Shiki
+    expect(detectLanguage('component.tsx')).toBe('tsx');
   });
 
-  it('detects JavaScript files', () => {
+  it('detects JavaScript and JSX files', () => {
     expect(detectLanguage('file.js')).toBe('javascript');
-    expect(detectLanguage('component.jsx')).toBe('javascript');
+    // JSX must return 'jsx' (not 'javascript') to enable JSX grammar in Shiki
+    expect(detectLanguage('component.jsx')).toBe('jsx');
     expect(detectLanguage('config.mjs')).toBe('javascript');
   });
 

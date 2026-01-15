@@ -12,6 +12,7 @@ import { render, screen, waitFor } from '@/tests/helpers';
 import { ShikiTokensProvider, useShikiTokens, type TokenSide } from './ShikiTokensContext';
 import { getHighlighter } from '@/lib/shiki';
 import { useThemeStore } from '@/features/theme';
+import { detectLanguage } from '../utils/parse-patch';
 
 // Pre-initialize Shiki to avoid timeout issues
 beforeAll(async () => {
@@ -330,6 +331,55 @@ function App() {
       expect(componentToken?.color.toLowerCase()).toBe('#267f99');
 
       // Unmount before restoring to avoid triggering re-render with old scheme
+      unmount();
+      useThemeStore.setState({ diffColorScheme: originalScheme });
+    });
+
+    it('detectLanguage returns correct language for TSX files to enable JSX highlighting', async () => {
+      // This test verifies that detectLanguage returns 'tsx' (not 'typescript')
+      // for .tsx files. Using 'typescript' would break JSX highlighting on
+      // continuation lines where <ComponentName appears alone.
+      const originalScheme = useThemeStore.getState().diffColorScheme;
+      useThemeStore.setState({ diffColorScheme: 'visual-studio' });
+
+      // Get language from detectLanguage - this is what the real app uses
+      const language = detectLanguage('MyComponent.tsx');
+
+      // Multi-line JSX where component name is on its own line (line 5)
+      // This pattern breaks when using 'typescript' instead of 'tsx'
+      const tsxCode = `import React from 'react';
+
+function App() {
+  return (
+    <MyComponent
+      prop="value"
+    />
+  );
+}`;
+
+      const { unmount } = render(
+        <ShikiTokensProvider newContent={tsxCode} language={language}>
+          {/* Line 5 is "    <MyComponent" - component on its own line */}
+          <TokenInspector lineNumber={5} side="new" />
+        </ShikiTokensProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('token-inspector')).not.toHaveTextContent('Loading...');
+      });
+
+      const tokenData = screen.getByTestId('token-data').textContent;
+      expect(tokenData).toBeTruthy();
+
+      const tokens = JSON.parse(tokenData) as { content: string; color: string }[];
+
+      // Find the MyComponent token
+      const componentToken = tokens.find((t) => t.content === 'MyComponent');
+
+      // When detectLanguage correctly returns 'tsx', the component gets teal (#267F99)
+      // When it incorrectly returns 'typescript', it gets dark blue (#001080)
+      expect(componentToken?.color.toLowerCase()).toBe('#267f99');
+
       unmount();
       useThemeStore.setState({ diffColorScheme: originalScheme });
     });
