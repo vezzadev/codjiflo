@@ -17,6 +17,9 @@
     "better-sqlite3": "^12.5.0",
     "pino": "^10.1.0"
   },
+  "overrides": {
+    "undici": "^6.23.0"
+  },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
     "@types/better-sqlite3": "^7.6.13",
