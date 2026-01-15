@@ -64,7 +64,7 @@ jobs:
         run: npm ci
 
       - name: Run typecheck
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: npm run typecheck
 
   unit-tests:
