@@ -84,21 +84,31 @@ test.describe("File List Sorting", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    // Get all file items (excluding PR Description which is always first)
-    const fileItems = fileNav.getByRole("listitem");
+    // File list uses tree structure with folder groups
+    // Verify files are present by looking for them by name
+    // Files should appear in alphabetical order within each folder
 
-    // Wait for files to load - should have PR Description + 4 files = 5 items
-    await expect(fileItems).toHaveCount(5);
+    // Root folder files: package.json should come before README.md (p < r)
+    const packageJson = fileNav.getByRole("treeitem", { name: /package\.json/ });
+    const readme = fileNav.getByRole("treeitem", { name: /README\.md/ });
+    await expect(packageJson).toBeVisible();
+    await expect(readme).toBeVisible();
 
-    // Verify files are in alphabetical order (case-insensitive: p < r < s)
-    // PR Description is first, then sorted files
-    const itemTexts = await fileItems.allTextContents();
+    // src folder files: alpha.ts should come before zebra.ts (a < z)
+    const alphaTs = fileNav.getByRole("treeitem", { name: /alpha\.ts/ });
+    const zebraTs = fileNav.getByRole("treeitem", { name: /zebra\.ts/ });
+    await expect(alphaTs).toBeVisible();
+    await expect(zebraTs).toBeVisible();
 
-    // Extract just the filenames (items contain filename + stats)
-    expect(itemTexts[0]).toContain("Pull Request Description");
-    expect(itemTexts[1]).toContain("package.json");
-    expect(itemTexts[2]).toContain("README.md");
-    expect(itemTexts[3]).toContain("src/alpha.ts");
-    expect(itemTexts[4]).toContain("src/zebra.ts");
+    // Verify ordering by checking DOM positions
+    // Get bounding boxes to verify visual order
+    const packageBox = await packageJson.boundingBox();
+    const readmeBox = await readme.boundingBox();
+    const alphaBox = await alphaTs.boundingBox();
+    const zebraBox = await zebraTs.boundingBox();
+
+    // In the file tree, alphabetically earlier files should be higher (smaller Y)
+    expect(packageBox!.y).toBeLessThan(readmeBox!.y);
+    expect(alphaBox!.y).toBeLessThan(zebraBox!.y);
   });
 });
