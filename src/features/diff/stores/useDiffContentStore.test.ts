@@ -65,7 +65,7 @@ describe('useDiffContentStore', () => {
       expect(result.path).toBe('src/test.ts');
       expect(result.content).toBe('const x = 1;\nconst y = 2;');
       expect(result.lines).toEqual(['const x = 1;', 'const y = 2;']);
-      expect(result.language).toBe('typescript');
+      expect(result.language).toBe('ts'); // detectLanguage returns extension, Shiki resolves alias
       expect(useDiffContentStore.getState().isLoadingContent).toBe(false);
     });
 
