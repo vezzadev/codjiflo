@@ -258,33 +258,37 @@ test.describe("Side filter with view modes", () => {
   // These tests verify the bug fix in VirtualizedSideBySideDiffView
   // ============================================================================
 
-  // Helper to toggle side-by-side view
+  // Helper to toggle side-by-side view and return the new region
   async function setSideBySideView(page: import("@playwright/test").Page) {
     await page.locator("body").click();
-    await page.keyboard.press("s"); // 's' for side-by-side
+    await page.keyboard.press("x"); // 'x' for side-by-side (not 's' which is next file)
+    // Return the side-by-side region (different from inline "Diff content" region)
+    const sideBySideRegion = page.getByRole("region", { name: "Side-by-side diff view" });
+    await expect(sideBySideRegion).toBeVisible();
+    return sideBySideRegion;
   }
 
   test("left filter shows only deletions in side-by-side changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "small.ts");
+    await navigateToFile(page, "small.ts");
 
-    // Switch to side-by-side view
-    await setSideBySideView(page);
+    // Switch to side-by-side view (get new region)
+    const sideBySideRegion = await setSideBySideView(page);
 
     // Set filter to left (deletions only)
     await setFilter(page, "left");
 
     // Verify filter is applied
-    const counts = await countLineTypes(diffRegion);
+    const counts = await countLineTypes(sideBySideRegion);
     expect(counts.deletions).toBeGreaterThan(0);
     expect(counts.additions).toBe(0);
   });
 
   test("left filter shows only deletions in side-by-side full file view", async ({ page }) => {
     // Use large file to trigger virtualization
-    const diffRegion = await navigateToFile(page, "large.ts");
+    await navigateToFile(page, "large.ts");
 
-    // Switch to side-by-side view
-    await setSideBySideView(page);
+    // Switch to side-by-side view (get new region)
+    const sideBySideRegion = await setSideBySideView(page);
 
     // Enable full file view
     await setFullFileView(page, true);
@@ -297,32 +301,32 @@ test.describe("Side filter with view modes", () => {
     await setFilter(page, "left");
 
     // Verify filter is applied in virtualized side-by-side full file view
-    const counts = await countLineTypes(diffRegion);
+    const counts = await countLineTypes(sideBySideRegion);
     expect(counts.deletions).toBeGreaterThan(0);
     expect(counts.additions).toBe(0);
   });
 
   test("right filter shows only additions in side-by-side changes view", async ({ page }) => {
-    const diffRegion = await navigateToFile(page, "small.ts");
+    await navigateToFile(page, "small.ts");
 
-    // Switch to side-by-side view
-    await setSideBySideView(page);
+    // Switch to side-by-side view (get new region)
+    const sideBySideRegion = await setSideBySideView(page);
 
     // Set filter to right (additions only)
     await setFilter(page, "right");
 
     // Verify filter is applied
-    const counts = await countLineTypes(diffRegion);
+    const counts = await countLineTypes(sideBySideRegion);
     expect(counts.additions).toBeGreaterThan(0);
     expect(counts.deletions).toBe(0);
   });
 
   test("right filter shows only additions in side-by-side full file view", async ({ page }) => {
     // Use large file to trigger virtualization
-    const diffRegion = await navigateToFile(page, "large.ts");
+    await navigateToFile(page, "large.ts");
 
-    // Switch to side-by-side view
-    await setSideBySideView(page);
+    // Switch to side-by-side view (get new region)
+    const sideBySideRegion = await setSideBySideView(page);
 
     // Enable full file view
     await setFullFileView(page, true);
@@ -335,7 +339,7 @@ test.describe("Side filter with view modes", () => {
     await setFilter(page, "right");
 
     // Verify filter is applied in virtualized side-by-side full file view
-    const counts = await countLineTypes(diffRegion);
+    const counts = await countLineTypes(sideBySideRegion);
     expect(counts.additions).toBeGreaterThan(0);
     expect(counts.deletions).toBe(0);
   });
