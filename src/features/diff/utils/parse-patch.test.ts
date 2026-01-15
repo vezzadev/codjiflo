@@ -96,6 +96,7 @@ describe('detectLanguage', () => {
     expect(detectLanguage('file.js')).toBe('js');
     expect(detectLanguage('component.jsx')).toBe('jsx');
     expect(detectLanguage('config.mjs')).toBe('mjs');
+    expect(detectLanguage('utils.cjs')).toBe('cjs');
   });
 
   it('returns file extension for other languages', () => {

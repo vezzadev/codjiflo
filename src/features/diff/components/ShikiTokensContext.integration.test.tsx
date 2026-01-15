@@ -289,6 +289,58 @@ const code = true;`;
       expect(screen.getByTestId('token-count')).toBeInTheDocument();
     });
 
+    it('tokenizes .mjs and .cjs files as JavaScript via Shiki alias resolution', async () => {
+      // Shiki resolves 'mjs' and 'cjs' to 'javascript' internally
+      // This test verifies the alias resolution works correctly
+      const originalScheme = useThemeStore.getState().diffColorScheme;
+      useThemeStore.setState({ diffColorScheme: 'visual-studio' });
+
+      const jsCode = `const foo = 'bar';`;
+
+      // Test with 'mjs' extension (what detectLanguage returns for .mjs files)
+      const { unmount: unmountMjs } = render(
+        <ShikiTokensProvider newContent={jsCode} language={detectLanguage('config.mjs')}>
+          <TokenInspector lineNumber={1} side="new" />
+        </ShikiTokensProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('token-inspector')).not.toHaveTextContent('Loading...');
+      });
+
+      let tokenData = screen.getByTestId('token-data').textContent;
+      expect(tokenData).toBeTruthy();
+      let tokens = JSON.parse(tokenData!) as { content: string; color: string }[];
+
+      // 'const' keyword should be blue (#0000FF) in light-plus theme for JavaScript
+      const constTokenMjs = tokens.find((t) => t.content === 'const');
+      expect(constTokenMjs?.color.toLowerCase()).toBe('#0000ff');
+
+      unmountMjs();
+
+      // Test with 'cjs' extension
+      const { unmount: unmountCjs } = render(
+        <ShikiTokensProvider newContent={jsCode} language={detectLanguage('utils.cjs')}>
+          <TokenInspector lineNumber={1} side="new" />
+        </ShikiTokensProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('token-inspector')).not.toHaveTextContent('Loading...');
+      });
+
+      tokenData = screen.getByTestId('token-data').textContent;
+      expect(tokenData).toBeTruthy();
+      tokens = JSON.parse(tokenData!) as { content: string; color: string }[];
+
+      // 'const' keyword should also be blue for .cjs files
+      const constTokenCjs = tokens.find((t) => t.content === 'const');
+      expect(constTokenCjs?.color.toLowerCase()).toBe('#0000ff');
+
+      unmountCjs();
+      useThemeStore.setState({ diffColorScheme: originalScheme });
+    });
+
     it('tokenizes JSX component names with correct color (#267F99 teal)', async () => {
       // Set Visual Studio diff color scheme to use light-plus theme BEFORE render
       // to avoid triggering re-tokenization mid-flight
