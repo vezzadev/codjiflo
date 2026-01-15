@@ -310,7 +310,7 @@ const code = true;`;
 
       let tokenData = screen.getByTestId('token-data').textContent;
       expect(tokenData).toBeTruthy();
-      let tokens = JSON.parse(tokenData!) as { content: string; color: string }[];
+      let tokens = JSON.parse(tokenData) as { content: string; color: string }[];
 
       // 'const' keyword should be blue (#0000FF) in light-plus theme for JavaScript
       const constTokenMjs = tokens.find((t) => t.content === 'const');
@@ -331,7 +331,7 @@ const code = true;`;
 
       tokenData = screen.getByTestId('token-data').textContent;
       expect(tokenData).toBeTruthy();
-      tokens = JSON.parse(tokenData!) as { content: string; color: string }[];
+      tokens = JSON.parse(tokenData) as { content: string; color: string }[];
 
       // 'const' keyword should also be blue for .cjs files
       const constTokenCjs = tokens.find((t) => t.content === 'const');

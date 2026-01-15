@@ -240,9 +240,9 @@ export function DiffView() {
 
       {/* Diff content - wrapped with ShikiTokensProvider for multi-line comment support */}
       <ShikiTokensProvider
-        oldContent={fullFileContent.oldContent}
-        newContent={fullFileContent.newContent}
-        visibleLines={visibleLines}
+        {...(fullFileContent.oldContent !== undefined && { oldContent: fullFileContent.oldContent })}
+        {...(fullFileContent.newContent !== undefined && { newContent: fullFileContent.newContent })}
+        {...(visibleLines !== undefined && { visibleLines })}
         language={pipeline.language}
       >
         {pipeline.viewMode === 'inline' ? (
