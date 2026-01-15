@@ -70,57 +70,15 @@ export function parsePatch(patch: string): ParsedDiffLine[] {
 }
 
 /**
- * Detects programming language from filename extension
+ * Extracts file extension for syntax highlighting.
+ * Returns the lowercased extension which Shiki resolves to the correct language
+ * via its built-in alias system (e.g., 'ts' → 'typescript', 'py' → 'python').
+ *
  * @param filename - The file name with extension
- * @returns Language identifier for syntax highlighting
+ * @returns File extension (lowercased) or 'txt' for unknown/missing extensions
  */
 export function detectLanguage(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase();
-
-  const languageMap: Record<string, string> = {
-    // JavaScript/TypeScript
-    'ts': 'typescript',
-    'tsx': 'tsx',
-    'js': 'javascript',
-    'jsx': 'jsx',
-    'mjs': 'javascript',
-    'cjs': 'javascript',
-
-    // Python
-    'py': 'python',
-    'pyw': 'python',
-
-    // Web
-    'html': 'html',
-    'htm': 'html',
-    'css': 'css',
-    'scss': 'css',
-    'less': 'css',
-    'json': 'json',
-    'xml': 'xml',
-    'yaml': 'yaml',
-    'yml': 'yaml',
-
-    // Other languages
-    'java': 'java',
-    'kt': 'kotlin',
-    'cs': 'csharp',
-    'go': 'go',
-    'rs': 'rust',
-    'rb': 'ruby',
-    'php': 'php',
-    'swift': 'swift',
-    'c': 'c',
-    'cpp': 'cpp',
-    'h': 'c',
-    'hpp': 'cpp',
-    'sh': 'bash',
-    'bash': 'bash',
-    'zsh': 'bash',
-    'sql': 'sql',
-    'md': 'markdown',
-    'markdown': 'markdown',
-  };
-
-  return languageMap[ext ?? ''] ?? 'plaintext';
+  // Return extension if present, 'txt' otherwise (Shiki treats 'txt' as plaintext)
+  return ext && ext !== filename.toLowerCase() ? ext : 'txt';
 }

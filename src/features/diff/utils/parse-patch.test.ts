@@ -84,36 +84,39 @@ describe('parsePatch', () => {
 });
 
 describe('detectLanguage', () => {
-  it('detects TypeScript and TSX files', () => {
-    expect(detectLanguage('file.ts')).toBe('typescript');
-    // TSX must return 'tsx' (not 'typescript') to enable JSX grammar in Shiki
+  // detectLanguage returns the file extension, which Shiki resolves via its alias system
+  // (e.g., 'ts' → 'typescript', 'py' → 'python')
+
+  it('returns file extension for TypeScript and TSX files', () => {
+    expect(detectLanguage('file.ts')).toBe('ts');
     expect(detectLanguage('component.tsx')).toBe('tsx');
   });
 
-  it('detects JavaScript and JSX files', () => {
-    expect(detectLanguage('file.js')).toBe('javascript');
-    // JSX must return 'jsx' (not 'javascript') to enable JSX grammar in Shiki
+  it('returns file extension for JavaScript and JSX files', () => {
+    expect(detectLanguage('file.js')).toBe('js');
     expect(detectLanguage('component.jsx')).toBe('jsx');
-    expect(detectLanguage('config.mjs')).toBe('javascript');
+    expect(detectLanguage('config.mjs')).toBe('mjs');
   });
 
-  it('detects Python files', () => {
-    expect(detectLanguage('script.py')).toBe('python');
-  });
-
-  it('detects web files', () => {
+  it('returns file extension for other languages', () => {
+    expect(detectLanguage('script.py')).toBe('py');
     expect(detectLanguage('index.html')).toBe('html');
     expect(detectLanguage('styles.css')).toBe('css');
     expect(detectLanguage('data.json')).toBe('json');
   });
 
-  it('returns plaintext for unknown extensions', () => {
-    expect(detectLanguage('file.unknown')).toBe('plaintext');
-    expect(detectLanguage('file')).toBe('plaintext');
+  it('returns txt for files without extension', () => {
+    expect(detectLanguage('Makefile')).toBe('txt');
+    expect(detectLanguage('Dockerfile')).toBe('txt');
+  });
+
+  it('returns extension even for unknown types (Shiki handles fallback)', () => {
+    // Unknown extensions are still returned - Shiki will fall back to plaintext
+    expect(detectLanguage('file.xyz')).toBe('xyz');
   });
 
   it('handles case insensitivity', () => {
-    expect(detectLanguage('FILE.TS')).toBe('typescript');
-    expect(detectLanguage('FILE.PY')).toBe('python');
+    expect(detectLanguage('FILE.TS')).toBe('ts');
+    expect(detectLanguage('FILE.PY')).toBe('py');
   });
 });
