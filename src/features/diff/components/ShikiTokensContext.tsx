@@ -197,7 +197,6 @@ export function ShikiTokensProvider({
     memoizedOldContent,
     memoizedNewContent,
     memoizedVisibleLines,
-    visibleLines,
     language,
     theme,
     hasFullContent,
