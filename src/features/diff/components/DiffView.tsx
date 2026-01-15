@@ -333,6 +333,7 @@ export function DiffView() {
             onSubmitDraft={handleSubmitDraft}
             showWhitespace={pipeline.showWhitespace}
             scrollToRowIndex={pipeline.scrollToRowIndex}
+            hasFullContent={hasFullContent}
           />
         </div>
       ) : (
@@ -358,6 +359,7 @@ export function DiffView() {
           onChangeDraftBody={draft.setDraftBody}
           onSubmitDraft={handleSubmitDraft}
           showWhitespace={pipeline.showWhitespace}
+          hasFullContent={hasFullContent}
         />
         )}
       </ShikiTokensProvider>

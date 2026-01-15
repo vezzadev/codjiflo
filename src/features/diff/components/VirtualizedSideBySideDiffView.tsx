@@ -39,6 +39,8 @@ interface VirtualizedSideBySideDiffViewProps {
   showWhitespace: boolean;
   /** Row index to scroll to (for J/K navigation) */
   scrollToRowIndex?: number | undefined;
+  /** Whether full file content is available for accurate token lookup */
+  hasFullContent?: boolean;
 }
 
 interface RowData {
@@ -61,6 +63,7 @@ interface RowData {
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
   showWhitespace: boolean;
+  hasFullContent: boolean;
 }
 
 /**
@@ -102,6 +105,7 @@ function SideBySideRow({
   onChangeDraftBody,
   onSubmitDraft,
   showWhitespace,
+  hasFullContent,
 }: RowComponentProps<RowData>) {
 
   const pair = alignedLines[index];
@@ -136,6 +140,7 @@ function SideBySideRow({
                     showCommentButton={leftLine.type !== 'header'}
                     onStartComment={() => onStartComment(index, 'LEFT')}
                     showWhitespace={showWhitespace}
+                    hasFullContent={hasFullContent}
                   />
                 ) : (
                   <DiffLineSpacer />
@@ -190,6 +195,7 @@ function SideBySideRow({
                     showCommentButton={rightLine.type !== 'header'}
                     onStartComment={() => onStartComment(index, 'RIGHT')}
                     showWhitespace={showWhitespace}
+                    hasFullContent={hasFullContent}
                   />
                 ) : (
                   <DiffLineSpacer />
@@ -260,6 +266,7 @@ export function VirtualizedSideBySideDiffView({
   onSubmitDraft,
   showWhitespace,
   scrollToRowIndex,
+  hasFullContent = false,
 }: VirtualizedSideBySideDiffViewProps) {
   const listRef = useListRef(null);
 
@@ -358,6 +365,7 @@ export function VirtualizedSideBySideDiffView({
       onChangeDraftBody,
       onSubmitDraft,
       showWhitespace,
+      hasFullContent,
     }),
     [
       filteredLines,
@@ -379,6 +387,7 @@ export function VirtualizedSideBySideDiffView({
       onChangeDraftBody,
       onSubmitDraft,
       showWhitespace,
+      hasFullContent,
     ]
   );
 

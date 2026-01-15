@@ -11,6 +11,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@/tests/helpers';
 import { ShikiTokensProvider, useShikiTokens, type TokenSide } from './ShikiTokensContext';
 import { getHighlighter } from '@/lib/shiki';
+import { useThemeStore } from '@/features/theme';
 
 // Pre-initialize Shiki to avoid timeout issues
 beforeAll(async () => {
@@ -285,6 +286,52 @@ const code = true;`;
 
       // Just verify it doesn't crash and returns tokens
       expect(screen.getByTestId('token-count')).toBeInTheDocument();
+    });
+
+    it('tokenizes JSX component names with correct color (#267F99 teal)', async () => {
+      // Set Visual Studio diff color scheme to use light-plus theme BEFORE render
+      // to avoid triggering re-tokenization mid-flight
+      const originalScheme = useThemeStore.getState().diffColorScheme;
+      useThemeStore.setState({ diffColorScheme: 'visual-studio' });
+
+      // TSX code with a JSX component on line 5
+      const tsxCode = `import React from 'react';
+
+function App() {
+  return (
+    <MyComponent
+      prop="value"
+    />
+  );
+}`;
+
+      const { unmount } = render(
+        <ShikiTokensProvider newContent={tsxCode} language="tsx">
+          {/* Line 5 is "    <MyComponent" */}
+          <TokenInspector lineNumber={5} side="new" />
+        </ShikiTokensProvider>
+      );
+
+      // Wait for tokenization to complete
+      await waitFor(() => {
+        expect(screen.getByTestId('token-inspector')).not.toHaveTextContent('Loading...');
+      });
+
+      const tokenData = screen.getByTestId('token-data').textContent;
+      expect(tokenData).toBeTruthy();
+
+      const tokens = JSON.parse(tokenData) as { content: string; color: string }[];
+
+      // Find the MyComponent token
+      const componentToken = tokens.find((t) => t.content === 'MyComponent');
+
+      // JSX component names should be teal (#267F99) in light-plus theme
+      // This color comes from the "support.class.component" TextMate scope
+      expect(componentToken?.color.toLowerCase()).toBe('#267f99');
+
+      // Unmount before restoring to avoid triggering re-render with old scheme
+      unmount();
+      useThemeStore.setState({ diffColorScheme: originalScheme });
     });
   });
 });
