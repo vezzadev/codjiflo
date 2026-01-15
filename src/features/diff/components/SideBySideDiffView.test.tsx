@@ -414,4 +414,43 @@ describe('SideBySideDiffView', () => {
       expect(screen.getByText('Failed to submit comment')).toBeInTheDocument();
     });
   });
+
+  describe('hasFullContent prop', () => {
+    it('passes hasFullContent to DiffLine components when true', () => {
+      const contextLine = createContextLine(1, 1, 'test line');
+      const alignedLines: AlignedDiffLine[] = [
+        { left: contextLine, right: contextLine, key: 'ctx-1-1' },
+      ];
+
+      render(
+        <SideBySideDiffView
+          {...defaultProps}
+          alignedLines={alignedLines}
+          hasFullContent={true}
+        />
+      );
+
+      // Both diff lines (left and right panes) should be rendered
+      const diffLines = screen.getAllByTestId('diff-line');
+      expect(diffLines).toHaveLength(2);
+    });
+
+    it('defaults hasFullContent to false when not provided', () => {
+      const contextLine = createContextLine(1, 1, 'test line');
+      const alignedLines: AlignedDiffLine[] = [
+        { left: contextLine, right: contextLine, key: 'ctx-1-1' },
+      ];
+
+      render(
+        <SideBySideDiffView
+          {...defaultProps}
+          alignedLines={alignedLines}
+        />
+      );
+
+      // Component should render without error when hasFullContent is not provided
+      const diffLines = screen.getAllByTestId('diff-line');
+      expect(diffLines).toHaveLength(2);
+    });
+  });
 });

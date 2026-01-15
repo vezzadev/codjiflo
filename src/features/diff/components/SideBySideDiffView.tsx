@@ -41,6 +41,8 @@ interface SideBySideDiffViewProps {
   showWhitespace?: boolean;
   /** Ref for the container element (used for change navigation) */
   containerRef?: React.RefObject<HTMLDivElement | null>;
+  /** Whether full file content is available for accurate token lookup */
+  hasFullContent?: boolean;
 }
 
 /**
@@ -67,6 +69,7 @@ export function SideBySideDiffView({
   onSubmitDraft,
   showWhitespace = false,
   containerRef,
+  hasFullContent = false,
 }: SideBySideDiffViewProps) {
   const leftPaneRef = useRef<HTMLDivElement>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -161,6 +164,7 @@ export function SideBySideDiffView({
                         showCommentButton={leftLine.type !== 'header'}
                         onStartComment={() => onStartComment(index, 'LEFT')}
                         showWhitespace={showWhitespace}
+                        hasFullContent={hasFullContent}
                       />
                     ) : (
                       <DiffLineSpacer />
@@ -236,6 +240,7 @@ export function SideBySideDiffView({
                         showCommentButton={rightLine.type !== 'header'}
                         onStartComment={() => onStartComment(index, 'RIGHT')}
                         showWhitespace={showWhitespace}
+                        hasFullContent={hasFullContent}
                       />
                     ) : (
                       <DiffLineSpacer />
