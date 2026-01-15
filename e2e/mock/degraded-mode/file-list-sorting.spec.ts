@@ -107,8 +107,14 @@ test.describe("File List Sorting", () => {
     const alphaBox = await alphaTs.boundingBox();
     const zebraBox = await zebraTs.boundingBox();
 
+    // Ensure bounding boxes exist (elements are visible)
+    expect(packageBox).not.toBeNull();
+    expect(readmeBox).not.toBeNull();
+    expect(alphaBox).not.toBeNull();
+    expect(zebraBox).not.toBeNull();
+
     // In the file tree, alphabetically earlier files should be higher (smaller Y)
-    expect(packageBox!.y).toBeLessThan(readmeBox!.y);
-    expect(alphaBox!.y).toBeLessThan(zebraBox!.y);
+    expect(packageBox?.y).toBeLessThan(readmeBox?.y ?? Infinity);
+    expect(alphaBox?.y).toBeLessThan(zebraBox?.y ?? Infinity);
   });
 });
