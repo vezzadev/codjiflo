@@ -236,9 +236,11 @@ export function DiffLine({
             code={line.content}
             language={language}
             showWhitespace={showWhitespace}
-            lineNumber={tokenLineNumber}
-            side={tokenSide}
-            lineIndex={lineIndex}
+            {...(tokenLineNumber !== undefined && tokenSide !== undefined && {
+              lineNumber: tokenLineNumber,
+              side: tokenSide,
+            })}
+            {...(lineIndex !== undefined && { lineIndex })}
           />
         )}
       </td>
