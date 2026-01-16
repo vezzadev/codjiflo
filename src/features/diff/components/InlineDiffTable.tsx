@@ -3,14 +3,14 @@
  */
 
 import { useMemo, useEffect } from 'react';
-import { List, useListRef, type RowComponentProps } from 'react-window';
+import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine } from './DiffLine';
 import type { ParsedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
 
-/** Line height from CSS variables (--diff-line-height) */
-const LINE_HEIGHT = 23;
+/** Default line height from CSS variables (--diff-line-height) */
+const DEFAULT_ROW_HEIGHT = 23;
 
 /** Number of rows to render outside the visible area */
 const OVERSCAN_COUNT = 10;
@@ -185,6 +185,20 @@ export function InlineDiffTable({
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
 
+  // Generate key for dynamic row height cache based on comments
+  // This ensures rows are re-measured when comments are added/removed
+  const dynamicHeightKey = useMemo(() => {
+    const commentCount = threadsByLineAndSide.size;
+    const hasDraft = draftLineIndex !== null;
+    return `${commentCount}-${String(hasDraft)}-${String(draftLineIndex ?? 'none')}`;
+  }, [threadsByLineAndSide.size, draftLineIndex]);
+
+  // Use dynamic row heights to accommodate comment threads
+  const dynamicRowHeight = useDynamicRowHeight({
+    defaultRowHeight: DEFAULT_ROW_HEIGHT,
+    key: dynamicHeightKey,
+  });
+
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
@@ -252,7 +266,7 @@ export function InlineDiffTable({
       listRef={listRef}
       rowComponent={DiffRow}
       rowCount={diffLines.length}
-      rowHeight={LINE_HEIGHT}
+      rowHeight={dynamicRowHeight}
       style={{ height: containerHeight, width: '100%', overflowX: 'visible' }}
       overscanCount={OVERSCAN_COUNT}
       rowProps={rowProps}
