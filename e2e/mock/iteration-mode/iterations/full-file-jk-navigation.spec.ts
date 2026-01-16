@@ -178,9 +178,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Toggle to full file mode (this triggers virtualization with 600+ lines)
     await page.keyboard.press("f");
 
-    // Wait for full file content - button should show "Full"
-    const fullFileBtn = toolbar.getByRole("button", { name: /show changes only/i });
-    await expect(fullFileBtn).toContainText("Full");
+    // Wait for full file content - dropdown should show "Full File"
+    const fileContentDropdown = toolbar.getByRole("button", { name: "File content" });
+    await expect(fileContentDropdown).toContainText("Full File");
 
     // Navigation buttons should be ready (multiple hunks detected)
     await expect(nextChangeBtn).toBeEnabled();

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@/tests/helpers';
+import { render, screen, fireEvent, within } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
 import { DiffToolbar } from './DiffToolbar';
 import { useDiffStore } from '../stores';
@@ -12,7 +12,8 @@ import { useDiffStore } from '../stores';
 vi.mock('lucide-react', () => ({
   Eye: () => <span data-testid="icon-eye" />,
   EyeOff: () => <span data-testid="icon-eyeoff" />,
-  File: () => <span data-testid="icon-file" />,
+  FileDiff: () => <span data-testid="icon-filediff" />,
+  FileText: () => <span data-testid="icon-filetext" />,
   ChevronUp: () => <span data-testid="icon-chevronup" />,
   ChevronDown: () => <span data-testid="icon-chevrondown" />,
 }));
@@ -42,11 +43,11 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('toolbar')).toHaveAttribute('aria-label', 'Diff view controls');
     });
 
-    it('renders view mode select showing Inline by default', () => {
+    it('renders view mode dropdown showing Inline by default', () => {
       render(<DiffToolbar />);
-      const select = screen.getByRole('combobox', { name: 'View mode' });
-      expect(select).toBeInTheDocument();
-      expect(select).toHaveValue('inline');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('Inline');
     });
 
     it('renders content filter radiogroup', () => {
@@ -54,28 +55,32 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('renders file content select', () => {
+    it('renders file content dropdown', () => {
       render(<DiffToolbar />);
-      const select = screen.getByRole('combobox', { name: 'File content' });
-      expect(select).toBeInTheDocument();
-      expect(select).toHaveValue('changes');
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('Changes');
     });
 
-    it('renders whitespace visibility select', () => {
+    it('renders whitespace visibility dropdown', () => {
       render(<DiffToolbar />);
-      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
-      expect(select).toBeInTheDocument();
-      expect(select).toHaveValue('hidden');
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('WS: Hidden');
     });
   });
 
-  describe('view mode select', () => {
+  describe('view mode dropdown', () => {
     it('changes to split mode when selecting split option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'View mode' });
-      await user.selectOptions(select, 'split');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'View mode' });
+      const splitOption = within(listbox).getByRole('option', { name: /Side-by-Side/i });
+      await user.click(splitOption);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
@@ -88,20 +93,24 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'View mode' });
-      await user.selectOptions(select, 'inline');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'View mode' });
+      const inlineOption = within(listbox).getByRole('option', { name: /Inline/i });
+      await user.click(inlineOption);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
-    it('shows split value when in split mode', () => {
+    it('shows split label when in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'View mode' });
-      expect(select).toHaveValue('split');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveTextContent('Side-by-Side');
     });
   });
 
@@ -148,59 +157,67 @@ describe('DiffToolbar', () => {
     });
   });
 
-  describe('file content select', () => {
+  describe('file content dropdown', () => {
     it('enables full file when selecting full option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'File content' });
-      await user.selectOptions(select, 'full');
+      const button = screen.getByRole('button', { name: 'File content' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'File content' });
+      const fullOption = within(listbox).getByRole('option', { name: /Full File/i });
+      await user.click(fullOption);
 
       expect(useDiffStore.getState().viewConfig.showFullFile).toBe(true);
     });
 
-    it('shows full value when full file is enabled', () => {
+    it('shows full label when full file is enabled', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showFullFile: true },
       });
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'File content' });
-      expect(select).toHaveValue('full');
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveTextContent('Full File');
     });
 
-    it('shows changes value when showing changes only', () => {
+    it('shows changes label when showing changes only', () => {
       render(<DiffToolbar />);
-      const select = screen.getByRole('combobox', { name: 'File content' });
-      expect(select).toHaveValue('changes');
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveTextContent('Changes');
     });
   });
 
-  describe('whitespace visibility select', () => {
+  describe('whitespace visibility dropdown', () => {
     it('enables whitespace when selecting visible option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
-      await user.selectOptions(select, 'visible');
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'Whitespace visibility' });
+      const visibleOption = within(listbox).getByRole('option', { name: /WS: Visible/i });
+      await user.click(visibleOption);
 
       expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
     });
 
-    it('shows visible value when whitespace is shown', () => {
+    it('shows visible label when whitespace is shown', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
-      expect(select).toHaveValue('visible');
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveTextContent('WS: Visible');
     });
 
-    it('shows hidden value when whitespace is hidden', () => {
+    it('shows hidden label when whitespace is hidden', () => {
       render(<DiffToolbar />);
-      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
-      expect(select).toHaveValue('hidden');
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveTextContent('WS: Hidden');
     });
 
     it('shows Eye icon when whitespace is shown', () => {
@@ -283,25 +300,45 @@ describe('DiffToolbar', () => {
   });
 
   describe('accessibility', () => {
-    it('view mode select has aria-label', () => {
+    it('view mode dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'View mode' });
-      expect(select).toHaveAttribute('aria-label', 'View mode');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveAttribute('aria-label', 'View mode');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('file content select has aria-label', () => {
+    it('file content dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'File content' });
-      expect(select).toHaveAttribute('aria-label', 'File content');
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveAttribute('aria-label', 'File content');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('whitespace visibility select has aria-label', () => {
+    it('whitespace visibility dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
-      expect(select).toHaveAttribute('aria-label', 'Whitespace visibility');
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveAttribute('aria-label', 'Whitespace visibility');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
+    });
+
+    it('dropdown button has aria-expanded false when closed', () => {
+      render(<DiffToolbar />);
+
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('dropdown button has aria-expanded true when open', async () => {
+      const user = userEvent.setup();
+      render(<DiffToolbar />);
+
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      expect(button).toHaveAttribute('aria-expanded', 'true');
     });
   });
 });
