@@ -424,6 +424,87 @@ describe('Minimap component', () => {
       expect(onNavigate).toHaveBeenCalled();
     });
 
+    it('drag uses 1:1 lasso tracking (accounts for lasso height)', async () => {
+      // This test verifies the drag formula:
+      // ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
+      // This ensures lasso center follows mouse at the same speed
+      const pipeline = createMockPipeline();
+      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+
+      // Setup scrollable: viewportRatio = clientHeight/scrollHeight = 500/1000 = 0.5
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
+      scrollable.scrollTop = 0;
+
+      const containerRef = { current: scrollContainer };
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Trigger scroll event to initialize useMinimapScroll state
+      // (requestAnimationFrame doesn't run synchronously in tests)
+      fireEvent.scroll(scrollable);
+
+      // Wait for state update
+      await vi.waitFor(() => {
+        // State should be initialized
+      });
+
+      const svg = container.querySelector('svg') as SVGSVGElement;
+
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // For containerHeight=500, PADDING_VERTICAL=10:
+      // renderAreaHeight = 480, barTop = 10
+      // viewportRatio = 0.5, lassoHeight = 0.5 * 480 = 240
+      // lassoMoveRange = 480 - 240 = 240
+      //
+      // Drag formula: ratio = (y - barTop - lassoHeight/2) / lassoMoveRange
+      //             = (y - 10 - 120) / 240
+      //             = (y - 130) / 240
+      //
+      // For lasso center at middle of bar (y = 250):
+      // ratio = (250 - 130) / 240 = 0.5
+      // scrollTop = 0.5 * 500 = 250
+
+      // Start drag
+      fireEvent.mouseDown(svg, { clientX: 45, clientY: 250 });
+      // Move to trigger drag calculation
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 250 });
+
+      // Should scroll to 50% (250) with 1:1 lasso tracking
+      expect(scrollable.scrollTop).toBe(250);
+
+      // Now drag to where lasso center would be at bottom (y = 370)
+      // ratio = (370 - 130) / 240 = 1.0
+      // scrollTop = 1.0 * 500 = 500
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 370 });
+      expect(scrollable.scrollTop).toBe(500);
+
+      // And drag to where lasso center would be at top (y = 130)
+      // ratio = (130 - 130) / 240 = 0
+      // scrollTop = 0
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 130 });
+      expect(scrollable.scrollTop).toBe(0);
+    });
+
     it('disables drag when inline comments present', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };

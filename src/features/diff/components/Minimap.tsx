@@ -137,7 +137,8 @@ export function Minimap({
     barHeights,
   ]);
 
-  // Convert Y position to scroll ratio (0-1) based on bar position
+  // Convert Y position to scroll ratio (0-1) for click navigation
+  // Maps Y across full bar height - click at bottom = scroll to bottom
   const yToScrollRatio = useCallback(
     (y: number, side: 'left' | 'right'): number => {
       const barTop = side === 'left' ? leftBarTop : rightBarTop;
@@ -149,6 +150,31 @@ export function Minimap({
       return Math.max(0, Math.min(1, (y - barTop) / barHeight));
     },
     [barHeights, leftBarTop, rightBarTop]
+  );
+
+  // Convert Y position to scroll ratio for drag navigation (1:1 with lasso center)
+  // Accounts for lasso height so mouse movement matches lasso movement exactly
+  const yToScrollRatioForDrag = useCallback(
+    (y: number, side: 'left' | 'right'): number => {
+      const barTop = side === 'left' ? leftBarTop : rightBarTop;
+      const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
+      const { viewportRatio } = scrollState;
+
+      // Lasso height and movement range
+      const lassoHeight = viewportRatio * barHeight;
+      const lassoMoveRange = barHeight - lassoHeight;
+
+      // Edge case: lasso fills entire bar (no scrolling possible)
+      if (lassoMoveRange <= 0) return 0;
+
+      // Map Y to scroll ratio such that lasso center follows mouse 1:1
+      // lassoCenterY = barTop + scrollRatio * lassoMoveRange + lassoHeight/2
+      // Solving for scrollRatio: scrollRatio = (Y - barTop - lassoHeight/2) / lassoMoveRange
+      const ratio = (y - barTop - lassoHeight / 2) / lassoMoveRange;
+
+      return Math.max(0, Math.min(1, ratio));
+    },
+    [barHeights, leftBarTop, rightBarTop, scrollState]
   );
 
   // Navigate to scroll position by ratio (0-1) - instant, no animation
@@ -229,7 +255,8 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = dragSideRef.current;
-      const ratio = yToScrollRatio(y, side);
+      // Use drag-specific ratio calculation for 1:1 lasso tracking
+      const ratio = yToScrollRatioForDrag(y, side);
 
       // Navigate using scroll ratio
       navigateToRatio(ratio);
@@ -241,7 +268,7 @@ export function Minimap({
         onNavigate({ lineNumber, side, type: 'drag' });
       }
     },
-    [isDragging, hasInlineComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
+    [isDragging, hasInlineComments, yToScrollRatioForDrag, navigateToRatio, onNavigate, lineCounts]
   );
 
   // Handle mouse up (end drag)

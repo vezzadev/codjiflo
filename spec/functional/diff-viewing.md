@@ -327,18 +327,23 @@ interface OverviewMargin {
 
 Minimap navigation (click and drag) scrolls the diff view instantly without any smooth scroll animation. This provides immediate visual feedback and responsive drag scrolling. Direct `scrollTop` assignment is used rather than `scrollTo({ behavior: 'smooth' })`.
 
-**Scroll Ratio Calculation:**
+**Click vs Drag Calculation:**
 
-Navigation uses a direct scroll ratio approach:
-1. **Click Y position** is converted to a ratio (0-1) relative to the clicked bar: `ratio = (y - barTop) / barHeight`
-2. **Ratio is applied directly** to the scroll container: `scrollTop = ratio * maxScroll`
+Navigation uses different calculations for click and drag to provide intuitive behavior:
 
-This ensures proportional navigation:
-- Clicking at the **top** of a bar (Y = barTop) scrolls to the top (scrollTop = 0)
-- Clicking at the **bottom** of a bar (Y = barTop + barHeight) scrolls to the bottom (scrollTop = maxScroll)
+**Click Navigation:**
+- Converts Y position to ratio relative to full bar height: `ratio = (y - barTop) / barHeight`
+- Clicking at the **top** of a bar scrolls to the top (scrollTop = 0)
+- Clicking at the **bottom** of a bar scrolls to the bottom (scrollTop = maxScroll)
 - Clicking at **50%** of the bar scrolls to 50% of the file
 
-The ratio is clamped to [0, 1] to handle clicks outside bar bounds gracefully.
+**Drag Navigation (1:1 lasso tracking):**
+- Accounts for lasso height so mouse movement matches lasso center movement exactly
+- Formula: `ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)`
+- This ensures the lasso center follows the mouse cursor at the same speed
+- The lasso can only move within `barHeight - lassoHeight` pixels, not the full bar height
+
+Both calculations clamp the ratio to [0, 1] to handle positions outside bar bounds gracefully.
 
 ### Comment Margins
 
