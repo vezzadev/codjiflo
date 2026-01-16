@@ -301,12 +301,10 @@ export function InlineDiffTable({
     // renders rows incrementally.
     let resizeRafId: number | undefined;
     const observer = new ResizeObserver(() => {
-      if (resizeRafId === undefined) {
-        resizeRafId = requestAnimationFrame(() => {
-          resizeRafId = undefined;
-          updateScrollWidth();
-        });
-      }
+      resizeRafId ??= requestAnimationFrame(() => {
+        resizeRafId = undefined;
+        updateScrollWidth();
+      });
     });
 
     // Observe the list container - its scroll width changes when content renders
