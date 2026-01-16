@@ -346,6 +346,23 @@ This ensures:
 - Dragging moves the lasso center 1:1 with the mouse
 - The lasso stays within bar bounds (ratio clamped to [0, 1])
 
+**Asymmetric Lasso Heights:**
+
+When files have different line counts, the lasso height on each side reflects what portion of that file is actually visible in the viewport:
+
+```
+leftLassoHeight = (visibleLeftLines / totalLeftLines) * leftBarHeight
+rightLassoHeight = (visibleRightLines / totalRightLines) * rightBarHeight
+```
+
+Key behaviors:
+- **All-added content**: When scrolled to a region with only additions (no corresponding left content), the left lasso shrinks to minimum height (4px) while the right lasso shows the normal viewport proportion
+- **All-deleted content**: When scrolled to a region with only deletions, the right lasso shrinks to minimum while left shows normal proportion
+- **Mixed content**: Both lassos show proportional heights based on visible lines
+- **Minimum height**: Lasso never disappears completely; minimum height of 4px ensures visibility
+
+This asymmetric behavior provides accurate visual feedback about which portions of each file are currently visible, especially important when reviewing large diffs with significant additions or deletions.
+
 ### Comment Margins
 
 Multiple margin types for comment display:
