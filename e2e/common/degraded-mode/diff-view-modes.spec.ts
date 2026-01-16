@@ -126,7 +126,7 @@ const baz = 'qux';
       await expect(
         page.getByRole("region", { name: "Side-by-side diff view" })
       ).toBeVisible();
-      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      // Use .first() since react-window renders each row with its own pane element
       await expect(
         page.getByRole("region", { name: "Original version" }).first()
       ).toBeVisible();
@@ -219,7 +219,7 @@ const baz = 'qux';
       // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
       await page.keyboard.press("l");
       await expect(currentRadio).toHaveAttribute("aria-label", "Left Only");
-      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      // Use .first() since react-window renders each row with its own pane element
       await expect(
         page.getByRole("region", { name: "Original version" }).first()
       ).toBeVisible();
@@ -402,7 +402,7 @@ const baz = 'qux';
       });
       await expect(sideBySideContainer).toBeVisible();
 
-      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      // Use .first() since react-window renders each row with its own pane element
       const leftPane = page.getByRole("region", { name: "Original version" }).first();
       const rightPane = page.getByRole("region", { name: "Modified version" }).first();
 
@@ -449,7 +449,7 @@ const baz = 'qux';
       await page.keyboard.press("x");
 
       // [AC-3.2.8] Screen reader can move between panes
-      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      // Use .first() since react-window renders each row with its own pane element
       const leftPane = page.getByRole("region", { name: "Original version" }).first();
       const rightPane = page.getByRole("region", { name: "Modified version" }).first();
 

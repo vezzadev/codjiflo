@@ -158,7 +158,7 @@ function DiffRow({
 
 /**
  * Inline diff table using react-window
- * Used when diff has more than 500 lines for better performance
+ * Virtualized rendering is always enabled for optimal performance
  */
 export function InlineDiffTable({
   diffLines,
