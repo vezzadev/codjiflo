@@ -29,6 +29,12 @@ vi.mock('react-window', () => ({
     );
   },
   useListRef: (initialValue: unknown) => ({ current: initialValue }),
+  useDynamicRowHeight: () => ({
+    getAverageRowHeight: () => 23,
+    getRowHeight: () => 23,
+    setRowHeight: () => {},
+    observeRowElements: () => () => {},
+  }),
 }));
 
 const createMockDiffLine = (overrides: Partial<ParsedDiffLine> = {}): ParsedDiffLine => ({
