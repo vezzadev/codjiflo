@@ -267,7 +267,15 @@ For unsupported file types:
 
 ### Overview Margin (Minimap)
 
-Minimap has two bars, with 100% of their height visible at all times. The left bar is highlighted in red in the region proportional to the lines that were removed or modified. The right bar is highlighted in yellow in the region proportional to the lines that were added or modified. A lasso surrounds the parts of the bar that correspond to the code chunk that is in the viewport. As the user scrolls, the lasso is auto updated. Users may also click on the bars or drag the lasso to scroll directly to the region of interest.
+Minimap has two bars, with 100% of their height visible at all times. The left bar is highlighted in red in the region proportional to the lines that were removed or modified. The right bar is highlighted in yellow in the region proportional to the lines that were added or modified. A lasso surrounds the parts of the bar that correspond to the code chunk that is in the viewport. As the user scrolls, the lasso is auto updated. Users may click on the bars or drag the lasso to scroll directly to the region of interest.
+
+**Lasso Visibility Rules:**
+
+Lasso visibility is determined by the following combined conditions:
+- **Lasso is visible only in full-file mode without inline comments**: The lasso is shown when `showFullFile=true` **and** no inline review comments are currently displayed in the diff. Drag scrolling is supported in this mode.
+- **Lasso is hidden whenever either hiding condition applies**:
+  - when review comments are displayed inline in the diff (to avoid visual clutter and interaction conflicts with comment threads), or
+  - when changes-only mode is active (`showFullFile=false`), since only changes are shown without surrounding context, making the lasso less meaningful.
 
 ```typescript
 interface OverviewMargin {
@@ -276,11 +284,11 @@ interface OverviewMargin {
   // Visual elements
   leftBar: Rectangle;   // Shows diff blocks in left file
   rightBar: Rectangle;  // Shows diff blocks in right file
-  viewport: Rectangle;  // Current visible area indicator
+  lasso: Rectangle;     // Current visible area indicator
 
   // Interactions
   onClick(y: number): void;  // Jump to position
-  onDrag(y: number): void;   // Scroll to position
+  onDrag(y: number): void;   // Scroll to position (disabled with inline comments)
 }
 ```
 
