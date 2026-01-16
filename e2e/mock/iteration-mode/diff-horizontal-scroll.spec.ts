@@ -365,16 +365,20 @@ Iterations: 2`,
     const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(diffToolbar).toBeVisible();
 
-    // Find the Full/Changes toggle button - it shows "Changes" when in changes-only mode
-    // and shows "Full" when in full-file mode
-    const changesButton = diffToolbar.getByRole("button", { name: /Changes|Full/i });
-    await expect(changesButton).toBeVisible();
+    // Find the File content dropdown button
+    const fileContentButton = diffToolbar.getByRole("button", { name: /File content/i });
+    await expect(fileContentButton).toBeVisible();
 
-    // Click to toggle to Full mode
-    await changesButton.click();
+    // Click to open the dropdown menu
+    await fileContentButton.click();
 
-    // Wait for the view to update - button label changes to "Full" when in full mode
-    await expect(diffToolbar.getByText("Full")).toBeVisible();
+    // Select "Full File" from the dropdown
+    const fullFileOption = page.getByRole("option", { name: /Full File/i });
+    await expect(fullFileOption).toBeVisible();
+    await fullFileOption.click();
+
+    // Wait for the view to update - button text changes to show "Full File"
+    await expect(fileContentButton.getByText(/Full/i)).toBeVisible();
 
     // Wait for ResizeObserver to fire and update the CSS variable
     // The CSS variable should match the scrollWidth
