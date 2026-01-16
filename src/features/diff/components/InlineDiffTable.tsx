@@ -2,7 +2,7 @@
  * Inline diff table using react-window for performant rendering
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef, useCallback } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine } from './DiffLine';
 import type { ParsedDiffLine } from '../types';
@@ -184,6 +184,7 @@ export function InlineDiffTable({
   hasFullContent = false,
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Generate key for dynamic row height cache based on comments
   // This ensures rows are re-measured when comments are added/removed
@@ -201,7 +202,7 @@ export function InlineDiffTable({
 
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
-    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
+    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current && diffLines.length > 0) {
       // Read context lines from CSS variable for consistency with non-virtualized views
       let contextLines = 3;
       const rootStyles = getComputedStyle(document.documentElement);
@@ -210,10 +211,61 @@ export function InlineDiffTable({
       if (!Number.isNaN(parsed) && parsed >= 0) {
         contextLines = parsed;
       }
-      const targetIndex = Math.max(0, scrollToRowIndex - contextLines);
+      // Clamp scrollToRowIndex to valid range before calculating target
+      const clampedIndex = Math.min(scrollToRowIndex, diffLines.length - 1);
+      const targetIndex = Math.max(0, clampedIndex - contextLines);
       listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
     }
-  }, [scrollToRowIndex]);
+  }, [scrollToRowIndex, diffLines.length]);
+
+  // Update CSS variable for scroll width so all tables can extend to match widest content.
+  // This ensures diff backgrounds (addition/deletion) extend to the full scroll width.
+  const updateScrollWidth = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const list = container.querySelector('.virtualized-inline-list');
+    if (list && list.scrollWidth > list.clientWidth) {
+      container.style.setProperty('--diff-scroll-width', `${String(list.scrollWidth)}px`);
+    } else {
+      container.style.removeProperty('--diff-scroll-width');
+    }
+  }, []);
+
+  // Use ResizeObserver to detect when virtualized content width changes.
+  // This is needed because react-window renders rows asynchronously, so the
+  // scroll width may not be accurate immediately after diffLines changes.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Initial measurement after a frame to let react-window render
+    const rafId = requestAnimationFrame(() => {
+      updateScrollWidth();
+    });
+
+    // Observe the inner content div that react-window creates
+    // This fires when rows are rendered and their widths change
+    const observer = new ResizeObserver(() => {
+      updateScrollWidth();
+    });
+
+    // Observe the list container - its scroll width changes when content renders
+    const list = container.querySelector('.virtualized-inline-list');
+    if (list) {
+      observer.observe(list);
+      // Also observe the inner div that contains the actual rows
+      const innerDiv = list.firstElementChild;
+      if (innerDiv) {
+        observer.observe(innerDiv);
+      }
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
+  }, [diffLines, updateScrollWidth]);
 
   // Memoize row props to prevent unnecessary re-renders
   const rowProps = useMemo<RowData>(
@@ -262,14 +314,17 @@ export function InlineDiffTable({
   );
 
   return (
-    <List
-      listRef={listRef}
-      rowComponent={DiffRow}
-      rowCount={diffLines.length}
-      rowHeight={dynamicRowHeight}
-      style={{ height: containerHeight, width: '100%', overflowX: 'visible' }}
-      overscanCount={OVERSCAN_COUNT}
-      rowProps={rowProps}
-    />
+    <div ref={containerRef} className="virtualized-inline-container">
+      <List
+        listRef={listRef}
+        rowComponent={DiffRow}
+        rowCount={diffLines.length}
+        rowHeight={dynamicRowHeight}
+        className="virtualized-inline-list"
+        style={{ height: containerHeight, width: '100%' }}
+        overscanCount={OVERSCAN_COUNT}
+        rowProps={rowProps}
+      />
+    </div>
   );
 }

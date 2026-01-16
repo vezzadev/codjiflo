@@ -297,7 +297,10 @@ export function SideBySideDiffView({
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
-      let effectiveIndex = scrollToRowIndex;
+      // Early return if list is empty
+      if (alignedLines.length === 0) return;
+
+      let effectiveIndex = Math.min(scrollToRowIndex, alignedLines.length - 1);
 
       // When filtering is active, map the unfiltered index to the corresponding
       // index in the filtered list (or the nearest visible line).
@@ -349,7 +352,16 @@ export function SideBySideDiffView({
       if (!Number.isNaN(parsed) && parsed >= 0) {
         contextLines = parsed;
       }
-      const targetIndex = Math.max(0, effectiveIndex - contextLines);
+
+      // Calculate target index with context, clamped to valid range
+      // The list renders filteredLines, so bound by its length
+      const maxIndex = contentFilter === 'both' ? alignedLines.length - 1 : Math.max(0, alignedLines.filter((pair) =>
+        contentFilter === 'left'
+          ? pair.left !== null || pair.right?.type !== 'addition'
+          : pair.right !== null || pair.left?.type !== 'deletion'
+      ).length - 1);
+
+      const targetIndex = Math.min(Math.max(0, effectiveIndex - contextLines), maxIndex);
       listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
     }
   }, [scrollToRowIndex, alignedLines, contentFilter]);
