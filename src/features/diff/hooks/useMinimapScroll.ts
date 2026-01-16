@@ -63,7 +63,9 @@ export function useMinimapScroll(
   // Returns null if no valid scrollable element is found (react-window not yet rendered)
   const findScrollableElement = useCallback((): HTMLElement | null => {
     const container = containerRef.current;
-    if (!container) return null;
+    if (!container) {
+      return null;
+    }
 
     // For react-window, look for element with overflow style
     // There may be multiple elements with overflow; we need the one with the most scrollable content

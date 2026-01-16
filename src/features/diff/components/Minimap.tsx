@@ -171,11 +171,23 @@ export function Minimap({
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      // Find actual scroll container (virtualized container or SxS pane)
-      const scrollEl =
-        container.querySelector<HTMLElement>('[style*="overflow"]') ??
-        container.querySelector<HTMLElement>('.side-by-side-pane-left') ??
-        container;
+      // Find actual scroll container with LARGEST scroll range (matching useMinimapScroll logic)
+      const candidates = container.querySelectorAll<HTMLElement>('[style*="overflow"]');
+      let scrollEl: HTMLElement | null = null;
+      let maxScrollRange = 0;
+
+      for (const el of candidates) {
+        const scrollRange = el.scrollHeight - el.clientHeight;
+        if (scrollRange > maxScrollRange) {
+          maxScrollRange = scrollRange;
+          scrollEl = el;
+        }
+      }
+
+      // Fallback for side-by-side view
+      if (!scrollEl || maxScrollRange <= 100) {
+        scrollEl = container.querySelector<HTMLElement>('.side-by-side-pane-left') ?? container;
+      }
 
       const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
       // Set scroll position directly from ratio - instant scrolling

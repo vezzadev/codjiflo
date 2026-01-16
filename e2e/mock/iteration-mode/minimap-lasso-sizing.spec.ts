@@ -103,46 +103,45 @@ diff --git a/src/large-file.ts b/src/large-file.ts
    * Helper to extract lasso height from SVG path
    *
    * The lasso path format from generateLassoPath is:
-   *   M x1 leftTop L x2 leftTop L x3 rightTop L x4 rightTop
-   *   Q x5 rightTop x5 rightTop+r L x5 rightBottom-r
-   *   Q x5 rightBottom x4 rightBottom L x3 rightBottom
-   *   L x2 leftBottom L x1 leftBottom
-   *   Q x0 leftBottom x0 leftBottom-r L x0 leftTop+r
-   *   Q x0 leftTop x1 leftTop Z
+   *   M (LEFT_BAR_X + r) leftTop           -> coords[0], coords[1]
+   *   L leftBarRight leftTop               -> coords[2], coords[3]
+   *   L rightBarLeft rightTop              -> coords[4], coords[5]
+   *   L (rightBarRight - r) rightTop       -> coords[6], coords[7]
+   *   Q rightBarRight rightTop rightBarRight (rightTop + r)  -> coords[8-11]
+   *   L rightBarRight (rightBottom - r)    -> coords[12], coords[13]
+   *   Q rightBarRight rightBottom (rightBarRight - r) rightBottom  -> coords[14-17]
+   *   L rightBarLeft rightBottom           -> coords[18], coords[19]
+   *   L leftBarRight leftBottom            -> coords[20], coords[21]
+   *   L (LEFT_BAR_X + r) leftBottom        -> coords[22], coords[23]
+   *   Q LEFT_BAR_X leftBottom LEFT_BAR_X (leftBottom - r)  -> coords[24-27]
+   *   L LEFT_BAR_X (leftTop + r)           -> coords[28], coords[29]
+   *   Q LEFT_BAR_X leftTop (LEFT_BAR_X + r) leftTop  -> coords[30-33]
+   *   Z
    *
-   * We extract the lasso height by finding leftTop and leftBottom values.
-   * leftTop appears after the first "M" command.
-   * leftBottom appears after "L x1" near the end.
+   * We extract the LEFT bar lasso height (leftBottom - leftTop) specifically.
+   * leftTop is at coords[1], leftBottom is at coords[21].
    */
-  async function getLassoHeight(page: import("@playwright/test").Page): Promise<{ height: number; path: string }> {
+  async function getLassoHeight(page: import("@playwright/test").Page): Promise<{ height: number; path: string; leftTop: number; leftBottom: number }> {
     const minimap = page.getByRole("img", { name: /minimap/i });
     const lasso = minimap.locator(".minimap-lasso");
     const pathD = await lasso.getAttribute("d");
 
-    if (!pathD) return { height: 0, path: "" };
+    if (!pathD) return { height: 0, path: "", leftTop: 0, leftBottom: 0 };
 
-    // The path structure has leftTop early and leftBottom later
     // Extract all numbers from the path
     const numbers = pathD.match(/[\d.]+/g);
-    if (!numbers || numbers.length < 10) return { height: 0, path: pathD };
+    if (!numbers || numbers.length < 22) return { height: 0, path: pathD, leftTop: 0, leftBottom: 0 };
 
     // Convert to numbers
     const coords = numbers.map(Number);
 
-    // Find leftBottom - it appears around 2/3 into the path
-    // After "L x1 leftBottom" near the end
-    // The pattern is: ... L x leftBottom Q x leftBottom ...
-    // We can find it by looking at Y values in the latter half
-    // A simpler approach: get all unique Y values and find min/max in first/second half
+    // leftTop is at index 1 (M x leftTop)
+    const leftTop = coords[1] ?? 0;
 
-    // Extract Y coordinates (odd indices: 1, 3, 5, ...)
-    const yCoords = coords.filter((_, i) => i % 2 === 1);
+    // leftBottom is at index 21 (L leftBarRight leftBottom)
+    const leftBottom = coords[21] ?? 0;
 
-    // The lasso connects top to bottom, so find the extent
-    const minY = Math.min(...yCoords);
-    const maxY = Math.max(...yCoords);
-
-    return { height: maxY - minY, path: pathD };
+    return { height: leftBottom - leftTop, path: pathD, leftTop, leftBottom };
   }
 
   /**
@@ -172,6 +171,38 @@ diff --git a/src/large-file.ts b/src/large-file.ts
         clientHeight: best.clientHeight,
         scrollTop: best.scrollTop,
       };
+    });
+  }
+
+  /**
+   * Wait for scroll container metrics to stabilize
+   * React-window virtualization may update scrollHeight as content renders
+   */
+  async function waitForScrollStabilization(page: import("@playwright/test").Page): Promise<void> {
+    await page.waitForFunction(() => {
+      // Find scroll container
+      const candidates = document.querySelectorAll<HTMLElement>('[style*="overflow"]');
+      let best: HTMLElement | null = null;
+      let maxRange = 0;
+
+      for (const el of candidates) {
+        const range = el.scrollHeight - el.clientHeight;
+        if (range > maxRange) {
+          maxRange = range;
+          best = el;
+        }
+      }
+
+      if (!best || maxRange <= 100) return false;
+
+      // Store current scrollHeight and check again in next frame
+      const currentHeight = best.scrollHeight;
+      // Use a custom attribute to track previous measurement
+      const prevHeight = best.getAttribute('data-prev-scroll-height');
+      best.setAttribute('data-prev-scroll-height', String(currentHeight));
+
+      // Stabilized when scrollHeight hasn't changed
+      return prevHeight !== null && Number(prevHeight) === currentHeight;
     });
   }
 
@@ -207,6 +238,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const lasso = minimap.locator(".minimap-lasso");
     await expect(lasso).toBeVisible();
 
+    // Wait for scroll container to stabilize before measuring
+    await waitForScrollStabilization(page);
+
     // Get lasso height and scroll metrics at top of file
     const topResult = await getLassoHeight(page);
     const topMetrics = await getScrollMetrics(page);
@@ -216,7 +250,8 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Log for debugging
     console.log("At TOP:", {
       lassoHeight: heightAtTop,
-      path: topResult.path.substring(0, 100) + "...",
+      leftTop: topResult.leftTop,
+      leftBottom: topResult.leftBottom,
       scrollMetrics: topMetrics,
       viewportRatio: topMetrics.clientHeight / topMetrics.scrollHeight,
     });
@@ -243,7 +278,8 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     console.log("At MIDDLE:", {
       lassoHeight: heightAtMiddle,
-      path: middleResult.path.substring(0, 100) + "...",
+      leftTop: middleResult.leftTop,
+      leftBottom: middleResult.leftBottom,
       scrollMetrics: middleMetrics,
       viewportRatio: middleMetrics.clientHeight / middleMetrics.scrollHeight,
     });
@@ -261,15 +297,16 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     console.log("At BOTTOM:", {
       lassoHeight: heightAtBottom,
-      path: bottomResult.path.substring(0, 100) + "...",
+      leftTop: bottomResult.leftTop,
+      leftBottom: bottomResult.leftBottom,
       scrollMetrics: bottomMetrics,
       viewportRatio: bottomMetrics.clientHeight / bottomMetrics.scrollHeight,
     });
 
-    // The heights should be approximately equal (within 30% tolerance)
-    // This accounts for minor rounding differences in SVG rendering
-    // and asymmetric bar heights between left and right sides
-    const tolerance = heightAtTop * 0.30;
+    // The left bar lasso heights should be nearly identical (within 5% tolerance)
+    // since viewportRatio is constant and we're measuring the same bar.
+    // Minor differences may occur due to floating point precision.
+    const tolerance = heightAtTop * 0.05;
 
     expect(Math.abs(heightAtMiddle - heightAtTop)).toBeLessThan(tolerance);
     expect(Math.abs(heightAtBottom - heightAtTop)).toBeLessThan(tolerance);
@@ -354,9 +391,8 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Path should change (position moved) - use negated toHaveAttribute with exact match
     await expect(lasso).not.toHaveAttribute("d", initialPath);
 
-    // Height should stay the same (within tolerance)
-    // Using 30% tolerance to account for rounding and asymmetric bar heights
-    const tolerance = initialResult.height * 0.30;
+    // Left bar height should stay the same (within 5% tolerance for floating point)
+    const tolerance = initialResult.height * 0.05;
     expect(Math.abs(newResult.height - initialResult.height)).toBeLessThan(tolerance);
   });
 });

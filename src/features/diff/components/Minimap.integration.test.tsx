@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@/tests/helpers';
+import { render, screen, fireEvent, act } from '@/tests/helpers';
 import { Minimap, type NavigateEvent } from './Minimap';
 import type { DiffPipelineOutput } from '../hooks/pipeline/types';
 import type { ParsedDiffLine, AlignedDiffLine } from '../types';
@@ -19,6 +19,15 @@ import type { ReviewThread } from '@/features/comments';
 function assertElement<T extends Element>(element: T | null, message: string): T {
   if (!element) throw new Error(message);
   return element;
+}
+
+/** Wait for requestAnimationFrame-based initialization to complete */
+async function waitForRAF(): Promise<void> {
+  // Wait for useMinimapScroll's rAF-based scroll element detection
+  // Must be wrapped in act() to handle React state updates
+  await act(async () => {
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  });
 }
 
 // ============================================================================
@@ -161,7 +170,7 @@ describe('Minimap component', () => {
   });
 
   describe('lasso visibility', () => {
-    it('shows lasso when comments are hidden (showComments=false) in full-file mode', () => {
+    it('shows lasso when comments are hidden (showComments=false) in full-file mode', async () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -174,6 +183,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for useMinimapScroll's rAF-based initialization
+      await waitForRAF();
 
       const lasso = container.querySelector('.minimap-lasso');
       expect(lasso).toBeInTheDocument();
@@ -288,7 +300,10 @@ describe('Minimap component', () => {
         />
       );
 
-      // Trigger scroll event to initialize useMinimapScroll state
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
+
+      // Trigger scroll event to update scroll state
       fireEvent.scroll(scrollable);
       await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
@@ -338,6 +353,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
 
       fireEvent.scroll(scrollable);
       await vi.waitFor(() => { /* Allow React to process scroll event */ });
@@ -460,8 +478,10 @@ describe('Minimap component', () => {
         />
       );
 
-      // Trigger scroll event to initialize useMinimapScroll state
-      // (requestAnimationFrame doesn't run synchronously in tests)
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
+
+      // Trigger scroll event to update scroll state
       fireEvent.scroll(scrollable);
 
       // Wait for state update
@@ -691,6 +711,9 @@ describe('Minimap component', () => {
         />
       );
 
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
+
       // Trigger scroll to update scroll state
       fireEvent.scroll(scrollable);
       await vi.waitFor(() => { /* Allow React to process scroll event */ });
@@ -710,6 +733,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for new rAF cycle after rerender
+      await waitForRAF();
 
       // Trigger scroll event to recalculate
       fireEvent.scroll(scrollable);
@@ -762,7 +788,7 @@ describe('Minimap component', () => {
       expect(splitDeletions + splitAdditions).toBeGreaterThan(0);
     });
 
-    it('preserves lasso visibility when switching view modes', () => {
+    it('preserves lasso visibility when switching view modes', async () => {
       const containerRef = { current: scrollContainer };
 
       // Start in inline mode with lasso visible
@@ -776,6 +802,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
 
       expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
 
@@ -910,7 +939,7 @@ describe('Minimap component', () => {
   });
 
   describe('showFullFile toggle (dynamic)', () => {
-    it('shows lasso when showFullFile changes from false to true', () => {
+    it('shows lasso when showFullFile changes from false to true', async () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -938,10 +967,13 @@ describe('Minimap component', () => {
         />
       );
 
+      // Wait for rAF-based scroll state initialization
+      await waitForRAF();
+
       expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
     });
 
-    it('hides lasso when showFullFile changes from true to false', () => {
+    it('hides lasso when showFullFile changes from true to false', async () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -955,6 +987,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for rAF-based scroll state initialization
+      await waitForRAF();
 
       expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
 
@@ -974,7 +1009,7 @@ describe('Minimap component', () => {
   });
 
   describe('showComments toggle (dynamic)', () => {
-    it('hides lasso when comments appear', () => {
+    it('hides lasso when comments appear', async () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -988,6 +1023,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for rAF-based scroll state initialization
+      await waitForRAF();
 
       expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
 
@@ -1005,7 +1043,7 @@ describe('Minimap component', () => {
       expect(container.querySelector('.minimap-lasso')).not.toBeInTheDocument();
     });
 
-    it('shows lasso when comments are removed', () => {
+    it('shows lasso when comments are removed', async () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -1032,6 +1070,9 @@ describe('Minimap component', () => {
           showComments={false}
         />
       );
+
+      // Wait for rAF-based scroll state initialization
+      await waitForRAF();
 
       expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
     });
