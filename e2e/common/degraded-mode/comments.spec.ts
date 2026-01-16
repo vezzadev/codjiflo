@@ -116,7 +116,8 @@ test.describe("Inline comments flow (S-2.x)", () => {
       await expect(fileListItem).toHaveAttribute("aria-current", "location");
 
       // The diff content should be rendered in a table
-      const diffTable = page.locator('table');
+      // Use .first() since virtualized rendering creates multiple tables (one per visible row)
+      const diffTable = page.locator('table').first();
       await expect(diffTable).toBeVisible();
 
       // Verify the existing comment is displayed (comments load async)

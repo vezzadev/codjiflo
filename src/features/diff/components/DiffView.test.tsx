@@ -81,7 +81,6 @@ const mockDiffPipeline = {
   lineNumberMode: 'both' as const,
   hunkIndices: [],
   scrollToRowIndex: undefined,
-  isVirtualized: false,
   isFullFileChange: false,
   threadsByLineAndSide: new Map(),
   filename: undefined as string | undefined,

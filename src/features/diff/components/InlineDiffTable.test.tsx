@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@/tests/helpers';
-import { VirtualizedInlineDiffTable } from './VirtualizedInlineDiffTable';
+import { InlineDiffTable } from './InlineDiffTable';
 import type { ParsedDiffLine } from '../types';
 import { useThemeStore } from '@/features/theme';
 
@@ -65,20 +65,20 @@ const defaultProps = {
   lineNumberMode: 'both' as const,
 };
 
-describe('VirtualizedInlineDiffTable', () => {
+describe('InlineDiffTable', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useThemeStore.setState({ theme: 'dark' });
   });
 
   it('renders virtualized list container', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     expect(screen.getByTestId('virtualized-list')).toBeInTheDocument();
   });
 
   it('renders diff lines', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     // Should render the diff lines
     const diffLines = screen.getAllByTestId('diff-line');
@@ -86,7 +86,7 @@ describe('VirtualizedInlineDiffTable', () => {
   });
 
   it('renders addition lines with correct type', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     const lines = screen.getAllByTestId('diff-line');
     const additionLine = lines.find(el => el.getAttribute('data-line-type') === 'addition');
@@ -95,7 +95,7 @@ describe('VirtualizedInlineDiffTable', () => {
   });
 
   it('renders deletion lines with correct type', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     const lines = screen.getAllByTestId('diff-line');
     const deletionLine = lines.find(el => el.getAttribute('data-line-type') === 'deletion');
@@ -104,7 +104,7 @@ describe('VirtualizedInlineDiffTable', () => {
   });
 
   it('shows comment button on hover for non-header lines', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     // Comment buttons should exist for diff lines (not headers)
     const buttons = screen.getAllByRole('button', { name: /Add comment/i });
@@ -113,7 +113,7 @@ describe('VirtualizedInlineDiffTable', () => {
 
   it('calls onStartComment when comment button is clicked', () => {
     const onStartComment = vi.fn();
-    render(<VirtualizedInlineDiffTable {...defaultProps} onStartComment={onStartComment} />);
+    render(<InlineDiffTable {...defaultProps} onStartComment={onStartComment} />);
 
     const buttons = screen.getAllByRole('button', { name: /Add comment/i });
     buttons[0]?.click();
@@ -122,13 +122,13 @@ describe('VirtualizedInlineDiffTable', () => {
   });
 
   it('renders with empty diff lines', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} diffLines={[]} />);
+    render(<InlineDiffTable {...defaultProps} diffLines={[]} />);
 
     expect(screen.getByTestId('virtualized-list')).toBeInTheDocument();
   });
 
   it('applies syntax highlighting', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} />);
+    render(<InlineDiffTable {...defaultProps} />);
 
     // The syntax highlighter should be rendering content
     const lines = screen.getAllByTestId('diff-line');
@@ -136,19 +136,19 @@ describe('VirtualizedInlineDiffTable', () => {
   });
 
   it('renders with lineNumberMode left', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} lineNumberMode="left" />);
+    render(<InlineDiffTable {...defaultProps} lineNumberMode="left" />);
 
     expect(screen.getByTestId('virtualized-list')).toBeInTheDocument();
   });
 
   it('renders with lineNumberMode right', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} lineNumberMode="right" />);
+    render(<InlineDiffTable {...defaultProps} lineNumberMode="right" />);
 
     expect(screen.getByTestId('virtualized-list')).toBeInTheDocument();
   });
 
   it('renders with showWhitespace enabled', () => {
-    render(<VirtualizedInlineDiffTable {...defaultProps} showWhitespace={true} />);
+    render(<InlineDiffTable {...defaultProps} showWhitespace={true} />);
 
     expect(screen.getByTestId('virtualized-list')).toBeInTheDocument();
   });
