@@ -31,7 +31,7 @@ function isPortAvailable(port) {
       server.close(() => resolve(true));
     });
     // Bind to all interfaces (::) like Next.js does
-    server.listen(port);
+    server.listen(port, "::");
   });
 }
 
@@ -52,7 +52,8 @@ async function main() {
   try {
     execSync("node scripts/kill-zombie-next.js", { stdio: "inherit" });
   } catch {
-    // Ignore errors from kill-zombie
+    // Ignore errors from kill-zombie: if there are no zombie Next.js processes,
+    // or the cleanup script otherwise fails, we can still safely proceed.
   }
 
   // Ensure env is set up
