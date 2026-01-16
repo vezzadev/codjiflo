@@ -167,6 +167,83 @@
 }
 
 /* ============================================
+   TOOLBAR SELECT (customizable dropdown)
+   ============================================ */
+.toolbar-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.toolbar-select-wrapper svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.toolbar-select {
+  /* Enable customizable select for Chrome 135+ */
+  appearance: base-select;
+
+  /* Base styling */
+  height: 25px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--main-fg);
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  cursor: pointer;
+}
+
+.toolbar-select:hover {
+  background-color: var(--btn-hover);
+}
+
+.toolbar-select:focus {
+  border-color: var(--focus-border);
+  outline: none;
+}
+
+/* Dropdown picker styling (Chrome 135+) */
+.toolbar-select::picker(select) {
+  appearance: base-select;
+  border: 1px solid var(--combobox-border);
+  background: var(--menu-bg);
+  padding: 4px 0;
+}
+
+/* Option styling (Chrome 135+) */
+.toolbar-select option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.toolbar-select option:hover {
+  background-color: var(--menu-hover);
+}
+
+.toolbar-select option:checked {
+  background-color: var(--menu-focus);
+}
+
+/* Fallback for browsers without base-select */
+@supports not (appearance: base-select) {
+  .toolbar-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23C4C4C4' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+  }
+}
+
+/* ============================================
    SLIDER
    ============================================ */
 .slider {
