@@ -194,7 +194,6 @@
 
 .toolbar-dropdown-button:focus {
   border-color: var(--focus-border);
-  outline: none;
 }
 
 .toolbar-dropdown-button[aria-expanded="true"] {
