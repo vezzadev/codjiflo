@@ -60,6 +60,8 @@ export interface MockComment {
   line: number;
   side: "LEFT" | "RIGHT";
   position: number;
+  /** If set, this comment is a reply to the comment with this ID */
+  in_reply_to_id?: number;
 }
 
 // ============================================================================
