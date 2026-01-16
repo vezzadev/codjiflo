@@ -340,5 +340,27 @@ describe('DiffToolbar', () => {
 
       expect(button).toHaveAttribute('aria-expanded', 'true');
     });
+
+    it('dropdown closes when focus leaves via Tab', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <DiffToolbar />
+          <button data-testid="outside-button">Outside</button>
+        </>
+      );
+
+      const viewModeButton = screen.getByRole('button', { name: 'View mode' });
+
+      // Open dropdown
+      await user.click(viewModeButton);
+      expect(viewModeButton).toHaveAttribute('aria-expanded', 'true');
+
+      // Tab away from the dropdown
+      await user.tab();
+
+      // Dropdown should close
+      expect(viewModeButton).toHaveAttribute('aria-expanded', 'false');
+    });
   });
 });

@@ -87,7 +87,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
 
   const selectedOption = options.find(opt => opt.value === value) ?? options[0];
 
-  // Close on click outside
+  // Close on click outside or focus leaving container
   useEffect(() => {
     if (!isOpen) return;
 
@@ -97,8 +97,22 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
       }
     };
 
+    const handleFocusOut = (e: FocusEvent) => {
+      // Close if focus moves outside the container
+      // relatedTarget is null when clicking non-focusable elements (like options), so don't close in that case
+      if (e.relatedTarget && containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    containerRef.current?.addEventListener('focusout', handleFocusOut);
+
+    const container = containerRef.current;
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      container?.removeEventListener('focusout', handleFocusOut);
+    };
   }, [isOpen]);
 
   // Keyboard navigation
