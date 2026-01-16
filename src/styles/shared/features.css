@@ -689,7 +689,8 @@
 /* Virtualized row wrapper - enables horizontal scrolling for long lines.
  * react-window sets rows to width: 100%, which clips content.
  * We override this to allow rows to expand to fit wide content.
- * The List container's overflow: auto then provides the horizontal scrollbar. */
+ * The List container's overflow: auto then provides the horizontal scrollbar.
+ * !important is required to override react-window's inline style (width: 100%). */
 .virtualized-inline-list .virtualized-row {
   width: max-content !important;
   min-width: 100%;

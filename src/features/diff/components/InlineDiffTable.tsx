@@ -295,10 +295,18 @@ export function InlineDiffTable({
       updateScrollWidth();
     });
 
-    // Observe the inner content div that react-window creates
-    // This fires when rows are rendered and their widths change
+    // Observe the inner content div that react-window creates.
+    // This fires when rows are rendered and their widths change.
+    // Debounce with RAF to avoid excessive DOM queries when react-window
+    // renders rows incrementally.
+    let resizeRafId: number | undefined;
     const observer = new ResizeObserver(() => {
-      updateScrollWidth();
+      if (resizeRafId === undefined) {
+        resizeRafId = requestAnimationFrame(() => {
+          resizeRafId = undefined;
+          updateScrollWidth();
+        });
+      }
     });
 
     // Observe the list container - its scroll width changes when content renders
@@ -314,6 +322,9 @@ export function InlineDiffTable({
 
     return () => {
       cancelAnimationFrame(rafId);
+      if (resizeRafId !== undefined) {
+        cancelAnimationFrame(resizeRafId);
+      }
       observer.disconnect();
     };
   }, [diffLines, updateScrollWidth]);

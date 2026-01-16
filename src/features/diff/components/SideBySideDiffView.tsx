@@ -294,11 +294,24 @@ export function SideBySideDiffView({
     key: dynamicHeightKey,
   });
 
+  // Filter lines based on content filter (moved before useEffect to use filteredLines.length)
+  const filteredLines = useMemo(() => {
+    if (contentFilter === 'both') return alignedLines;
+
+    return alignedLines.filter((pair) => {
+      if (contentFilter === 'left') {
+        return pair.left !== null || pair.right?.type !== 'addition';
+      } else {
+        return pair.right !== null || pair.left?.type !== 'deletion';
+      }
+    });
+  }, [alignedLines, contentFilter]);
+
   // Scroll to row when scrollToRowIndex changes (J/K navigation)
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
       // Early return if list is empty
-      if (alignedLines.length === 0) return;
+      if (filteredLines.length === 0) return;
 
       let effectiveIndex = Math.min(scrollToRowIndex, alignedLines.length - 1);
 
@@ -354,30 +367,11 @@ export function SideBySideDiffView({
       }
 
       // Calculate target index with context, clamped to valid range
-      // The list renders filteredLines, so bound by its length
-      const maxIndex = contentFilter === 'both' ? alignedLines.length - 1 : Math.max(0, alignedLines.filter((pair) =>
-        contentFilter === 'left'
-          ? pair.left !== null || pair.right?.type !== 'addition'
-          : pair.right !== null || pair.left?.type !== 'deletion'
-      ).length - 1);
-
+      const maxIndex = Math.max(0, filteredLines.length - 1);
       const targetIndex = Math.min(Math.max(0, effectiveIndex - contextLines), maxIndex);
       listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
     }
-  }, [scrollToRowIndex, alignedLines, contentFilter]);
-
-  // Filter lines based on content filter
-  const filteredLines = useMemo(() => {
-    if (contentFilter === 'both') return alignedLines;
-
-    return alignedLines.filter((pair) => {
-      if (contentFilter === 'left') {
-        return pair.left !== null || pair.right?.type !== 'addition';
-      } else {
-        return pair.right !== null || pair.left?.type !== 'deletion';
-      }
-    });
-  }, [alignedLines, contentFilter]);
+  }, [scrollToRowIndex, alignedLines, contentFilter, filteredLines.length]);
 
   // Memoize row props to prevent unnecessary re-renders
   const rowProps = useMemo<RowData>(
