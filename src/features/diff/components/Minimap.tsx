@@ -21,7 +21,10 @@ import {
   countLinesByType,
   calculateBarHeights,
   type DiffRegion,
+  type VisibleLineRange,
 } from '../utils/minimap-mapping';
+import type { VisibleRowRange } from './InlineDiffTable';
+import type { ParsedDiffLine } from '../types';
 
 // ============================================================================
 // Types
@@ -49,6 +52,8 @@ interface MinimapProps {
   showComments: boolean;
   /** Callback when user navigates via click or drag */
   onNavigate?: (event: NavigateEvent) => void;
+  /** Visible row range from react-window (for accurate lasso positioning) */
+  visibleRowRange?: VisibleRowRange | null;
 }
 
 // ============================================================================
@@ -56,6 +61,62 @@ interface MinimapProps {
 // ============================================================================
 
 const { WIDTH, BAR_WIDTH, LEFT_BAR_X, RIGHT_BAR_X, PADDING_VERTICAL } = MINIMAP_CONSTANTS;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Calculate visible line ranges from row indices and diff lines
+ *
+ * This function maps visible row indices (from react-window) to actual file
+ * line numbers by examining the diff lines in that range.
+ */
+function calculateVisibleLineRangesFromRows(
+  startIndex: number,
+  stopIndex: number,
+  diffLines: ParsedDiffLine[]
+): { left: VisibleLineRange | null; right: VisibleLineRange | null } {
+  if (diffLines.length === 0) {
+    return { left: null, right: null };
+  }
+
+  // Clamp indices to valid range
+  const firstRow = Math.max(0, startIndex);
+  const lastRow = Math.min(diffLines.length - 1, stopIndex);
+
+  // Find actual line numbers from visible diff rows
+  let leftFirst: number | null = null;
+  let leftLast: number | null = null;
+  let rightFirst: number | null = null;
+  let rightLast: number | null = null;
+
+  for (let i = firstRow; i <= lastRow; i++) {
+    const line = diffLines[i];
+    if (!line) continue;
+
+    // Track left side line numbers (deletions and context)
+    if (line.oldLineNumber !== null && line.oldLineNumber !== undefined) {
+      if (leftFirst === null) leftFirst = line.oldLineNumber;
+      leftLast = line.oldLineNumber;
+    }
+
+    // Track right side line numbers (additions and context)
+    if (line.newLineNumber !== null && line.newLineNumber !== undefined) {
+      if (rightFirst === null) rightFirst = line.newLineNumber;
+      rightLast = line.newLineNumber;
+    }
+  }
+
+  return {
+    left: leftFirst !== null && leftLast !== null
+      ? { firstLine: leftFirst, lastLine: leftLast }
+      : null,
+    right: rightFirst !== null && rightLast !== null
+      ? { firstLine: rightFirst, lastLine: rightLast }
+      : null,
+  };
+}
 
 // ============================================================================
 // Component
@@ -68,6 +129,7 @@ export function Minimap({
   showFullFile,
   showComments,
   onNavigate,
+  visibleRowRange,
 }: MinimapProps) {
   const { diffLines, alignedLines, viewMode, contentFilter, filename } = pipeline;
 
@@ -108,15 +170,28 @@ export function Minimap({
     return calculateDiffRegions(lines, viewMode === 'split' ? 'side-by-side' : 'inline');
   }, [viewMode, alignedLines, diffLines]);
 
+  // Calculate visible line ranges from row indices provided by react-window
+  // This gives accurate lasso positioning based on what's actually visible in the viewport
+  const visibleRanges = useMemo(() => {
+    if (!showFullFile || showComments || !visibleRowRange) {
+      return { left: null, right: null };
+    }
+    return calculateVisibleLineRangesFromRows(
+      visibleRowRange.startIndex,
+      visibleRowRange.stopIndex,
+      diffLines
+    );
+  }, [showFullFile, showComments, visibleRowRange, diffLines]);
+
   // Calculate viewport lasso position
   const lasso = useMemo(() => {
     // Lasso is hidden when:
     // 1. Not in full file mode
     // 2. Comments are visible (showComments=true)
-    // 3. Scroll state not yet initialized (viewportRatio === 0)
-    //    This prevents the lasso from appearing at full-bar-height before
-    //    the actual viewport ratio is calculated from the DOM.
-    if (!showFullFile || showComments || scrollState.viewportRatio === 0) {
+    // 3. Visible row range not yet available from react-window
+    //    This prevents the lasso from appearing before react-window reports
+    //    which rows are visible.
+    if (!showFullFile || showComments || !visibleRowRange) {
       return null;
     }
 
@@ -129,15 +204,19 @@ export function Minimap({
       leftBarHeight: barHeights.leftHeight,
       rightBarTop,
       rightBarHeight: barHeights.rightHeight,
+      visibleLeftRange: visibleRanges.left,
+      visibleRightRange: visibleRanges.right,
     });
   }, [
     showFullFile,
     showComments,
+    visibleRowRange,
     scrollState,
     lineCounts,
     leftBarTop,
     rightBarTop,
     barHeights,
+    visibleRanges,
   ]);
 
   // Convert Y position to scroll ratio (0-1) with lasso-center positioning

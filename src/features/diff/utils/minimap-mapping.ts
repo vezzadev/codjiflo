@@ -81,6 +81,88 @@ export interface LineCounts {
   rightLineCount: number;
 }
 
+/**
+ * Visible line range for a side of the diff
+ */
+export interface VisibleLineRange {
+  /** First visible line number (1-indexed, inclusive) */
+  firstLine: number;
+  /** Last visible line number (1-indexed, inclusive) */
+  lastLine: number;
+}
+
+/**
+ * Default row height for diff lines (matches --diff-line-height CSS variable)
+ */
+const DEFAULT_ROW_HEIGHT = 23;
+
+/**
+ * Calculate visible line ranges from scroll ratios and diff data
+ *
+ * Maps scroll position to actual file line numbers by:
+ * 1. Calculating which diff row indices are visible based on scroll ratios
+ * 2. Looking up file line numbers from those diff rows
+ *
+ * @param scrollRatio - Current scroll position as ratio (0-1)
+ * @param viewportRatio - Viewport size as ratio of total content (0-1)
+ * @param diffLines - Array of diff lines with line number information
+ * @returns Visible line ranges for left and right sides
+ */
+export function calculateVisibleLineRanges(
+  scrollRatio: number,
+  viewportRatio: number,
+  diffLines: ParsedDiffLine[]
+): { left: VisibleLineRange | null; right: VisibleLineRange | null } {
+  if (diffLines.length === 0 || viewportRatio <= 0) {
+    return { left: null, right: null };
+  }
+
+  // Calculate visible range as fractions of total lines (matches feature/minimap approach)
+  const firstVisibleRatio = scrollRatio * (1 - viewportRatio);
+  const lastVisibleRatio = firstVisibleRatio + viewportRatio;
+
+  // Convert to indices - use floor for start (inclusive) and ceil for end (inclusive)
+  const firstVisibleRow = Math.max(0, Math.floor(firstVisibleRatio * diffLines.length));
+  const lastVisibleRow = Math.min(
+    diffLines.length - 1,
+    Math.ceil(lastVisibleRatio * diffLines.length)
+  );
+
+  // Find actual line numbers from visible diff rows
+  let leftFirst: number | null = null;
+  let leftLast: number | null = null;
+  let rightFirst: number | null = null;
+  let rightLast: number | null = null;
+
+  for (let i = firstVisibleRow; i <= lastVisibleRow; i++) {
+    const line = diffLines[i];
+    if (!line) continue;
+
+    // Track left side line numbers (deletions and context)
+    // ParsedDiffLine uses oldLineNumber for base/left side
+    if (line.oldLineNumber !== null && line.oldLineNumber !== undefined) {
+      if (leftFirst === null) leftFirst = line.oldLineNumber;
+      leftLast = line.oldLineNumber;
+    }
+
+    // Track right side line numbers (additions and context)
+    // ParsedDiffLine uses newLineNumber for head/right side
+    if (line.newLineNumber !== null && line.newLineNumber !== undefined) {
+      if (rightFirst === null) rightFirst = line.newLineNumber;
+      rightLast = line.newLineNumber;
+    }
+  }
+
+  return {
+    left: leftFirst !== null && leftLast !== null
+      ? { firstLine: leftFirst, lastLine: leftLast }
+      : null,
+    right: rightFirst !== null && rightLast !== null
+      ? { firstLine: rightFirst, lastLine: rightLast }
+      : null,
+  };
+}
+
 // ============================================================================
 // Coordinate Mapping Functions
 // ============================================================================
@@ -412,6 +494,10 @@ export function calculateBarHeights(
  * line counts or when scrolling through regions with additions/deletions.
  * Each bar is centered vertically, so leftBarTop and rightBarTop may differ.
  *
+ * When visibleLeftRange and visibleRightRange are provided, they are used
+ * directly for accurate lasso positioning. Otherwise, falls back to estimation
+ * from scroll ratios (less accurate for diffs with pure additions/deletions).
+ *
  * @param params - Calculation parameters
  * @returns Lasso coordinates or null if cannot calculate
  */
@@ -424,6 +510,10 @@ export function calculateAsymmetricViewportLasso(params: {
   leftBarHeight: number;
   rightBarTop: number;
   rightBarHeight: number;
+  /** Actual visible line range on left side (if available) */
+  visibleLeftRange?: VisibleLineRange | null;
+  /** Actual visible line range on right side (if available) */
+  visibleRightRange?: VisibleLineRange | null;
 }): ViewportLasso | null {
   const {
     scrollRatio,
@@ -434,6 +524,8 @@ export function calculateAsymmetricViewportLasso(params: {
     leftBarHeight,
     rightBarTop,
     rightBarHeight,
+    visibleLeftRange,
+    visibleRightRange,
   } = params;
 
   if (leftLineCount === 0 && rightLineCount === 0) {
@@ -443,8 +535,50 @@ export function calculateAsymmetricViewportLasso(params: {
   // Minimum lasso height ensures visibility even with no content on one side
   const MIN_LASSO_HEIGHT = 4;
 
-  // Calculate what portion of each file is actually visible based on scroll position
-  // When scrolled past where the shorter file ends, its lasso should shrink
+  // When actual visible ranges are provided, use them directly for accurate positioning
+  if (visibleLeftRange || visibleRightRange) {
+    // Calculate left lasso position from actual visible lines
+    let leftTop: number;
+    let leftLassoHeight: number;
+
+    if (visibleLeftRange && leftLineCount > 0) {
+      // Directly map line numbers to bar positions
+      // Line 1 = top of bar, Line N = bottom of bar
+      const startRatio = (visibleLeftRange.firstLine - 1) / leftLineCount;
+      const endRatio = visibleLeftRange.lastLine / leftLineCount;
+      leftTop = leftBarTop + startRatio * leftBarHeight;
+      leftLassoHeight = Math.max(MIN_LASSO_HEIGHT, (endRatio - startRatio) * leftBarHeight);
+    } else {
+      // No visible left lines - use minimum height at scroll position
+      leftLassoHeight = MIN_LASSO_HEIGHT;
+      leftTop = leftBarTop + scrollRatio * (leftBarHeight - leftLassoHeight);
+    }
+
+    // Calculate right lasso position from actual visible lines
+    let rightTop: number;
+    let rightLassoHeight: number;
+
+    if (visibleRightRange && rightLineCount > 0) {
+      // Directly map line numbers to bar positions
+      const startRatio = (visibleRightRange.firstLine - 1) / rightLineCount;
+      const endRatio = visibleRightRange.lastLine / rightLineCount;
+      rightTop = rightBarTop + startRatio * rightBarHeight;
+      rightLassoHeight = Math.max(MIN_LASSO_HEIGHT, (endRatio - startRatio) * rightBarHeight);
+    } else {
+      // No visible right lines - use minimum height at scroll position
+      rightLassoHeight = MIN_LASSO_HEIGHT;
+      rightTop = rightBarTop + scrollRatio * (rightBarHeight - rightLassoHeight);
+    }
+
+    return {
+      leftTop,
+      leftBottom: leftTop + leftLassoHeight,
+      rightTop,
+      rightBottom: rightTop + rightLassoHeight,
+    };
+  }
+
+  // Fallback: estimate from scroll ratios (less accurate for asymmetric diffs)
   const maxLineCount = Math.max(leftLineCount, rightLineCount);
 
   // Calculate the visible line range in the longer file's coordinate space
@@ -455,20 +589,20 @@ export function calculateAsymmetricViewportLasso(params: {
   // Calculate how much of each file overlaps with the visible range
   const leftVisibleStart = Math.max(0, Math.min(firstVisibleLine, leftLineCount));
   const leftVisibleEnd = Math.max(0, Math.min(lastVisibleLine, leftLineCount));
-  const leftVisibleLines = Math.max(0, leftVisibleEnd - leftVisibleStart);
+  const leftVisibleLinesCount = Math.max(0, leftVisibleEnd - leftVisibleStart);
 
   const rightVisibleStart = Math.max(0, Math.min(firstVisibleLine, rightLineCount));
   const rightVisibleEnd = Math.max(0, Math.min(lastVisibleLine, rightLineCount));
-  const rightVisibleLines = Math.max(0, rightVisibleEnd - rightVisibleStart);
+  const rightVisibleLinesCount = Math.max(0, rightVisibleEnd - rightVisibleStart);
 
   // Lasso height = proportion of that file's lines that are visible
-  const leftLassoRatio = leftLineCount > 0 ? leftVisibleLines / leftLineCount : 0;
-  const rightLassoRatio = rightLineCount > 0 ? rightVisibleLines / rightLineCount : 0;
+  const leftLassoRatio = leftLineCount > 0 ? leftVisibleLinesCount / leftLineCount : 0;
+  const rightLassoRatio = rightLineCount > 0 ? rightVisibleLinesCount / rightLineCount : 0;
 
   const leftLassoHeight = Math.max(MIN_LASSO_HEIGHT, leftLassoRatio * leftBarHeight);
   const rightLassoHeight = Math.max(MIN_LASSO_HEIGHT, rightLassoRatio * rightBarHeight);
 
-  // Calculate top positions based on scroll ratio (within each bar's bounds)
+  // Use scroll ratio for positioning (keeps lassos synchronized)
   const leftScrollableRange = leftBarHeight - leftLassoHeight;
   const rightScrollableRange = rightBarHeight - rightLassoHeight;
 

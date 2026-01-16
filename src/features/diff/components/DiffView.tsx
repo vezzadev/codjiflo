@@ -7,7 +7,7 @@
  * S-3.3: View mode toggles
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   useDiffPipeline,
@@ -16,7 +16,7 @@ import {
   useIterationDiff,
 } from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
-import { InlineDiffTable } from './InlineDiffTable';
+import { InlineDiffTable, type VisibleRowRange } from './InlineDiffTable';
 import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
@@ -58,6 +58,9 @@ export function DiffView() {
 
   // Container height for virtualized rendering
   const { containerHeight, containerRefCallback } = useContainerHeight();
+
+  // Track visible row range from react-window for accurate minimap lasso positioning
+  const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
@@ -222,6 +225,7 @@ export function DiffView() {
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
               showComments={viewConfig.showComments}
+              onVisibleRangeChange={setVisibleRowRange}
             />
             <Minimap
               pipeline={pipeline}
@@ -229,6 +233,7 @@ export function DiffView() {
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
               showComments={viewConfig.showComments}
+              visibleRowRange={visibleRowRange}
             />
           </div>
         ) : (
@@ -266,6 +271,7 @@ export function DiffView() {
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
               showComments={viewConfig.showComments}
+              onVisibleRangeChange={setVisibleRowRange}
             />
             <Minimap
               pipeline={pipeline}
@@ -273,6 +279,7 @@ export function DiffView() {
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
               showComments={viewConfig.showComments}
+              visibleRowRange={visibleRowRange}
             />
           </div>
         )}

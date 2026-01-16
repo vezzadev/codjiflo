@@ -26,12 +26,21 @@ export interface ScrollState {
   scrollRatio: number;
   /** Viewport size as ratio of total content (0-1) */
   viewportRatio: number;
+  /** Raw scroll position in pixels */
+  scrollTop: number;
+  /** Viewport height in pixels */
+  clientHeight: number;
+  /** Total scrollable content height in pixels */
+  scrollHeight: number;
 }
 
 /** Default scroll state - viewportRatio of 0 means "not initialized" */
 const DEFAULT_SCROLL_STATE: ScrollState = {
   scrollRatio: 0,
   viewportRatio: 0,
+  scrollTop: 0,
+  clientHeight: 0,
+  scrollHeight: 0,
 };
 
 // ============================================================================
@@ -113,7 +122,7 @@ export function useMinimapScroll(
 
     // If content fits in viewport, no scrolling needed
     if (scrollHeight <= clientHeight) {
-      return { scrollRatio: 0, viewportRatio: 1 };
+      return { scrollRatio: 0, viewportRatio: 1, scrollTop, clientHeight, scrollHeight };
     }
 
     const maxScroll = scrollHeight - clientHeight;
@@ -123,6 +132,9 @@ export function useMinimapScroll(
     return {
       scrollRatio: Math.max(0, Math.min(1, scrollRatio)),
       viewportRatio: Math.max(0, Math.min(1, viewportRatio)),
+      scrollTop,
+      clientHeight,
+      scrollHeight,
     };
   }, []);
 

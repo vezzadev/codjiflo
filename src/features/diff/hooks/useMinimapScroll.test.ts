@@ -60,9 +60,13 @@ describe('useMinimapScroll', () => {
       useMinimapScroll(containerRef, 500)
     );
 
-    expect(result.current.scrollState).toEqual({
+    // State includes raw scroll values for lasso position calculation
+    expect(result.current.scrollState).toMatchObject({
       scrollRatio: 0,
       viewportRatio: 0,
+      scrollTop: 0,
+      clientHeight: 0,
+      scrollHeight: 0,
     });
   });
 
@@ -177,9 +181,13 @@ describe('useMinimapScroll', () => {
     );
 
     // When no container, returns default state with viewportRatio: 0 (not initialized)
-    expect(result.current.scrollState).toEqual({
+    // State includes raw scroll values for lasso position calculation
+    expect(result.current.scrollState).toMatchObject({
       scrollRatio: 0,
       viewportRatio: 0,
+      scrollTop: 0,
+      clientHeight: 0,
+      scrollHeight: 0,
     });
   });
 });

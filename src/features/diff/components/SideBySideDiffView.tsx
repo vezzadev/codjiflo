@@ -5,12 +5,13 @@
  * Uses react-window for performant rendering of large diffs.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
 import type { AlignedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
+import type { VisibleRowRange } from './InlineDiffTable';
 
 /** Default line height from CSS variables (--diff-line-height) */
 const DEFAULT_ROW_HEIGHT = 23;
@@ -44,6 +45,8 @@ interface SideBySideDiffViewProps {
   hasFullContent?: boolean;
   /** Whether to show comment threads (controlled by toolbar toggle) */
   showComments?: boolean;
+  /** Callback when visible row range changes (for minimap synchronization) */
+  onVisibleRangeChange?: (range: VisibleRowRange) => void;
 }
 
 interface RowData {
@@ -274,8 +277,19 @@ export function SideBySideDiffView({
   scrollToRowIndex,
   hasFullContent = false,
   showComments = true,
+  onVisibleRangeChange,
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
+
+  // Handle visible rows change from react-window
+  const handleRowsRendered = useCallback(
+    (visibleRows: { startIndex: number; stopIndex: number }) => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange(visibleRows);
+      }
+    },
+    [onVisibleRangeChange]
+  );
 
   // Generate key for dynamic row height cache based on comments
   // This ensures rows are re-measured when comments are added/removed
@@ -432,6 +446,7 @@ export function SideBySideDiffView({
         style={{ height: containerHeight, width: '100%', overflowX: 'visible' }}
         overscanCount={OVERSCAN_COUNT}
         rowProps={rowProps}
+        onRowsRendered={handleRowsRendered}
       />
     </div>
   );

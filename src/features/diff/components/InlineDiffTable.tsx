@@ -15,6 +15,14 @@ const DEFAULT_ROW_HEIGHT = 23;
 /** Number of rows to render outside the visible area */
 const OVERSCAN_COUNT = 10;
 
+/** Visible row range for minimap synchronization */
+export interface VisibleRowRange {
+  /** First visible row index (0-indexed) */
+  startIndex: number;
+  /** Last visible row index (0-indexed, inclusive) */
+  stopIndex: number;
+}
+
 export interface InlineDiffTableProps {
   diffLines: ParsedDiffLine[];
   language: string;
@@ -40,6 +48,8 @@ export interface InlineDiffTableProps {
   hasFullContent?: boolean;
   /** Whether to show comment threads (controlled by toolbar toggle) */
   showComments?: boolean;
+  /** Callback when visible row range changes (for minimap synchronization) */
+  onVisibleRangeChange?: (range: VisibleRowRange) => void;
 }
 
 interface RowData {
@@ -181,9 +191,20 @@ export function InlineDiffTable({
   scrollToRowIndex,
   hasFullContent = false,
   showComments = true,
+  onVisibleRangeChange,
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle visible rows change from react-window
+  const handleRowsRendered = useCallback(
+    (visibleRows: { startIndex: number; stopIndex: number }) => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange(visibleRows);
+      }
+    },
+    [onVisibleRangeChange]
+  );
 
   // Generate key for dynamic row height cache based on comments
   // This ensures rows are re-measured when comments are added/removed
@@ -396,6 +417,7 @@ export function InlineDiffTable({
         style={{ height: containerHeight, width: '100%' }}
         overscanCount={OVERSCAN_COUNT}
         rowProps={rowProps}
+        onRowsRendered={handleRowsRendered}
       />
     </div>
   );
