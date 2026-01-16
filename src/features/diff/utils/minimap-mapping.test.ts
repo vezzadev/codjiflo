@@ -493,4 +493,44 @@ describe('generateLassoPath', () => {
     // Path should include the right bar x positions
     expect(path).toContain(String(MINIMAP_CONSTANTS.RIGHT_BAR_X + MINIMAP_CONSTANTS.BAR_WIDTH));
   });
+
+  it('creates single connected shape bridging both bars (not two separate rectangles)', () => {
+    const lasso: ViewportLasso = {
+      leftTop: 20,
+      leftBottom: 60,
+      rightTop: 25,
+      rightBottom: 55,
+    };
+
+    const path = generateLassoPath(lasso);
+
+    // Single connected shape should have exactly one Z (close path) command
+    // Two separate rectangles would have two Z commands
+    const zCount = (path.match(/Z/gi) ?? []).length;
+    expect(zCount).toBe(1);
+
+    // Path should connect from left bar to right bar (contains both bar X positions)
+    expect(path).toContain(String(MINIMAP_CONSTANTS.LEFT_BAR_X + MINIMAP_CONSTANTS.BAR_WIDTH)); // left bar right edge
+    expect(path).toContain(String(MINIMAP_CONSTANTS.RIGHT_BAR_X)); // right bar left edge
+  });
+
+  it('returns empty string when lasso height is zero or negative', () => {
+    const zeroHeightLasso: ViewportLasso = {
+      leftTop: 50,
+      leftBottom: 50, // same as top = zero height
+      rightTop: 50,
+      rightBottom: 50,
+    };
+
+    expect(generateLassoPath(zeroHeightLasso)).toBe('');
+
+    const negativeHeightLasso: ViewportLasso = {
+      leftTop: 60,
+      leftBottom: 50, // bottom above top = negative height
+      rightTop: 60,
+      rightBottom: 50,
+    };
+
+    expect(generateLassoPath(negativeHeightLasso)).toBe('');
+  });
 });

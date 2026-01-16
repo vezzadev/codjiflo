@@ -466,41 +466,44 @@ export function calculateAsymmetricViewportLasso(params: {
 /**
  * Generate SVG path for the viewport lasso
  *
- * Creates a path that connects the left and right bar positions,
- * forming a quadrilateral that shows the visible viewport region.
+ * Creates a single continuous outline connecting both bars via horizontal edges,
+ * forming a shape that visually connects the visible viewport on both sides.
  *
  * @param lasso - Lasso coordinates
  * @returns SVG path string
  */
 export function generateLassoPath(lasso: ViewportLasso): string {
   const { leftTop, leftBottom, rightTop, rightBottom } = lasso;
-  const { LEFT_BAR_X, RIGHT_BAR_X, BAR_WIDTH, VIEWPORT_CORNER_RADIUS: r } = MINIMAP_CONSTANTS;
+  const { LEFT_BAR_X, RIGHT_BAR_X, BAR_WIDTH, VIEWPORT_CORNER_RADIUS } = MINIMAP_CONSTANTS;
 
   const leftBarRight = LEFT_BAR_X + BAR_WIDTH;
+  const rightBarLeft = RIGHT_BAR_X;
   const rightBarRight = RIGHT_BAR_X + BAR_WIDTH;
 
-  // Generate path connecting left bar to right bar
-  // Start at top-left of left bar, go clockwise
+  // Calculate effective corner radius (can't exceed half the height)
+  const height = Math.min(leftBottom - leftTop, rightBottom - rightTop);
+  const r = Math.min(VIEWPORT_CORNER_RADIUS, height / 2);
+
+  if (r <= 0 || height <= 0) {
+    return '';
+  }
+
+  // Single continuous outline connecting both bars via inner edges (horizontal connections)
+  // Shape: top-left of left bar → across top to right bar → down right bar → across bottom back → up left bar
   return `
     M ${LEFT_BAR_X + r} ${leftTop}
-    L ${leftBarRight - r} ${leftTop}
-    Q ${leftBarRight} ${leftTop} ${leftBarRight} ${leftTop + r}
-    L ${leftBarRight} ${leftBottom - r}
-    Q ${leftBarRight} ${leftBottom} ${leftBarRight - r} ${leftBottom}
+    L ${leftBarRight} ${leftTop}
+    L ${rightBarLeft} ${rightTop}
+    L ${rightBarRight - r} ${rightTop}
+    Q ${rightBarRight} ${rightTop} ${rightBarRight} ${rightTop + r}
+    L ${rightBarRight} ${rightBottom - r}
+    Q ${rightBarRight} ${rightBottom} ${rightBarRight - r} ${rightBottom}
+    L ${rightBarLeft} ${rightBottom}
+    L ${leftBarRight} ${leftBottom}
     L ${LEFT_BAR_X + r} ${leftBottom}
     Q ${LEFT_BAR_X} ${leftBottom} ${LEFT_BAR_X} ${leftBottom - r}
     L ${LEFT_BAR_X} ${leftTop + r}
     Q ${LEFT_BAR_X} ${leftTop} ${LEFT_BAR_X + r} ${leftTop}
     Z
-    M ${RIGHT_BAR_X + r} ${rightTop}
-    L ${rightBarRight - r} ${rightTop}
-    Q ${rightBarRight} ${rightTop} ${rightBarRight} ${rightTop + r}
-    L ${rightBarRight} ${rightBottom - r}
-    Q ${rightBarRight} ${rightBottom} ${rightBarRight - r} ${rightBottom}
-    L ${RIGHT_BAR_X + r} ${rightBottom}
-    Q ${RIGHT_BAR_X} ${rightBottom} ${RIGHT_BAR_X} ${rightBottom - r}
-    L ${RIGHT_BAR_X} ${rightTop + r}
-    Q ${RIGHT_BAR_X} ${rightTop} ${RIGHT_BAR_X + r} ${rightTop}
-    Z
-  `.trim().replace(/\s+/g, ' ');
+  `.trim();
 }

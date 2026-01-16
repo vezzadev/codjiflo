@@ -293,6 +293,13 @@ This centering ensures asymmetric diffs remain visually balanced and the lasso c
 | Additions | `--diff-add-word` | Green highlight on right bar |
 | Lasso stroke | `#505050` | Gray outline around visible viewport |
 
+**Lasso Shape:**
+
+The viewport lasso is rendered as a single continuous SVG path that connects both bars, forming a shape that visually bridges the left and right bar positions. The path flows:
+- Top-left of left bar → across to right bar top → down right bar outer edge → across bottom back to left bar → up left bar outer edge → close
+
+This connected shape (rather than two separate rectangles) provides clear visual indication that the lasso represents a unified viewport spanning both file views.
+
 **Lasso Visibility Rules:**
 
 Lasso visibility is determined by the following combined conditions:
