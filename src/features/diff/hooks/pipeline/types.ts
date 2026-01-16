@@ -122,8 +122,6 @@ export interface DiffNavigationOutput extends DiffSideFilterOutput {
   hunkIndices: number[];
   /** Row index to scroll to for current change (undefined if no target) */
   scrollToRowIndex: number | undefined;
-  /** Whether virtualization is enabled (based on line count) */
-  isVirtualized: boolean;
 }
 
 // ============================================================================

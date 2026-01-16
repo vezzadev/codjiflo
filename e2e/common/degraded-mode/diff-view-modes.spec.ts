@@ -126,11 +126,12 @@ const baz = 'qux';
       await expect(
         page.getByRole("region", { name: "Side-by-side diff view" })
       ).toBeVisible();
+      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
       await expect(
-        page.getByRole("region", { name: "Original version" })
+        page.getByRole("region", { name: "Original version" }).first()
       ).toBeVisible();
       await expect(
-        page.getByRole("region", { name: "Modified version" })
+        page.getByRole("region", { name: "Modified version" }).first()
       ).toBeVisible();
 
       // Switch back to Inline
@@ -218,31 +219,35 @@ const baz = 'qux';
       // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
       await page.keyboard.press("l");
       await expect(currentRadio).toHaveAttribute("aria-label", "Left Only");
+      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
       await expect(
-        page.getByRole("region", { name: "Original version" })
+        page.getByRole("region", { name: "Original version" }).first()
       ).toBeVisible();
+      // When filtering to left only, right panes should not exist
       await expect(
         page.getByRole("region", { name: "Modified version" })
-      ).toBeHidden();
+      ).toHaveCount(0);
 
       // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
       await page.keyboard.press("r");
       await expect(currentRadio).toHaveAttribute("aria-label", "Right Only");
       await expect(
-        page.getByRole("region", { name: "Modified version" })
+        page.getByRole("region", { name: "Modified version" }).first()
       ).toBeVisible();
+      // When filtering to right only, left panes should not exist
       await expect(
         page.getByRole("region", { name: "Original version" })
-      ).toBeHidden();
+      ).toHaveCount(0);
 
       // Back to Both - use keyboard shortcut 'o'
       await page.keyboard.press("o");
       await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
+      // Use .first() since virtualized rendering creates multiple panes
       await expect(
-        page.getByRole("region", { name: "Original version" })
+        page.getByRole("region", { name: "Original version" }).first()
       ).toBeVisible();
       await expect(
-        page.getByRole("region", { name: "Modified version" })
+        page.getByRole("region", { name: "Modified version" }).first()
       ).toBeVisible();
     } else {
       // Prod mode: verify structure
@@ -397,8 +402,9 @@ const baz = 'qux';
       });
       await expect(sideBySideContainer).toBeVisible();
 
-      const leftPane = page.getByRole("region", { name: "Original version" });
-      const rightPane = page.getByRole("region", { name: "Modified version" });
+      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      const leftPane = page.getByRole("region", { name: "Original version" }).first();
+      const rightPane = page.getByRole("region", { name: "Modified version" }).first();
 
       await expect(leftPane).toBeVisible();
       await expect(rightPane).toBeVisible();
@@ -443,8 +449,9 @@ const baz = 'qux';
       await page.keyboard.press("x");
 
       // [AC-3.2.8] Screen reader can move between panes
-      const leftPane = page.getByRole("region", { name: "Original version" });
-      const rightPane = page.getByRole("region", { name: "Modified version" });
+      // Use .first() since virtualized rendering creates multiple panes (one per visible row)
+      const leftPane = page.getByRole("region", { name: "Original version" }).first();
+      const rightPane = page.getByRole("region", { name: "Modified version" }).first();
 
       await expect(leftPane).toBeVisible();
       await expect(rightPane).toBeVisible();

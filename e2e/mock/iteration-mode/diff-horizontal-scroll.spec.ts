@@ -158,6 +158,17 @@ Iterations: 2`,
         }
       }
 
+      // With virtualized rendering (react-window), scroll happens inside the List component
+      // which is a child of .diff-content-area - this is also correct behavior
+      const reactWindowContainer = contentArea?.firstElementChild as HTMLElement | null;
+      if (reactWindowContainer && reactWindowContainer.scrollWidth > reactWindowContainer.clientWidth) {
+        const style = window.getComputedStyle(reactWindowContainer);
+        if (style.overflowX === "auto" || style.overflowX === "scroll") {
+          reactWindowContainer.scrollLeft = 300;
+          return { element: ".diff-content-area > div", scrolled: reactWindowContainer.scrollLeft > 0 };
+        }
+      }
+
       // Try .diff-viewer (incorrect implementation - scroll happens here)
       const viewer = document.querySelector(".diff-viewer");
       if (viewer && viewer.scrollWidth > viewer.clientWidth) {
@@ -176,6 +187,11 @@ Iterations: 2`,
     await page.waitForFunction(() => {
       const contentArea = document.querySelector(".diff-content-area");
       if (contentArea && contentArea.scrollLeft > 0) {
+        return true;
+      }
+      // Also check react-window container (child of .diff-content-area)
+      const reactWindowContainer = contentArea?.firstElementChild as HTMLElement | null;
+      if (reactWindowContainer && reactWindowContainer.scrollLeft > 0) {
         return true;
       }
       const viewer = document.querySelector(".diff-viewer");
@@ -215,36 +231,63 @@ Iterations: 2`,
     const contentArea = page.locator(".diff-content-area");
     await expect(contentArea).toBeVisible();
 
-    // ASSERTION: Content area should allow horizontal scrolling
+    // ASSERTION: Content area (or react-window child) should allow horizontal scrolling
     const canScroll = await contentArea.evaluate((el) => {
       // Check if element can scroll (has overflow: auto/scroll and content wider than container)
       const style = window.getComputedStyle(el);
       const overflowX = style.overflowX;
       const hasOverflow = overflowX === "auto" || overflowX === "scroll";
       const hasContent = el.scrollWidth > el.clientWidth;
-      return hasOverflow && hasContent;
+      if (hasOverflow && hasContent) return true;
+
+      // Also check react-window container (child of .diff-content-area)
+      const reactWindowContainer = el.firstElementChild as HTMLElement | null;
+      if (reactWindowContainer) {
+        const childStyle = window.getComputedStyle(reactWindowContainer);
+        const childOverflow = childStyle.overflowX === "auto" || childStyle.overflowX === "scroll";
+        const childContent = reactWindowContainer.scrollWidth > reactWindowContainer.clientWidth;
+        return childOverflow && childContent;
+      }
+      return false;
     });
 
     expect(canScroll).toBe(true);
 
     // ASSERTION: Can scroll to reveal hidden content
-    const initialScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    // With virtualized rendering, scroll may happen on contentArea or its react-window child
+    const initialScrollLeft = await contentArea.evaluate((el) => {
+      const child = el.firstElementChild as HTMLElement | null;
+      const container = el.scrollWidth > el.clientWidth ? el : (child ?? el);
+      return container.scrollLeft;
+    });
     expect(initialScrollLeft).toBe(0);
 
     // Scroll right
     await contentArea.evaluate((el) => {
-      el.scrollLeft = 100;
+      const child = el.firstElementChild as HTMLElement | null;
+      const container = el.scrollWidth > el.clientWidth ? el : (child ?? el);
+      container.scrollLeft = 100;
     });
 
-    const newScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    const newScrollLeft = await contentArea.evaluate((el) => {
+      const child = el.firstElementChild as HTMLElement | null;
+      const container = el.scrollWidth > el.clientWidth ? el : (child ?? el);
+      return container.scrollLeft;
+    });
     expect(newScrollLeft).toBe(100);
 
     // Scroll back
     await contentArea.evaluate((el) => {
-      el.scrollLeft = 0;
+      const child = el.firstElementChild as HTMLElement | null;
+      const container = el.scrollWidth > el.clientWidth ? el : (child ?? el);
+      container.scrollLeft = 0;
     });
 
-    const resetScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    const resetScrollLeft = await contentArea.evaluate((el) => {
+      const child = el.firstElementChild as HTMLElement | null;
+      const container = el.scrollWidth > el.clientWidth ? el : (child ?? el);
+      return container.scrollLeft;
+    });
     expect(resetScrollLeft).toBe(0);
   });
 });

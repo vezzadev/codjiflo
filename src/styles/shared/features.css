@@ -327,6 +327,7 @@
   background-color: var(--diff-area-bg);
 }
 
+
 .diff-filename {
   margin: 0;
   font-size: 13px;
@@ -680,11 +681,12 @@
 
 /* Virtualized row wrapper */
 .virtualized-row {
-  overflow: hidden;
+  overflow: visible; /* Allow content to extend for horizontal scroll on parent */
 }
 
 .virtualized-row .diff-table {
-  table-layout: fixed;
+  table-layout: auto; /* Allow table to expand with content */
+  width: max-content; /* Allow horizontal scroll for long lines */
   min-width: 100%;
 }
 
