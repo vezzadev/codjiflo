@@ -65,31 +65,38 @@ function SxSIcon() {
   );
 }
 
-interface ToggleButtonProps {
-  isActive: boolean;
-  onClick: () => void;
-  icon?: React.ReactNode;
+interface ToolbarSelectOption<T extends string> {
+  value: T;
   label: string;
-  shortcut?: string;
-  ariaLabel: string;
-  className?: string;
+  icon?: React.ReactNode;
 }
 
-function ToggleButton({ isActive, onClick, icon, label, shortcut, ariaLabel, className }: ToggleButtonProps) {
-  const classes = ['btn-toggle', 'btn-toolbar', isActive ? 'active' : '', className].filter(Boolean).join(' ');
+interface ToolbarSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: ToolbarSelectOption<T>[];
+  ariaLabel: string;
+}
+
+function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel }: ToolbarSelectProps<T>) {
+  const currentOption = options.find(opt => opt.value === value);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={isActive}
-      aria-label={ariaLabel}
-      title={shortcut ? `${ariaLabel} (${shortcut})` : ariaLabel}
-      className={classes}
-    >
-      {icon}
-      <span className="btn-label">{label}</span>
-    </button>
+    <span className="toolbar-select-wrapper">
+      {currentOption?.icon}
+      <select
+        className="toolbar-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        aria-label={ariaLabel}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 
@@ -321,11 +328,6 @@ export function DiffToolbar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Toggle between inline and split view
-  const handleViewModeToggle = useCallback(() => {
-    setViewMode(viewConfig.mode === 'inline' ? 'split' : 'inline');
-  }, [viewConfig.mode, setViewMode]);
-
   return (
     <div className="toolbar-right" role="toolbar" aria-label="Diff view controls">
       {/* Content Filter Slider (AC-3.3.5-15) */}
@@ -334,45 +336,43 @@ export function DiffToolbar() {
         onChange={setContentFilter}
       />
 
-      {/* View Mode Toggle - Single button (AC-3.3.1-4) */}
-      <ToggleButton
-        isActive={false}
-        onClick={handleViewModeToggle}
-        icon={viewConfig.mode === 'split' ? <SxSIcon /> : <InlineIcon />}
-        label={viewConfig.mode === 'split' ? 'SxS' : 'Inline'}
-        shortcut={viewConfig.mode === 'split' ? 'I' : 'X'}
-        ariaLabel={viewConfig.mode === 'split' ? 'Switch to inline view' : 'Switch to side-by-side view'}
-        className="btn-toolbar-wide"
+      {/* View Mode Select (AC-3.3.1-4) */}
+      <ToolbarSelect
+        value={viewConfig.mode}
+        onChange={setViewMode}
+        options={[
+          { value: 'inline', label: 'Inline', icon: <InlineIcon /> },
+          { value: 'split', label: 'Side-by-Side', icon: <SxSIcon /> },
+        ]}
+        ariaLabel="View mode"
       />
 
-      {/* Full File Toggle (AC-3.1.10-11) */}
-      <ToggleButton
-        isActive={false}
-        onClick={toggleFullFile}
-        icon={<File className="w-4 h-4" aria-hidden />}
-        label={viewConfig.showFullFile ? 'Full' : 'Changes'}
-        ariaLabel={viewConfig.showFullFile ? 'Show changes only' : 'Show full file'}
-        className="btn-toolbar-wide"
+      {/* Full File Select (AC-3.1.10-11) */}
+      <ToolbarSelect
+        value={viewConfig.showFullFile ? 'full' : 'changes'}
+        onChange={(v) => {
+          if (v === 'full' && !viewConfig.showFullFile) toggleFullFile();
+          if (v === 'changes' && viewConfig.showFullFile) toggleFullFile();
+        }}
+        options={[
+          { value: 'changes', label: 'Changes', icon: <File className="w-4 h-4" aria-hidden /> },
+          { value: 'full', label: 'Full File', icon: <File className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="File content"
       />
 
-      {/* Whitespace Toggle (AC-3.5.4-5) */}
-      <ToggleButton
-        isActive={viewConfig.showWhitespace}
-        onClick={toggleWhitespace}
-        icon={
-          viewConfig.showWhitespace ? (
-            <Eye className="w-4 h-4" aria-hidden />
-          ) : (
-            <EyeOff className="w-4 h-4" aria-hidden />
-          )
-        }
-        label="a · b"
-        ariaLabel={
-          viewConfig.showWhitespace
-            ? 'Hide whitespace characters'
-            : 'Show whitespace characters'
-        }
-        className="btn-toolbar-wide"
+      {/* Whitespace Select (AC-3.5.4-5) */}
+      <ToolbarSelect
+        value={viewConfig.showWhitespace ? 'visible' : 'hidden'}
+        onChange={(v) => {
+          if (v === 'visible' && !viewConfig.showWhitespace) toggleWhitespace();
+          if (v === 'hidden' && viewConfig.showWhitespace) toggleWhitespace();
+        }}
+        options={[
+          { value: 'hidden', label: 'WS: Hidden', icon: <EyeOff className="w-4 h-4" aria-hidden /> },
+          { value: 'visible', label: 'WS: Visible', icon: <Eye className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="Whitespace visibility"
       />
 
       {/* Change Navigation Buttons */}

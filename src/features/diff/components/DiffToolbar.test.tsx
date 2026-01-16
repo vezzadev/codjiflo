@@ -42,10 +42,11 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('toolbar')).toHaveAttribute('aria-label', 'Diff view controls');
     });
 
-    it('renders view mode toggle button showing Inline by default', () => {
+    it('renders view mode select showing Inline by default', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /switch to side-by-side view/i })).toBeInTheDocument();
-      expect(screen.getByText('Inline')).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'View mode' });
+      expect(select).toBeInTheDocument();
+      expect(select).toHaveValue('inline');
     });
 
     it('renders content filter radiogroup', () => {
@@ -53,29 +54,33 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('renders full file toggle button', () => {
+    it('renders file content select', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /show full file/i })).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'File content' });
+      expect(select).toBeInTheDocument();
+      expect(select).toHaveValue('changes');
     });
 
-    it('renders whitespace toggle button', () => {
+    it('renders whitespace visibility select', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /show whitespace characters/i })).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
+      expect(select).toBeInTheDocument();
+      expect(select).toHaveValue('hidden');
     });
   });
 
-  describe('view mode toggle', () => {
-    it('toggles to split mode when clicking button in inline mode', async () => {
+  describe('view mode select', () => {
+    it('changes to split mode when selecting split option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      await user.click(toggleButton);
+      const select = screen.getByRole('combobox', { name: 'View mode' });
+      await user.selectOptions(select, 'split');
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
 
-    it('toggles to inline mode when clicking button in split mode', async () => {
+    it('changes to inline mode when selecting inline option', async () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
@@ -83,19 +88,20 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
-      await user.click(toggleButton);
+      const select = screen.getByRole('combobox', { name: 'View mode' });
+      await user.selectOptions(select, 'inline');
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
-    it('shows SxS label when in split mode', () => {
+    it('shows split value when in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByText('SxS')).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'View mode' });
+      expect(select).toHaveValue('split');
     });
   });
 
@@ -142,56 +148,59 @@ describe('DiffToolbar', () => {
     });
   });
 
-  describe('full file toggle', () => {
-    it('calls toggleFullFile when clicked', async () => {
+  describe('file content select', () => {
+    it('enables full file when selecting full option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const button = screen.getByRole('button', { name: /show full file/i });
-      await user.click(button);
+      const select = screen.getByRole('combobox', { name: 'File content' });
+      await user.selectOptions(select, 'full');
 
       expect(useDiffStore.getState().viewConfig.showFullFile).toBe(true);
     });
 
-    it('shows correct label when full file is enabled', () => {
+    it('shows full value when full file is enabled', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showFullFile: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByRole('button', { name: /show changes only/i })).toBeInTheDocument();
-      expect(screen.getByText('Full')).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'File content' });
+      expect(select).toHaveValue('full');
     });
 
-    it('shows Changes label when showing changes only', () => {
+    it('shows changes value when showing changes only', () => {
       render(<DiffToolbar />);
-      expect(screen.getByText('Changes')).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'File content' });
+      expect(select).toHaveValue('changes');
     });
   });
 
-  describe('whitespace toggle', () => {
-    it('calls toggleWhitespace when clicked', async () => {
+  describe('whitespace visibility select', () => {
+    it('enables whitespace when selecting visible option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const button = screen.getByRole('button', { name: /show whitespace characters/i });
-      await user.click(button);
+      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
+      await user.selectOptions(select, 'visible');
 
       expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
     });
 
-    it('shows correct aria-label when whitespace is shown', () => {
+    it('shows visible value when whitespace is shown', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByRole('button', { name: /hide whitespace characters/i })).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
+      expect(select).toHaveValue('visible');
     });
 
-    it('shows a · b label', () => {
+    it('shows hidden value when whitespace is hidden', () => {
       render(<DiffToolbar />);
-      expect(screen.getByText('a · b')).toBeInTheDocument();
+      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
+      expect(select).toHaveValue('hidden');
     });
 
     it('shows Eye icon when whitespace is shown', () => {
@@ -274,28 +283,25 @@ describe('DiffToolbar', () => {
   });
 
   describe('accessibility', () => {
-    it('view mode toggle button has aria-pressed attribute', () => {
+    it('view mode select has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+      const select = screen.getByRole('combobox', { name: 'View mode' });
+      expect(select).toHaveAttribute('aria-label', 'View mode');
     });
 
-    it('view mode toggle stays unpressed when in split mode', () => {
-      useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
-      });
+    it('file content select has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+      const select = screen.getByRole('combobox', { name: 'File content' });
+      expect(select).toHaveAttribute('aria-label', 'File content');
     });
 
-    it('toggle button has title with keyboard shortcut', () => {
+    it('whitespace visibility select has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      expect(toggleButton).toHaveAttribute('title', expect.stringContaining('X'));
+      const select = screen.getByRole('combobox', { name: 'Whitespace visibility' });
+      expect(select).toHaveAttribute('aria-label', 'Whitespace visibility');
     });
   });
 });
