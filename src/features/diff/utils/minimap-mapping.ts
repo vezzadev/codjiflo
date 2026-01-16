@@ -440,9 +440,33 @@ export function calculateAsymmetricViewportLasso(params: {
     return null;
   }
 
-  // Calculate lasso height as proportion of bar height
-  const leftLassoHeight = Math.max(4, viewportRatio * leftBarHeight);
-  const rightLassoHeight = Math.max(4, viewportRatio * rightBarHeight);
+  // Minimum lasso height ensures visibility even with no content on one side
+  const MIN_LASSO_HEIGHT = 4;
+
+  // Calculate what portion of each file is actually visible based on scroll position
+  // When scrolled past where the shorter file ends, its lasso should shrink
+  const maxLineCount = Math.max(leftLineCount, rightLineCount);
+
+  // Calculate the visible line range in the longer file's coordinate space
+  const visibleLines = viewportRatio * maxLineCount;
+  const firstVisibleLine = scrollRatio * (maxLineCount - visibleLines);
+  const lastVisibleLine = firstVisibleLine + visibleLines;
+
+  // Calculate how much of each file overlaps with the visible range
+  const leftVisibleStart = Math.max(0, Math.min(firstVisibleLine, leftLineCount));
+  const leftVisibleEnd = Math.max(0, Math.min(lastVisibleLine, leftLineCount));
+  const leftVisibleLines = Math.max(0, leftVisibleEnd - leftVisibleStart);
+
+  const rightVisibleStart = Math.max(0, Math.min(firstVisibleLine, rightLineCount));
+  const rightVisibleEnd = Math.max(0, Math.min(lastVisibleLine, rightLineCount));
+  const rightVisibleLines = Math.max(0, rightVisibleEnd - rightVisibleStart);
+
+  // Lasso height = proportion of that file's lines that are visible
+  const leftLassoRatio = leftLineCount > 0 ? leftVisibleLines / leftLineCount : 0;
+  const rightLassoRatio = rightLineCount > 0 ? rightVisibleLines / rightLineCount : 0;
+
+  const leftLassoHeight = Math.max(MIN_LASSO_HEIGHT, leftLassoRatio * leftBarHeight);
+  const rightLassoHeight = Math.max(MIN_LASSO_HEIGHT, rightLassoRatio * rightBarHeight);
 
   // Calculate top positions based on scroll ratio (within each bar's bounds)
   const leftScrollableRange = leftBarHeight - leftLassoHeight;

@@ -210,21 +210,23 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
       page.getByRole("heading", { name: "src/commented-file.ts" })
     ).toBeVisible();
 
-    // Find the comments toggle button (initially showing "Comments" because showComments=true)
-    const toggleButton = page.getByRole("button", { name: /comments/i });
+    // Find the comments toggle dropdown (initially showing "Comments: Visible" because showComments=true)
+    const toggleButton = page.getByRole("button", { name: /comments visibility/i });
     await expect(toggleButton).toBeVisible();
 
-    // Button should show "Comments" label initially
-    await expect(toggleButton).toContainText("Comments");
+    // Button should show "Comments: Visible" label initially
+    await expect(toggleButton).toContainText("Comments: Visible");
 
-    // Click the button to toggle
+    // Click the button to open dropdown and select hidden option
     await toggleButton.click();
+    await page.getByText("Comments: Hidden").click();
 
-    // Button should now show "No Comments"
-    await expect(toggleButton).toContainText("No Comments");
+    // Button should now show "Comments: Hidden"
+    await expect(toggleButton).toContainText("Comments: Hidden");
 
-    // Click again to toggle back
+    // Click again and select visible
     await toggleButton.click();
-    await expect(toggleButton).toContainText("Comments");
+    await page.getByText("Comments: Visible").click();
+    await expect(toggleButton).toContainText("Comments: Visible");
   });
 });

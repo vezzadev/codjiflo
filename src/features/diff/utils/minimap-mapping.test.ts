@@ -384,7 +384,10 @@ describe('calculateAsymmetricViewportLasso', () => {
     expect(result.leftBottom).toBe(result.rightBottom);
   });
 
-  it('calculates asymmetric lasso for different line counts', () => {
+  it('calculates asymmetric lasso for different line counts at top', () => {
+    // At scrollRatio: 0, viewportRatio: 0.5 = viewing first 50 lines of 100 total
+    // Left file (50 lines): all 50 lines visible, so lasso spans full bar (100px)
+    // Right file (100 lines): 50/100 lines visible, so lasso spans half bar (100px)
     const result = calculateAsymmetricViewportLasso({
       scrollRatio: 0,
       viewportRatio: 0.5,
@@ -398,8 +401,40 @@ describe('calculateAsymmetricViewportLasso', () => {
 
     expect(result).not.toBeNull();
     if (!result) return; // Type guard
-    // Left bar is shorter, so lasso spans more of it proportionally
-    expect(result.leftBottom - result.leftTop).toBeLessThan(result.rightBottom - result.rightTop);
+    // At top of file, shorter file (left) is fully visible, so lasso spans full bar
+    // Both lassos end up same height (100px) in this scenario
+    const leftHeight = result.leftBottom - result.leftTop;
+    const rightHeight = result.rightBottom - result.rightTop;
+    expect(leftHeight).toBe(100); // Full left bar (all 50 lines visible)
+    expect(rightHeight).toBe(100); // Half of right bar (50/100 lines visible)
+  });
+
+  it('shrinks lasso when viewing content past the shorter file', () => {
+    // Scenario: 50 lines on left, 200 lines on right
+    // Scrolled to bottom where only right content exists (lines 150-200)
+    // viewportRatio: 0.25 = viewing 50 lines of 200 total at any time
+    // scrollRatio: 1.0 = scrolled to very bottom (viewing lines 150-200)
+    const result = calculateAsymmetricViewportLasso({
+      scrollRatio: 1.0,
+      viewportRatio: 0.25,
+      leftLineCount: 50,
+      rightLineCount: 200,
+      leftBarTop: 60,
+      leftBarHeight: 50, // Shorter bar
+      rightBarTop: 10,
+      rightBarHeight: 200,
+    });
+
+    expect(result).not.toBeNull();
+    if (!result) return; // Type guard
+
+    const leftHeight = result.leftBottom - result.leftTop;
+    const rightHeight = result.rightBottom - result.rightTop;
+
+    // Left lasso should be at minimum (4px) since no left content is visible (lines 150-200 are beyond left file's 50 lines)
+    expect(leftHeight).toBe(4); // MIN_LASSO_HEIGHT
+    // Right lasso shows 50/200 = 25% of the bar
+    expect(rightHeight).toBe(50); // 0.25 * 200
   });
 
   it('positions lasso at start when scrollRatio is 0', () => {

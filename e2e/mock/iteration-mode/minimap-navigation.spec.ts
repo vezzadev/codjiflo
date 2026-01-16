@@ -122,7 +122,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
   async function waitForLasso(page: import("@playwright/test").Page): Promise<void> {
     const minimap = page.getByRole("img", { name: /minimap/i });
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible({ timeout: 5000 });
+    await expect(lasso).toBeVisible();
   }
 
   test.beforeEach(async ({ page }) => {
@@ -175,8 +175,8 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
 
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
-    // Wait for toolbar to show "Changes" label (indicating full-file mode is active)
-    await expect(page.getByRole("button", { name: /show changes only/i })).toBeVisible();
+    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
+    await expect(page.getByText("Full File")).toBeVisible();
 
     // Hide comments to show lasso (D key)
     await page.keyboard.press("d");
@@ -260,8 +260,8 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
 
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
-    // Wait for toolbar to show "Changes" label (indicating full-file mode is active)
-    await expect(page.getByRole("button", { name: /show changes only/i })).toBeVisible();
+    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
+    await expect(page.getByText("Full File")).toBeVisible();
 
     // Hide comments to show lasso (D key)
     await page.keyboard.press("d");
