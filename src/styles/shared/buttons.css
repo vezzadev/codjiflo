@@ -120,17 +120,6 @@
 }
 
 /* ============================================
-   TEXT TOGGLE BUTTON (state shown in label)
-   ============================================ */
-.btn-text-toggle {
-  min-width: auto;
-  padding: 2px 8px;
-  height: 25px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-/* ============================================
    MENU/SIDEBAR BUTTON
    ============================================ */
 .btn-menu {
