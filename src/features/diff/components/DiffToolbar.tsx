@@ -4,13 +4,13 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, File, ChevronUp, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
 // Icon color constants (defined outside components to avoid recreation on each render)
 const ICON_COLORS = {
-  w: 'var(--main-bg)',
+  w: 'var(--diff-area-bg)',
   r: 'var(--diff-delete-word)',
   g: 'var(--diff-add-word)',
   border: 'var(--combobox-border)',
@@ -76,27 +76,110 @@ interface ToolbarSelectProps<T extends string> {
   onChange: (value: T) => void;
   options: ToolbarSelectOption<T>[];
   ariaLabel: string;
+  tooltip?: string;
 }
 
-function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel }: ToolbarSelectProps<T>) {
-  const currentOption = options.find(opt => opt.value === value);
+/** Custom dropdown that supports icons in options */
+function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, tooltip }: ToolbarSelectProps<T>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [listboxId] = useState(() => `listbox-${Math.random().toString(36).slice(2, 9)}`);
+
+  const selectedOption = options.find(opt => opt.value === value) ?? options[0];
+
+  // Close on click outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        setIsOpen(!isOpen);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const nextOption = options[Math.min(currentIndex + 1, options.length - 1)];
+          if (nextOption) onChange(nextOption.value);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (isOpen) {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const prevOption = options[Math.max(currentIndex - 1, 0)];
+          if (prevOption) onChange(prevOption.value);
+        }
+        break;
+    }
+  };
+
+  const handleOptionClick = (optValue: T) => {
+    onChange(optValue);
+    setIsOpen(false);
+  };
 
   return (
-    <span className="toolbar-select-wrapper">
-      {currentOption?.icon}
-      <select
-        className="toolbar-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
+    <div className="toolbar-dropdown" ref={containerRef}>
+      <button
+        type="button"
+        className="toolbar-dropdown-button"
         aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        title={tooltip}
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </span>
+        {selectedOption?.icon}
+        <span className="toolbar-dropdown-label">{selectedOption?.label}</span>
+        <svg className="toolbar-dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
+          <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
+      </button>
+      {isOpen && (
+        <ul
+          id={listboxId}
+          className="toolbar-dropdown-listbox"
+          role="listbox"
+          aria-label={ariaLabel}
+        >
+          {options.map((opt) => (
+            <li
+              key={opt.value}
+              role="option"
+              aria-selected={opt.value === value}
+              className={`toolbar-dropdown-option ${opt.value === value ? 'selected' : ''}`}
+              onClick={() => handleOptionClick(opt.value)}
+            >
+              {opt.icon}
+              <span>{opt.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -345,6 +428,7 @@ export function DiffToolbar() {
           { value: 'split', label: 'Side-by-Side', icon: <SxSIcon /> },
         ]}
         ariaLabel="View mode"
+        tooltip="View mode (I: Inline, X: Side-by-Side)"
       />
 
       {/* Full File Select (AC-3.1.10-11) */}
@@ -355,10 +439,11 @@ export function DiffToolbar() {
           if (v === 'changes' && viewConfig.showFullFile) toggleFullFile();
         }}
         options={[
-          { value: 'changes', label: 'Changes', icon: <File className="w-4 h-4" aria-hidden /> },
-          { value: 'full', label: 'Full File', icon: <File className="w-4 h-4" aria-hidden /> },
+          { value: 'changes', label: 'Changes', icon: <FileDiff className="w-4 h-4" aria-hidden /> },
+          { value: 'full', label: 'Full File', icon: <FileText className="w-4 h-4" aria-hidden /> },
         ]}
         ariaLabel="File content"
+        tooltip="File content (C: Changes, F: Full File)"
       />
 
       {/* Whitespace Select (AC-3.5.4-5) */}
@@ -373,6 +458,7 @@ export function DiffToolbar() {
           { value: 'visible', label: 'WS: Visible', icon: <Eye className="w-4 h-4" aria-hidden /> },
         ]}
         ariaLabel="Whitespace visibility"
+        tooltip="Whitespace visibility (B: Toggle)"
       />
 
       {/* Change Navigation Buttons */}

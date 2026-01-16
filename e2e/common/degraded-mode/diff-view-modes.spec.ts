@@ -102,25 +102,20 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // [AC-3.3.1] Inline mode should be default - single toggle button shows "Inline"
+      // [AC-3.3.1] Inline mode should be default - dropdown shows "Inline"
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
       await expect(toolbar).toBeVisible();
 
-      const viewModeButton = toolbar.getByRole("button", {
-        name: /switch to side-by-side view/i,
-      });
-      await expect(viewModeButton).toBeVisible();
-      await expect(viewModeButton).toContainText("Inline");
+      const viewModeDropdown = toolbar.getByRole("button", { name: "View mode" });
+      await expect(viewModeDropdown).toBeVisible();
+      await expect(viewModeDropdown).toContainText("Inline");
 
-      // [AC-3.2.1] Switch to Split view by clicking the toggle
-      await viewModeButton.click();
+      // [AC-3.2.1] Switch to Split view by selecting from dropdown
+      await viewModeDropdown.click();
+      await page.getByRole("option", { name: /Side-by-Side/i }).click();
 
-      // Now button should show SxS and offer to switch to inline
-      const inlineButton = toolbar.getByRole("button", {
-        name: /switch to inline view/i,
-      });
-      await expect(inlineButton).toBeVisible();
-      await expect(inlineButton).toContainText("SxS");
+      // Now dropdown should show Side-by-Side
+      await expect(viewModeDropdown).toContainText("Side-by-Side");
 
       // [AC-3.2.8-9] Split view should have accessible labels
       await expect(
@@ -135,10 +130,9 @@ const baz = 'qux';
       ).toBeVisible();
 
       // Switch back to Inline
-      await inlineButton.click();
-      await expect(
-        toolbar.getByRole("button", { name: /switch to side-by-side view/i })
-      ).toContainText("Inline");
+      await viewModeDropdown.click();
+      await page.getByRole("option", { name: /Inline/i }).click();
+      await expect(viewModeDropdown).toContainText("Inline");
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");
@@ -168,20 +162,18 @@ const baz = 'qux';
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
       await expect(toolbar).toBeVisible();
 
+      const viewModeDropdown = toolbar.getByRole("button", { name: "View mode" });
+
       // Focus on page body
       await page.locator("body").click();
 
-      // [AC-3.3.4] Press 'x' for Split - button should now show SxS
+      // [AC-3.3.4] Press 'x' for Split - dropdown should now show Side-by-Side
       await page.keyboard.press("x");
-      await expect(
-        toolbar.getByRole("button", { name: /switch to inline view/i })
-      ).toContainText("SxS");
+      await expect(viewModeDropdown).toContainText("Side-by-Side");
 
-      // [AC-3.3.4] Press 'i' for Inline - button should now show Inline
+      // [AC-3.3.4] Press 'i' for Inline - dropdown should now show Inline
       await page.keyboard.press("i");
-      await expect(
-        toolbar.getByRole("button", { name: /switch to side-by-side view/i })
-      ).toContainText("Inline");
+      await expect(viewModeDropdown).toContainText("Inline");
     }
   });
 
@@ -277,26 +269,27 @@ const baz = 'qux';
         page.getByRole("heading", { name: "src/example.ts" })
       ).toBeVisible();
 
-      // [AC-3.5.4] Whitespace toggle in toolbar - find by aria-label pattern
+      // [AC-3.5.4] Whitespace dropdown in toolbar
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
       await expect(toolbar).toBeVisible();
 
-      // Whitespace button uses aria-label "Hide whitespace changes" or "Show whitespace changes"
-      const whitespaceButton = toolbar.getByRole("button", {
-        name: /whitespace/i,
+      const whitespaceDropdown = toolbar.getByRole("button", {
+        name: "Whitespace visibility",
       });
-      await expect(whitespaceButton).toBeVisible();
+      await expect(whitespaceDropdown).toBeVisible();
 
-      // [AC-3.5.5] Toggle state indicator - starts off (WS visible)
-      await expect(whitespaceButton).toHaveAttribute("aria-pressed", "false");
+      // [AC-3.5.5] Default state - WS hidden
+      await expect(whitespaceDropdown).toContainText("WS: Hidden");
 
-      // Toggle on (hide whitespace)
-      await whitespaceButton.click();
-      await expect(whitespaceButton).toHaveAttribute("aria-pressed", "true");
+      // Select visible option
+      await whitespaceDropdown.click();
+      await page.getByRole("option", { name: /WS: Visible/i }).click();
+      await expect(whitespaceDropdown).toContainText("WS: Visible");
 
-      // Toggle off (show whitespace)
-      await whitespaceButton.click();
-      await expect(whitespaceButton).toHaveAttribute("aria-pressed", "false");
+      // Select hidden option
+      await whitespaceDropdown.click();
+      await page.getByRole("option", { name: /WS: Hidden/i }).click();
+      await expect(whitespaceDropdown).toContainText("WS: Hidden");
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");
@@ -328,32 +321,34 @@ const baz = 'qux';
       const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
       await expect(toolbar).toBeVisible();
 
-      // Find the full file toggle button
-      const fullFileButton = toolbar.getByRole("button", {
-        name: /show full file|show changes only/i,
+      // Find the file content dropdown
+      const fileContentDropdown = toolbar.getByRole("button", {
+        name: "File content",
       });
-      await expect(fullFileButton).toBeVisible();
+      await expect(fileContentDropdown).toBeVisible();
 
       // [AC-3.1.1] Default should be "Changes" (showing changes only)
-      await expect(fullFileButton).toContainText("Changes");
+      await expect(fileContentDropdown).toContainText("Changes");
 
       // Verify we see the hunk header (changes only mode)
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
       await expect(diffRegion).toBeVisible();
       await expect(diffRegion.getByText("@@")).toBeVisible();
 
-      // [AC-3.1.2] Toggle to full file mode
-      await fullFileButton.click();
-      await expect(fullFileButton).toContainText("Full");
+      // [AC-3.1.2] Select full file mode from dropdown
+      await fileContentDropdown.click();
+      await page.getByRole("option", { name: /Full File/i }).click();
+      await expect(fileContentDropdown).toContainText("Full File");
 
       // [AC-3.1.3-6] Full file mode should show more lines
       // Should now see content from the full file (line numbers starting from 1)
       // In full file mode, we should see lines that weren't in the patch
       await expect(diffRegion.getByText("End of file")).toBeVisible();
 
-      // [AC-3.1.7] Toggle back to changes only
-      await fullFileButton.click();
-      await expect(fullFileButton).toContainText("Changes");
+      // [AC-3.1.7] Select changes only mode
+      await fileContentDropdown.click();
+      await page.getByRole("option", { name: /Changes/i }).click();
+      await expect(fileContentDropdown).toContainText("Changes");
 
       // Should be back to showing only the hunk
       await expect(diffRegion.getByText("@@")).toBeVisible();
@@ -366,12 +361,12 @@ const baz = 'qux';
         const diffRegion = page.getByRole("region", { name: /Diff content/i });
         await expect(diffRegion).toBeVisible();
 
-        // Verify full file toggle exists
+        // Verify file content dropdown exists
         const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-        const fullFileButton = toolbar.getByRole("button", {
-          name: /show full file|show changes only/i,
+        const fileContentDropdown = toolbar.getByRole("button", {
+          name: "File content",
         });
-        await expect(fullFileButton).toBeVisible();
+        await expect(fileContentDropdown).toBeVisible();
       }
     }
   });

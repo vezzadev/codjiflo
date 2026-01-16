@@ -83,14 +83,15 @@ export function suppressWarnings() {
     const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(toolbar).toBeVisible();
 
-    const fullFileButton = toolbar.getByRole("button", {
-      name: /show full file|show changes only/i,
+    const fileContentDropdown = toolbar.getByRole("button", {
+      name: "File content",
     });
-    await expect(fullFileButton).toBeVisible();
+    await expect(fileContentDropdown).toBeVisible();
 
-    // Toggle to full file mode
-    await fullFileButton.click();
-    await expect(fullFileButton).toContainText("Full");
+    // Select full file mode from dropdown
+    await fileContentDropdown.click();
+    await page.getByRole("option", { name: /Full File/i }).click();
+    await expect(fileContentDropdown).toContainText("Full File");
 
     // KEY ASSERTION: No error banner should be displayed
     // The bug in Issue #195 shows "File not found at this version" error

@@ -167,27 +167,17 @@
 }
 
 /* ============================================
-   TOOLBAR SELECT (customizable dropdown)
+   TOOLBAR DROPDOWN (custom dropdown with icons)
    ============================================ */
-.toolbar-select-wrapper {
+.toolbar-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.toolbar-dropdown-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  position: relative;
-}
-
-.toolbar-select-wrapper svg {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-  pointer-events: none;
-}
-
-.toolbar-select {
-  /* Enable customizable select for Chrome 135+ */
-  appearance: base-select;
-
-  /* Base styling */
+  gap: 6px;
   height: 25px;
   padding: 2px 8px;
   font-size: 12px;
@@ -198,49 +188,87 @@
   cursor: pointer;
 }
 
-.toolbar-select:hover {
+.toolbar-dropdown-button:hover {
   background-color: var(--btn-hover);
 }
 
-.toolbar-select:focus {
+.toolbar-dropdown-button:focus {
   border-color: var(--focus-border);
   outline: none;
 }
 
-/* Dropdown picker styling (Chrome 135+) */
-.toolbar-select::picker(select) {
-  appearance: base-select;
-  border: 1px solid var(--combobox-border);
-  background: var(--menu-bg);
-  padding: 4px 0;
+.toolbar-dropdown-button[aria-expanded="true"] {
+  border-color: var(--focus-border);
 }
 
-/* Option styling (Chrome 135+) */
-.toolbar-select option {
+.toolbar-dropdown-label {
+  white-space: nowrap;
+}
+
+.toolbar-dropdown-arrow {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Listbox dropdown */
+.toolbar-dropdown-listbox {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 100%;
+  margin: 2px 0 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background-color: var(--window-bg);
+  border: 1px solid var(--combobox-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Option items */
+.toolbar-dropdown-option {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--main-fg);
+  background-color: var(--window-bg);
 }
 
-.toolbar-select option:hover {
+.toolbar-dropdown-option:hover {
   background-color: var(--menu-hover);
 }
 
-.toolbar-select option:checked {
+.toolbar-dropdown-option.selected {
   background-color: var(--menu-focus);
 }
 
-/* Fallback for browsers without base-select */
-@supports not (appearance: base-select) {
-  .toolbar-select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23C4C4C4' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-  }
+/* Icons in options - fixed width container for alignment */
+.toolbar-dropdown-option svg {
+  display: block;
+  flex: 0 0 24px;
+  height: 16px;
+}
+
+/* Text in options */
+.toolbar-dropdown-option span {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Icon sizing for lucide icons */
+.toolbar-dropdown-option svg.w-4 {
+  width: 14px;
+  height: 14px;
+}
+
+.toolbar-dropdown-button svg.w-4 {
+  width: 14px;
+  height: 14px;
 }
 
 /* ============================================
