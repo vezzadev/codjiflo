@@ -317,11 +317,15 @@ interface OverviewMargin {
   rightBar: Rectangle;  // Shows diff blocks in right file
   lasso: Rectangle;     // Current visible area indicator
 
-  // Interactions
-  onClick(y: number): void;  // Jump to position
-  onDrag(y: number): void;   // Scroll to position (disabled with inline comments)
+  // Interactions (instant, no animation)
+  onClick(y: number): void;  // Jump to position instantly
+  onDrag(y: number): void;   // Scroll to position instantly (disabled with inline comments)
 }
 ```
+
+**Navigation Behavior:**
+
+Minimap navigation (click and drag) scrolls the diff view instantly without any smooth scroll animation. This provides immediate visual feedback and responsive drag scrolling. Direct `scrollTop` assignment is used rather than `scrollTo({ behavior: 'smooth' })`.
 
 ### Comment Margins
 
