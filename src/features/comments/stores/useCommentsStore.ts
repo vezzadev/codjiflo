@@ -69,7 +69,7 @@ const mapGitHubComment = (comment: GitHubReviewComment): Comment => ({
   createdAt: new Date(comment.created_at),
   updatedAt: new Date(comment.updated_at),
   path: comment.path,
-  line: comment.line ?? 0,
+  line: comment.line,
   side: comment.side,
   position: comment.position,
   ...(comment.in_reply_to_id != null
@@ -108,7 +108,7 @@ const groupCommentsIntoThreads = (comments: GitHubReviewComment[]): ReviewThread
     threadMap.set(rootId, {
       id: String(rootId),
       path: comment.path,
-      line: comment.line ?? 0,
+      line: comment.line,
       side: comment.side,
       comments: [mapped],
       isResolved: false,

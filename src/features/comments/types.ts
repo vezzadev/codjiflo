@@ -13,7 +13,8 @@ export interface Comment {
   createdAt: Date;
   updatedAt: Date;
   path: string;
-  line: number;
+  /** Line number, or null if comment is outdated/unmappable */
+  line: number | null;
   side: CommentSide;
   position: number | null;
   inReplyTo?: string;
@@ -23,7 +24,8 @@ export interface Comment {
 export interface ReviewThread {
   id: string;
   path: string;
-  line: number;
+  /** Line number, or null if thread is outdated/unmappable */
+  line: number | null;
   side: CommentSide;
   comments: Comment[];
   isResolved: boolean;

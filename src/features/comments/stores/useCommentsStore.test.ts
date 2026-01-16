@@ -500,7 +500,7 @@ describe("useCommentsStore", () => {
 
       const state = useCommentsStore.getState();
       expect(state.threads).toHaveLength(1);
-      expect(state.threads[0]?.line).toBe(0); // Fallback to 0
+      expect(state.threads[0]?.line).toBeNull(); // Preserves null for unmappable comments
     });
   });
 
