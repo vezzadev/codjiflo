@@ -134,24 +134,45 @@ export function useMinimapScroll(
   }, [calculateScrollState, contentKey]);
 
   // Set up scroll listener and calculate initial state
-  // Uses polling via rAF to wait for react-window to render if needed
+  // Uses polling via rAF to wait for react-window to render AND stabilize
   useEffect(() => {
     let rafId: number;
     let currentScrollEl: HTMLElement | null = null;
     let isCleanedUp = false;
+    let lastScrollHeight = 0;
+    let stableFrameCount = 0;
 
-    // Poll until we find a valid scrollable element (react-window rendered)
+    // Poll until we find a valid scrollable element with STABLE scrollHeight
+    // React-window virtualization may update scrollHeight as content renders
     const trySetup = () => {
       if (isCleanedUp) return;
 
       const scrollEl = findScrollableElement();
       if (!scrollEl) {
         // Element not ready yet, retry on next frame
+        lastScrollHeight = 0;
+        stableFrameCount = 0;
         rafId = requestAnimationFrame(trySetup);
         return;
       }
 
-      // Found scrollable element - set up listener and calculate initial state
+      // Check if scrollHeight has stabilized (same value for 2 consecutive frames)
+      const currentScrollHeight = scrollEl.scrollHeight;
+      if (currentScrollHeight === lastScrollHeight) {
+        stableFrameCount++;
+      } else {
+        stableFrameCount = 0;
+        lastScrollHeight = currentScrollHeight;
+      }
+
+      // Require 2 stable frames before accepting the metrics
+      // This ensures react-window has finished rendering
+      if (stableFrameCount < 2) {
+        rafId = requestAnimationFrame(trySetup);
+        return;
+      }
+
+      // Found scrollable element with stable metrics - set up listener and calculate initial state
       currentScrollEl = scrollEl;
       const initialState = calculateScrollState(scrollEl);
       setScrollState({ ...initialState, key: contentKey });

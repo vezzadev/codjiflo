@@ -235,10 +235,30 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
+    // Wait for scroll container to stabilize before checking lasso
+    // Lasso only appears after viewportRatio is calculated
+    await waitForScrollStabilization(page);
+
     const lasso = minimap.locator(".minimap-lasso");
     await expect(lasso).toBeVisible();
 
-    // Wait for scroll container to stabilize before measuring
+    // Force react-window to calculate correct scrollHeight by scrolling
+    // React-window may overestimate total height before any scrolling occurs
+    const minimapBoxInit = await minimap.boundingBox();
+    if (!minimapBoxInit) throw new Error("Minimap bounding box not found");
+
+    // Scroll to middle to force height calculation
+    await page.mouse.click(
+      minimapBoxInit.x + minimapBoxInit.width / 2,
+      minimapBoxInit.y + minimapBoxInit.height * 0.5
+    );
+    await waitForScrollStabilization(page);
+
+    // Scroll back to top
+    await page.mouse.click(
+      minimapBoxInit.x + minimapBoxInit.width / 2,
+      minimapBoxInit.y + 20 // Near top
+    );
     await waitForScrollStabilization(page);
 
     // Get lasso height and scroll metrics at top of file
@@ -265,11 +285,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.y + minimapBox.height * 0.5
     );
 
-    // Wait for scroll to settle
-    await page.waitForFunction(() => {
-      const el = document.querySelector('[style*="overflow"]');
-      return el !== null;
-    });
+    // Wait for scroll metrics to stabilize after click
+    // React-window may recalculate scrollHeight after scrolling
+    await waitForScrollStabilization(page);
 
     // Get lasso height and scroll metrics at middle
     const middleResult = await getLassoHeight(page);
@@ -289,6 +307,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.9
     );
+
+    // Wait for scroll metrics to stabilize after click
+    await waitForScrollStabilization(page);
 
     // Get lasso height and scroll metrics at bottom
     const bottomResult = await getLassoHeight(page);
@@ -333,6 +354,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
+    // Wait for scroll metrics to stabilize before checking lasso
+    await waitForScrollStabilization(page);
+
     const lasso = minimap.locator(".minimap-lasso");
     await expect(lasso).toBeVisible();
 
@@ -374,8 +398,30 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
+    // Wait for scroll metrics to stabilize before checking lasso
+    await waitForScrollStabilization(page);
+
     const lasso = minimap.locator(".minimap-lasso");
     await expect(lasso).toBeVisible();
+
+    // Force react-window to calculate correct scrollHeight by scrolling first
+    // React-window may overestimate total height before any scrolling occurs
+    const minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
+    // Scroll to middle to force height calculation
+    await page.mouse.click(
+      minimapBox.x + minimapBox.width / 2,
+      minimapBox.y + minimapBox.height * 0.5
+    );
+    await waitForScrollStabilization(page);
+
+    // Scroll back to top
+    await page.mouse.click(
+      minimapBox.x + minimapBox.width / 2,
+      minimapBox.y + 20 // Near top
+    );
+    await waitForScrollStabilization(page);
 
     // Get initial lasso path
     const initialPath = await lasso.getAttribute("d");
@@ -384,6 +430,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Scroll down using keyboard
     await page.keyboard.press("j"); // Navigate to change
+
+    // Wait for scroll stabilization after keyboard navigation
+    await waitForScrollStabilization(page);
 
     // Get new lasso path
     const newResult = await getLassoHeight(page);

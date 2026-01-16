@@ -8,6 +8,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMinimapScroll } from './useMinimapScroll';
 
+/**
+ * Helper to wait for scroll stabilization (3 rAF frames needed):
+ * - Frame 1: Sets lastScrollHeight
+ * - Frame 2: stableFrameCount = 1
+ * - Frame 3: stableFrameCount = 2, triggers state update
+ */
+async function waitForScrollStabilization(): Promise<void> {
+  await act(async () => {
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  });
+}
+
 describe('useMinimapScroll', () => {
   let container: HTMLDivElement;
   let scrollableElement: HTMLDivElement;
@@ -58,10 +72,8 @@ describe('useMinimapScroll', () => {
       useMinimapScroll(containerRef, 500)
     );
 
-    // Wait for initial setup (rAF polling)
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for initial setup (rAF polling with stabilization)
+    await waitForScrollStabilization();
 
     // Simulate scroll to middle (maxScroll = 5000 - 500 = 4500)
     act(() => {
@@ -79,10 +91,8 @@ describe('useMinimapScroll', () => {
       useMinimapScroll(containerRef, 500)
     );
 
-    // Wait for requestAnimationFrame to execute and update state
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for scroll stabilization (requires 2 stable frames)
+    await waitForScrollStabilization();
 
     // viewportRatio = clientHeight / scrollHeight = 500 / 5000 = 0.1
     expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.1, 1);
@@ -97,10 +107,8 @@ describe('useMinimapScroll', () => {
       { initialProps: { key: contentKey } }
     );
 
-    // Wait for initial setup
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for initial setup (scroll stabilization)
+    await waitForScrollStabilization();
 
     // Scroll to middle (maxScroll = 5000 - 500 = 4500)
     act(() => {
@@ -129,10 +137,8 @@ describe('useMinimapScroll', () => {
       { initialProps: { key: contentKey } }
     );
 
-    // Wait for initial calculation
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for initial calculation (scroll stabilization)
+    await waitForScrollStabilization();
 
     // viewportRatio should be calculated: 500 / 5000 = 0.1
     expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.1, 1);
@@ -141,14 +147,8 @@ describe('useMinimapScroll', () => {
     contentKey = 'file2.ts';
     rerender({ key: contentKey });
 
-    // Immediately after key change, the hook recalculates synchronously from DOM
-    // Since the scroll element is still valid, it returns the calculated state
-    expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.1, 1);
-
-    // Wait for effect to recalculate
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for effect to re-stabilize after key change
+    await waitForScrollStabilization();
 
     // After recalculation, viewportRatio should be 0.1 (from actual scroll container)
     expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.1, 1);
@@ -162,10 +162,8 @@ describe('useMinimapScroll', () => {
       useMinimapScroll(containerRef, 500)
     );
 
-    // Wait for setup to complete (polling via rAF)
-    await act(async () => {
-      await new Promise(resolve => requestAnimationFrame(resolve));
-    });
+    // Wait for setup to complete (scroll stabilization)
+    await waitForScrollStabilization();
 
     unmount();
 

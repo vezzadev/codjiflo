@@ -21,11 +21,20 @@ function assertElement<T extends Element>(element: T | null, message: string): T
   return element;
 }
 
-/** Wait for requestAnimationFrame-based initialization to complete */
+/**
+ * Wait for useMinimapScroll's scroll stabilization to complete.
+ *
+ * The hook requires 2 stable frames before reporting metrics:
+ * - Frame 1: Sets lastScrollHeight
+ * - Frame 2: stableFrameCount = 1
+ * - Frame 3: stableFrameCount = 2, triggers state update
+ *
+ * Must be wrapped in act() to handle React state updates.
+ */
 async function waitForRAF(): Promise<void> {
-  // Wait for useMinimapScroll's rAF-based scroll element detection
-  // Must be wrapped in act() to handle React state updates
   await act(async () => {
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => requestAnimationFrame(resolve));
     await new Promise(resolve => requestAnimationFrame(resolve));
   });
 }

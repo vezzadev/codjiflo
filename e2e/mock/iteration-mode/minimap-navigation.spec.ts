@@ -115,6 +115,38 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     },
   ];
 
+  /**
+   * Wait for scroll container metrics to stabilize
+   * React-window virtualization may update scrollHeight as content renders
+   */
+  async function waitForScrollStabilization(page: import("@playwright/test").Page): Promise<void> {
+    await page.waitForFunction(() => {
+      // Find scroll container
+      const candidates = document.querySelectorAll<HTMLElement>('[style*="overflow"]');
+      let best: HTMLElement | null = null;
+      let maxRange = 0;
+
+      for (const el of candidates) {
+        const range = el.scrollHeight - el.clientHeight;
+        if (range > maxRange) {
+          maxRange = range;
+          best = el;
+        }
+      }
+
+      if (!best || maxRange <= 100) return false;
+
+      // Store current scrollHeight and check again in next frame
+      const currentHeight = best.scrollHeight;
+      // Use a custom attribute to track previous measurement
+      const prevHeight = best.getAttribute('data-prev-scroll-height');
+      best.setAttribute('data-prev-scroll-height', String(currentHeight));
+
+      // Stabilized when scrollHeight hasn't changed
+      return prevHeight !== null && Number(prevHeight) === currentHeight;
+    });
+  }
+
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
 
@@ -254,6 +286,10 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
+
+    // Wait for scroll metrics to stabilize before checking lasso
+    // Lasso only appears after viewportRatio is calculated
+    await waitForScrollStabilization(page);
 
     // Get initial lasso state
     const lassoInitial = minimap.locator(".minimap-lasso");
