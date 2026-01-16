@@ -83,7 +83,7 @@ interface ToolbarSelectProps<T extends string> {
 function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, tooltip }: ToolbarSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [listboxId] = useState(() => `listbox-${Math.random().toString(36).slice(2, 9)}`);
+  const [baseId] = useState(() => `dropdown-${Math.random().toString(36).slice(2, 9)}`);
 
   const selectedOption = options.find(opt => opt.value === value) ?? options[0];
 
@@ -107,14 +107,17 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
       case 'Enter':
       case ' ':
         e.preventDefault();
+        e.stopPropagation();
         setIsOpen(!isOpen);
         break;
       case 'Escape':
         e.preventDefault();
+        e.stopPropagation();
         setIsOpen(false);
         break;
       case 'ArrowDown':
         e.preventDefault();
+        e.stopPropagation();
         if (!isOpen) {
           setIsOpen(true);
         } else {
@@ -125,6 +128,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
         break;
       case 'ArrowUp':
         e.preventDefault();
+        e.stopPropagation();
         if (isOpen) {
           const currentIndex = options.findIndex(opt => opt.value === value);
           const prevOption = options[Math.max(currentIndex - 1, 0)];
@@ -147,7 +151,8 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-controls={listboxId}
+        aria-controls={`${baseId}-listbox`}
+        aria-activedescendant={isOpen ? `${baseId}-option-${value}` : undefined}
         title={tooltip}
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
@@ -160,7 +165,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
       </button>
       {isOpen && (
         <ul
-          id={listboxId}
+          id={`${baseId}-listbox`}
           className="toolbar-dropdown-listbox"
           role="listbox"
           aria-label={ariaLabel}
@@ -168,6 +173,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
           {options.map((opt) => (
             <li
               key={opt.value}
+              id={`${baseId}-option-${opt.value}`}
               role="option"
               aria-selected={opt.value === value}
               className={`toolbar-dropdown-option ${opt.value === value ? 'selected' : ''}`}
@@ -435,8 +441,8 @@ export function DiffToolbar() {
       <ToolbarSelect
         value={viewConfig.showFullFile ? 'full' : 'changes'}
         onChange={(v) => {
-          if (v === 'full' && !viewConfig.showFullFile) toggleFullFile();
-          if (v === 'changes' && viewConfig.showFullFile) toggleFullFile();
+          const wantsFull = v === 'full';
+          if (wantsFull !== viewConfig.showFullFile) toggleFullFile();
         }}
         options={[
           { value: 'changes', label: 'Changes', icon: <FileDiff className="w-4 h-4" aria-hidden /> },
@@ -450,8 +456,8 @@ export function DiffToolbar() {
       <ToolbarSelect
         value={viewConfig.showWhitespace ? 'visible' : 'hidden'}
         onChange={(v) => {
-          if (v === 'visible' && !viewConfig.showWhitespace) toggleWhitespace();
-          if (v === 'hidden' && viewConfig.showWhitespace) toggleWhitespace();
+          const wantsVisible = v === 'visible';
+          if (wantsVisible !== viewConfig.showWhitespace) toggleWhitespace();
         }}
         options={[
           { value: 'hidden', label: 'WS: Hidden', icon: <EyeOff className="w-4 h-4" aria-hidden /> },
