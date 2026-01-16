@@ -132,7 +132,8 @@ export function DiffView() {
       const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
       const targetScroll = scrollRatio * maxScroll;
 
-      scrollEl.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      // Direct assignment for instant scrolling (no animation)
+      scrollEl.scrollTop = targetScroll;
     },
     [pipeline.diffLines]
   );
