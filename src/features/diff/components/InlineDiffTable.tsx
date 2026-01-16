@@ -220,10 +220,21 @@ export function InlineDiffTable({
 
   // Update CSS variable for scroll width so all tables can extend to match widest content.
   // This ensures diff backgrounds (addition/deletion) extend to the full scroll width.
-  const updateScrollWidth = useCallback(() => {
+  const updateScrollWidth = useCallback((width?: number) => {
     const container = containerRef.current;
     if (!container) return;
 
+    // If width is provided (from precalculation), use it directly
+    if (width !== undefined && width > 0) {
+      const list = container.querySelector('.virtualized-inline-list');
+      const clientWidth = list?.clientWidth ?? container.clientWidth;
+      if (width > clientWidth) {
+        container.style.setProperty('--diff-scroll-width', `${String(width)}px`);
+        return;
+      }
+    }
+
+    // Fall back to measuring actual scroll width
     const list = container.querySelector('.virtualized-inline-list');
     if (list && list.scrollWidth > list.clientWidth) {
       container.style.setProperty('--diff-scroll-width', `${String(list.scrollWidth)}px`);
@@ -231,6 +242,46 @@ export function InlineDiffTable({
       container.style.removeProperty('--diff-scroll-width');
     }
   }, []);
+
+  // Precalculate max width by measuring the longest line content.
+  // This ensures the scrollbar appears immediately, not just when long rows render.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || diffLines.length === 0) return;
+
+    // Find the longest line content
+    let longestContent = '';
+    for (const line of diffLines) {
+      if (line.content.length > longestContent.length) {
+        longestContent = line.content;
+      }
+    }
+
+    if (longestContent.length === 0) return;
+
+    // Create a hidden measuring element with the same styles as diff content
+    const measurer = document.createElement('div');
+    measurer.className = 'diff-content-measurer';
+    measurer.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      height: auto;
+      width: auto;
+      white-space: pre;
+      font-family: var(--font-mono);
+      font-size: var(--diff-font-size);
+    `;
+    // Add line number column widths (approx 80px for two columns + gutter)
+    const lineNumberWidth = lineNumberMode === 'both' ? 120 : 80;
+    measurer.textContent = longestContent;
+    container.appendChild(measurer);
+
+    // Measure and set width
+    const contentWidth = measurer.offsetWidth + lineNumberWidth + 40; // 40px padding
+    container.removeChild(measurer);
+
+    updateScrollWidth(contentWidth);
+  }, [diffLines, lineNumberMode, updateScrollWidth]);
 
   // Use ResizeObserver to detect when virtualized content width changes.
   // This is needed because react-window renders rows asynchronously, so the
