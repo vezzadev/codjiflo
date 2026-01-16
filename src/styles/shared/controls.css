@@ -245,11 +245,10 @@
   background-color: var(--menu-focus);
 }
 
-/* Icons in options - fixed width container for alignment */
+/* Icons in options */
 .toolbar-dropdown-option svg {
   display: block;
-  flex: 0 0 24px;
-  height: 16px;
+  flex-shrink: 0;
 }
 
 /* Text in options */

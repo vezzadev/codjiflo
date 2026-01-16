@@ -487,24 +487,22 @@ export function DiffToolbar() {
         tooltip="Whitespace visibility (B: Toggle)"
       />
 
-      {/* Separator before comments toggle */}
+      {/* Separator before comments */}
       <span className="toolbar-separator" aria-hidden="true" />
 
-      {/* Comments Toggle */}
-      <ToggleButton
-        isActive={viewConfig.showComments}
-        onClick={toggleComments}
-        icon={
-          viewConfig.showComments ? (
-            <MessageSquare className="w-4 h-4" aria-hidden />
-          ) : (
-            <MessageSquareOff className="w-4 h-4" aria-hidden />
-          )
-        }
-        label={viewConfig.showComments ? 'Comments' : 'No Comments'}
-        shortcut="D"
-        ariaLabel={viewConfig.showComments ? 'Hide comments' : 'Show comments'}
-        className="btn-toolbar-wide"
+      {/* Comments Select */}
+      <ToolbarSelect
+        value={viewConfig.showComments ? 'visible' : 'hidden'}
+        onChange={(v) => {
+          const wantsVisible = v === 'visible';
+          if (wantsVisible !== viewConfig.showComments) toggleComments();
+        }}
+        options={[
+          { value: 'hidden', label: 'Comments: Hidden', icon: <MessageSquareOff className="w-4 h-4" aria-hidden /> },
+          { value: 'visible', label: 'Comments: Visible', icon: <MessageSquare className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="Comments visibility"
+        tooltip="Comments visibility (D: Toggle)"
       />
 
       {/* Change Navigation Buttons */}
