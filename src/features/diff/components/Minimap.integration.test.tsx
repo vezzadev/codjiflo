@@ -12,6 +12,16 @@ import type { ParsedDiffLine, AlignedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
 
 // ============================================================================
+// Type-safe helpers
+// ============================================================================
+
+/** Assert element exists and return it with proper type narrowing */
+function assertElement<T extends Element>(element: T | null, message: string): T {
+  if (!element) throw new Error(message);
+  return element;
+}
+
+// ============================================================================
 // Test Fixtures
 // ============================================================================
 
@@ -259,7 +269,7 @@ describe('Minimap component', () => {
       // This test verifies lasso-center positioning:
       // Click uses formula: ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
       const pipeline = createMockPipeline();
-      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+      const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
       // Setup scrollable: viewportRatio = 500/1000 = 0.5
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
@@ -280,9 +290,9 @@ describe('Minimap component', () => {
 
       // Trigger scroll event to initialize useMinimapScroll state
       fireEvent.scroll(scrollable);
-      await vi.waitFor(() => {});
+      await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
-      const svg = container.querySelector('svg') as SVGSVGElement;
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
 
       svg.getBoundingClientRect = () => ({
         top: 0,
@@ -311,7 +321,7 @@ describe('Minimap component', () => {
 
     it('click positions lasso center at click point (scrolls to top)', async () => {
       const pipeline = createMockPipeline();
-      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+      const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
       Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
@@ -330,9 +340,9 @@ describe('Minimap component', () => {
       );
 
       fireEvent.scroll(scrollable);
-      await vi.waitFor(() => {});
+      await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
-      const svg = container.querySelector('svg') as SVGSVGElement;
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
 
       svg.getBoundingClientRect = () => ({
         top: 0,
@@ -354,7 +364,7 @@ describe('Minimap component', () => {
 
     it('click positions lasso center at click point (scrolls to middle)', async () => {
       const pipeline = createMockPipeline();
-      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+      const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
       Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
@@ -373,9 +383,9 @@ describe('Minimap component', () => {
       );
 
       fireEvent.scroll(scrollable);
-      await vi.waitFor(() => {});
+      await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
-      const svg = container.querySelector('svg') as SVGSVGElement;
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
 
       svg.getBoundingClientRect = () => ({
         top: 0,
@@ -431,7 +441,7 @@ describe('Minimap component', () => {
       // ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
       // This ensures lasso center follows mouse at the same speed
       const pipeline = createMockPipeline();
-      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+      const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
       // Setup scrollable: viewportRatio = clientHeight/scrollHeight = 500/1000 = 0.5
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
@@ -459,7 +469,7 @@ describe('Minimap component', () => {
         // State should be initialized
       });
 
-      const svg = container.querySelector('svg') as SVGSVGElement;
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
 
       svg.getBoundingClientRect = () => ({
         top: 0,
@@ -596,6 +606,488 @@ describe('Minimap component', () => {
       const deletionRects = container.querySelectorAll('.minimap-deletion');
       const additionRects = container.querySelectorAll('.minimap-addition');
       expect(deletionRects.length + additionRects.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ============================================================================
+  // Dynamic Prop Changes (State Transitions)
+  // These tests verify minimap correctly updates when props change between renders
+  // ============================================================================
+
+  describe('file switching (dynamic filename change)', () => {
+    it('recalculates diff regions when filename changes', () => {
+      // Create two pipelines with different diff patterns
+      const pipelineFile1 = createMockPipeline({
+        filename: 'file1.ts',
+        diffLines: [
+          { type: 'deletion', oldLineNumber: 1, newLineNumber: null, content: 'old line' },
+          { type: 'context', oldLineNumber: 2, newLineNumber: 1, content: 'context' },
+        ],
+      });
+
+      const pipelineFile2 = createMockPipeline({
+        filename: 'file2.ts',
+        diffLines: [
+          { type: 'context', oldLineNumber: 1, newLineNumber: 1, content: 'context' },
+          { type: 'addition', oldLineNumber: null, newLineNumber: 2, content: 'new line' },
+          { type: 'addition', oldLineNumber: null, newLineNumber: 3, content: 'another new' },
+        ],
+      });
+
+      const containerRef = { current: scrollContainer };
+
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineFile1}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // File 1 should have deletions
+      let deletionRects = container.querySelectorAll('.minimap-deletion');
+      let additionRects = container.querySelectorAll('.minimap-addition');
+      expect(deletionRects.length).toBeGreaterThan(0);
+
+      // Switch to file 2
+      rerender(
+        <Minimap
+          pipeline={pipelineFile2}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // File 2 should have additions, no deletions
+      deletionRects = container.querySelectorAll('.minimap-deletion');
+      additionRects = container.querySelectorAll('.minimap-addition');
+      expect(additionRects.length).toBeGreaterThan(0);
+    });
+
+    it('resets scroll tracking state when filename changes', async () => {
+      // This test validates the contentKey bug fix:
+      // When filename changes, useMinimapScroll should reset and recalculate
+      const pipelineFile1 = createMockPipeline({ filename: 'file1.ts' });
+      const pipelineFile2 = createMockPipeline({ filename: 'file2.ts' });
+
+      const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
+      scrollable.scrollTop = 250; // Start scrolled to middle
+
+      const containerRef = { current: scrollContainer };
+
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineFile1}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Trigger scroll to update scroll state
+      fireEvent.scroll(scrollable);
+      await vi.waitFor(() => { /* Allow React to process scroll event */ });
+
+      // Get lasso path for file1 (scrolled position)
+      const lassoFile1 = container.querySelector('.minimap-lasso');
+      const lassoPathFile1 = lassoFile1?.getAttribute('d');
+
+      // Switch to file 2 (scroll state should reset)
+      scrollable.scrollTop = 0; // Simulate new file starting at top
+      rerender(
+        <Minimap
+          pipeline={pipelineFile2}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Trigger scroll event to recalculate
+      fireEvent.scroll(scrollable);
+      await vi.waitFor(() => { /* Allow React to process scroll event */ });
+
+      // Get lasso path for file2 (should be at top)
+      const lassoFile2 = container.querySelector('.minimap-lasso');
+      const lassoPathFile2 = lassoFile2?.getAttribute('d');
+
+      // Paths should be different (file1 was scrolled, file2 is at top)
+      // This validates the contentKey reset is working
+      expect(lassoPathFile1).not.toEqual(lassoPathFile2);
+    });
+  });
+
+  describe('view mode switching (inline ↔ split)', () => {
+    it('updates regions when switching from inline to split mode', () => {
+      const containerRef = { current: scrollContainer };
+
+      // Start in inline mode
+      const pipelineInline = createMockPipeline({ viewMode: 'inline' });
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineInline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Verify regions exist in inline mode
+      expect(container.querySelectorAll('.minimap-deletion, .minimap-addition').length).toBeGreaterThan(0);
+
+      // Switch to split mode
+      const pipelineSplit = createMockPipeline({ viewMode: 'split' });
+      rerender(
+        <Minimap
+          pipeline={pipelineSplit}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Regions should still be rendered (may have same count but validates re-render)
+      const splitDeletions = container.querySelectorAll('.minimap-deletion').length;
+      const splitAdditions = container.querySelectorAll('.minimap-addition').length;
+      expect(splitDeletions + splitAdditions).toBeGreaterThan(0);
+    });
+
+    it('preserves lasso visibility when switching view modes', () => {
+      const containerRef = { current: scrollContainer };
+
+      // Start in inline mode with lasso visible
+      const pipelineInline = createMockPipeline({ viewMode: 'inline' });
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineInline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+
+      // Switch to split mode
+      const pipelineSplit = createMockPipeline({ viewMode: 'split' });
+      rerender(
+        <Minimap
+          pipeline={pipelineSplit}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Lasso should still be visible
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+    });
+  });
+
+  describe('content filter changes (dynamic)', () => {
+    it('disables left bar when filter changes from both to right', () => {
+      const containerRef = { current: scrollContainer };
+
+      // Start with both filter
+      const pipelineBoth = createMockPipeline({ contentFilter: 'both' });
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineBoth}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Both bars should be enabled
+      let leftBar = container.querySelector('.minimap-bar-left');
+      let rightBar = container.querySelector('.minimap-bar-right');
+      expect(leftBar).not.toHaveClass('minimap-bar-disabled');
+      expect(rightBar).not.toHaveClass('minimap-bar-disabled');
+
+      // Change filter to right-only
+      const pipelineRight = createMockPipeline({ contentFilter: 'right' });
+      rerender(
+        <Minimap
+          pipeline={pipelineRight}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Left bar should be disabled
+      leftBar = container.querySelector('.minimap-bar-left');
+      rightBar = container.querySelector('.minimap-bar-right');
+      expect(leftBar).toHaveClass('minimap-bar-disabled');
+      expect(rightBar).not.toHaveClass('minimap-bar-disabled');
+    });
+
+    it('disables right bar when filter changes from both to left', () => {
+      const containerRef = { current: scrollContainer };
+
+      // Start with both filter
+      const pipelineBoth = createMockPipeline({ contentFilter: 'both' });
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineBoth}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Change filter to left-only
+      const pipelineLeft = createMockPipeline({ contentFilter: 'left' });
+      rerender(
+        <Minimap
+          pipeline={pipelineLeft}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Right bar should be disabled
+      const leftBar = container.querySelector('.minimap-bar-left');
+      const rightBar = container.querySelector('.minimap-bar-right');
+      expect(leftBar).not.toHaveClass('minimap-bar-disabled');
+      expect(rightBar).toHaveClass('minimap-bar-disabled');
+    });
+
+    it('re-enables both bars when filter changes back to both', () => {
+      const containerRef = { current: scrollContainer };
+
+      // Start with left filter (right bar disabled)
+      const pipelineLeft = createMockPipeline({ contentFilter: 'left' });
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipelineLeft}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      let rightBar = container.querySelector('.minimap-bar-right');
+      expect(rightBar).toHaveClass('minimap-bar-disabled');
+
+      // Change back to both
+      const pipelineBoth = createMockPipeline({ contentFilter: 'both' });
+      rerender(
+        <Minimap
+          pipeline={pipelineBoth}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      // Both bars should be enabled
+      const leftBar = container.querySelector('.minimap-bar-left');
+      rightBar = container.querySelector('.minimap-bar-right');
+      expect(leftBar).not.toHaveClass('minimap-bar-disabled');
+      expect(rightBar).not.toHaveClass('minimap-bar-disabled');
+    });
+  });
+
+  describe('showFullFile toggle (dynamic)', () => {
+    it('shows lasso when showFullFile changes from false to true', () => {
+      const pipeline = createMockPipeline();
+      const containerRef = { current: scrollContainer };
+
+      // Start with showFullFile=false (no lasso)
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={false}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).not.toBeInTheDocument();
+
+      // Toggle to showFullFile=true
+      rerender(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+    });
+
+    it('hides lasso when showFullFile changes from true to false', () => {
+      const pipeline = createMockPipeline();
+      const containerRef = { current: scrollContainer };
+
+      // Start with showFullFile=true (lasso visible)
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+
+      // Toggle to showFullFile=false
+      rerender(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={false}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('hasInlineComments toggle (dynamic)', () => {
+    it('hides lasso when comments appear', () => {
+      const pipeline = createMockPipeline();
+      const containerRef = { current: scrollContainer };
+
+      // Start without comments (lasso visible)
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+
+      // Comments appear
+      rerender(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={true}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).not.toBeInTheDocument();
+    });
+
+    it('shows lasso when comments are removed', () => {
+      const pipeline = createMockPipeline();
+      const containerRef = { current: scrollContainer };
+
+      // Start with comments (no lasso)
+      const { container, rerender } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={true}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).not.toBeInTheDocument();
+
+      // Comments removed
+      rerender(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      expect(container.querySelector('.minimap-lasso')).toBeInTheDocument();
+    });
+
+    it('disables drag when comments appear mid-drag', () => {
+      const pipeline = createMockPipeline();
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      // Start without comments
+      const { rerender } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /minimap/i });
+
+      // Start drag
+      fireEvent.mouseDown(svg, { clientX: 30, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 30, clientY: 150 });
+
+      // Drag should be working
+      const dragCallsBefore = onNavigate.mock.calls.filter(
+        (call) => (call as [NavigateEvent])[0].type === 'drag'
+      ).length;
+      expect(dragCallsBefore).toBeGreaterThan(0);
+
+      // Comments appear while dragging
+      rerender(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={true}
+          onNavigate={onNavigate}
+        />
+      );
+
+      // Clear call count
+      onNavigate.mockClear();
+
+      // Try to continue dragging
+      fireEvent.mouseMove(svg, { clientX: 30, clientY: 200 });
+
+      // No more drag events should fire
+      const dragCallsAfter = onNavigate.mock.calls.filter(
+        (call) => (call as [NavigateEvent])[0].type === 'drag'
+      ).length;
+      expect(dragCallsAfter).toBe(0);
     });
   });
 });

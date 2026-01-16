@@ -176,6 +176,7 @@ export function Minimap({
 
       const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
       // Set scroll position directly from ratio - instant scrolling
+      // eslint-disable-next-line react-hooks/immutability -- We're modifying the DOM element's scroll position, not the ref
       scrollEl.scrollTop = ratio * maxScroll;
     },
     [scrollContainerRef]

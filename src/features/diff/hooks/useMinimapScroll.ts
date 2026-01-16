@@ -89,7 +89,7 @@ export function useMinimapScroll(
   const handleScroll = useCallback((event: Event) => {
     const target = event.target as HTMLElement;
     const newState = calculateScrollState(target);
-    setScrollState(prev => ({ ...newState, key: contentKey }));
+    setScrollState({ ...newState, key: contentKey });
   }, [calculateScrollState, contentKey]);
 
   // Set up scroll listener - re-runs when contentKey changes to recalculate state

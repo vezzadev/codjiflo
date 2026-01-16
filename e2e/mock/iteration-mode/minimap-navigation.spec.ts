@@ -24,8 +24,16 @@ test.describe("Minimap navigation without inline comments", () => {
     "\nconst added = 'new line';\n" +
     createLargeContent(49, "const base =");
 
+  // Create a much larger file for testing lasso proportional sizing
+  const veryLargeBaseContent = createLargeContent(500, "const config =");
+  const veryLargeHeadContent =
+    createLargeContent(250, "const config =") +
+    "\nconst newConfig = 'added';\n" +
+    createLargeContent(249, "const config =");
+
   const initialFiles = {
     "src/large-file.ts": baseContent,
+    "src/very-large-file.ts": veryLargeBaseContent,
   };
 
   const patch1 = `From abc123 Mon Sep 17 00:00:00 2001
@@ -42,6 +50,16 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 +const added = 'new line';
  const base = line 51
  const base = line 52
+
+diff --git a/src/very-large-file.ts b/src/very-large-file.ts
+--- a/src/very-large-file.ts
++++ b/src/very-large-file.ts
+@@ -248,6 +248,7 @@ const config = line 248
+ const config = line 249
+ const config = line 250
++const newConfig = 'added';
+ const config = line 251
+ const config = line 252
 `;
 
   const mockPR: MockPR = {
@@ -80,6 +98,21 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       baseContent,
       headContent,
     },
+    {
+      filename: "src/very-large-file.ts",
+      status: "modified",
+      additions: 1,
+      deletions: 0,
+      changes: 1,
+      patch: `@@ -248,6 +248,7 @@ const config = line 248
+ const config = line 249
+ const config = line 250
++const newConfig = 'added';
+ const config = line 251
+ const config = line 252`,
+      baseContent: veryLargeBaseContent,
+      headContent: veryLargeHeadContent,
+    },
   ];
 
   test.beforeEach(async ({ page }) => {
@@ -104,7 +137,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Wait for file navigation and click file
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("large-file.ts").click();
+    await fileNav.getByText("large-file.ts", { exact: true }).click();
 
     // Wait for diff to load
     await expect(
@@ -124,7 +157,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("large-file.ts").click();
+    await fileNav.getByText("large-file.ts", { exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: "src/large-file.ts" })
@@ -146,7 +179,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("large-file.ts").click();
+    await fileNav.getByText("large-file.ts", { exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: "src/large-file.ts" })
@@ -166,7 +199,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
-    await fileNav.getByText("large-file.ts").click();
+    await fileNav.getByText("large-file.ts", { exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: "src/large-file.ts" })
@@ -192,6 +225,74 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Verify scrolling happened by checking that later lines are visible
     // After clicking bottom of minimap, we should see lines near the end
-    await expect(page.getByText(/line 9\d/)).toBeVisible();
+    await expect(page.getByText(/line 9\d/).first()).toBeVisible();
+  });
+
+  test("minimap resets lasso when switching files", async ({ page }) => {
+    // This test validates the contentKey bug fix:
+    // When switching files, the minimap lasso should reset to top position
+    // and reflect the new file's proportional viewport size
+    await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    // Click on first file
+    await fileNav.getByText("large-file.ts", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "src/large-file.ts" })
+    ).toBeVisible();
+
+    // Enable full file mode (F key) to show lasso
+    await page.keyboard.press("f");
+
+    const minimap = page.getByRole("img", { name: /minimap/i });
+    await expect(minimap).toBeVisible();
+
+    // Get initial lasso state
+    const lassoInitial = minimap.locator(".minimap-lasso");
+    await expect(lassoInitial).toBeVisible();
+
+    // Scroll down in the first file by clicking bottom of minimap
+    const minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
+    await page.mouse.click(
+      minimapBox.x + minimapBox.width / 2,
+      minimapBox.y + minimapBox.height * 0.8
+    );
+
+    // Wait for scroll to take effect (lines in 90s should be visible)
+    await expect(page.getByText(/line 9\d/).first()).toBeVisible();
+
+    // Get lasso "d" attribute after scrolling (should be lower on the bar)
+    const pathAfterScroll = await lassoInitial.getAttribute("d");
+
+    // Now switch to the very large file
+    await fileNav.getByText("very-large-file.ts").click();
+    await expect(
+      page.getByRole("heading", { name: "src/very-large-file.ts" })
+    ).toBeVisible();
+
+    // Verify minimap is still visible
+    await expect(minimap).toBeVisible();
+
+    // Get lasso after file switch
+    const lassoAfterSwitch = minimap.locator(".minimap-lasso");
+    await expect(lassoAfterSwitch).toBeVisible();
+
+    // Get the "d" attribute after switching files
+    const pathAfterSwitch = await lassoAfterSwitch.getAttribute("d");
+
+    // The lasso path should be different after switching files
+    // (it should reset to top position for the new file)
+    // Using if-throw pattern to avoid linter auto-fix issues
+    if (pathAfterScroll === pathAfterSwitch) {
+      throw new Error(`Lasso path should change after file switch. Got: ${pathAfterScroll ?? "null"}`);
+    }
+
+    // Additional verification: the lasso should be near the top (scrollRatio ~0)
+    // This is hard to assert directly, but we can verify the diff content is at line 1
+    await expect(page.getByText(/const config = line 1$/)).toBeVisible();
   });
 });
