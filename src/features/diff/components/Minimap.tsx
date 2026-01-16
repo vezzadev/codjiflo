@@ -113,7 +113,10 @@ export function Minimap({
     // Lasso is hidden when:
     // 1. Not in full file mode
     // 2. Comments are visible (showComments=true)
-    if (!showFullFile || showComments) {
+    // 3. Scroll state not yet initialized (viewportRatio === 0)
+    //    This prevents the lasso from appearing at full-bar-height before
+    //    the actual viewport ratio is calculated from the DOM.
+    if (!showFullFile || showComments || scrollState.viewportRatio === 0) {
       return null;
     }
 

@@ -3,9 +3,16 @@
  *
  * Tracks scroll state of a container for minimap viewport lasso positioning.
  * Uses a single scroll event listener for efficient updates.
+ *
+ * The hook returns viewportRatio: 0 until it finds a valid scroll container with
+ * significant scroll range (> 100px). This prevents incorrect lasso sizing when
+ * multiple overflow elements exist (e.g., wrapper vs react-window list).
+ *
+ * The minimap component should hide the lasso when viewportRatio === 0 to avoid
+ * showing a full-bar-height lasso before the actual ratio is calculated.
  */
 
-import { useCallback, useEffect, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useState, useRef, type RefObject } from 'react';
 
 // ============================================================================
 // Types
@@ -21,10 +28,10 @@ export interface ScrollState {
   viewportRatio: number;
 }
 
-/** Default scroll state */
+/** Default scroll state - viewportRatio of 0 means "not initialized" */
 const DEFAULT_SCROLL_STATE: ScrollState = {
   scrollRatio: 0,
-  viewportRatio: 1,
+  viewportRatio: 0,
 };
 
 // ============================================================================
@@ -44,25 +51,56 @@ export function useMinimapScroll(
   containerHeight: number,
   contentKey?: string
 ): { scrollState: ScrollState } {
-  // Use contentKey to force state reset by including it in state key
-  // This pattern avoids setState in effect by using state with a key
   const [scrollState, setScrollState] = useState<ScrollState & { key: string | undefined }>({
     ...DEFAULT_SCROLL_STATE,
     key: contentKey,
   });
 
+  // Track if we've done initial measurement to avoid double calculation
+  const initializedRef = useRef(false);
+
   // Find the scrollable element within the container
+  // Returns null if no valid scrollable element is found (react-window not yet rendered)
   const findScrollableElement = useCallback((): HTMLElement | null => {
     const container = containerRef.current;
     if (!container) return null;
 
     // For react-window, look for element with overflow style
-    const scrollEl =
-      container.querySelector<HTMLElement>('[style*="overflow"]') ??
-      container.querySelector<HTMLElement>('.side-by-side-pane-left') ??
-      container;
+    // There may be multiple elements with overflow; we need the one with the most scrollable content
+    const candidates = container.querySelectorAll<HTMLElement>('[style*="overflow"]');
 
-    return scrollEl;
+    // Find the element with the largest scrollable range (scrollHeight - clientHeight)
+    // This ensures we get the actual react-window list, not a wrapper with minimal scroll
+    let bestEl: HTMLElement | null = null;
+    let maxScrollRange = 0;
+
+    for (const el of candidates) {
+      const scrollRange = el.scrollHeight - el.clientHeight;
+      if (scrollRange > maxScrollRange) {
+        maxScrollRange = scrollRange;
+        bestEl = el;
+      }
+    }
+
+    // Only return if we found an element with meaningful scroll range
+    // A file with 500 lines should have scrollRange > 1000 (500 * 23px line height - viewport)
+    // Threshold of 100px prevents selecting elements with minor overflow
+    if (bestEl && maxScrollRange > 100) {
+      return bestEl;
+    }
+
+    // Fallback for side-by-side view
+    const sxsPane = container.querySelector<HTMLElement>('.side-by-side-pane-left');
+    if (sxsPane) {
+      const sxsScrollRange = sxsPane.scrollHeight - sxsPane.clientHeight;
+      if (sxsScrollRange > 100) {
+        return sxsPane;
+      }
+    }
+
+    // If no scrollable element found yet, return null to indicate not ready
+    // This prevents incorrect viewportRatio calculation from non-scrollable elements
+    return null;
   }, [containerRef]);
 
   // Calculate scroll state from element
@@ -71,8 +109,9 @@ export function useMinimapScroll(
     const clientHeight = el.clientHeight;
     const scrollTop = el.scrollTop;
 
+    // If content fits in viewport, no scrolling needed
     if (scrollHeight <= clientHeight) {
-      return DEFAULT_SCROLL_STATE;
+      return { scrollRatio: 0, viewportRatio: 1 };
     }
 
     const maxScroll = scrollHeight - clientHeight;
@@ -85,39 +124,55 @@ export function useMinimapScroll(
     };
   }, []);
 
-  // Handle scroll events - callback, so setState is allowed
+  // Handle scroll events
   const handleScroll = useCallback((event: Event) => {
     const target = event.target as HTMLElement;
     const newState = calculateScrollState(target);
     setScrollState({ ...newState, key: contentKey });
   }, [calculateScrollState, contentKey]);
 
-  // Set up scroll listener - re-runs when contentKey changes to recalculate state
+  // Set up scroll listener and calculate initial state
+  // Uses polling via rAF to wait for react-window to render if needed
   useEffect(() => {
-    const scrollEl = findScrollableElement();
-    if (!scrollEl) return;
+    let rafId: number;
+    let currentScrollEl: HTMLElement | null = null;
+    let isCleanedUp = false;
 
-    // Use requestAnimationFrame to read initial state asynchronously
-    const rafId = requestAnimationFrame(() => {
+    // Poll until we find a valid scrollable element (react-window rendered)
+    const trySetup = () => {
+      if (isCleanedUp) return;
+
+      const scrollEl = findScrollableElement();
+      if (!scrollEl) {
+        // Element not ready yet, retry on next frame
+        rafId = requestAnimationFrame(trySetup);
+        return;
+      }
+
+      // Found scrollable element - set up listener and calculate initial state
+      currentScrollEl = scrollEl;
       const initialState = calculateScrollState(scrollEl);
       setScrollState({ ...initialState, key: contentKey });
-    });
+      initializedRef.current = true;
 
-    // Add scroll listener
-    scrollEl.addEventListener('scroll', handleScroll);
+      // Add scroll listener
+      scrollEl.addEventListener('scroll', handleScroll);
+    };
+
+    // Start polling
+    rafId = requestAnimationFrame(trySetup);
 
     return () => {
+      isCleanedUp = true;
       cancelAnimationFrame(rafId);
-      scrollEl.removeEventListener('scroll', handleScroll);
+      if (currentScrollEl) {
+        currentScrollEl.removeEventListener('scroll', handleScroll);
+      }
+      initializedRef.current = false;
     };
   }, [findScrollableElement, calculateScrollState, handleScroll, containerHeight, contentKey]);
 
-  // If contentKey changed, return default state and schedule update
-  if (contentKey !== scrollState.key) {
-    // Return default state immediately for new content
-    // The effect will update with actual scroll state
-    return { scrollState: { ...DEFAULT_SCROLL_STATE } };
-  }
-
-  return { scrollState: { scrollRatio: scrollState.scrollRatio, viewportRatio: scrollState.viewportRatio } };
+  // Return current state - the effect will update it asynchronously when ready
+  // viewportRatio: 0 indicates "not initialized" and hides the lasso
+  return { scrollState };
 }
