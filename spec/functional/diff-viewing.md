@@ -327,6 +327,19 @@ interface OverviewMargin {
 
 Minimap navigation (click and drag) scrolls the diff view instantly without any smooth scroll animation. This provides immediate visual feedback and responsive drag scrolling. Direct `scrollTop` assignment is used rather than `scrollTo({ behavior: 'smooth' })`.
 
+**Scroll Ratio Calculation:**
+
+Navigation uses a direct scroll ratio approach:
+1. **Click Y position** is converted to a ratio (0-1) relative to the clicked bar: `ratio = (y - barTop) / barHeight`
+2. **Ratio is applied directly** to the scroll container: `scrollTop = ratio * maxScroll`
+
+This ensures proportional navigation:
+- Clicking at the **top** of a bar (Y = barTop) scrolls to the top (scrollTop = 0)
+- Clicking at the **bottom** of a bar (Y = barTop + barHeight) scrolls to the bottom (scrollTop = maxScroll)
+- Clicking at **50%** of the bar scrolls to 50% of the file
+
+The ratio is clamped to [0, 1] to handle clicks outside bar bounds gracefully.
+
 ### Comment Margins
 
 Multiple margin types for comment display:

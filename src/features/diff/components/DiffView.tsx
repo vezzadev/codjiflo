@@ -21,7 +21,7 @@ import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { ShikiTokensProvider } from './ShikiTokensContext';
-import { Minimap, type NavigateEvent } from './Minimap';
+import { Minimap } from './Minimap';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
@@ -109,34 +109,6 @@ export function DiffView() {
 
   // Check if inline comments are present
   const hasInlineComments = pipeline.threadsByLineAndSide.size > 0;
-
-  // Handler for minimap navigation
-  const handleMinimapNavigate = useCallback(
-    (event: NavigateEvent) => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-
-      // Find the scrollable element within the container
-      const scrollEl =
-        container.querySelector<HTMLElement>('[style*="overflow"]') ??
-        container.querySelector<HTMLElement>('.side-by-side-pane-left') ??
-        container;
-
-      const totalLines = event.side === 'left'
-        ? pipeline.diffLines.filter(l => l.oldLineNumber !== null).length || pipeline.diffLines.length
-        : pipeline.diffLines.length;
-
-      if (totalLines === 0) return;
-
-      const scrollRatio = event.lineNumber / totalLines;
-      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
-      const targetScroll = scrollRatio * maxScroll;
-
-      // Direct assignment for instant scrolling (no animation)
-      scrollEl.scrollTop = targetScroll;
-    },
-    [pipeline.diffLines]
-  );
 
   // Fallback: extract line contents for non-iteration mode (multi-line comment support)
   const visibleLines = useMemo(() => {
@@ -259,8 +231,7 @@ export function DiffView() {
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
               hasInlineComments={hasInlineComments}
-              onNavigate={handleMinimapNavigate}
-            />
+                          />
           </div>
         ) : (
           <div
@@ -303,8 +274,7 @@ export function DiffView() {
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
               hasInlineComments={hasInlineComments}
-              onNavigate={handleMinimapNavigate}
-            />
+                          />
           </div>
         )}
       </ShikiTokensProvider>

@@ -137,26 +137,42 @@ export function Minimap({
     barHeights,
   ]);
 
-  // Convert Y position to line number
-  const yToLineNumber = useCallback(
+  // Convert Y position to scroll ratio (0-1) based on bar position
+  const yToScrollRatio = useCallback(
     (y: number, side: 'left' | 'right'): number => {
       const barTop = side === 'left' ? leftBarTop : rightBarTop;
       const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
-      const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
 
-      if (barHeight === 0 || lineCount === 0) return 0;
+      if (barHeight === 0) return 0;
 
-      const ratio = Math.max(0, Math.min(1, (y - barTop) / barHeight));
-      return Math.floor(ratio * lineCount);
+      // Clamp y to bar bounds and return ratio
+      return Math.max(0, Math.min(1, (y - barTop) / barHeight));
     },
-    [barHeights, lineCounts, leftBarTop, rightBarTop]
+    [barHeights, leftBarTop, rightBarTop]
+  );
+
+  // Navigate to scroll position by ratio (0-1) - instant, no animation
+  const navigateToRatio = useCallback(
+    (ratio: number) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      // Find actual scroll container (virtualized container or SxS pane)
+      const scrollEl =
+        container.querySelector<HTMLElement>('[style*="overflow"]') ??
+        container.querySelector<HTMLElement>('.side-by-side-pane-left') ??
+        container;
+
+      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+      // Set scroll position directly from ratio - instant scrolling
+      scrollEl.scrollTop = ratio * maxScroll;
+    },
+    [scrollContainerRef]
   );
 
   // Handle click navigation
   const handleClick = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
-      if (!onNavigate) return;
-
       const svg = svgRef.current;
       if (!svg) return;
 
@@ -165,11 +181,19 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = getClickSide(x);
-      const lineNumber = yToLineNumber(y, side);
+      const ratio = yToScrollRatio(y, side);
 
-      onNavigate({ lineNumber, side, type: 'click' });
+      // Navigate using scroll ratio for accurate positioning
+      navigateToRatio(ratio);
+
+      // Call external callback if provided (for testing/external tracking)
+      if (onNavigate) {
+        const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
+        const lineNumber = Math.floor(ratio * lineCount);
+        onNavigate({ lineNumber, side, type: 'click' });
+      }
     },
-    [onNavigate, yToLineNumber]
+    [onNavigate, yToScrollRatio, navigateToRatio, lineCounts]
   );
 
   // Handle mouse down (start drag)
@@ -196,7 +220,7 @@ export function Minimap({
   // Handle mouse move (during drag)
   const handleMouseMove = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
-      if (!isDragging || !onNavigate || hasInlineComments) return;
+      if (!isDragging || hasInlineComments) return;
 
       const svg = svgRef.current;
       if (!svg) return;
@@ -205,11 +229,19 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = dragSideRef.current;
-      const lineNumber = yToLineNumber(y, side);
+      const ratio = yToScrollRatio(y, side);
 
-      onNavigate({ lineNumber, side, type: 'drag' });
+      // Navigate using scroll ratio
+      navigateToRatio(ratio);
+
+      // Call external callback if provided
+      if (onNavigate) {
+        const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
+        const lineNumber = Math.floor(ratio * lineCount);
+        onNavigate({ lineNumber, side, type: 'drag' });
+      }
     },
-    [isDragging, onNavigate, hasInlineComments, yToLineNumber]
+    [isDragging, hasInlineComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
   );
 
   // Handle mouse up (end drag)

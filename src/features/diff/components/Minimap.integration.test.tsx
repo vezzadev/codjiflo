@@ -254,6 +254,145 @@ describe('Minimap component', () => {
         expect.objectContaining({ side: 'right' })
       );
     });
+
+    it('scrolls to bottom when clicking at bottom of bar (scroll ratio)', () => {
+      // This test verifies the scroll ratio calculation:
+      // Clicking at bottom of bar (Y = barTop + barHeight) should scroll to maxScroll
+      const pipeline = createMockPipeline();
+      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+
+      // Setup scrollable with known dimensions
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
+      scrollable.scrollTop = 0;
+
+      const containerRef = { current: scrollContainer };
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      const svg = container.querySelector('svg') as SVGSVGElement;
+
+      // Mock getBoundingClientRect to return known bounds
+      const originalGetBoundingClientRect = svg.getBoundingClientRect;
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // For containerHeight=500 with PADDING_VERTICAL=10:
+      // renderAreaHeight = 500 - 2*10 = 480
+      // barTop = 10 (renderAreaTop)
+      // For equal line counts, both bars have height = 480
+      // Bottom of bar: y = barTop + barHeight = 10 + 480 = 490
+      // Click at bottom of right bar: clientX=45, clientY=490
+      fireEvent.click(svg, { clientX: 45, clientY: 490 });
+
+      // maxScroll = scrollHeight - clientHeight = 1000 - 500 = 500
+      // At ratio=1.0 (bottom of bar), scrollTop should be 500
+      expect(scrollable.scrollTop).toBe(500);
+
+      // Restore
+      svg.getBoundingClientRect = originalGetBoundingClientRect;
+    });
+
+    it('scrolls to top when clicking at top of bar', () => {
+      const pipeline = createMockPipeline();
+      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+
+      // Setup scrollable with known dimensions, start scrolled down
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
+      scrollable.scrollTop = 250; // Start in the middle
+
+      const containerRef = { current: scrollContainer };
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      const svg = container.querySelector('svg') as SVGSVGElement;
+
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // Top of bar: y = barTop = 10 (PADDING_VERTICAL)
+      // Click at top of right bar: clientX=45, clientY=10
+      fireEvent.click(svg, { clientX: 45, clientY: 10 });
+
+      // At ratio=0.0 (top of bar), scrollTop should be 0
+      expect(scrollable.scrollTop).toBe(0);
+    });
+
+    it('scrolls to middle when clicking at middle of bar', () => {
+      const pipeline = createMockPipeline();
+      const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
+
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
+      scrollable.scrollTop = 0;
+
+      const containerRef = { current: scrollContainer };
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          hasInlineComments={false}
+        />
+      );
+
+      const svg = container.querySelector('svg') as SVGSVGElement;
+
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // For barTop=10, barHeight=480, middle = 10 + 240 = 250
+      fireEvent.click(svg, { clientX: 45, clientY: 250 });
+
+      // At ratio=0.5 (middle of bar), scrollTop should be 250 (0.5 * 500)
+      expect(scrollable.scrollTop).toBe(250);
+    });
   });
 
   describe('drag navigation', () => {
