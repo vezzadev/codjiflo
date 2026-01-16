@@ -252,7 +252,7 @@ function SideBySideRow({
 
 /**
  * Side-by-side diff view using react-window
- * Used when diff has more than 500 lines for better performance
+ * Virtualized rendering is always enabled for optimal performance
  */
 export function SideBySideDiffView({
   alignedLines,
