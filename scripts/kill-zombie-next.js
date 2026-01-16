@@ -1,13 +1,15 @@
 import { execSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import { join } from "path";
 
 const LOCK_FILE = join(process.cwd(), ".next", "dev", "lock");
+const NEXT_CACHE = join(process.cwd(), ".next");
 const PROJECT_PATH = process.cwd().replace(/\//g, "\\"); // Normalize to Windows paths
 
 /**
  * Kills zombie Next.js dev server for THIS project only.
  * Detects the lock file and finds node processes with this project's path.
+ * Also wipes .next cache to ensure clean restart.
  */
 function killZombieNextProcess() {
   if (!existsSync(LOCK_FILE)) {
@@ -57,6 +59,14 @@ function killZombieNextProcess() {
   execSync("pwsh.exe -NoProfile -Command Start-Sleep -Milliseconds 500", {
     stdio: "ignore",
   });
+
+  // Wipe .next cache for clean restart
+  try {
+    rmSync(NEXT_CACHE, { recursive: true, force: true });
+    console.log("Wiped .next cache");
+  } catch {
+    // Ignore if already deleted or inaccessible
+  }
 }
 
 killZombieNextProcess();
