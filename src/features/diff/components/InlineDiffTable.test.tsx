@@ -32,8 +32,8 @@ vi.mock('react-window', () => ({
   useDynamicRowHeight: () => ({
     getAverageRowHeight: () => 23,
     getRowHeight: () => 23,
-    setRowHeight: () => {},
-    observeRowElements: () => () => {},
+    setRowHeight: () => { /* noop */ },
+    observeRowElements: () => () => { /* noop */ },
   }),
 }));
 
