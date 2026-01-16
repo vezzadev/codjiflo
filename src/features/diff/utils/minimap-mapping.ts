@@ -410,6 +410,7 @@ export function calculateBarHeights(
  *
  * The lasso can have different heights on each bar when files have different
  * line counts or when scrolling through regions with additions/deletions.
+ * Each bar is centered vertically, so leftBarTop and rightBarTop may differ.
  *
  * @param params - Calculation parameters
  * @returns Lasso coordinates or null if cannot calculate
@@ -419,8 +420,9 @@ export function calculateAsymmetricViewportLasso(params: {
   viewportRatio: number;
   leftLineCount: number;
   rightLineCount: number;
-  renderAreaTop: number;
+  leftBarTop: number;
   leftBarHeight: number;
+  rightBarTop: number;
   rightBarHeight: number;
 }): ViewportLasso | null {
   const {
@@ -428,8 +430,9 @@ export function calculateAsymmetricViewportLasso(params: {
     viewportRatio,
     leftLineCount,
     rightLineCount,
-    renderAreaTop,
+    leftBarTop,
     leftBarHeight,
+    rightBarTop,
     rightBarHeight,
   } = params;
 
@@ -441,12 +444,12 @@ export function calculateAsymmetricViewportLasso(params: {
   const leftLassoHeight = Math.max(4, viewportRatio * leftBarHeight);
   const rightLassoHeight = Math.max(4, viewportRatio * rightBarHeight);
 
-  // Calculate top positions based on scroll ratio
+  // Calculate top positions based on scroll ratio (within each bar's bounds)
   const leftScrollableRange = leftBarHeight - leftLassoHeight;
   const rightScrollableRange = rightBarHeight - rightLassoHeight;
 
-  const leftTop = renderAreaTop + scrollRatio * leftScrollableRange;
-  const rightTop = renderAreaTop + scrollRatio * rightScrollableRange;
+  const leftTop = leftBarTop + scrollRatio * leftScrollableRange;
+  const rightTop = rightBarTop + scrollRatio * rightScrollableRange;
 
   return {
     leftTop,

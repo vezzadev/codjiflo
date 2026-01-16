@@ -98,6 +98,10 @@ export function Minimap({
     );
   }, [lineCounts, renderAreaHeight]);
 
+  // Center bars vertically within render area
+  const leftBarTop = renderAreaTop + (renderAreaHeight - barHeights.leftHeight) / 2;
+  const rightBarTop = renderAreaTop + (renderAreaHeight - barHeights.rightHeight) / 2;
+
   // Calculate diff regions for highlighting
   const regions = useMemo(() => {
     const lines = viewMode === 'split' ? alignedLines : diffLines;
@@ -118,8 +122,9 @@ export function Minimap({
       viewportRatio: scrollState.viewportRatio,
       leftLineCount: lineCounts.leftLineCount,
       rightLineCount: lineCounts.rightLineCount,
-      renderAreaTop,
+      leftBarTop,
       leftBarHeight: barHeights.leftHeight,
+      rightBarTop,
       rightBarHeight: barHeights.rightHeight,
     });
   }, [
@@ -127,22 +132,24 @@ export function Minimap({
     hasInlineComments,
     scrollState,
     lineCounts,
-    renderAreaTop,
+    leftBarTop,
+    rightBarTop,
     barHeights,
   ]);
 
   // Convert Y position to line number
   const yToLineNumber = useCallback(
     (y: number, side: 'left' | 'right'): number => {
+      const barTop = side === 'left' ? leftBarTop : rightBarTop;
       const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
       const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
 
       if (barHeight === 0 || lineCount === 0) return 0;
 
-      const ratio = Math.max(0, Math.min(1, (y - renderAreaTop) / barHeight));
+      const ratio = Math.max(0, Math.min(1, (y - barTop) / barHeight));
       return Math.floor(ratio * lineCount);
     },
-    [barHeights, lineCounts, renderAreaTop]
+    [barHeights, lineCounts, leftBarTop, rightBarTop]
   );
 
   // Handle click navigation
@@ -221,13 +228,14 @@ export function Minimap({
   const renderRegions = (
     regionList: DiffRegion[],
     barX: number,
+    barTop: number,
     barHeight: number,
     className: string
   ) => {
     if (barHeight === 0) return null;
 
     return regionList.map((region, index) => {
-      const y = renderAreaTop + region.startRatio * barHeight;
+      const y = barTop + region.startRatio * barHeight;
       const height = (region.endRatio - region.startRatio) * barHeight;
 
       return (
@@ -265,7 +273,7 @@ export function Minimap({
       <rect
         className={`minimap-bar minimap-bar-left${isLeftDisabled ? ' minimap-bar-disabled' : ''}`}
         x={LEFT_BAR_X}
-        y={renderAreaTop}
+        y={leftBarTop}
         width={BAR_WIDTH}
         height={barHeights.leftHeight}
       />
@@ -274,7 +282,7 @@ export function Minimap({
       <rect
         className={`minimap-bar minimap-bar-right${isRightDisabled ? ' minimap-bar-disabled' : ''}`}
         x={RIGHT_BAR_X}
-        y={renderAreaTop}
+        y={rightBarTop}
         width={BAR_WIDTH}
         height={barHeights.rightHeight}
       />
@@ -283,6 +291,7 @@ export function Minimap({
       {!isLeftDisabled && renderRegions(
         regions.leftRegions,
         LEFT_BAR_X,
+        leftBarTop,
         barHeights.leftHeight,
         'minimap-deletion'
       )}
@@ -291,6 +300,7 @@ export function Minimap({
       {!isRightDisabled && renderRegions(
         regions.rightRegions,
         RIGHT_BAR_X,
+        rightBarTop,
         barHeights.rightHeight,
         'minimap-addition'
       )}

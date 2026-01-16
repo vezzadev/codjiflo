@@ -347,8 +347,8 @@ describe('calculateBarHeights', () => {
 // ============================================================================
 
 describe('calculateAsymmetricViewportLasso', () => {
-  const renderAreaTop = 10;
-  const renderAreaHeight = 200;
+  const leftBarTop = 10;
+  const rightBarTop = 10;
   const leftBarHeight = 200;
   const rightBarHeight = 200;
 
@@ -358,22 +358,24 @@ describe('calculateAsymmetricViewportLasso', () => {
       viewportRatio: 0.5,
       leftLineCount: 0,
       rightLineCount: 0,
-      renderAreaTop,
+      leftBarTop,
       leftBarHeight,
+      rightBarTop,
       rightBarHeight,
     });
     expect(result).toBeNull();
   });
 
-  it('calculates symmetric lasso for equal line counts', () => {
+  it('calculates symmetric lasso for equal line counts and bar positions', () => {
     const result = calculateAsymmetricViewportLasso({
       scrollRatio: 0,
       viewportRatio: 0.3,
       leftLineCount: 100,
       rightLineCount: 100,
-      renderAreaTop,
-      leftBarHeight: renderAreaHeight,
-      rightBarHeight: renderAreaHeight,
+      leftBarTop,
+      leftBarHeight: 200,
+      rightBarTop,
+      rightBarHeight: 200,
     });
 
     expect(result).not.toBeNull();
@@ -388,8 +390,9 @@ describe('calculateAsymmetricViewportLasso', () => {
       viewportRatio: 0.5,
       leftLineCount: 50,
       rightLineCount: 100,
-      renderAreaTop,
+      leftBarTop: 60, // Centered: 10 + (200 - 100) / 2 = 60
       leftBarHeight: 100, // Shorter bar for fewer lines
+      rightBarTop: 10,
       rightBarHeight: 200,
     });
 
@@ -405,15 +408,16 @@ describe('calculateAsymmetricViewportLasso', () => {
       viewportRatio: 0.2,
       leftLineCount: 100,
       rightLineCount: 100,
-      renderAreaTop,
-      leftBarHeight: renderAreaHeight,
-      rightBarHeight: renderAreaHeight,
+      leftBarTop,
+      leftBarHeight: 200,
+      rightBarTop,
+      rightBarHeight: 200,
     });
 
     expect(result).not.toBeNull();
     if (!result) return; // Type guard
-    expect(result.leftTop).toBe(renderAreaTop);
-    expect(result.rightTop).toBe(renderAreaTop);
+    expect(result.leftTop).toBe(leftBarTop);
+    expect(result.rightTop).toBe(rightBarTop);
   });
 
   it('positions lasso at end when scrollRatio is 1', () => {
@@ -422,15 +426,35 @@ describe('calculateAsymmetricViewportLasso', () => {
       viewportRatio: 0.2,
       leftLineCount: 100,
       rightLineCount: 100,
-      renderAreaTop,
-      leftBarHeight: renderAreaHeight,
-      rightBarHeight: renderAreaHeight,
+      leftBarTop,
+      leftBarHeight: 200,
+      rightBarTop,
+      rightBarHeight: 200,
     });
 
     expect(result).not.toBeNull();
     if (!result) return; // Type guard
-    expect(result.leftBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
-    expect(result.rightBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
+    expect(result.leftBottom).toBeCloseTo(leftBarTop + 200, 0);
+    expect(result.rightBottom).toBeCloseTo(rightBarTop + 200, 0);
+  });
+
+  it('handles bars at different top positions (centered bars)', () => {
+    // When bars have different heights and are centered, they have different tops
+    const result = calculateAsymmetricViewportLasso({
+      scrollRatio: 0,
+      viewportRatio: 0.2,
+      leftLineCount: 50,
+      rightLineCount: 100,
+      leftBarTop: 60, // Shorter bar centered: 10 + (200 - 100) / 2 = 60
+      leftBarHeight: 100,
+      rightBarTop: 10, // Full height bar at top
+      rightBarHeight: 200,
+    });
+
+    expect(result).not.toBeNull();
+    if (!result) return; // Type guard
+    expect(result.leftTop).toBe(60); // Starts at centered position
+    expect(result.rightTop).toBe(10); // Starts at normal position
   });
 });
 

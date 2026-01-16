@@ -276,6 +276,23 @@ Minimap has two bars, with 100% of their height visible at all times. The left b
 | Inline | Left edge of diff content |
 | Side-by-Side | Center, between left and right panes |
 
+**Bar Heights and Centering:**
+
+Bar heights are proportional to the number of lines in each original file. The bar with more lines gets full render area height; the shorter file's bar is proportionally smaller. Both bars are **centered vertically** within the render area, meaning:
+- If the left file has fewer lines than the right, the left bar is shorter and centered
+- If the right file has fewer lines than the left, the right bar is shorter and centered
+- When files have equal line counts, both bars have equal height
+
+This centering ensures asymmetric diffs remain visually balanced and the lasso correctly tracks viewport position on each bar independently.
+
+**Colors:**
+
+| Element | CSS Variable | Purpose |
+|---------|-------------|---------|
+| Deletions | `--diff-delete-word` | Red highlight on left bar |
+| Additions | `--diff-add-word` | Green highlight on right bar |
+| Lasso stroke | `#505050` | Gray outline around visible viewport |
+
 **Lasso Visibility Rules:**
 
 Lasso visibility is determined by the following combined conditions:
