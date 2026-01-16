@@ -259,17 +259,19 @@ export function InlineDiffTable({
 
     if (longestContent.length === 0) return;
 
-    // Wait for a rendered diff-content cell to exist so we can copy its computed styles
-    const existingCell = container.querySelector('.diff-content');
-    if (!existingCell) {
-      // No cell rendered yet - will be handled by ResizeObserver when rows render
+    // Wait for a rendered diff-code element to exist so we can copy its computed styles.
+    // We must query .diff-code (the inner code/pre element), not .diff-content (the td cell),
+    // because .diff-code uses monospace font while .diff-content inherits the default font.
+    const existingCode = container.querySelector('.diff-code');
+    if (!existingCode) {
+      // No code rendered yet - will be handled by ResizeObserver when rows render
       return;
     }
 
-    // Get the actual computed styles from a rendered cell
-    const cellStyles = getComputedStyle(existingCell);
+    // Get the actual computed styles from the rendered code element
+    const codeStyles = getComputedStyle(existingCode);
 
-    // Create a hidden measuring element with the same styles as actual diff content
+    // Create a hidden measuring element with the same styles as actual diff code
     const measurer = document.createElement('div');
     measurer.style.cssText = `
       position: absolute;
@@ -277,10 +279,10 @@ export function InlineDiffTable({
       height: auto;
       width: auto;
       white-space: pre;
-      font-family: ${cellStyles.fontFamily};
-      font-size: ${cellStyles.fontSize};
-      font-weight: ${cellStyles.fontWeight};
-      letter-spacing: ${cellStyles.letterSpacing};
+      font-family: ${codeStyles.fontFamily};
+      font-size: ${codeStyles.fontSize};
+      font-weight: ${codeStyles.fontWeight};
+      letter-spacing: ${codeStyles.letterSpacing};
     `;
     // Add line number column widths (approx 80px for two columns + gutter)
     const lineNumberWidth = lineNumberMode === 'both' ? 120 : 80;
