@@ -259,17 +259,28 @@ export function InlineDiffTable({
 
     if (longestContent.length === 0) return;
 
-    // Create a hidden measuring element with the same styles as diff content
+    // Wait for a rendered diff-content cell to exist so we can copy its computed styles
+    const existingCell = container.querySelector('.diff-content');
+    if (!existingCell) {
+      // No cell rendered yet - will be handled by ResizeObserver when rows render
+      return;
+    }
+
+    // Get the actual computed styles from a rendered cell
+    const cellStyles = getComputedStyle(existingCell);
+
+    // Create a hidden measuring element with the same styles as actual diff content
     const measurer = document.createElement('div');
-    measurer.className = 'diff-content-measurer';
     measurer.style.cssText = `
       position: absolute;
       visibility: hidden;
       height: auto;
       width: auto;
       white-space: pre;
-      font-family: var(--font-mono);
-      font-size: var(--diff-font-size);
+      font-family: ${cellStyles.fontFamily};
+      font-size: ${cellStyles.fontSize};
+      font-weight: ${cellStyles.fontWeight};
+      letter-spacing: ${cellStyles.letterSpacing};
     `;
     // Add line number column widths (approx 80px for two columns + gutter)
     const lineNumberWidth = lineNumberMode === 'both' ? 120 : 80;
