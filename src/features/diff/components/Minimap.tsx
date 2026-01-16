@@ -45,8 +45,8 @@ interface MinimapProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   /** Whether full file mode is enabled (hides lasso in changes-only mode) */
   showFullFile: boolean;
-  /** Whether inline comments are present (hides lasso and disables drag) */
-  hasInlineComments: boolean;
+  /** When true, comments are shown and lasso is hidden; when false, comments hidden and lasso visible */
+  showComments: boolean;
   /** Callback when user navigates via click or drag */
   onNavigate?: (event: NavigateEvent) => void;
 }
@@ -66,7 +66,7 @@ export function Minimap({
   containerHeight,
   scrollContainerRef,
   showFullFile,
-  hasInlineComments,
+  showComments,
   onNavigate,
 }: MinimapProps) {
   const { diffLines, alignedLines, viewMode, contentFilter, filename } = pipeline;
@@ -112,8 +112,8 @@ export function Minimap({
   const lasso = useMemo(() => {
     // Lasso is hidden when:
     // 1. Not in full file mode
-    // 2. Inline comments are present
-    if (!showFullFile || hasInlineComments) {
+    // 2. Comments are visible (showComments=true)
+    if (!showFullFile || showComments) {
       return null;
     }
 
@@ -129,7 +129,7 @@ export function Minimap({
     });
   }, [
     showFullFile,
-    hasInlineComments,
+    showComments,
     scrollState,
     lineCounts,
     leftBarTop,
@@ -212,8 +212,8 @@ export function Minimap({
   // Handle mouse down (start drag)
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
-      // Disable drag when inline comments present
-      if (hasInlineComments) return;
+      // Disable drag when comments are visible
+      if (showComments) return;
 
       const svg = svgRef.current;
       if (!svg) return;
@@ -227,13 +227,13 @@ export function Minimap({
       // Prevent text selection during drag
       event.preventDefault();
     },
-    [hasInlineComments]
+    [showComments]
   );
 
   // Handle mouse move (during drag)
   const handleMouseMove = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
-      if (!isDragging || hasInlineComments) return;
+      if (!isDragging || showComments) return;
 
       const svg = svgRef.current;
       if (!svg) return;
@@ -255,7 +255,7 @@ export function Minimap({
         onNavigate({ lineNumber, side, type: 'drag' });
       }
     },
-    [isDragging, hasInlineComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
+    [isDragging, showComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
   );
 
   // Handle mouse up (end drag)

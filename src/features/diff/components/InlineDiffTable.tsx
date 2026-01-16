@@ -38,6 +38,8 @@ export interface InlineDiffTableProps {
   scrollToRowIndex?: number | undefined;
   /** Whether full file content is available for accurate token lookup */
   hasFullContent?: boolean;
+  /** Whether to show comment threads (controlled by toolbar toggle) */
+  showComments?: boolean;
 }
 
 interface RowData {
@@ -59,6 +61,7 @@ interface RowData {
   showWhitespace: boolean;
   lineNumberMode: 'left' | 'both' | 'right';
   hasFullContent: boolean;
+  showComments: boolean;
 }
 
 /**
@@ -85,6 +88,7 @@ function DiffRow({
   showWhitespace,
   lineNumberMode,
   hasFullContent,
+  showComments,
 }: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
@@ -131,7 +135,7 @@ function DiffRow({
               </td>
             </tr>
           )}
-          {lineThreads.map((thread) => (
+          {showComments && lineThreads.map((thread) => (
             <tr key={`thread-${thread.id}`}>
               <td colSpan={colSpan} className="diff-comment-cell">
                 <CommentThread
@@ -176,6 +180,7 @@ export function InlineDiffTable({
   lineNumberMode,
   scrollToRowIndex,
   hasFullContent = false,
+  showComments = true,
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -355,6 +360,7 @@ export function InlineDiffTable({
       showWhitespace,
       lineNumberMode,
       hasFullContent,
+      showComments,
     }),
     [
       diffLines,
@@ -375,6 +381,7 @@ export function InlineDiffTable({
       showWhitespace,
       lineNumberMode,
       hasFullContent,
+      showComments,
     ]
   );
 

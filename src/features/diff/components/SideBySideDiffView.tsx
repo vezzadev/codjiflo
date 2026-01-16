@@ -42,6 +42,8 @@ interface SideBySideDiffViewProps {
   scrollToRowIndex?: number | undefined;
   /** Whether full file content is available for accurate token lookup */
   hasFullContent?: boolean;
+  /** Whether to show comment threads (controlled by toolbar toggle) */
+  showComments?: boolean;
 }
 
 interface RowData {
@@ -64,6 +66,7 @@ interface RowData {
   onSubmitDraft: () => void;
   showWhitespace: boolean;
   hasFullContent: boolean;
+  showComments: boolean;
 }
 
 /**
@@ -105,6 +108,7 @@ function SideBySideRow({
   onSubmitDraft,
   showWhitespace,
   hasFullContent,
+  showComments,
 }: RowComponentProps<RowData>) {
 
   const pair = alignedLines[index];
@@ -163,7 +167,7 @@ function SideBySideRow({
                     </td>
                   </tr>
                 )}
-                {leftThreads.map((thread) => (
+                {showComments && leftThreads.map((thread) => (
                   <tr key={`thread-left-${thread.id}`}>
                     <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
@@ -220,7 +224,7 @@ function SideBySideRow({
                     </td>
                   </tr>
                 )}
-                {rightThreads.map((thread) => (
+                {showComments && rightThreads.map((thread) => (
                   <tr key={`thread-right-${thread.id}`}>
                     <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
@@ -269,6 +273,7 @@ export function SideBySideDiffView({
   showWhitespace,
   scrollToRowIndex,
   hasFullContent = false,
+  showComments = true,
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
 
@@ -387,6 +392,7 @@ export function SideBySideDiffView({
       onSubmitDraft,
       showWhitespace,
       hasFullContent,
+      showComments,
     }),
     [
       filteredLines,
@@ -408,6 +414,7 @@ export function SideBySideDiffView({
       onSubmitDraft,
       showWhitespace,
       hasFullContent,
+      showComments,
     ]
   );
 

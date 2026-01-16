@@ -107,9 +107,6 @@ export function DiffView() {
 
   const hasFullContent = fullFileContent.oldContent !== undefined || fullFileContent.newContent !== undefined;
 
-  // Check if inline comments are present
-  const hasInlineComments = pipeline.threadsByLineAndSide.size > 0;
-
   // Fallback: extract line contents for non-iteration mode (multi-line comment support)
   const visibleLines = useMemo(() => {
     if (hasFullContent) return undefined;
@@ -224,14 +221,15 @@ export function DiffView() {
               lineNumberMode={pipeline.lineNumberMode}
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
+              showComments={viewConfig.showComments}
             />
             <Minimap
               pipeline={pipeline}
               containerHeight={containerHeight}
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
-              hasInlineComments={hasInlineComments}
-                          />
+              showComments={viewConfig.showComments}
+            />
           </div>
         ) : (
           <div
@@ -267,14 +265,15 @@ export function DiffView() {
               showWhitespace={pipeline.showWhitespace}
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
+              showComments={viewConfig.showComments}
             />
             <Minimap
               pipeline={pipeline}
               containerHeight={containerHeight}
               scrollContainerRef={scrollContainerRef}
               showFullFile={viewConfig.showFullFile}
-              hasInlineComments={hasInlineComments}
-                          />
+              showComments={viewConfig.showComments}
+            />
           </div>
         )}
       </ShikiTokensProvider>

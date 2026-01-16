@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
@@ -348,6 +348,7 @@ export function DiffToolbar() {
     setContentFilter,
     toggleFullFile,
     toggleWhitespace,
+    toggleComments,
     scrollToNextChange,
     scrollToPreviousChange,
     currentChangeIndex,
@@ -421,9 +422,14 @@ export function DiffToolbar() {
           event.preventDefault();
           toggleWhitespace();
           break;
+        case 'd':
+          // D for comments toggle
+          event.preventDefault();
+          toggleComments();
+          break;
       }
     },
-    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace]
+    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace, toggleComments]
   );
 
   useEffect(() => {
@@ -479,6 +485,26 @@ export function DiffToolbar() {
         ]}
         ariaLabel="Whitespace visibility"
         tooltip="Whitespace visibility (B: Toggle)"
+      />
+
+      {/* Separator before comments toggle */}
+      <span className="toolbar-separator" aria-hidden="true" />
+
+      {/* Comments Toggle */}
+      <ToggleButton
+        isActive={viewConfig.showComments}
+        onClick={toggleComments}
+        icon={
+          viewConfig.showComments ? (
+            <MessageSquare className="w-4 h-4" aria-hidden />
+          ) : (
+            <MessageSquareOff className="w-4 h-4" aria-hidden />
+          )
+        }
+        label={viewConfig.showComments ? 'Comments' : 'No Comments'}
+        shortcut="D"
+        ariaLabel={viewConfig.showComments ? 'Hide comments' : 'Show comments'}
+        className="btn-toolbar-wide"
       />
 
       {/* Change Navigation Buttons */}

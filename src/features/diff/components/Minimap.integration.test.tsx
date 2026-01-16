@@ -113,7 +113,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -131,7 +131,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -150,7 +150,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -161,7 +161,7 @@ describe('Minimap component', () => {
   });
 
   describe('lasso visibility', () => {
-    it('shows lasso in full-file mode without comments', () => {
+    it('shows lasso when comments are hidden (showComments=false) in full-file mode', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -171,7 +171,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -189,7 +189,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={false}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -197,7 +197,7 @@ describe('Minimap component', () => {
       expect(lasso).not.toBeInTheDocument();
     });
 
-    it('hides lasso when inline comments are present', () => {
+    it('hides lasso when comments are shown (showComments=true)', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
 
@@ -207,7 +207,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={true}
+          showComments={true}
         />
       );
 
@@ -228,7 +228,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
           onNavigate={onNavigate}
         />
       );
@@ -252,7 +252,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
           onNavigate={onNavigate}
         />
       );
@@ -284,7 +284,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -335,7 +335,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -378,7 +378,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -408,7 +408,7 @@ describe('Minimap component', () => {
   });
 
   describe('drag navigation', () => {
-    it('enables drag when no inline comments', () => {
+    it('enables drag when comments are hidden (showComments=false)', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
       const onNavigate = vi.fn();
@@ -419,7 +419,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
           onNavigate={onNavigate}
         />
       );
@@ -456,7 +456,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -517,7 +517,7 @@ describe('Minimap component', () => {
       expect(scrollable.scrollTop).toBe(0);
     });
 
-    it('disables drag when inline comments present', () => {
+    it('disables drag when comments are shown (showComments=true)', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
       const onNavigate = vi.fn();
@@ -528,7 +528,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={true}
+          showComments={true}
           onNavigate={onNavigate}
         />
       );
@@ -560,7 +560,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -578,7 +578,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -598,7 +598,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -642,7 +642,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -658,7 +658,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -687,7 +687,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -707,7 +707,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -737,7 +737,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -752,7 +752,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -773,7 +773,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -787,7 +787,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -808,7 +808,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -826,7 +826,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -848,7 +848,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -860,7 +860,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -882,7 +882,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -897,7 +897,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -921,7 +921,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={false}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -934,7 +934,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -952,7 +952,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -965,7 +965,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={false}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -973,7 +973,7 @@ describe('Minimap component', () => {
     });
   });
 
-  describe('hasInlineComments toggle (dynamic)', () => {
+  describe('showComments toggle (dynamic)', () => {
     it('hides lasso when comments appear', () => {
       const pipeline = createMockPipeline();
       const containerRef = { current: scrollContainer };
@@ -985,7 +985,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -998,7 +998,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={true}
+          showComments={true}
         />
       );
 
@@ -1016,7 +1016,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={true}
+          showComments={true}
         />
       );
 
@@ -1029,7 +1029,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
         />
       );
 
@@ -1048,7 +1048,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={false}
+          showComments={false}
           onNavigate={onNavigate}
         />
       );
@@ -1072,7 +1072,7 @@ describe('Minimap component', () => {
           containerHeight={500}
           scrollContainerRef={containerRef}
           showFullFile={true}
-          hasInlineComments={true}
+          showComments={true}
           onNavigate={onNavigate}
         />
       );

@@ -8,7 +8,7 @@ import {
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
 
-test.describe("Minimap navigation without inline comments", () => {
+test.describe("Minimap navigation with comments hidden", () => {
   const owner = "test";
   const repo = "repo";
   const prNumber = 789;
@@ -152,7 +152,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await expect(minimap).toBeVisible();
   });
 
-  test("shows lasso in full-file mode without comments", async ({ page }) => {
+  test("shows lasso when comments hidden in full-file mode", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -166,7 +166,10 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     // Enable full file mode (F key)
     await page.keyboard.press("f");
 
-    // Minimap should show lasso
+    // Hide comments to show lasso (D key)
+    await page.keyboard.press("d");
+
+    // Minimap should show lasso when comments are hidden
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
@@ -245,6 +248,9 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
 
     // Enable full file mode (F key) to show lasso
     await page.keyboard.press("f");
+
+    // Hide comments to show lasso (D key)
+    await page.keyboard.press("d");
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();

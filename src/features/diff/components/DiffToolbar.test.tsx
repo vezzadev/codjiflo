@@ -16,6 +16,8 @@ vi.mock('lucide-react', () => ({
   FileText: () => <span data-testid="icon-filetext" />,
   ChevronUp: () => <span data-testid="icon-chevronup" />,
   ChevronDown: () => <span data-testid="icon-chevrondown" />,
+  MessageSquare: () => <span data-testid="icon-messagesquare" />,
+  MessageSquareOff: () => <span data-testid="icon-messagesquareoff" />,
 }));
 
 describe('DiffToolbar', () => {
@@ -27,6 +29,7 @@ describe('DiffToolbar', () => {
         filter: 'both',
         showFullFile: false,
         showWhitespace: false,
+        showComments: true,
       },
       currentChangeIndex: -1,
       totalChangeCount: 0,

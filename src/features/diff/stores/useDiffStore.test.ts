@@ -244,6 +244,7 @@ describe('useDiffStore', () => {
           filter: 'left',
           showFullFile: true,
           showWhitespace: true,
+          showComments: false,
         },
       });
 
@@ -254,6 +255,7 @@ describe('useDiffStore', () => {
       expect(viewConfig.filter).toBe('left');
       expect(viewConfig.showFullFile).toBe(true);
       expect(viewConfig.showWhitespace).toBe(true);
+      expect(viewConfig.showComments).toBe(false);
     });
   });
 
@@ -369,6 +371,7 @@ describe('useDiffStore', () => {
           filter: 'both',
           showFullFile: false,
           showWhitespace: false,
+          showComments: true,
         },
       });
     });
@@ -394,6 +397,7 @@ describe('useDiffStore', () => {
             filter: 'left',
             showFullFile: true,
             showWhitespace: true,
+            showComments: false,
           },
         });
 
@@ -404,6 +408,7 @@ describe('useDiffStore', () => {
         expect(config.filter).toBe('left');
         expect(config.showFullFile).toBe(true);
         expect(config.showWhitespace).toBe(true);
+        expect(config.showComments).toBe(false);
       });
     });
 

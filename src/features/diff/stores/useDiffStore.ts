@@ -12,6 +12,7 @@ const DEFAULT_VIEW_CONFIG: DiffViewConfig = {
   filter: 'both',
   showFullFile: false,
   showWhitespace: false,
+  showComments: true,
 };
 
 export const useDiffStore = create<DiffState>()(
@@ -101,6 +102,15 @@ export const useDiffStore = create<DiffState>()(
           viewConfig: {
             ...state.viewConfig,
             showWhitespace: !state.viewConfig.showWhitespace,
+          },
+        }));
+      },
+
+      toggleComments: () => {
+        set((state) => ({
+          viewConfig: {
+            ...state.viewConfig,
+            showComments: !state.viewConfig.showComments,
           },
         }));
       },
