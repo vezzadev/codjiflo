@@ -267,7 +267,14 @@ For unsupported file types:
 
 ### Overview Margin (Minimap)
 
-Minimap has two bars, with 100% of their height visible at all times. The left bar is highlighted in red in the region proportional to the lines that were removed or modified. The right bar is highlighted in yellow in the region proportional to the lines that were added or modified. A lasso surrounds the parts of the bar that correspond to the code chunk that is in the viewport. As the user scrolls, the lasso is auto updated. Users may click on the bars or drag the lasso to scroll directly to the region of interest.
+Minimap has two bars, with 100% of their height visible at all times. The left bar is highlighted in red (`--diff-delete-word`) in the region proportional to the lines that were removed or modified. The right bar is highlighted in green/yellow (`--diff-add-word`) in the region proportional to the lines that were added or modified. A lasso surrounds the parts of the bar that correspond to the code chunk that is in the viewport. As the user scrolls, the lasso is auto updated. Users may click on the bars or drag the lasso to scroll directly to the region of interest.
+
+**Positioning:**
+
+| View Mode | Minimap Position |
+|-----------|------------------|
+| Inline | Left edge of diff content |
+| Side-by-Side | Center, between left and right panes |
 
 **Lasso Visibility Rules:**
 

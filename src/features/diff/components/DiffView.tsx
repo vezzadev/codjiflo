@@ -223,7 +223,8 @@ export function DiffView() {
               containerRefCallback(el);
               scrollContainerRef.current = el;
             }}
-            className="diff-content-area diff-content-with-minimap"
+            className="diff-content-area diff-content-with-minimap diff-content-wrapper"
+            data-view-mode="inline"
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
@@ -266,7 +267,8 @@ export function DiffView() {
               containerRefCallback(el);
               scrollContainerRef.current = el;
             }}
-            className="diff-content-area diff-content-with-minimap"
+            className="diff-content-area diff-content-with-minimap diff-content-wrapper"
+            data-view-mode="split"
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
