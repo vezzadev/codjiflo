@@ -327,6 +327,10 @@
   background-color: var(--diff-area-bg);
 }
 
+.diff-content-with-minimap {
+  position: relative; /* For minimap absolute positioning */
+}
+
 
 .diff-filename {
   margin: 0;
@@ -736,4 +740,41 @@
 .virtualized-sxs-pane .diff-table {
   width: 100%;
   table-layout: fixed;
+}
+
+/* ============================================
+   MINIMAP COMPONENT
+   ============================================ */
+.minimap {
+  position: absolute;
+  right: 0;
+  top: 0;
+  cursor: pointer;
+  z-index: 5;
+  background-color: var(--minimap-bg, var(--control-bg));
+  border-left: 1px solid var(--combobox-border);
+}
+
+.minimap-bar {
+  fill: var(--minimap-bar-bg, var(--control-bg));
+  stroke: var(--combobox-border);
+  stroke-width: 1;
+}
+
+.minimap-bar-disabled {
+  opacity: 0.3;
+}
+
+.minimap-deletion {
+  fill: var(--diff-delete-gutter);
+}
+
+.minimap-addition {
+  fill: var(--diff-add-gutter);
+}
+
+.minimap-lasso {
+  stroke: var(--minimap-lasso, var(--focus-border));
+  stroke-width: 2;
+  fill: var(--minimap-lasso-fill, rgba(128, 128, 128, 0.1));
 }

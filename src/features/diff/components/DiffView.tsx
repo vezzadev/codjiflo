@@ -7,7 +7,7 @@
  * S-3.3: View mode toggles
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   useDiffPipeline,
@@ -21,6 +21,7 @@ import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { ShikiTokensProvider } from './ShikiTokensContext';
+import { Minimap, type NavigateEvent } from './Minimap';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
@@ -33,7 +34,8 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * Main diff view component with support for inline and side-by-side modes.
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { selectedRange, getFileDiffByPath, isIterationMode } = useIterationDiff();
   const {
@@ -104,6 +106,36 @@ export function DiffView() {
   }, [isIterationMode, pipeline.filename, getFileDiffByPath]);
 
   const hasFullContent = fullFileContent.oldContent !== undefined || fullFileContent.newContent !== undefined;
+
+  // Check if inline comments are present
+  const hasInlineComments = pipeline.threadsByLineAndSide.size > 0;
+
+  // Handler for minimap navigation
+  const handleMinimapNavigate = useCallback(
+    (event: NavigateEvent) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      // Find the scrollable element within the container
+      const scrollEl =
+        container.querySelector<HTMLElement>('[style*="overflow"]') ??
+        container.querySelector<HTMLElement>('.side-by-side-pane-left') ??
+        container;
+
+      const totalLines = event.side === 'left'
+        ? pipeline.diffLines.filter(l => l.oldLineNumber !== null).length || pipeline.diffLines.length
+        : pipeline.diffLines.length;
+
+      if (totalLines === 0) return;
+
+      const scrollRatio = event.lineNumber / totalLines;
+      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+      const targetScroll = scrollRatio * maxScroll;
+
+      scrollEl.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    },
+    [pipeline.diffLines]
+  );
 
   // Fallback: extract line contents for non-iteration mode (multi-line comment support)
   const visibleLines = useMemo(() => {
@@ -187,8 +219,11 @@ export function DiffView() {
       >
         {pipeline.viewMode === 'inline' ? (
           <div
-            ref={containerRefCallback}
-            className="diff-content-area"
+            ref={(el) => {
+              containerRefCallback(el);
+              scrollContainerRef.current = el;
+            }}
+            className="diff-content-area diff-content-with-minimap"
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
@@ -216,11 +251,22 @@ export function DiffView() {
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
             />
+            <Minimap
+              pipeline={pipeline}
+              containerHeight={containerHeight}
+              scrollContainerRef={scrollContainerRef}
+              showFullFile={viewConfig.showFullFile}
+              hasInlineComments={hasInlineComments}
+              onNavigate={handleMinimapNavigate}
+            />
           </div>
         ) : (
           <div
-            ref={containerRefCallback}
-            className="diff-content-area"
+            ref={(el) => {
+              containerRefCallback(el);
+              scrollContainerRef.current = el;
+            }}
+            className="diff-content-area diff-content-with-minimap"
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
@@ -247,6 +293,14 @@ export function DiffView() {
               showWhitespace={pipeline.showWhitespace}
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
+            />
+            <Minimap
+              pipeline={pipeline}
+              containerHeight={containerHeight}
+              scrollContainerRef={scrollContainerRef}
+              showFullFile={viewConfig.showFullFile}
+              hasInlineComments={hasInlineComments}
+              onNavigate={handleMinimapNavigate}
             />
           </div>
         )}

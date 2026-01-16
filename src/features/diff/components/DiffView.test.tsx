@@ -54,6 +54,11 @@ vi.mock('./ShikiTokensContext', () => ({
   useShikiTokens: () => null,
 }));
 
+// Mock Minimap to avoid async requestAnimationFrame state updates and act() warnings
+vi.mock('./Minimap', () => ({
+  Minimap: () => <div data-testid="minimap-mock" />,
+}));
+
 // Mock useIterationDiff hook for iteration switch tests
 const mockIterationDiff = {
   isIterationMode: false,

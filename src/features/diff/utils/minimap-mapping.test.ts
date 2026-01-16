@@ -17,7 +17,6 @@ import {
   generateLassoPath,
   calculateBarHeights,
   countLinesByType,
-  type DiffRegion,
   type ViewportLasso,
 } from './minimap-mapping';
 
@@ -40,8 +39,9 @@ function createDiffLine(
 }
 
 function createAlignedLine(
-  left: { type: 'deletion' | 'context' | 'empty'; lineNumber: number | null } | null,
-  right: { type: 'addition' | 'context' | 'empty'; lineNumber: number | null } | null
+  left: { type: 'deletion' | 'context'; lineNumber: number | null } | null,
+  right: { type: 'addition' | 'context'; lineNumber: number | null } | null,
+  key?: string
 ): AlignedDiffLine {
   return {
     left: left
@@ -60,6 +60,7 @@ function createAlignedLine(
           content: '',
         }
       : null,
+    key: key ?? `line-${left?.lineNumber ?? 'null'}-${right?.lineNumber ?? 'null'}`,
   };
 }
 
@@ -197,8 +198,8 @@ describe('countLinesByType', () => {
   it('counts lines correctly for aligned diff', () => {
     const alignedLines: AlignedDiffLine[] = [
       createAlignedLine({ type: 'context', lineNumber: 1 }, { type: 'context', lineNumber: 1 }),
-      createAlignedLine({ type: 'deletion', lineNumber: 2 }, { type: 'empty', lineNumber: null }),
-      createAlignedLine({ type: 'empty', lineNumber: null }, { type: 'addition', lineNumber: 2 }),
+      createAlignedLine({ type: 'deletion', lineNumber: 2 }, null),
+      createAlignedLine(null, { type: 'addition', lineNumber: 2 }),
       createAlignedLine({ type: 'context', lineNumber: 3 }, { type: 'context', lineNumber: 3 }),
     ];
 
@@ -236,11 +237,10 @@ describe('calculateDiffRegions', () => {
 
       const result = calculateDiffRegions(diffLines, 'inline');
       expect(result.leftRegions).toHaveLength(1);
-      expect(result.leftRegions[0]).toEqual({
-        startRatio: expect.closeTo(0.25, 2), // Line 2 of 4
-        endRatio: expect.closeTo(0.75, 2), // Line 3 of 4
-        type: 'deletion',
-      });
+      const region = result.leftRegions[0];
+      expect(region?.startRatio).toBeCloseTo(0.25, 2); // Line 2 of 4
+      expect(region?.endRatio).toBeCloseTo(0.75, 2); // Line 3 of 4
+      expect(region?.type).toBe('deletion');
       expect(result.rightRegions).toEqual([]);
     });
 
@@ -254,11 +254,10 @@ describe('calculateDiffRegions', () => {
 
       const result = calculateDiffRegions(diffLines, 'inline');
       expect(result.rightRegions).toHaveLength(1);
-      expect(result.rightRegions[0]).toEqual({
-        startRatio: expect.closeTo(0.25, 2), // Line 2 of 4
-        endRatio: expect.closeTo(0.75, 2), // Line 3 of 4
-        type: 'addition',
-      });
+      const region = result.rightRegions[0];
+      expect(region?.startRatio).toBeCloseTo(0.25, 2); // Line 2 of 4
+      expect(region?.endRatio).toBeCloseTo(0.75, 2); // Line 3 of 4
+      expect(region?.type).toBe('addition');
       expect(result.leftRegions).toEqual([]);
     });
 
@@ -285,7 +284,7 @@ describe('calculateDiffRegions', () => {
     it('calculates deletion region from aligned lines', () => {
       const alignedLines: AlignedDiffLine[] = [
         createAlignedLine({ type: 'context', lineNumber: 1 }, { type: 'context', lineNumber: 1 }),
-        createAlignedLine({ type: 'deletion', lineNumber: 2 }, { type: 'empty', lineNumber: null }),
+        createAlignedLine({ type: 'deletion', lineNumber: 2 }, null),
         createAlignedLine({ type: 'context', lineNumber: 3 }, { type: 'context', lineNumber: 2 }),
       ];
 
@@ -297,7 +296,7 @@ describe('calculateDiffRegions', () => {
     it('calculates addition region from aligned lines', () => {
       const alignedLines: AlignedDiffLine[] = [
         createAlignedLine({ type: 'context', lineNumber: 1 }, { type: 'context', lineNumber: 1 }),
-        createAlignedLine({ type: 'empty', lineNumber: null }, { type: 'addition', lineNumber: 2 }),
+        createAlignedLine(null, { type: 'addition', lineNumber: 2 }),
         createAlignedLine({ type: 'context', lineNumber: 2 }, { type: 'context', lineNumber: 3 }),
       ];
 
@@ -378,8 +377,9 @@ describe('calculateAsymmetricViewportLasso', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.leftTop).toBe(result!.rightTop);
-    expect(result!.leftBottom).toBe(result!.rightBottom);
+    if (!result) return; // Type guard
+    expect(result.leftTop).toBe(result.rightTop);
+    expect(result.leftBottom).toBe(result.rightBottom);
   });
 
   it('calculates asymmetric lasso for different line counts', () => {
@@ -394,8 +394,9 @@ describe('calculateAsymmetricViewportLasso', () => {
     });
 
     expect(result).not.toBeNull();
+    if (!result) return; // Type guard
     // Left bar is shorter, so lasso spans more of it proportionally
-    expect(result!.leftBottom - result!.leftTop).toBeLessThan(result!.rightBottom - result!.rightTop);
+    expect(result.leftBottom - result.leftTop).toBeLessThan(result.rightBottom - result.rightTop);
   });
 
   it('positions lasso at start when scrollRatio is 0', () => {
@@ -410,8 +411,9 @@ describe('calculateAsymmetricViewportLasso', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.leftTop).toBe(renderAreaTop);
-    expect(result!.rightTop).toBe(renderAreaTop);
+    if (!result) return; // Type guard
+    expect(result.leftTop).toBe(renderAreaTop);
+    expect(result.rightTop).toBe(renderAreaTop);
   });
 
   it('positions lasso at end when scrollRatio is 1', () => {
@@ -426,8 +428,9 @@ describe('calculateAsymmetricViewportLasso', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.leftBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
-    expect(result!.rightBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
+    if (!result) return; // Type guard
+    expect(result.leftBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
+    expect(result.rightBottom).toBeCloseTo(renderAreaTop + renderAreaHeight, 0);
   });
 });
 

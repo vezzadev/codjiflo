@@ -6,7 +6,13 @@
  * generation for the minimap component.
  */
 
-import type { ParsedDiffLine, AlignedDiffLine, DiffViewMode } from '../types';
+import type { ParsedDiffLine, AlignedDiffLine } from '../types';
+
+/**
+ * View mode type for minimap calculations
+ * Uses 'inline' and 'side-by-side' internally for clarity
+ */
+export type MinimapViewMode = 'inline' | 'side-by-side';
 
 // ============================================================================
 // Constants
@@ -144,7 +150,7 @@ export function getClickSide(x: number): 'left' | 'right' {
  */
 export function countLinesByType(
   lines: ParsedDiffLine[] | AlignedDiffLine[],
-  viewMode: DiffViewMode
+  viewMode: MinimapViewMode
 ): LineCounts {
   if (lines.length === 0) {
     return { leftLineCount: 0, rightLineCount: 0 };
@@ -201,7 +207,7 @@ export function countLinesByType(
  */
 export function calculateDiffRegions(
   lines: ParsedDiffLine[] | AlignedDiffLine[],
-  viewMode: DiffViewMode
+  viewMode: MinimapViewMode
 ): { leftRegions: DiffRegion[]; rightRegions: DiffRegion[] } {
   if (lines.length === 0) {
     return { leftRegions: [], rightRegions: [] };
