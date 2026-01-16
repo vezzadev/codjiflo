@@ -175,35 +175,13 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   }
 
   /**
-   * Wait for scroll container metrics to stabilize
-   * React-window virtualization may update scrollHeight as content renders
+   * Wait for the minimap lasso to become visible
+   * This waits for the scroll container to be found AND viewportRatio to be calculated
    */
-  async function waitForScrollStabilization(page: import("@playwright/test").Page): Promise<void> {
-    await page.waitForFunction(() => {
-      // Find scroll container
-      const candidates = document.querySelectorAll<HTMLElement>('[style*="overflow"]');
-      let best: HTMLElement | null = null;
-      let maxRange = 0;
-
-      for (const el of candidates) {
-        const range = el.scrollHeight - el.clientHeight;
-        if (range > maxRange) {
-          maxRange = range;
-          best = el;
-        }
-      }
-
-      if (!best || maxRange <= 100) return false;
-
-      // Store current scrollHeight and check again in next frame
-      const currentHeight = best.scrollHeight;
-      // Use a custom attribute to track previous measurement
-      const prevHeight = best.getAttribute('data-prev-scroll-height');
-      best.setAttribute('data-prev-scroll-height', String(currentHeight));
-
-      // Stabilized when scrollHeight hasn't changed
-      return prevHeight !== null && Number(prevHeight) === currentHeight;
-    });
+  async function waitForLasso(page: import("@playwright/test").Page): Promise<void> {
+    const minimap = page.getByRole("img", { name: /minimap/i });
+    const lasso = minimap.locator(".minimap-lasso");
+    await expect(lasso).toBeVisible({ timeout: 5000 });
   }
 
   test("lasso maintains consistent height while scrolling within same file", async ({ page }) => {
@@ -226,8 +204,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode
+    // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
+    // Wait for toolbar to show "Changes" label (indicating full-file mode is active)
+    await expect(page.getByRole("button", { name: /show changes only/i })).toBeVisible();
 
     // Hide comments to show lasso
     await page.keyboard.press("d");
@@ -235,12 +215,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
-    // Wait for scroll container to stabilize before checking lasso
-    // Lasso only appears after viewportRatio is calculated
-    await waitForScrollStabilization(page);
+    // Wait for lasso to appear (depends on scroll container being found and viewportRatio calculated)
+    await waitForLasso(page);
 
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
 
     // Force react-window to calculate correct scrollHeight by scrolling
     // React-window may overestimate total height before any scrolling occurs
@@ -252,14 +230,14 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBoxInit.x + minimapBoxInit.width / 2,
       minimapBoxInit.y + minimapBoxInit.height * 0.5
     );
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Scroll back to top
     await page.mouse.click(
       minimapBoxInit.x + minimapBoxInit.width / 2,
       minimapBoxInit.y + 20 // Near top
     );
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Get lasso height and scroll metrics at top of file
     const topResult = await getLassoHeight(page);
@@ -287,7 +265,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Wait for scroll metrics to stabilize after click
     // React-window may recalculate scrollHeight after scrolling
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Get lasso height and scroll metrics at middle
     const middleResult = await getLassoHeight(page);
@@ -309,7 +287,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     );
 
     // Wait for scroll metrics to stabilize after click
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Get lasso height and scroll metrics at bottom
     const bottomResult = await getLassoHeight(page);
@@ -345,8 +323,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode
+    // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
+    // Wait for toolbar to show "Changes" label (indicating full-file mode is active)
+    await expect(page.getByRole("button", { name: /show changes only/i })).toBeVisible();
 
     // Hide comments to show lasso
     await page.keyboard.press("d");
@@ -354,11 +334,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
-    // Wait for scroll metrics to stabilize before checking lasso
-    await waitForScrollStabilization(page);
+    // Wait for lasso to appear
+    await waitForLasso(page);
 
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
 
     // Get minimap bar height (approximately containerHeight - 2*PADDING_VERTICAL)
     const minimapBox = await minimap.boundingBox();
@@ -389,8 +368,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode
+    // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
+    // Wait for toolbar to show "Changes" label (indicating full-file mode is active)
+    await expect(page.getByRole("button", { name: /show changes only/i })).toBeVisible();
 
     // Hide comments to show lasso
     await page.keyboard.press("d");
@@ -398,11 +379,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
-    // Wait for scroll metrics to stabilize before checking lasso
-    await waitForScrollStabilization(page);
+    // Wait for lasso to appear
+    await waitForLasso(page);
 
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
 
     // Force react-window to calculate correct scrollHeight by scrolling first
     // React-window may overestimate total height before any scrolling occurs
@@ -414,14 +394,14 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.5
     );
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Scroll back to top
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + 20 // Near top
     );
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Get initial lasso path
     const initialPath = await lasso.getAttribute("d");
@@ -432,7 +412,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await page.keyboard.press("j"); // Navigate to change
 
     // Wait for scroll stabilization after keyboard navigation
-    await waitForScrollStabilization(page);
+    await waitForLasso(page);
 
     // Get new lasso path
     const newResult = await getLassoHeight(page);

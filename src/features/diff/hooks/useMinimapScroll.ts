@@ -134,45 +134,31 @@ export function useMinimapScroll(
   }, [calculateScrollState, contentKey]);
 
   // Set up scroll listener and calculate initial state
-  // Uses polling via rAF to wait for react-window to render AND stabilize
+  // Uses polling via rAF to wait for react-window to render
   useEffect(() => {
     let rafId: number;
     let currentScrollEl: HTMLElement | null = null;
     let isCleanedUp = false;
-    let lastScrollHeight = 0;
-    let stableFrameCount = 0;
 
-    // Poll until we find a valid scrollable element with STABLE scrollHeight
-    // React-window virtualization may update scrollHeight as content renders
+    // Poll until we find a valid scrollable element
     const trySetup = () => {
       if (isCleanedUp) return;
 
       const scrollEl = findScrollableElement();
       if (!scrollEl) {
         // Element not ready yet, retry on next frame
-        lastScrollHeight = 0;
-        stableFrameCount = 0;
         rafId = requestAnimationFrame(trySetup);
         return;
       }
 
-      // Check if scrollHeight has stabilized (same value for 2 consecutive frames)
-      const currentScrollHeight = scrollEl.scrollHeight;
-      if (currentScrollHeight === lastScrollHeight) {
-        stableFrameCount++;
-      } else {
-        stableFrameCount = 0;
-        lastScrollHeight = currentScrollHeight;
-      }
+      // Accept metrics immediately on first frame with valid scroll element
+      // Previously we waited for 2 stable frames, but this caused ~1s delays
+      // on large files because React rendering blocked the main thread.
+      // Since react-window sets correct scrollHeight on first render,
+      // we can accept immediately. If scrollHeight changes later, the
+      // scroll event listener will update the state.
 
-      // Require 2 stable frames before accepting the metrics
-      // This ensures react-window has finished rendering
-      if (stableFrameCount < 2) {
-        rafId = requestAnimationFrame(trySetup);
-        return;
-      }
-
-      // Found scrollable element with stable metrics - set up listener and calculate initial state
+      // Found scrollable element - set up listener and calculate initial state
       currentScrollEl = scrollEl;
       const initialState = calculateScrollState(scrollEl);
       setScrollState({ ...initialState, key: contentKey });
