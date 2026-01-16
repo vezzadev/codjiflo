@@ -137,24 +137,9 @@ export function Minimap({
     barHeights,
   ]);
 
-  // Convert Y position to scroll ratio (0-1) for click navigation
-  // Maps Y across full bar height - click at bottom = scroll to bottom
+  // Convert Y position to scroll ratio (0-1) with lasso-center positioning
+  // Both click and drag use this so lasso center is positioned at cursor
   const yToScrollRatio = useCallback(
-    (y: number, side: 'left' | 'right'): number => {
-      const barTop = side === 'left' ? leftBarTop : rightBarTop;
-      const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
-
-      if (barHeight === 0) return 0;
-
-      // Clamp y to bar bounds and return ratio
-      return Math.max(0, Math.min(1, (y - barTop) / barHeight));
-    },
-    [barHeights, leftBarTop, rightBarTop]
-  );
-
-  // Convert Y position to scroll ratio for drag navigation (1:1 with lasso center)
-  // Accounts for lasso height so mouse movement matches lasso movement exactly
-  const yToScrollRatioForDrag = useCallback(
     (y: number, side: 'left' | 'right'): number => {
       const barTop = side === 'left' ? leftBarTop : rightBarTop;
       const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
@@ -196,7 +181,7 @@ export function Minimap({
     [scrollContainerRef]
   );
 
-  // Handle click navigation
+  // Handle click navigation - positions lasso center at click point
   const handleClick = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
       const svg = svgRef.current;
@@ -207,6 +192,7 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = getClickSide(x);
+      // Use lasso-aware calculation so click positions lasso center under cursor
       const ratio = yToScrollRatio(y, side);
 
       // Navigate using scroll ratio for accurate positioning
@@ -256,7 +242,7 @@ export function Minimap({
 
       const side = dragSideRef.current;
       // Use drag-specific ratio calculation for 1:1 lasso tracking
-      const ratio = yToScrollRatioForDrag(y, side);
+      const ratio = yToScrollRatio(y, side);
 
       // Navigate using scroll ratio
       navigateToRatio(ratio);
@@ -268,7 +254,7 @@ export function Minimap({
         onNavigate({ lineNumber, side, type: 'drag' });
       }
     },
-    [isDragging, hasInlineComments, yToScrollRatioForDrag, navigateToRatio, onNavigate, lineCounts]
+    [isDragging, hasInlineComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
   );
 
   // Handle mouse up (end drag)

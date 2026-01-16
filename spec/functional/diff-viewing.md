@@ -327,23 +327,24 @@ interface OverviewMargin {
 
 Minimap navigation (click and drag) scrolls the diff view instantly without any smooth scroll animation. This provides immediate visual feedback and responsive drag scrolling. Direct `scrollTop` assignment is used rather than `scrollTo({ behavior: 'smooth' })`.
 
-**Click vs Drag Calculation:**
+**Lasso-Center Positioning:**
 
-Navigation uses different calculations for click and drag to provide intuitive behavior:
+Both click and drag navigation position the **lasso center** under the cursor using the same formula:
 
-**Click Navigation:**
-- Converts Y position to ratio relative to full bar height: `ratio = (y - barTop) / barHeight`
-- Clicking at the **top** of a bar scrolls to the top (scrollTop = 0)
-- Clicking at the **bottom** of a bar scrolls to the bottom (scrollTop = maxScroll)
-- Clicking at **50%** of the bar scrolls to 50% of the file
+```
+ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
+```
 
-**Drag Navigation (1:1 lasso tracking):**
-- Accounts for lasso height so mouse movement matches lasso center movement exactly
-- Formula: `ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)`
-- This ensures the lasso center follows the mouse cursor at the same speed
-- The lasso can only move within `barHeight - lassoHeight` pixels, not the full bar height
+Where:
+- `y` is the mouse Y position within the SVG
+- `barTop` is the top of the clicked bar
+- `lassoHeight = viewportRatio * barHeight` (viewport size as portion of bar)
+- `barHeight - lassoHeight` is the range the lasso can move within
 
-Both calculations clamp the ratio to [0, 1] to handle positions outside bar bounds gracefully.
+This ensures:
+- Clicking anywhere positions the lasso center at the click point
+- Dragging moves the lasso center 1:1 with the mouse
+- The lasso stays within bar bounds (ratio clamped to [0, 1])
 
 ### Comment Margins
 

@@ -255,13 +255,13 @@ describe('Minimap component', () => {
       );
     });
 
-    it('scrolls to bottom when clicking at bottom of bar (scroll ratio)', () => {
-      // This test verifies the scroll ratio calculation:
-      // Clicking at bottom of bar (Y = barTop + barHeight) should scroll to maxScroll
+    it('click positions lasso center at click point (scrolls to bottom)', async () => {
+      // This test verifies lasso-center positioning:
+      // Click uses formula: ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
       const pipeline = createMockPipeline();
       const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
 
-      // Setup scrollable with known dimensions
+      // Setup scrollable: viewportRatio = 500/1000 = 0.5
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
       Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
       scrollable.scrollTop = 0;
@@ -278,10 +278,12 @@ describe('Minimap component', () => {
         />
       );
 
+      // Trigger scroll event to initialize useMinimapScroll state
+      fireEvent.scroll(scrollable);
+      await vi.waitFor(() => {});
+
       const svg = container.querySelector('svg') as SVGSVGElement;
 
-      // Mock getBoundingClientRect to return known bounds
-      const originalGetBoundingClientRect = svg.getBoundingClientRect;
       svg.getBoundingClientRect = () => ({
         top: 0,
         left: 0,
@@ -294,27 +296,23 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // For containerHeight=500 with PADDING_VERTICAL=10:
-      // renderAreaHeight = 500 - 2*10 = 480
-      // barTop = 10 (renderAreaTop)
-      // For equal line counts, both bars have height = 480
-      // Bottom of bar: y = barTop + barHeight = 10 + 480 = 490
-      // Click at bottom of right bar: clientX=45, clientY=490
-      fireEvent.click(svg, { clientX: 45, clientY: 490 });
+      // For containerHeight=500, PADDING_VERTICAL=10:
+      // renderAreaHeight = 480, barTop = 10
+      // viewportRatio = 0.5, lassoHeight = 0.5 * 480 = 240
+      // lassoMoveRange = 480 - 240 = 240
+      // Formula: ratio = (y - 10 - 120) / 240 = (y - 130) / 240
+      //
+      // For ratio=1.0 (scroll to bottom): y = 130 + 240 = 370
+      fireEvent.click(svg, { clientX: 45, clientY: 370 });
 
-      // maxScroll = scrollHeight - clientHeight = 1000 - 500 = 500
-      // At ratio=1.0 (bottom of bar), scrollTop should be 500
+      // maxScroll = 1000 - 500 = 500, scrollTop = 1.0 * 500 = 500
       expect(scrollable.scrollTop).toBe(500);
-
-      // Restore
-      svg.getBoundingClientRect = originalGetBoundingClientRect;
     });
 
-    it('scrolls to top when clicking at top of bar', () => {
+    it('click positions lasso center at click point (scrolls to top)', async () => {
       const pipeline = createMockPipeline();
       const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
 
-      // Setup scrollable with known dimensions, start scrolled down
       Object.defineProperty(scrollable, 'scrollHeight', { value: 1000, writable: true });
       Object.defineProperty(scrollable, 'clientHeight', { value: 500, writable: true });
       scrollable.scrollTop = 250; // Start in the middle
@@ -331,6 +329,9 @@ describe('Minimap component', () => {
         />
       );
 
+      fireEvent.scroll(scrollable);
+      await vi.waitFor(() => {});
+
       const svg = container.querySelector('svg') as SVGSVGElement;
 
       svg.getBoundingClientRect = () => ({
@@ -345,15 +346,13 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // Top of bar: y = barTop = 10 (PADDING_VERTICAL)
-      // Click at top of right bar: clientX=45, clientY=10
-      fireEvent.click(svg, { clientX: 45, clientY: 10 });
+      // For ratio=0 (scroll to top): y = 130
+      fireEvent.click(svg, { clientX: 45, clientY: 130 });
 
-      // At ratio=0.0 (top of bar), scrollTop should be 0
       expect(scrollable.scrollTop).toBe(0);
     });
 
-    it('scrolls to middle when clicking at middle of bar', () => {
+    it('click positions lasso center at click point (scrolls to middle)', async () => {
       const pipeline = createMockPipeline();
       const scrollable = scrollContainer.querySelector('[style*="overflow"]') as HTMLDivElement;
 
@@ -373,6 +372,9 @@ describe('Minimap component', () => {
         />
       );
 
+      fireEvent.scroll(scrollable);
+      await vi.waitFor(() => {});
+
       const svg = container.querySelector('svg') as SVGSVGElement;
 
       svg.getBoundingClientRect = () => ({
@@ -387,10 +389,10 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // For barTop=10, barHeight=480, middle = 10 + 240 = 250
+      // For ratio=0.5 (scroll to middle): y = 130 + 120 = 250
       fireEvent.click(svg, { clientX: 45, clientY: 250 });
 
-      // At ratio=0.5 (middle of bar), scrollTop should be 250 (0.5 * 500)
+      // scrollTop = 0.5 * 500 = 250
       expect(scrollable.scrollTop).toBe(250);
     });
   });
