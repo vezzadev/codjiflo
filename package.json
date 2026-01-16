@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
-    "dev": "node scripts/ensure-env.js && next dev --turbopack",
+    "dev": "node scripts/kill-zombie-next.js && node scripts/ensure-env.js && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --fix --quiet",
