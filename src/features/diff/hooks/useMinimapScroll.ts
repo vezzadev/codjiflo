@@ -89,10 +89,10 @@ export function useMinimapScroll(
   const handleScroll = useCallback((event: Event) => {
     const target = event.target as HTMLElement;
     const newState = calculateScrollState(target);
-    setScrollState(prev => ({ ...newState, key: prev.key }));
-  }, [calculateScrollState]);
+    setScrollState(prev => ({ ...newState, key: contentKey }));
+  }, [calculateScrollState, contentKey]);
 
-  // Set up scroll listener
+  // Set up scroll listener - re-runs when contentKey changes to recalculate state
   useEffect(() => {
     const scrollEl = findScrollableElement();
     if (!scrollEl) return;
@@ -100,7 +100,7 @@ export function useMinimapScroll(
     // Use requestAnimationFrame to read initial state asynchronously
     const rafId = requestAnimationFrame(() => {
       const initialState = calculateScrollState(scrollEl);
-      setScrollState(prev => ({ ...initialState, key: prev.key }));
+      setScrollState({ ...initialState, key: contentKey });
     });
 
     // Add scroll listener
@@ -110,7 +110,7 @@ export function useMinimapScroll(
       cancelAnimationFrame(rafId);
       scrollEl.removeEventListener('scroll', handleScroll);
     };
-  }, [findScrollableElement, calculateScrollState, handleScroll, containerHeight]);
+  }, [findScrollableElement, calculateScrollState, handleScroll, containerHeight, contentKey]);
 
   // If contentKey changed, return default state and schedule update
   if (contentKey !== scrollState.key) {

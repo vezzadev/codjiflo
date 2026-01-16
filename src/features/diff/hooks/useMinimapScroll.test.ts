@@ -105,6 +105,40 @@ describe('useMinimapScroll', () => {
     expect(result.current.scrollState.scrollRatio).toBe(0);
   });
 
+  it('recalculates viewportRatio after contentKey changes', async () => {
+    const containerRef = { current: container };
+    let contentKey = 'file1.ts';
+
+    const { result, rerender } = renderHook(
+      ({ key }) => useMinimapScroll(containerRef, 500, key),
+      { initialProps: { key: contentKey } }
+    );
+
+    // Wait for initial calculation
+    await act(async () => {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    });
+
+    // viewportRatio should be calculated: 500 / 1000 = 0.5
+    expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.5, 1);
+
+    // Change content key (simulates file change)
+    contentKey = 'file2.ts';
+    rerender({ key: contentKey });
+
+    // Immediately after key change, should return default state
+    expect(result.current.scrollState.viewportRatio).toBe(1);
+
+    // Wait for effect to recalculate
+    await act(async () => {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    });
+
+    // BUG: After recalculation, viewportRatio should be 0.5 again (from actual scroll container)
+    // If this fails with viewportRatio=1, the key is not being updated in setScrollState
+    expect(result.current.scrollState.viewportRatio).toBeCloseTo(0.5, 1);
+  });
+
   it('cleans up scroll listener on unmount', () => {
     const containerRef = { current: container };
     const removeEventListenerSpy = vi.spyOn(scrollableElement, 'removeEventListener');
