@@ -5,12 +5,13 @@
  * Uses react-window for performant rendering of large diffs.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
 import type { AlignedDiffLine } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
+import type { VisibleRowRange } from './InlineDiffTable';
 
 /** Default line height from CSS variables (--diff-line-height) */
 const DEFAULT_ROW_HEIGHT = 23;
@@ -42,6 +43,10 @@ interface SideBySideDiffViewProps {
   scrollToRowIndex?: number | undefined;
   /** Whether full file content is available for accurate token lookup */
   hasFullContent?: boolean;
+  /** Whether to show comment threads (controlled by toolbar toggle) */
+  showComments?: boolean;
+  /** Callback when visible row range changes (for minimap synchronization) */
+  onVisibleRangeChange?: (range: VisibleRowRange) => void;
 }
 
 interface RowData {
@@ -64,6 +69,7 @@ interface RowData {
   onSubmitDraft: () => void;
   showWhitespace: boolean;
   hasFullContent: boolean;
+  showComments: boolean;
 }
 
 /**
@@ -105,6 +111,7 @@ function SideBySideRow({
   onSubmitDraft,
   showWhitespace,
   hasFullContent,
+  showComments,
 }: RowComponentProps<RowData>) {
 
   const pair = alignedLines[index];
@@ -163,7 +170,7 @@ function SideBySideRow({
                     </td>
                   </tr>
                 )}
-                {leftThreads.map((thread) => (
+                {showComments && leftThreads.map((thread) => (
                   <tr key={`thread-left-${thread.id}`}>
                     <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
@@ -220,7 +227,7 @@ function SideBySideRow({
                     </td>
                   </tr>
                 )}
-                {rightThreads.map((thread) => (
+                {showComments && rightThreads.map((thread) => (
                   <tr key={`thread-right-${thread.id}`}>
                     <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
@@ -269,8 +276,20 @@ export function SideBySideDiffView({
   showWhitespace,
   scrollToRowIndex,
   hasFullContent = false,
+  showComments = true,
+  onVisibleRangeChange,
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
+
+  // Handle visible rows change from react-window
+  const handleRowsRendered = useCallback(
+    (visibleRows: { startIndex: number; stopIndex: number }) => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange(visibleRows);
+      }
+    },
+    [onVisibleRangeChange]
+  );
 
   // Generate key for dynamic row height cache based on comments
   // This ensures rows are re-measured when comments are added/removed
@@ -387,6 +406,7 @@ export function SideBySideDiffView({
       onSubmitDraft,
       showWhitespace,
       hasFullContent,
+      showComments,
     }),
     [
       filteredLines,
@@ -408,6 +428,7 @@ export function SideBySideDiffView({
       onSubmitDraft,
       showWhitespace,
       hasFullContent,
+      showComments,
     ]
   );
 
@@ -425,6 +446,7 @@ export function SideBySideDiffView({
         style={{ height: containerHeight, width: '100%', overflowX: 'visible' }}
         overscanCount={OVERSCAN_COUNT}
         rowProps={rowProps}
+        onRowsRendered={handleRowsRendered}
       />
     </div>
   );

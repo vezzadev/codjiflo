@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
@@ -348,6 +348,7 @@ export function DiffToolbar() {
     setContentFilter,
     toggleFullFile,
     toggleWhitespace,
+    toggleComments,
     scrollToNextChange,
     scrollToPreviousChange,
     currentChangeIndex,
@@ -421,9 +422,14 @@ export function DiffToolbar() {
           event.preventDefault();
           toggleWhitespace();
           break;
+        case 'd':
+          // D for comments toggle
+          event.preventDefault();
+          toggleComments();
+          break;
       }
     },
-    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace]
+    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace, toggleComments]
   );
 
   useEffect(() => {
@@ -479,6 +485,24 @@ export function DiffToolbar() {
         ]}
         ariaLabel="Whitespace visibility"
         tooltip="Whitespace visibility (B: Toggle)"
+      />
+
+      {/* Separator before comments */}
+      <span className="toolbar-separator" aria-hidden="true" />
+
+      {/* Comments Select */}
+      <ToolbarSelect
+        value={viewConfig.showComments ? 'visible' : 'hidden'}
+        onChange={(v) => {
+          const wantsVisible = v === 'visible';
+          if (wantsVisible !== viewConfig.showComments) toggleComments();
+        }}
+        options={[
+          { value: 'hidden', label: 'Comments: Hidden', icon: <MessageSquareOff className="w-4 h-4" aria-hidden /> },
+          { value: 'visible', label: 'Comments: Visible', icon: <MessageSquare className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="Comments visibility"
+        tooltip="Comments visibility (D: Toggle)"
       />
 
       {/* Change Navigation Buttons */}

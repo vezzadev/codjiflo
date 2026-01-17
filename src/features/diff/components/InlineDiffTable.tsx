@@ -15,6 +15,14 @@ const DEFAULT_ROW_HEIGHT = 23;
 /** Number of rows to render outside the visible area */
 const OVERSCAN_COUNT = 10;
 
+/** Visible row range for minimap synchronization */
+export interface VisibleRowRange {
+  /** First visible row index (0-indexed) */
+  startIndex: number;
+  /** Last visible row index (0-indexed, inclusive) */
+  stopIndex: number;
+}
+
 export interface InlineDiffTableProps {
   diffLines: ParsedDiffLine[];
   language: string;
@@ -38,6 +46,10 @@ export interface InlineDiffTableProps {
   scrollToRowIndex?: number | undefined;
   /** Whether full file content is available for accurate token lookup */
   hasFullContent?: boolean;
+  /** Whether to show comment threads (controlled by toolbar toggle) */
+  showComments?: boolean;
+  /** Callback when visible row range changes (for minimap synchronization) */
+  onVisibleRangeChange?: (range: VisibleRowRange) => void;
 }
 
 interface RowData {
@@ -59,6 +71,7 @@ interface RowData {
   showWhitespace: boolean;
   lineNumberMode: 'left' | 'both' | 'right';
   hasFullContent: boolean;
+  showComments: boolean;
 }
 
 /**
@@ -85,6 +98,7 @@ function DiffRow({
   showWhitespace,
   lineNumberMode,
   hasFullContent,
+  showComments,
 }: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
@@ -131,7 +145,7 @@ function DiffRow({
               </td>
             </tr>
           )}
-          {lineThreads.map((thread) => (
+          {showComments && lineThreads.map((thread) => (
             <tr key={`thread-${thread.id}`}>
               <td colSpan={colSpan} className="diff-comment-cell">
                 <CommentThread
@@ -176,9 +190,21 @@ export function InlineDiffTable({
   lineNumberMode,
   scrollToRowIndex,
   hasFullContent = false,
+  showComments = true,
+  onVisibleRangeChange,
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle visible rows change from react-window
+  const handleRowsRendered = useCallback(
+    (visibleRows: { startIndex: number; stopIndex: number }) => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange(visibleRows);
+      }
+    },
+    [onVisibleRangeChange]
+  );
 
   // Generate key for dynamic row height cache based on comments
   // This ensures rows are re-measured when comments are added/removed
@@ -355,6 +381,7 @@ export function InlineDiffTable({
       showWhitespace,
       lineNumberMode,
       hasFullContent,
+      showComments,
     }),
     [
       diffLines,
@@ -375,6 +402,7 @@ export function InlineDiffTable({
       showWhitespace,
       lineNumberMode,
       hasFullContent,
+      showComments,
     ]
   );
 
@@ -389,6 +417,7 @@ export function InlineDiffTable({
         style={{ height: containerHeight, width: '100%' }}
         overscanCount={OVERSCAN_COUNT}
         rowProps={rowProps}
+        onRowsRendered={handleRowsRendered}
       />
     </div>
   );

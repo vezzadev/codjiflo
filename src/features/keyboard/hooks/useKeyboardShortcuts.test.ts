@@ -389,6 +389,7 @@ describe('getShortcutsList', () => {
       { key: 'f', description: 'Show full file' },
       { key: 'c', description: 'Show changes only' },
       { key: 'b', description: 'Toggle whitespace visibility' },
+      { key: 'd', description: 'Toggle show/hide comments' },
     ]);
   });
 });

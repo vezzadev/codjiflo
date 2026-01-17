@@ -13,6 +13,8 @@ export interface DiffViewConfig {
   showFullFile: boolean;
   /** When true, render whitespace characters visibly (· for spaces, → for tabs) */
   showWhitespace: boolean;
+  /** When true, show inline comment threads; when false, hide comments and show minimap lasso */
+  showComments: boolean;
 }
 
 // ============================================================================
@@ -103,6 +105,7 @@ export interface DiffState {
   setContentFilter: (filter: ContentFilter) => void;
   toggleFullFile: () => void;
   toggleWhitespace: () => void;
+  toggleComments: () => void;
 
   // Change navigation actions
   scrollToNextChange: () => void;

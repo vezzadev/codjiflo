@@ -39,10 +39,14 @@ export function useDiffComments(navigation: DiffNavigationOutput): DiffCommentsO
 
   // Group threads by line number and side for quick lookup during render
   // Key format: "lineNumber-side" → "42-RIGHT", "17-LEFT"
+  // Threads with line === null (outdated/unmappable) are excluded
   const threadsByLineAndSide = useMemo(() => {
     const map = new Map<string, ReviewThread[]>();
 
     threadsForFile.forEach((thread) => {
+      // Skip threads that can't be mapped to a line (outdated comments)
+      if (thread.line === null) return;
+
       const key = `${String(thread.line)}-${thread.side}`;
       const existing = map.get(key) ?? [];
       map.set(key, [...existing, thread]);

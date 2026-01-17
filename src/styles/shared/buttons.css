@@ -385,6 +385,17 @@
 }
 
 /* ============================================
+   TOOLBAR SEPARATOR
+   ============================================ */
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background-color: var(--combobox-border);
+  margin: 0 4px;
+  align-self: center;
+}
+
+/* ============================================
    LINK BUTTON
    ============================================ */
 .btn-link {
