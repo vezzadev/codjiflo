@@ -67,18 +67,35 @@ const { WIDTH, BAR_WIDTH, LEFT_BAR_X, RIGHT_BAR_X, PADDING_VERTICAL } = MINIMAP_
 // ============================================================================
 
 /**
+ * Result type for visible line range calculation
+ * Includes anchor positions for when one side has no visible content
+ */
+interface VisibleLineRangesResult {
+  left: VisibleLineRange | null;
+  right: VisibleLineRange | null;
+  /** Last left line number before visible range (for positioning when left is null) */
+  leftAnchor: number | null;
+  /** Last right line number before visible range (for positioning when right is null) */
+  rightAnchor: number | null;
+}
+
+/**
  * Calculate visible line ranges from row indices and diff lines
  *
  * This function maps visible row indices (from react-window) to actual file
  * line numbers by examining the diff lines in that range.
+ *
+ * When one side has no visible lines (e.g., viewing pure additions), it also
+ * provides an "anchor" - the last line number from that side before the visible
+ * range. This allows consistent lasso positioning during transitions.
  */
 function calculateVisibleLineRangesFromRows(
   startIndex: number,
   stopIndex: number,
   diffLines: ParsedDiffLine[]
-): { left: VisibleLineRange | null; right: VisibleLineRange | null } {
+): VisibleLineRangesResult {
   if (diffLines.length === 0) {
-    return { left: null, right: null };
+    return { left: null, right: null, leftAnchor: null, rightAnchor: null };
   }
 
   // Clamp indices to valid range
@@ -108,6 +125,33 @@ function calculateVisibleLineRangesFromRows(
     }
   }
 
+  // Find anchor positions by looking at rows before the visible range
+  // These are used when one side has no visible content
+  let leftAnchor: number | null = null;
+  let rightAnchor: number | null = null;
+
+  if (leftFirst === null) {
+    // No left lines in visible range - find the last left line before it
+    for (let i = firstRow - 1; i >= 0; i--) {
+      const line = diffLines[i];
+      if (line?.oldLineNumber != null) {
+        leftAnchor = line.oldLineNumber;
+        break;
+      }
+    }
+  }
+
+  if (rightFirst === null) {
+    // No right lines in visible range - find the last right line before it
+    for (let i = firstRow - 1; i >= 0; i--) {
+      const line = diffLines[i];
+      if (line?.newLineNumber != null) {
+        rightAnchor = line.newLineNumber;
+        break;
+      }
+    }
+  }
+
   return {
     left: leftFirst !== null && leftLast !== null
       ? { firstLine: leftFirst, lastLine: leftLast }
@@ -115,6 +159,8 @@ function calculateVisibleLineRangesFromRows(
     right: rightFirst !== null && rightLast !== null
       ? { firstLine: rightFirst, lastLine: rightLast }
       : null,
+    leftAnchor,
+    rightAnchor,
   };
 }
 
@@ -174,7 +220,7 @@ export function Minimap({
   // This gives accurate lasso positioning based on what's actually visible in the viewport
   const visibleRanges = useMemo(() => {
     if (!showFullFile || showComments || !visibleRowRange) {
-      return { left: null, right: null };
+      return { left: null, right: null, leftAnchor: null, rightAnchor: null };
     }
     return calculateVisibleLineRangesFromRows(
       visibleRowRange.startIndex,
@@ -206,6 +252,8 @@ export function Minimap({
       rightBarHeight: barHeights.rightHeight,
       visibleLeftRange: visibleRanges.left,
       visibleRightRange: visibleRanges.right,
+      leftAnchor: visibleRanges.leftAnchor,
+      rightAnchor: visibleRanges.rightAnchor,
     });
   }, [
     showFullFile,

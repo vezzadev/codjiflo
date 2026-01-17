@@ -509,6 +509,10 @@ export function calculateAsymmetricViewportLasso(params: {
   visibleLeftRange?: VisibleLineRange | null;
   /** Actual visible line range on right side (if available) */
   visibleRightRange?: VisibleLineRange | null;
+  /** Anchor line number on left side when no left lines visible (last left line before visible range) */
+  leftAnchor?: number | null;
+  /** Anchor line number on right side when no right lines visible (last right line before visible range) */
+  rightAnchor?: number | null;
 }): ViewportLasso | null {
   const {
     scrollRatio,
@@ -521,6 +525,8 @@ export function calculateAsymmetricViewportLasso(params: {
     rightBarHeight,
     visibleLeftRange,
     visibleRightRange,
+    leftAnchor,
+    rightAnchor,
   } = params;
 
   if (leftLineCount === 0 && rightLineCount === 0) {
@@ -536,31 +542,66 @@ export function calculateAsymmetricViewportLasso(params: {
     let leftTop: number;
     let leftLassoHeight: number;
 
-    if (visibleLeftRange && leftLineCount > 0) {
+    // Calculate position ratios from visible ranges
+    // These are null if no lines visible on that side
+    const leftStartRatio = visibleLeftRange && leftLineCount > 0
+      ? (visibleLeftRange.firstLine - 1) / leftLineCount
+      : null;
+    const leftEndRatio = visibleLeftRange && leftLineCount > 0
+      ? visibleLeftRange.lastLine / leftLineCount
+      : null;
+    const rightStartRatio = visibleRightRange && rightLineCount > 0
+      ? (visibleRightRange.firstLine - 1) / rightLineCount
+      : null;
+    const rightEndRatio = visibleRightRange && rightLineCount > 0
+      ? visibleRightRange.lastLine / rightLineCount
+      : null;
+
+    // Calculate left lasso position
+    if (leftStartRatio !== null && leftEndRatio !== null) {
       // Directly map line numbers to bar positions
-      // Line 1 = top of bar, Line N = bottom of bar
-      const startRatio = (visibleLeftRange.firstLine - 1) / leftLineCount;
-      const endRatio = visibleLeftRange.lastLine / leftLineCount;
-      leftTop = leftBarTop + startRatio * leftBarHeight;
-      leftLassoHeight = Math.max(MIN_LASSO_HEIGHT, (endRatio - startRatio) * leftBarHeight);
+      leftTop = leftBarTop + leftStartRatio * leftBarHeight;
+      leftLassoHeight = Math.max(MIN_LASSO_HEIGHT, (leftEndRatio - leftStartRatio) * leftBarHeight);
+    } else if (leftAnchor != null && leftLineCount > 0) {
+      // No visible left lines but we have an anchor (last left line before visible range)
+      // Use anchor position for continuity during transitions
+      // The anchor is the last left line BEFORE the visible range, so we position
+      // the lasso at that line's position (using same formula as visible lines)
+      const anchorRatio = leftAnchor / leftLineCount;
+      leftLassoHeight = MIN_LASSO_HEIGHT;
+      leftTop = leftBarTop + anchorRatio * leftBarHeight;
+    } else if (rightStartRatio !== null) {
+      // No visible left lines and no anchor - derive from right side
+      leftLassoHeight = MIN_LASSO_HEIGHT;
+      leftTop = leftBarTop + rightStartRatio * (leftBarHeight - leftLassoHeight);
     } else {
-      // No visible left lines - use minimum height at scroll position
+      // No reference position - use scroll ratio as fallback
       leftLassoHeight = MIN_LASSO_HEIGHT;
       leftTop = leftBarTop + scrollRatio * (leftBarHeight - leftLassoHeight);
     }
 
-    // Calculate right lasso position from actual visible lines
+    // Calculate right lasso position
     let rightTop: number;
     let rightLassoHeight: number;
 
-    if (visibleRightRange && rightLineCount > 0) {
+    if (rightStartRatio !== null && rightEndRatio !== null) {
       // Directly map line numbers to bar positions
-      const startRatio = (visibleRightRange.firstLine - 1) / rightLineCount;
-      const endRatio = visibleRightRange.lastLine / rightLineCount;
-      rightTop = rightBarTop + startRatio * rightBarHeight;
-      rightLassoHeight = Math.max(MIN_LASSO_HEIGHT, (endRatio - startRatio) * rightBarHeight);
+      rightTop = rightBarTop + rightStartRatio * rightBarHeight;
+      rightLassoHeight = Math.max(MIN_LASSO_HEIGHT, (rightEndRatio - rightStartRatio) * rightBarHeight);
+    } else if (rightAnchor != null && rightLineCount > 0) {
+      // No visible right lines but we have an anchor (last right line before visible range)
+      // Use anchor position for continuity during transitions
+      // The anchor is the last right line BEFORE the visible range, so we position
+      // the lasso at that line's position (using same formula as visible lines)
+      const anchorRatio = rightAnchor / rightLineCount;
+      rightLassoHeight = MIN_LASSO_HEIGHT;
+      rightTop = rightBarTop + anchorRatio * rightBarHeight;
+    } else if (leftStartRatio !== null) {
+      // No visible right lines and no anchor - derive from left side
+      rightLassoHeight = MIN_LASSO_HEIGHT;
+      rightTop = rightBarTop + leftStartRatio * (rightBarHeight - rightLassoHeight);
     } else {
-      // No visible right lines - use minimum height at scroll position
+      // No reference position - use scroll ratio as fallback
       rightLassoHeight = MIN_LASSO_HEIGHT;
       rightTop = rightBarTop + scrollRatio * (rightBarHeight - rightLassoHeight);
     }
