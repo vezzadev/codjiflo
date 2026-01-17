@@ -327,24 +327,26 @@ interface OverviewMargin {
 
 Minimap navigation (click and drag) scrolls the diff view instantly without any smooth scroll animation. This provides immediate visual feedback and responsive drag scrolling. Direct `scrollTop` assignment is used rather than `scrollTo({ behavior: 'smooth' })`.
 
-**Lasso-Center Positioning:**
+**25% Viewport Positioning:**
 
-Both click and drag navigation position the **lasso center** under the cursor using the same formula:
+Both click and drag navigation position the target line at **25% of the viewport height** (near the top with context above):
 
 ```
-ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
+clickRatio = (y - barTop) / barHeight
+targetLine = clickRatio * totalLines
+scrollPosition = targetLine - (0.25 * visibleLines)
 ```
 
-Where:
-- `y` is the mouse Y position within the SVG
-- `barTop` is the top of the clicked bar
-- `lassoHeight = viewportRatio * barHeight` (viewport size as portion of bar)
-- `barHeight - lassoHeight` is the range the lasso can move within
+**Bar-specific scrolling:** The bar clicked/dragged determines which file's lines are used as reference:
+- **Left bar**: Uses left file line numbers. Scrolls to show the corresponding left-side line at 25% viewport height.
+- **Right bar**: Uses right file line numbers. Scrolls to show the corresponding right-side line at 25% viewport height.
 
 This ensures:
-- Clicking anywhere positions the lasso center at the click point
-- Dragging moves the lasso center 1:1 with the mouse
-- The lasso stays within bar bounds (ratio clamped to [0, 1])
+- Target content appears in the upper portion of the viewport
+- User can see context above the target line
+- Natural reading flow from top to bottom is preserved
+- Consistent behavior between click and drag interactions
+- Accurate navigation for asymmetric diffs where left and right have different line counts
 
 **Asymmetric Lasso Heights:**
 
