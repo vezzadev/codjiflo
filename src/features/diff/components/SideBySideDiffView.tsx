@@ -34,7 +34,6 @@ interface SideBySideDiffViewProps {
   draftBody: string;
   isSubmittingDraft: boolean;
   submitError: string | null;
-  onStartComment: (index: number, side: 'LEFT' | 'RIGHT') => void;
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
@@ -60,7 +59,6 @@ interface RowData {
   draftBody: string;
   isSubmittingDraft: boolean;
   submitError: string | null;
-  onStartComment: (index: number, side: 'LEFT' | 'RIGHT') => void;
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
@@ -102,7 +100,6 @@ function SideBySideRow({
   draftBody,
   isSubmittingDraft,
   submitError,
-  onStartComment,
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
@@ -143,8 +140,6 @@ function SideBySideRow({
                     language={language}
                     side="left"
                     singleLineNumber
-                    showCommentButton={leftLine.type !== 'header'}
-                    onStartComment={() => onStartComment(index, 'LEFT')}
                     showWhitespace={showWhitespace}
                     hasFullContent={hasFullContent}
                   />
@@ -153,7 +148,7 @@ function SideBySideRow({
                 )}
                 {showLeftDraft && (
                   <tr>
-                    <td colSpan={3} className="diff-comment-cell">
+                    <td colSpan={2} className="diff-comment-cell">
                       {submitError && (
                         <div className="diff-comment-error">{submitError}</div>
                       )}
@@ -170,7 +165,7 @@ function SideBySideRow({
                 )}
                 {leftThreads.map((thread) => (
                   <tr key={`thread-left-${thread.id}`}>
-                    <td colSpan={3} className="diff-comment-cell">
+                    <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
                         thread={thread}
                         currentUserLogin={currentUserLogin}
@@ -202,8 +197,6 @@ function SideBySideRow({
                     language={language}
                     side="right"
                     singleLineNumber
-                    showCommentButton={rightLine.type !== 'header'}
-                    onStartComment={() => onStartComment(index, 'RIGHT')}
                     showWhitespace={showWhitespace}
                     hasFullContent={hasFullContent}
                   />
@@ -212,7 +205,7 @@ function SideBySideRow({
                 )}
                 {showRightDraft && (
                   <tr>
-                    <td colSpan={3} className="diff-comment-cell">
+                    <td colSpan={2} className="diff-comment-cell">
                       {submitError && (
                         <div className="diff-comment-error">{submitError}</div>
                       )}
@@ -229,7 +222,7 @@ function SideBySideRow({
                 )}
                 {rightThreads.map((thread) => (
                   <tr key={`thread-right-${thread.id}`}>
-                    <td colSpan={3} className="diff-comment-cell">
+                    <td colSpan={2} className="diff-comment-cell">
                       <CommentThread
                         thread={thread}
                         currentUserLogin={currentUserLogin}
@@ -270,7 +263,6 @@ export function SideBySideDiffView({
   draftBody,
   isSubmittingDraft,
   submitError,
-  onStartComment,
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
@@ -390,7 +382,6 @@ export function SideBySideDiffView({
       draftBody,
       isSubmittingDraft,
       submitError,
-      onStartComment,
       onCancelDraft,
       onChangeDraftBody,
       onSubmitDraft,
@@ -412,7 +403,6 @@ export function SideBySideDiffView({
       draftBody,
       isSubmittingDraft,
       submitError,
-      onStartComment,
       onCancelDraft,
       onChangeDraftBody,
       onSubmitDraft,

@@ -79,16 +79,6 @@ export function DiffView() {
     setTotalChangeCount(pipeline.hunkIndices.length);
   }, [pipeline.hunkIndices.length, setTotalChangeCount]);
 
-  // Handler for starting comment (inline view only shows RIGHT side)
-  const handleStartCommentInline = useCallback(
-    (index: number) => {
-      const targetLine = pipeline.diffLines[index];
-      const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-      draft.startComment(index, side);
-    },
-    [pipeline.diffLines, draft]
-  );
-
   // Handler for submitting draft
   const handleSubmitDraft = useCallback(() => {
     if (draft.draftLineIndex !== null && draft.draftSide !== null && pipeline.filename) {
@@ -218,7 +208,6 @@ export function DiffView() {
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={handleStartCommentInline}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
@@ -252,7 +241,6 @@ export function DiffView() {
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={draft.startComment}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}

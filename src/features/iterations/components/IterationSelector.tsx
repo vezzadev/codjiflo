@@ -79,7 +79,7 @@ function IterationTab({
       aria-pressed={isSelected || isInRange}
       data-testid={`iteration-tab-${iteration.revision}`}
     >
-      <span className="iteration-tab-number">{iteration.revision}</span>
+      <span className="iteration-tab-number" aria-hidden="true">{iteration.revision}</span>
     </button>
   );
 }

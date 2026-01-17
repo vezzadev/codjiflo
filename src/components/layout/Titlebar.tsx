@@ -21,11 +21,11 @@ export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent, github
   return (
     <header className="titlebar">
       <div className="titlebar-left">
-        {/* Logo */}
-        <div className="logo">
+        {/* Logo - decorative, hidden from accessibility tree */}
+        <div className="logo" aria-hidden="true">
           <Image
             src="/codjiflo.svg"
-            alt="CodjiFlo"
+            alt=""
             width={32}
             height={32}
           />

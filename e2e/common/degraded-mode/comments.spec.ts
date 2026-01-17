@@ -111,7 +111,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
       await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
 
       // Wait for the file list item to be visible and selected
-      const fileListItem = page.getByRole("treeitem", { name: /src\/example\.ts/ });
+      const fileListItem = page.getByRole("treeitem", { name: /example\.ts/ });
       await expect(fileListItem).toBeVisible();
       await expect(fileListItem).toHaveAttribute("aria-current", "location");
 

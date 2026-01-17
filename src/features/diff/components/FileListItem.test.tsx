@@ -210,9 +210,9 @@ describe('FileListItem', () => {
         />
       );
 
-      // aria-label should contain full path for accessibility
+      // aria-label should use displayName (basename) for cleaner accessibility
       expect(
-        screen.getByRole('treeitem', { name: /src\/components\/Button\.tsx/i })
+        screen.getByRole('treeitem', { name: /Button\.tsx/i })
       ).toBeInTheDocument();
     });
   });

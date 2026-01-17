@@ -169,7 +169,7 @@ export function ShikiHighlighter({
   // Handle empty lines consistently to maintain line height
   if (code === '') {
     return (
-      <span className="diff-code" data-testid="shiki-highlighter">
+      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
         &nbsp;
       </span>
     );
@@ -178,7 +178,7 @@ export function ShikiHighlighter({
   // Use context tokens if available (handles multi-line constructs correctly)
   if (contextTokens) {
     return (
-      <span className="diff-code" data-testid="shiki-highlighter">
+      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
         {renderTokens([contextTokens], showWhitespace)}
       </span>
     );
@@ -187,14 +187,14 @@ export function ShikiHighlighter({
   // While loading, show unhighlighted code to prevent layout shift
   if (!tokens) {
     return (
-      <span className="diff-code" data-testid="shiki-highlighter">
+      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
         {showWhitespace ? insertWhitespaceMarkers(code) : code}
       </span>
     );
   }
 
   return (
-    <span className="diff-code" data-testid="shiki-highlighter">
+    <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
       {renderTokens(tokens, showWhitespace)}
     </span>
   );
