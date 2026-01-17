@@ -1,0 +1,44 @@
+/* ============================================
+   GO TO LINE MODAL
+   Compact modal positioned at top-right of diff area
+   ============================================ */
+
+.goto-line-modal {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 100;
+  background-color: var(--main-bg);
+  border: 1px solid var(--combobox-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  min-width: 280px;
+}
+
+.goto-line-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goto-line-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.goto-line-input::placeholder {
+  font-size: 12px;
+}
+
+.goto-line-close {
+  flex-shrink: 0;
+}
+
+.goto-line-error {
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--error-fg);
+  background-color: var(--error-bg);
+  border: 1px solid var(--error-fg);
+}

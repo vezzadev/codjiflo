@@ -381,6 +381,7 @@ describe('getShortcutsList', () => {
       { key: 's', description: 'Next file' },
       { key: 'w', description: 'Previous file' },
       { key: 'Space', description: 'Scroll down in diff view' },
+      { key: 'Ctrl+G', description: 'Go to line' },
       { key: 'i', description: 'Inline view' },
       { key: 'x', description: 'Side-by-side view' },
       { key: 'l', description: 'Left only (deletions)' },

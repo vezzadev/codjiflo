@@ -5,7 +5,7 @@ import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
-import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight } from '../hooks';
+import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight, useGoToLine } from '../hooks';
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -110,12 +110,21 @@ const mockContainerHeight = {
   scrollContainerRef: { current: null },
 };
 
+// Mock useGoToLine hook
+const mockGoToLine = {
+  isOpen: false,
+  open: vi.fn(),
+  close: vi.fn(),
+  findRowIndex: vi.fn(() => -1),
+};
+
 vi.mock('../hooks', () => ({
   useIterationDiff: vi.fn(() => mockIterationDiff),
   useIterationAwareFiles: vi.fn(() => mockIterationAwareFiles),
   useDiffPipeline: vi.fn(() => mockDiffPipeline),
   useDraftComment: vi.fn(() => mockDraftComment),
   useContainerHeight: vi.fn(() => mockContainerHeight),
+  useGoToLine: vi.fn(() => mockGoToLine),
 }));
 
 const mockDefaultCommentsState = {
@@ -166,6 +175,7 @@ describe('DiffView', () => {
     vi.mocked(useContainerHeight).mockReturnValue({ ...mockContainerHeight });
     vi.mocked(useIterationDiff).mockReturnValue({ ...mockIterationDiff });
     vi.mocked(useIterationAwareFiles).mockReturnValue({ ...mockIterationAwareFiles });
+    vi.mocked(useGoToLine).mockReturnValue({ ...mockGoToLine });
   });
 
   it('shows loading state', () => {

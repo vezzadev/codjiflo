@@ -7,6 +7,7 @@ export { SideBySideDiffView } from './SideBySideDiffView';
 export { InlineDiffTable } from './InlineDiffTable';
 export { DiffLoadingState } from './DiffLoadingState';
 export { DiffEmptyState } from './DiffEmptyState';
+export { GoToLineModal } from './GoToLineModal';
 
 export type { InlineDiffTableProps } from './InlineDiffTable';
 export type { DiffEmptyStateVariant } from './DiffEmptyState';

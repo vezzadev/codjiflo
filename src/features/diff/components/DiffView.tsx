@@ -7,19 +7,21 @@
  * S-3.3: View mode toggles
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   useDiffPipeline,
   useDraftComment,
   useContainerHeight,
   useIterationDiff,
+  useGoToLine,
 } from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
 import { InlineDiffTable } from './InlineDiffTable';
 import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
+import { GoToLineModal } from './GoToLineModal';
 import { ShikiTokensProvider } from './ShikiTokensContext';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
@@ -56,6 +58,11 @@ export function DiffView() {
 
   // Container height for virtualized rendering
   const { containerHeight, containerRefCallback } = useContainerHeight();
+
+  // Go to line modal
+  const goToLine = useGoToLine();
+  // Track go-to-line request with file context to auto-invalidate on file change
+  const [gotoRequest, setGotoRequest] = useState<{ fileIndex: number; rowIndex: number } | null>(null);
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
@@ -100,6 +107,29 @@ export function DiffView() {
       );
     }
   }, [draft, pipeline]);
+
+  // Handler for go-to-line navigation
+  const handleGoToLineNavigate = useCallback((rowIndex: number) => {
+    setGotoRequest({ fileIndex: selectedFileIndex, rowIndex });
+  }, [selectedFileIndex]);
+
+  // Wrapper for findRowIndex that uses current pipeline data
+  const findRowIndexForGoToLine = useCallback(
+    (input: string) => {
+      return goToLine.findRowIndex(
+        input,
+        pipeline.diffLines,
+        pipeline.alignedLines,
+        pipeline.viewMode
+      );
+    },
+    [goToLine, pipeline.diffLines, pipeline.alignedLines, pipeline.viewMode]
+  );
+
+  // Combined scroll target: go-to-line takes precedence over change navigation
+  // Auto-invalidate gotoRequest when file changes by checking fileIndex matches
+  const gotoRowIndex = gotoRequest?.fileIndex === selectedFileIndex ? gotoRequest.rowIndex : undefined;
+  const effectiveScrollToRowIndex = gotoRowIndex ?? pipeline.scrollToRowIndex;
 
   // Get full file content from iteration diff for accurate multi-line syntax highlighting
   const fullFileContent = useMemo(() => {
@@ -224,8 +254,14 @@ export function DiffView() {
               onSubmitDraft={handleSubmitDraft}
               showWhitespace={pipeline.showWhitespace}
               lineNumberMode={pipeline.lineNumberMode}
-              scrollToRowIndex={pipeline.scrollToRowIndex}
+              scrollToRowIndex={effectiveScrollToRowIndex}
               hasFullContent={hasFullContent}
+            />
+            <GoToLineModal
+              isOpen={goToLine.isOpen}
+              onClose={goToLine.close}
+              onNavigate={handleGoToLineNavigate}
+              findRowIndex={findRowIndexForGoToLine}
             />
           </div>
         ) : (
@@ -257,8 +293,14 @@ export function DiffView() {
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
               showWhitespace={pipeline.showWhitespace}
-              scrollToRowIndex={pipeline.scrollToRowIndex}
+              scrollToRowIndex={effectiveScrollToRowIndex}
               hasFullContent={hasFullContent}
+            />
+            <GoToLineModal
+              isOpen={goToLine.isOpen}
+              onClose={goToLine.close}
+              onNavigate={handleGoToLineNavigate}
+              findRowIndex={findRowIndexForGoToLine}
             />
           </div>
         )}
