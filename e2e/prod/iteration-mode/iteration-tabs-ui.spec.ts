@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 import { setupAuthState } from "../../fixtures/github-mocks";
 
 test.describe("Iteration Tabs UI (Prod Mode)", () => {
-  // These tests require real iteration artifacts from PR #75
+  // These tests require real iteration artifacts from PR #11 in e2e test repo
   const iterationTestPR = {
     owner: "pedropaulovc",
-    repo: "codjiflo",
-    prNumber: 75,
+    repo: "codjiflo-e2e-test-repo",
+    prNumber: 11,
   };
 
   test.beforeEach(async ({ page }) => {
