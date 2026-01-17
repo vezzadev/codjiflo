@@ -314,7 +314,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.keyboard.press("s");
 
     // The file at original index 0 should be selected (e2e/app.spec.ts in both modes)
-    const firstFileByIndex = fileNav.getByRole("treeitem", { name: /e2e\/app\.spec\.ts/ });
+    const firstFileByIndex = fileNav.getByRole("treeitem", { name: /app\.spec\.ts/ });
     await expect(firstFileByIndex).toHaveAttribute("aria-current", "location");
 
     // [AC-1.5.1] Press w to go back to PR Description (previous file)

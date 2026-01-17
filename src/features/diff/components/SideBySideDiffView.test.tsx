@@ -87,7 +87,6 @@ const defaultProps = {
   draftBody: '',
   isSubmittingDraft: false,
   submitError: null,
-  onStartComment: vi.fn(),
   onCancelDraft: vi.fn(),
   onChangeDraftBody: vi.fn(),
   onSubmitDraft: vi.fn(),
@@ -147,17 +146,6 @@ describe('SideBySideDiffView', () => {
 
     // Should still render the list
     expect(screen.getByTestId('virtualized-sxs-list')).toBeInTheDocument();
-  });
-
-  it('calls onStartComment with correct side when clicking left pane comment button', () => {
-    const onStartComment = vi.fn();
-    render(<SideBySideDiffView {...defaultProps} onStartComment={onStartComment} />);
-
-    const buttons = screen.getAllByRole('button', { name: /Add comment/i });
-    if (buttons.length > 0) {
-      buttons[0]?.click();
-      expect(onStartComment).toHaveBeenCalled();
-    }
   });
 
   it('renders with empty aligned lines', () => {

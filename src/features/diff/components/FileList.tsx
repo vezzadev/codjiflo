@@ -114,10 +114,10 @@ export function FileList() {
           aria-current={isDescriptionSelected ? 'location' : undefined}
           aria-label="Pull Request Description"
         >
-          <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }}>
+          <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }} aria-hidden="true">
             PR
           </span>
-          <span className="tree-label">Pull Request Description</span>
+          <span className="tree-label" aria-hidden="true">Pull Request Description</span>
         </div>
         {groupedFiles.map(({ folder, files: folderFiles }) => {
           const isCollapsed = collapsedFolders.has(folder);
@@ -128,6 +128,7 @@ export function FileList() {
                 className={`tree-item folder ${!isCollapsed ? 'expanded' : ''}`}
                 role="treeitem"
                 aria-expanded={!isCollapsed}
+                aria-label={folder}
                 onClick={() => toggleFolder(folder)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -137,8 +138,8 @@ export function FileList() {
                 }}
                 tabIndex={0}
               >
-                <span className="tree-toggle" aria-hidden="true" />
-                <span className="tree-label">{folder}</span>
+                <span className="tree-toggle" role="presentation" aria-hidden="true" />
+                <span className="tree-label" role="presentation" aria-hidden="true">{folder}</span>
               </div>
               {/* Files in folder */}
               {!isCollapsed &&

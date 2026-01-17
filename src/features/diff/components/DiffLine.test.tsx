@@ -71,8 +71,8 @@ describe('DiffLine', () => {
       </table>
     );
 
-    expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('+')).toBeInTheDocument();
+    expect(screen.getByTestId('diff-line')).toHaveAttribute('data-line-type', 'addition');
+    expect(screen.getByText('Added:')).toBeInTheDocument(); // sr-only text
   });
 
   it('renders deletion line with old line number', () => {
@@ -91,8 +91,8 @@ describe('DiffLine', () => {
       </table>
     );
 
-    expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('−')).toBeInTheDocument();
+    expect(screen.getByTestId('diff-line')).toHaveAttribute('data-line-type', 'deletion');
+    expect(screen.getByText('Deleted:')).toBeInTheDocument(); // sr-only text
   });
 
   it('renders context line with both line numbers', () => {
@@ -420,57 +420,6 @@ describe('DiffLine', () => {
       // singleLineNumber with side="left" should show only old line number
       expect(screen.getByText('5')).toBeInTheDocument();
       expect(screen.queryByText('10')).not.toBeInTheDocument();
-    });
-  });
-
-  // Comment button tests
-  describe('comment button', () => {
-    it('shows comment button when showCommentButton is true', () => {
-      const line: ParsedDiffLine = {
-        type: 'addition',
-        content: 'new line',
-        oldLineNumber: null,
-        newLineNumber: 1,
-      };
-
-      render(
-        <table>
-          <tbody>
-            <DiffLine
-              line={line}
-              language="typescript"
-              showCommentButton
-              onStartComment={vi.fn()}
-            />
-          </tbody>
-        </table>
-      );
-
-      expect(screen.getByRole('button', { name: 'Add comment' })).toBeInTheDocument();
-    });
-
-    it('does not show comment button for header lines', () => {
-      const line: ParsedDiffLine = {
-        type: 'header',
-        content: '@@ -1,3 +1,4 @@',
-        oldLineNumber: null,
-        newLineNumber: null,
-      };
-
-      render(
-        <table>
-          <tbody>
-            <DiffLine
-              line={line}
-              language="typescript"
-              showCommentButton={false}
-              onStartComment={vi.fn()}
-            />
-          </tbody>
-        </table>
-      );
-
-      expect(screen.queryByRole('button', { name: 'Add comment' })).not.toBeInTheDocument();
     });
   });
 

@@ -29,7 +29,6 @@ export interface InlineDiffTableProps {
   draftBody: string;
   isSubmittingDraft: boolean;
   submitError: string | null;
-  onStartComment: (index: number) => void;
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
@@ -54,7 +53,6 @@ interface RowData {
   draftBody: string;
   isSubmittingDraft: boolean;
   submitError: string | null;
-  onStartComment: (index: number) => void;
   onCancelDraft: () => void;
   onChangeDraftBody: (body: string) => void;
   onSubmitDraft: () => void;
@@ -81,7 +79,6 @@ function DiffRow({
   draftBody,
   isSubmittingDraft,
   submitError,
-  onStartComment,
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
@@ -101,19 +98,17 @@ function DiffRow({
     ...(rightKey ? threadsByLineAndSide.get(rightKey) ?? [] : []),
   ];
 
-  const showCommentButton = line.type !== 'header';
   const showDraftHere = draftLineIndex === index;
-  const colSpan = lineNumberMode === 'both' ? 4 : 3;
+  // Column count: line number cols + content col (marker column removed)
+  const colSpan = lineNumberMode === 'both' ? 3 : 2;
 
   return (
-    <div style={style} className="virtualized-row">
+    <div style={style} className="virtualized-row" role="presentation">
       <table className="diff-table">
         <tbody>
           <DiffLine
             line={line}
             language={language}
-            showCommentButton={showCommentButton}
-            onStartComment={() => onStartComment(index)}
             showWhitespace={showWhitespace}
             lineNumberMode={lineNumberMode}
             lineIndex={index}
@@ -174,7 +169,6 @@ export function InlineDiffTable({
   draftBody,
   isSubmittingDraft,
   submitError,
-  onStartComment,
   onCancelDraft,
   onChangeDraftBody,
   onSubmitDraft,
@@ -355,7 +349,6 @@ export function InlineDiffTable({
       draftBody,
       isSubmittingDraft,
       submitError,
-      onStartComment,
       onCancelDraft,
       onChangeDraftBody,
       onSubmitDraft,
@@ -376,7 +369,6 @@ export function InlineDiffTable({
       draftBody,
       isSubmittingDraft,
       submitError,
-      onStartComment,
       onCancelDraft,
       onChangeDraftBody,
       onSubmitDraft,

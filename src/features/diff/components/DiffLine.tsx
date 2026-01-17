@@ -1,13 +1,10 @@
 import type { ParsedDiffLine, WordDiffSegment } from '../types';
-import { Button } from '@/components';
 import { ShikiHighlighter } from './ShikiHighlighter';
 import type { TokenSide } from './ShikiTokensContext';
 
 interface DiffLineProps {
   line: ParsedDiffLine;
   language: string;
-  onStartComment?: () => void;
-  showCommentButton?: boolean;
   /** Side of the diff for side-by-side view */
   side?: 'left' | 'right';
   /** Show only one line number column (for side-by-side) */
@@ -40,13 +37,6 @@ const GUTTER_TYPE_CLASSES: Record<string, string> = {
   deletion: 'diff-gutter-deletion',
   context: 'diff-gutter-context',
   header: 'diff-gutter-header',
-};
-
-const LINE_MARKERS = {
-  addition: '+',
-  deletion: '−',
-  context: ' ',
-  header: '',
 };
 
 // Word-level diff segment styles (S-3.4: AC-3.4.1, AC-3.4.2)
@@ -112,7 +102,7 @@ function WordDiffContent({
   showWhitespace?: boolean;
 }) {
   return (
-    <span className="diff-code">
+    <span className="diff-code" role="presentation">
       {segments.map((segment, index) => (
         <span
           key={index}
@@ -133,8 +123,6 @@ function WordDiffContent({
 export function DiffLine({
   line,
   language,
-  onStartComment,
-  showCommentButton = false,
   side,
   singleLineNumber = false,
   showWhitespace = false,
@@ -172,53 +160,37 @@ export function DiffLine({
   const gutterClasses = ['diff-gutter', GUTTER_TYPE_CLASSES[line.type]].filter(Boolean).join(' ');
 
   return (
-    <tr className={rowClasses} data-testid="diff-line" data-line-type={line.type}>
+    <tr className={rowClasses} data-testid="diff-line" data-line-type={line.type} role="presentation">
       {/* Line numbers - show one or two columns based on mode */}
       {singleLineNumber ? (
-        <td className={gutterClasses}>
+        <td className={gutterClasses} role="presentation" aria-hidden="true">
           {displayLineNumber ?? ''}
         </td>
       ) : lineNumberMode === 'left' ? (
         /* AC-3.3.14: Left filter shows only old line numbers */
-        <td className={gutterClasses}>
+        <td className={gutterClasses} role="presentation" aria-hidden="true">
           {line.oldLineNumber ?? ''}
         </td>
       ) : lineNumberMode === 'right' ? (
         /* AC-3.3.15: Right filter shows only new line numbers */
-        <td className={gutterClasses}>
+        <td className={gutterClasses} role="presentation" aria-hidden="true">
           {line.newLineNumber ?? ''}
         </td>
       ) : (
         <>
           {/* AC-1.4.4: Line numbers - both mode shows old and new */}
-          <td className={gutterClasses}>
+          <td className={gutterClasses} role="presentation" aria-hidden="true">
             {line.oldLineNumber ?? ''}
           </td>
-          <td className={gutterClasses}>
+          <td className={gutterClasses} role="presentation" aria-hidden="true">
             {line.newLineNumber ?? ''}
           </td>
         </>
       )}
 
-      {/* AC-1.4.10: +/- markers for accessibility */}
-      <td className="diff-marker">
-        <span aria-hidden="true">{LINE_MARKERS[line.type]}</span>
-        {showCommentButton && onStartComment && (
-          <div className="diff-comment-btn">
-            <Button
-              label="+"
-              variant="secondary"
-              size="icon"
-              ariaLabel="Add comment"
-              onClick={onStartComment}
-            />
-          </div>
-        )}
-      </td>
-
       {/* AC-1.4.9: Screen reader accessible */}
       {/* AC-3.4.6: Screen reader announces modifications */}
-      <td className="diff-content">
+      <td className="diff-content" role="presentation">
         <span className="sr-only">
           {line.type === 'addition' && 'Added: '}
           {line.type === 'deletion' && 'Deleted: '}
@@ -227,22 +199,24 @@ export function DiffLine({
         {/* AC-1.4.5: Syntax highlighting, AC-1.4.6: Preserve indentation */}
         {/* AC-3.4.1-2: Word-level diff highlighting */}
         {/* S-3.5: Show whitespace characters when enabled */}
-        {line.type === 'header' ? (
-          <pre className="diff-code">{line.content}</pre>
-        ) : hasWordDiff && line.wordDiff ? (
-          <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
-        ) : (
-          <ShikiHighlighter
-            code={line.content}
-            language={language}
-            showWhitespace={showWhitespace}
-            {...(tokenLineNumber !== undefined && tokenSide !== undefined && {
-              lineNumber: tokenLineNumber,
-              side: tokenSide,
-            })}
-            {...(lineIndex !== undefined && { lineIndex })}
-          />
-        )}
+        <span aria-hidden="true">
+          {line.type === 'header' ? (
+            <pre className="diff-code">{line.content}</pre>
+          ) : hasWordDiff && line.wordDiff ? (
+            <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
+          ) : (
+            <ShikiHighlighter
+              code={line.content}
+              language={language}
+              showWhitespace={showWhitespace}
+              {...(tokenLineNumber !== undefined && tokenSide !== undefined && {
+                lineNumber: tokenLineNumber,
+                side: tokenSide,
+              })}
+              {...(lineIndex !== undefined && { lineIndex })}
+            />
+          )}
+        </span>
       </td>
     </tr>
   );
@@ -253,9 +227,8 @@ export function DiffLine({
  */
 export function DiffLineSpacer() {
   return (
-    <tr className="diff-line diff-line-spacer" data-testid="diff-line-spacer">
+    <tr className="diff-line diff-line-spacer" data-testid="diff-line-spacer" aria-hidden="true">
       <td className="diff-gutter diff-gutter-spacer" />
-      <td className="diff-marker" />
       <td className="diff-content">
         <span className="diff-code">&nbsp;</span>
       </td>

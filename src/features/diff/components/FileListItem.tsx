@@ -59,24 +59,21 @@ export function FileListItem({ file, isSelected, onClick, displayName, indent }:
       }}
       tabIndex={0}
       aria-current={isSelected ? 'location' : undefined}
-      aria-label={`${file.filename}, ${CHANGE_TYPE_LABELS[file.status]}, ${String(file.additions)} additions, ${String(file.deletions)} deletions`}
+      aria-label={`${displayName ?? file.filename}, ${CHANGE_TYPE_LABELS[file.status]}, ${String(file.additions)} additions, ${String(file.deletions)} deletions`}
     >
-      {/* Filename - AC-1.3.1 */}
-      <span className="tree-label" title={file.filename}>
+      {/* Filename - AC-1.3.1 (hidden from a11y tree, aria-label provides info) */}
+      <span className="tree-label" title={file.filename} aria-hidden="true">
         {displayName ?? file.filename}
       </span>
 
-      {/* Line counts - AC-1.3.3 */}
+      {/* Line counts - AC-1.3.3 (hidden, info in aria-label) */}
       <span className="line-counts" aria-hidden="true">
         {file.additions > 0 && <span className="additions">+{file.additions}</span>}
         {file.deletions > 0 && <span className="deletions">−{file.deletions}</span>}
       </span>
 
-      {/* Change type indicator - AC-1.3.2 */}
-      <span
-        className={`change-type ${CHANGE_TYPE_CLASSES[file.status]}`}
-        aria-hidden="true"
-      >
+      {/* Change type indicator - AC-1.3.2 (hidden, info in aria-label) */}
+      <span className={`change-type ${CHANGE_TYPE_CLASSES[file.status]}`} aria-hidden="true">
         {CHANGE_TYPE_ICONS[file.status]}
       </span>
     </div>

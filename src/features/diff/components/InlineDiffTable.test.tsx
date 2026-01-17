@@ -63,7 +63,6 @@ const defaultProps = {
   draftBody: '',
   isSubmittingDraft: false,
   submitError: null,
-  onStartComment: vi.fn(),
   onCancelDraft: vi.fn(),
   onChangeDraftBody: vi.fn(),
   onSubmitDraft: vi.fn(),
@@ -107,24 +106,6 @@ describe('InlineDiffTable', () => {
     const deletionLine = lines.find(el => el.getAttribute('data-line-type') === 'deletion');
 
     expect(deletionLine).toBeDefined();
-  });
-
-  it('shows comment button on hover for non-header lines', () => {
-    render(<InlineDiffTable {...defaultProps} />);
-
-    // Comment buttons should exist for diff lines (not headers)
-    const buttons = screen.getAllByRole('button', { name: /Add comment/i });
-    expect(buttons.length).toBeGreaterThan(0);
-  });
-
-  it('calls onStartComment when comment button is clicked', () => {
-    const onStartComment = vi.fn();
-    render(<InlineDiffTable {...defaultProps} onStartComment={onStartComment} />);
-
-    const buttons = screen.getAllByRole('button', { name: /Add comment/i });
-    buttons[0]?.click();
-
-    expect(onStartComment).toHaveBeenCalled();
   });
 
   it('renders with empty diff lines', () => {
