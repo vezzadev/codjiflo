@@ -3,10 +3,10 @@ import { setupAuthState } from "../../fixtures/github-mocks";
 
 test.describe("Iteration File Status", () => {
   // Test for bug fix: files first modified in later iterations should show as "modified" not "added"
-  // Uses real PR #97 which has action/action.yml first modified in iteration 2
+  // Uses real PR #11 in codjiflo-e2e-test-repo which has target-file.yml first modified in iteration 2
 
-  // Prod mode configuration - uses real PR #97
-  const config = { owner: "pedropaulovc", repo: "codjiflo", prNumber: 97 };
+  // Prod mode configuration - uses real PR #11 in e2e test repo
+  const config = { owner: "pedropaulovc", repo: "codjiflo-e2e-test-repo", prNumber: 11 };
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);
@@ -16,9 +16,9 @@ test.describe("Iteration File Status", () => {
     page,
   }) => {
     // This test verifies the "base equivalence" fix:
-    // - action/action.yml existed in the PR base but wasn't changed in iteration 1
-    // - action/action.yml was first modified in iteration 2
-    // - When viewing iteration 1, action/action.yml should NOT appear
+    // - target-file.yml existed in the PR base but wasn't changed in iteration 1
+    // - target-file.yml was first modified in iteration 2
+    // - When viewing iteration 1, target-file.yml should NOT appear
     // - When viewing iteration 2, it should show as "M" (modified), not "A" (added)
 
     const pageUrl = `/${config.owner}/${config.repo}/${String(config.prNumber)}`;
@@ -32,32 +32,32 @@ test.describe("Iteration File Status", () => {
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    const actionYmlItem = fileList.locator(".tree-item.file").filter({
-      hasText: /action\.yml/,
+    const targetFileItem = fileList.locator(".tree-item.file").filter({
+      hasText: /target-file\.yml/,
     });
 
-    // --- Iteration 1: action/action.yml should NOT appear ---
+    // --- Iteration 1: target-file.yml should NOT appear ---
     const iteration1Tab = page.getByTestId("iteration-tab-1");
     await iteration1Tab.click();
     await expect(iteration1Tab).toHaveClass(/selected/);
 
-    // action/action.yml should not be visible (wasn't modified in iteration 1)
-    await expect(actionYmlItem).toBeHidden();
+    // target-file.yml should not be visible (wasn't modified in iteration 1)
+    await expect(targetFileItem).toBeHidden();
 
-    // --- Iteration 2: action/action.yml should appear as "M" (modified) ---
+    // --- Iteration 2: target-file.yml should appear as "M" (modified) ---
     const iteration2Tab = page.getByTestId("iteration-tab-2");
     await iteration2Tab.click();
     await expect(iteration2Tab).toHaveClass(/selected/);
 
-    // action/action.yml should now be visible
-    await expect(actionYmlItem).toBeVisible();
+    // target-file.yml should now be visible
+    await expect(targetFileItem).toBeVisible();
 
     // Check the change-type indicator shows "M" (modified), not "A" (added)
-    const changeTypeIndicator = actionYmlItem.locator(".change-type");
+    const changeTypeIndicator = targetFileItem.locator(".change-type");
     await expect(changeTypeIndicator).toHaveText("M");
 
     // Also verify via aria-label that it says "modified" not "added"
-    const ariaLabel = await actionYmlItem.getAttribute("aria-label");
+    const ariaLabel = await targetFileItem.getAttribute("aria-label");
     expect(ariaLabel).toContain("modified");
     expect(ariaLabel).not.toContain("added");
   });
@@ -94,15 +94,15 @@ test.describe("Iteration File Status", () => {
     await expect(tab1).toHaveClass(/selected/);
     await expect(tab2).toHaveClass(/selected/);
 
-    // action/action.yml should appear as "M" (modified), not "A" (added)
+    // target-file.yml should appear as "M" (modified), not "A" (added)
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
-    const actionYmlItem = fileList.locator(".tree-item.file").filter({
-      hasText: /action\.yml/,
+    const targetFileItem = fileList.locator(".tree-item.file").filter({
+      hasText: /target-file\.yml/,
     });
 
-    await expect(actionYmlItem).toBeVisible();
+    await expect(targetFileItem).toBeVisible();
 
-    const changeTypeIndicator = actionYmlItem.locator(".change-type");
+    const changeTypeIndicator = targetFileItem.locator(".change-type");
     await expect(changeTypeIndicator).toHaveText("M");
   });
 });
