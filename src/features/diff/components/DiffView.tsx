@@ -30,9 +30,10 @@ import { IterationSelector } from '@/features/iterations';
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
-/** Scroll amounts in pixels */
-const ARROW_SCROLL_AMOUNT = 60;
-const PAGE_SCROLL_RATIO = 0.85;
+/** Line height matching CSS --diff-line-height and DEFAULT_ROW_HEIGHT */
+const LINE_HEIGHT = 23;
+/** Number of lines to scroll with arrow keys */
+const ARROW_SCROLL_LINES = 2;
 
 /**
  * Main diff view component with support for inline and side-by-side modes.
@@ -106,24 +107,27 @@ export function DiffView() {
   // Handler for keyboard scrolling in diff content area
   const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    let scrollAmount: number | null = null;
+    let scrollLines: number | null = null;
+
+    // Calculate whole number of lines that fit in viewport for page scroll
+    const linesPerPage = Math.floor(containerHeight / LINE_HEIGHT);
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        scrollAmount = ARROW_SCROLL_AMOUNT;
+        scrollLines = ARROW_SCROLL_LINES;
         break;
       case 'ArrowUp':
         e.preventDefault();
-        scrollAmount = -ARROW_SCROLL_AMOUNT;
+        scrollLines = -ARROW_SCROLL_LINES;
         break;
       case 'PageDown':
         e.preventDefault();
-        scrollAmount = containerHeight * PAGE_SCROLL_RATIO;
+        scrollLines = linesPerPage;
         break;
       case 'PageUp':
         e.preventDefault();
-        scrollAmount = -containerHeight * PAGE_SCROLL_RATIO;
+        scrollLines = -linesPerPage;
         break;
       case 'Home':
         e.preventDefault();
@@ -135,8 +139,8 @@ export function DiffView() {
         return;
     }
 
-    if (scrollAmount !== null) {
-      target.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+    if (scrollLines !== null) {
+      target.scrollBy({ top: scrollLines * LINE_HEIGHT, behavior: 'smooth' });
     }
   }, [containerHeight]);
 
