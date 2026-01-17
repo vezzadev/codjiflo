@@ -293,12 +293,260 @@ This centering ensures asymmetric diffs remain visually balanced and the lasso c
 | Additions | `--diff-add-word` | Green highlight on right bar |
 | Lasso stroke | `#505050` | Gray outline around visible viewport |
 
+**Visual Layout:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  8px   16px    12px   16px    8px                        │
+│ ┌───┐ ┌────┐       ┌────┐ ┌───┐                          │
+│ │pad│ │LEFT│       │RGHT│ │pad│   Total width: 60px      │
+│ │   │ │BAR │       │BAR │ │   │                          │
+│ └───┘ └────┘       └────┘ └───┘                          │
+│       x:8-24       x:36-52                               │
+└──────────────────────────────────────────────────────────┘
+```
+
+- Fixed width: **60 pixels**
+- Left bar: X position 8-24 (16px wide)
+- Right bar: X position 36-52 (16px wide)
+- Vertical padding: 10px top and bottom
+- Effective render height: `containerHeight - 20px`
+
 **Lasso Shape:**
 
 The viewport lasso is rendered as a single continuous SVG path that connects both bars, forming a shape that visually bridges the left and right bar positions. The path flows:
 - Top-left of left bar → across to right bar top → down right bar outer edge → across bottom back to left bar → up left bar outer edge → close
 
 This connected shape (rather than two separate rectangles) provides clear visual indication that the lasso represents a unified viewport spanning both file views.
+
+**Lasso Behavior Examples:**
+
+*Example 1: Lasso shows visible area in both files*
+```
+              LEFT BAR
+             +------------^
+             | +-------+  \
+             | |#######|   |
+             | |#######|   \
+             | |#######|    |
+             | |#######|    \
+             | |#######|     |
+             | |#######|     |
+             | |       |     \
+             | |       |      |
+             | |       |      \
+             +------------^    |
+               |       |   |   \
+               |       |   \    | RIGHT BAR
+               |       |    \   +----------+
+               |       |     |    +------+ |
+               |       |     \    |::::::| |
+               |       |      \   |::::::| |
+               |       |       |  |      | |
+               |       |       \  |      | |
+               |       |        +----------+
+               |       |          |      |
+               |#######|          |::::::|
+               |#######|          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |#######|          +------+
+               |#######|
+               |#######|
+               |#######|
+               |#######|
+               |#######|
+               |#######|
+               |#######|
+               |#######|
+               +-------+
+```
+
+*Example 2: Right side of lasso shrinks when scrolling through deleted content*
+```
+               +-------+
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+             +-----------^        +------+
+             | |#######|  \       |      |
+             | |#######|   \      |      |
+             | |#######|    |     |      |
+             | |#######|    \     |      |
+             | |#######|     \    |      |
+             | |#######|      \   |      |
+             | |#######|       \  |      |
+             | |#######|        +----------+
+             | |#######|        +----------+
+             | |#######|     --/  |      |
+             | |#######|   -/     |      |
+             +-----------</       |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          |      |
+               |       |          +------+
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               +-------+
+```
+
+*Example 3: Lasso tracks common content, even if it doesn't line up*
+```
+               +-------+
+               |       |
+               |       |
+               |#######|
+               |#######|
+               |#######|
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |          +------+
+               |#######|          |      |
+               |       |        +----------+
+               |       |       /  |      | |
+               |       |      /   |      | |
+               |#######|     /    |      | |
+               |#######|    /     |      | |
+               |#######|   /      |      | |
+               |       |  /       |      | |
+             +-----------v        |      | |
+             | |       |          |      | |
+             | |       |          |      | |
+             | |       |        +----------+
+             | |       |       /  |      |
+             | |       |      /   |::::::|
+             | |       |      |   |::::::|
+             | |       |     /    |      |
+             | |       |    /     |      |
+             | |       |   /      |      |
+             | |       |   |      |      |
+             | |       |  /       |      |
+             +-----------v        +------+
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               |       |
+               +-------+
+```
+
+*Example 4: Right side of lasso grows when scrolling through added content*
+```
+                                  +-------+
+                                  |       |
+                                  |       |
+                                  |       |
+                                  |       |
+                                  |       |
+                                  |       |
+                                  |       |
+                                  |       |
+               +-------+          |       |
+               |       |          |       |
+               |       |        +----------+
+               |       |        | |      | |
+               |       |       /  |      | |
+               |       |       |  |::::::| |
+               |       |      /   |::::::| |
+               |       |      |   |      | |
+               |       |      |   |      | |
+               |       |     /    |::::::| |
+               |       |     |    |::::::| |
+               |       |    /     |::::::| |
+               |       |    |   +----------+
+               |       |   /   /  |      |
+               |       |   |   |  |      |
+               |       |   |  /   |      |
+               |       |  /  /    |      |
+               |       |  | /     |      |
+               |       | /  |     |      |
+             +-----------v /      |::::::|
+             | |       |  /       |::::::|
+             | |#######|  |       |::::::|
+             +-----------v        |::::::|
+               |       |          |::::::|
+               |       |          |::::::|
+               +-------+          |::::::|
+                                  |::::::|
+                                  |::::::|
+                                  |      |
+                                  |      |
+                                  |      |
+                                  +------+
+```
+
+*Example 5: Lasso has minimal left side height for added files*
+```
+                                 |----------+
+                                /  +------+ |
+                                |  |::::::| |
+                               /   |::::::| |
+                              /    |::::::| |
+                              |    |::::::| |
+                             /     |::::::| |
+                             |     |::::::| |
+                            /      |::::::| |
+                           /       |::::::| |
+                           |    ------------+
+              +-----------v  --/   |::::::|
+              +-------------/      |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   |::::::|
+                                   +------+
+```
+
+*Example 6: Lasso has minimal right side height for deleted files*
+```
+              +----------|
+              | +------+ |
+              | |######|  \
+              | |######|  |
+              | |######|   \
+              | |######|   |
+              | |######|    \
+              | |######|    |
+              | |######|     \
+              | |######|     |
+              +------------   \
+                |######|   \- v-----------+
+                |######|     \>-----------+
+                |######|
+                |######|
+                |######|
+                |######|
+                |######|
+                |######|
+                |######|
+                +------+
+```
 
 **Lasso Visibility Rules:**
 
@@ -364,6 +612,17 @@ Key behaviors:
 - **Minimum height**: Lasso never disappears completely; minimum height of 4px ensures visibility
 
 This asymmetric behavior provides accurate visual feedback about which portions of each file are currently visible, especially important when reviewing large diffs with significant additions or deletions.
+
+**View Mode Adaptation:**
+
+The minimap adapts its display based on the current view mode:
+
+| View Mode | Left Bar Shows | Right Bar Shows | Click Behavior |
+|-----------|---------------|-----------------|----------------|
+| **Inline** | Removed regions | Added regions | Scrolls unified view |
+| **Side-by-Side** | Removed regions | Added regions | Scrolls respective panel, syncs the other |
+| **Left Only** | Removed regions | (grayed out) | Scrolls left view only |
+| **Right Only** | (grayed out) | Added regions | Scrolls right view only |
 
 ### Comment Margins
 
@@ -511,6 +770,7 @@ interface SelectionBehavior {
 |----------|--------|
 | `F` | Toggle Full file / Changes only |
 | `B` | Toggle whitespace visibility |
+| `D` | Toggle comments visibility (hides lasso when comments shown) |
 
 #### Other Shortcuts
 | Shortcut | Action |
