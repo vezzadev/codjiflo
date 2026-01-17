@@ -17,7 +17,6 @@ on:
 
 concurrency:
   group: azdo-mirror
-  cancel-in-progress: true
 
 permissions:
   id-token: write
