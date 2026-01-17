@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@/tests/helpers';
+import { render, screen, fireEvent } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
 import { FileList, groupFilesByFolder } from './FileList';
 import { useDiffStore } from '../stores';
@@ -170,6 +170,155 @@ describe('FileList', () => {
 
     // File should be visible again
     expect(screen.getByText('file1.ts')).toBeInTheDocument();
+  });
+
+  describe('keyboard navigation', () => {
+    const setupKeyboardTest = () => {
+      vi.mocked(useDiffStore).mockReturnValue({
+        files: [],
+        selectedFileIndex: 0,
+        selectFile: mockSelectFile,
+        isLoading: false,
+        error: null,
+      });
+      vi.mocked(useIterationAwareFiles).mockReturnValue(mockIterationFiles([
+        { filename: 'file1.ts', status: FileChangeStatus.Added, additions: 10, deletions: 0, changes: 10, patch: '', originalIndex: 0 },
+        { filename: 'file2.ts', status: FileChangeStatus.Modified, additions: 5, deletions: 3, changes: 8, patch: '', originalIndex: 1 },
+        { filename: 'file3.ts', status: FileChangeStatus.Deleted, additions: 0, deletions: 5, changes: 5, patch: '', originalIndex: 2 },
+      ]));
+    };
+
+    it('ArrowDown moves focus to next item', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus PR description (first item)
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      prDescription.focus();
+      expect(document.activeElement).toBe(prDescription);
+
+      // Press ArrowDown
+      await user.keyboard('{ArrowDown}');
+
+      // Should focus folder header (next item after PR description)
+      // The folder is "/" for root level files, it's the second treeitem
+      const treeitems = screen.getAllByRole('treeitem');
+      expect(document.activeElement).toBe(treeitems[1]); // folder header
+    });
+
+    it('ArrowUp moves focus to previous item', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus file1 (third treeitem: PR desc, folder, file1)
+      const file1 = screen.getByRole('treeitem', { name: /file1\.ts/i });
+      file1.focus();
+
+      // Press ArrowUp
+      await user.keyboard('{ArrowUp}');
+
+      // Should focus folder header (previous item)
+      const treeitems = screen.getAllByRole('treeitem');
+      expect(document.activeElement).toBe(treeitems[1]); // folder header
+    });
+
+    it('ArrowDown wraps to first item when at end', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus last file
+      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      file3.focus();
+
+      // Press ArrowDown
+      await user.keyboard('{ArrowDown}');
+
+      // Should wrap to first item (PR description)
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      expect(document.activeElement).toBe(prDescription);
+    });
+
+    it('ArrowUp wraps to last item when at start', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus PR description (first item)
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      prDescription.focus();
+
+      // Press ArrowUp
+      await user.keyboard('{ArrowUp}');
+
+      // Should wrap to last item (file3.ts)
+      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      expect(document.activeElement).toBe(file3);
+    });
+
+    it('ArrowDown focuses first item when no item is focused', () => {
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Simulate keydown on tree when no item is focused (edge case)
+      // Using fireEvent because tree container isn't directly focusable
+      const tree = screen.getByRole('tree');
+      fireEvent.keyDown(tree, { key: 'ArrowDown' });
+
+      // Should focus first item (PR description)
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      expect(document.activeElement).toBe(prDescription);
+    });
+
+    it('ArrowUp focuses first item when no item is focused', () => {
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Simulate keydown on tree when no item is focused (edge case)
+      // Using fireEvent because tree container isn't directly focusable
+      const tree = screen.getByRole('tree');
+      fireEvent.keyDown(tree, { key: 'ArrowUp' });
+
+      // Should focus first item (PR description), not last
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      expect(document.activeElement).toBe(prDescription);
+    });
+
+    it('Home focuses first item', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus last file
+      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      file3.focus();
+
+      // Press Home
+      await user.keyboard('{Home}');
+
+      // Should focus first item (PR description)
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      expect(document.activeElement).toBe(prDescription);
+    });
+
+    it('End focuses last item', async () => {
+      const user = userEvent.setup();
+      setupKeyboardTest();
+      render(<FileList />);
+
+      // Focus PR description
+      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      prDescription.focus();
+
+      // Press End
+      await user.keyboard('{End}');
+
+      // Should focus last item (file3.ts)
+      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      expect(document.activeElement).toBe(file3);
+    });
   });
 });
 
