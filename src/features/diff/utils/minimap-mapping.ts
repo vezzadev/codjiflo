@@ -92,11 +92,6 @@ export interface VisibleLineRange {
 }
 
 /**
- * Default row height for diff lines (matches --diff-line-height CSS variable)
- */
-const DEFAULT_ROW_HEIGHT = 23;
-
-/**
  * Calculate visible line ranges from scroll ratios and diff data
  *
  * Maps scroll position to actual file line numbers by:
@@ -140,15 +135,15 @@ export function calculateVisibleLineRanges(
 
     // Track left side line numbers (deletions and context)
     // ParsedDiffLine uses oldLineNumber for base/left side
-    if (line.oldLineNumber !== null && line.oldLineNumber !== undefined) {
-      if (leftFirst === null) leftFirst = line.oldLineNumber;
+    if (line.oldLineNumber != null) {
+      leftFirst ??= line.oldLineNumber;
       leftLast = line.oldLineNumber;
     }
 
     // Track right side line numbers (additions and context)
     // ParsedDiffLine uses newLineNumber for head/right side
-    if (line.newLineNumber !== null && line.newLineNumber !== undefined) {
-      if (rightFirst === null) rightFirst = line.newLineNumber;
+    if (line.newLineNumber != null) {
+      rightFirst ??= line.newLineNumber;
       rightLast = line.newLineNumber;
     }
   }

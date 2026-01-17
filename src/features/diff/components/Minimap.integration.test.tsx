@@ -91,6 +91,11 @@ function createMockPipeline(overrides: Partial<DiffPipelineOutput> = {}): DiffPi
   } as DiffPipelineOutput;
 }
 
+/** Create a default visible row range covering all rows */
+function createVisibleRowRange(rowCount: number) {
+  return { startIndex: 0, stopIndex: rowCount - 1 };
+}
+
 function createMockScrollContainer(): HTMLDivElement {
   const container = document.createElement('div');
   const scrollable = document.createElement('div');
@@ -190,6 +195,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 
@@ -710,6 +716,9 @@ describe('Minimap component', () => {
 
       const containerRef = { current: scrollContainer };
 
+      // File 1: simulate viewing middle rows (indices 2-4)
+      const file1VisibleRange = { startIndex: 2, stopIndex: 4 };
+
       const { container, rerender } = render(
         <Minimap
           pipeline={pipelineFile1}
@@ -717,6 +726,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={file1VisibleRange}
         />
       );
 
@@ -727,12 +737,14 @@ describe('Minimap component', () => {
       fireEvent.scroll(scrollable);
       await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
-      // Get lasso path for file1 (scrolled position)
+      // Get lasso path for file1 (scrolled to middle)
       const lassoFile1 = container.querySelector('.minimap-lasso');
       const lassoPathFile1 = lassoFile1?.getAttribute('d');
 
-      // Switch to file 2 (scroll state should reset)
-      scrollable.scrollTop = 0; // Simulate new file starting at top
+      // Switch to file 2 (simulating new file at top - indices 0-2)
+      scrollable.scrollTop = 0;
+      const file2VisibleRange = { startIndex: 0, stopIndex: 2 };
+
       rerender(
         <Minimap
           pipeline={pipelineFile2}
@@ -740,6 +752,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={file2VisibleRange}
         />
       );
 
@@ -754,8 +767,8 @@ describe('Minimap component', () => {
       const lassoFile2 = container.querySelector('.minimap-lasso');
       const lassoPathFile2 = lassoFile2?.getAttribute('d');
 
-      // Paths should be different (file1 was scrolled, file2 is at top)
-      // This validates the contentKey reset is working
+      // Paths should be different (file1 was scrolled to middle, file2 is at top)
+      // This validates that visible row range correctly affects lasso position
       expect(lassoPathFile1).not.toEqual(lassoPathFile2);
     });
   });
@@ -809,6 +822,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipelineInline.diffLines.length)}
         />
       );
 
@@ -826,6 +840,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipelineSplit.diffLines.length)}
         />
       );
 
@@ -973,6 +988,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 
@@ -994,6 +1010,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 
@@ -1010,6 +1027,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={false}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 
@@ -1030,6 +1048,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 
@@ -1077,6 +1096,7 @@ describe('Minimap component', () => {
           scrollContainerRef={containerRef}
           showFullFile={true}
           showComments={false}
+          visibleRowRange={createVisibleRowRange(pipeline.diffLines.length)}
         />
       );
 

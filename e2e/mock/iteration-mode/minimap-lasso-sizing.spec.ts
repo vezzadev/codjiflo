@@ -100,7 +100,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   });
 
   /**
-   * Helper to extract lasso height from SVG path
+   * Helper to extract lasso heights from SVG path
    *
    * The lasso path format from generateLassoPath is:
    *   M (LEFT_BAR_X + r) leftTop           -> coords[0], coords[1]
@@ -118,60 +118,51 @@ diff --git a/src/large-file.ts b/src/large-file.ts
    *   Q LEFT_BAR_X leftTop (LEFT_BAR_X + r) leftTop  -> coords[30-33]
    *   Z
    *
-   * We extract the LEFT bar lasso height (leftBottom - leftTop) specifically.
-   * leftTop is at coords[1], leftBottom is at coords[21].
+   * We extract both LEFT and RIGHT bar heights.
+   * - leftTop at coords[1], leftBottom at coords[21]
+   * - rightTop at coords[5], rightBottom at coords[19]
    */
-  async function getLassoHeight(page: import("@playwright/test").Page): Promise<{ height: number; path: string; leftTop: number; leftBottom: number }> {
+  interface LassoHeights {
+    leftHeight: number;
+    rightHeight: number;
+    path: string;
+    leftTop: number;
+    leftBottom: number;
+    rightTop: number;
+    rightBottom: number;
+  }
+
+  async function getLassoHeight(page: import("@playwright/test").Page): Promise<LassoHeights> {
     const minimap = page.getByRole("img", { name: /minimap/i });
     const lasso = minimap.locator(".minimap-lasso");
     const pathD = await lasso.getAttribute("d");
 
-    if (!pathD) return { height: 0, path: "", leftTop: 0, leftBottom: 0 };
+    if (!pathD) return { leftHeight: 0, rightHeight: 0, path: "", leftTop: 0, leftBottom: 0, rightTop: 0, rightBottom: 0 };
 
     // Extract all numbers from the path
     const numbers = pathD.match(/[\d.]+/g);
-    if (!numbers || numbers.length < 22) return { height: 0, path: pathD, leftTop: 0, leftBottom: 0 };
+    if (!numbers || numbers.length < 22) return { leftHeight: 0, rightHeight: 0, path: pathD, leftTop: 0, leftBottom: 0, rightTop: 0, rightBottom: 0 };
 
     // Convert to numbers
     const coords = numbers.map(Number);
 
-    // leftTop is at index 1 (M x leftTop)
+    // Left bar: leftTop at index 1, leftBottom at index 21
     const leftTop = coords[1] ?? 0;
-
-    // leftBottom is at index 21 (L leftBarRight leftBottom)
     const leftBottom = coords[21] ?? 0;
 
-    return { height: leftBottom - leftTop, path: pathD, leftTop, leftBottom };
-  }
+    // Right bar: rightTop at index 5, rightBottom at index 19
+    const rightTop = coords[5] ?? 0;
+    const rightBottom = coords[19] ?? 0;
 
-  /**
-   * Helper to get the scroll container metrics for debugging
-   * Finds the element with the largest scroll range (matching useMinimapScroll logic)
-   */
-  async function getScrollMetrics(page: import("@playwright/test").Page): Promise<{ scrollHeight: number; clientHeight: number; scrollTop: number }> {
-    return page.evaluate(() => {
-      // Find the react-window scroll container (element with largest scroll range)
-      const candidates = document.querySelectorAll<HTMLElement>('[style*="overflow"]');
-      let best: HTMLElement | null = null;
-      let maxRange = 0;
-
-      for (const el of candidates) {
-        const range = el.scrollHeight - el.clientHeight;
-        if (range > maxRange) {
-          maxRange = range;
-          best = el;
-        }
-      }
-
-      if (!best || maxRange <= 100) {
-        return { scrollHeight: 0, clientHeight: 0, scrollTop: 0 };
-      }
-      return {
-        scrollHeight: best.scrollHeight,
-        clientHeight: best.clientHeight,
-        scrollTop: best.scrollTop,
-      };
-    });
+    return {
+      leftHeight: leftBottom - leftTop,
+      rightHeight: rightBottom - rightTop,
+      path: pathD,
+      leftTop,
+      leftBottom,
+      rightTop,
+      rightBottom,
+    };
   }
 
   /**
@@ -184,16 +175,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await expect(lasso).toBeVisible();
   }
 
-  test("lasso maintains consistent height while scrolling within same file", async ({ page }) => {
-    // Capture console logs from the browser for debugging
-    page.on("console", (msg) => {
-      if (msg.text().includes("[Minimap]") || msg.text().includes("[useMinimapScroll]")) {
-        console.log("BROWSER:", msg.text());
-      }
-    });
-
-    // This test verifies that the lasso height remains stable during scrolling
-    // The viewportRatio (clientHeight/scrollHeight) should be constant for a given file
+  test("lasso reflects visible content and moves when scrolling", async ({ page }) => {
+    // This test verifies that:
+    // 1. The lasso height reflects visible line counts (can vary based on visible content)
+    // 2. The lasso position moves when scrolling (top/middle/bottom have different positions)
+    // 3. Left and right heights can differ in diff regions (asymmetric lasso)
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -206,7 +192,6 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
-    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
     await expect(page.getByText("Full File")).toBeVisible();
 
     // Hide comments to show lasso
@@ -214,12 +199,9 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-
-    // Wait for lasso to appear (depends on scroll container being found and viewportRatio calculated)
     await waitForLasso(page);
 
     // Force react-window to calculate correct scrollHeight by scrolling
-    // React-window may overestimate total height before any scrolling occurs
     const minimapBoxInit = await minimap.boundingBox();
     if (!minimapBoxInit) throw new Error("Minimap bounding box not found");
 
@@ -233,24 +215,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Scroll back to top
     await page.mouse.click(
       minimapBoxInit.x + minimapBoxInit.width / 2,
-      minimapBoxInit.y + 20 // Near top
+      minimapBoxInit.y + 20
     );
     await waitForLasso(page);
 
-    // Get lasso height and scroll metrics at top of file
+    // Get lasso at top of file
     const topResult = await getLassoHeight(page);
-    const topMetrics = await getScrollMetrics(page);
-    const heightAtTop = topResult.height;
-    expect(heightAtTop).toBeGreaterThan(0);
-
-    // Log for debugging
-    console.log("At TOP:", {
-      lassoHeight: heightAtTop,
-      leftTop: topResult.leftTop,
-      leftBottom: topResult.leftBottom,
-      scrollMetrics: topMetrics,
-      viewportRatio: topMetrics.clientHeight / topMetrics.scrollHeight,
-    });
 
     // Scroll to middle using minimap click
     const minimapBox = await minimap.boundingBox();
@@ -260,60 +230,44 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.5
     );
-
-    // Wait for scroll metrics to stabilize after click
-    // React-window may recalculate scrollHeight after scrolling
     await waitForLasso(page);
 
-    // Get lasso height and scroll metrics at middle
+    // Get lasso at middle
     const middleResult = await getLassoHeight(page);
-    const middleMetrics = await getScrollMetrics(page);
-    const heightAtMiddle = middleResult.height;
-
-    console.log("At MIDDLE:", {
-      lassoHeight: heightAtMiddle,
-      leftTop: middleResult.leftTop,
-      leftBottom: middleResult.leftBottom,
-      scrollMetrics: middleMetrics,
-      viewportRatio: middleMetrics.clientHeight / middleMetrics.scrollHeight,
-    });
 
     // Scroll to bottom
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.9
     );
-
-    // Wait for scroll metrics to stabilize after click
     await waitForLasso(page);
 
-    // Get lasso height and scroll metrics at bottom
+    // Get lasso at bottom
     const bottomResult = await getLassoHeight(page);
-    const bottomMetrics = await getScrollMetrics(page);
-    const heightAtBottom = bottomResult.height;
 
-    console.log("At BOTTOM:", {
-      lassoHeight: heightAtBottom,
-      leftTop: bottomResult.leftTop,
-      leftBottom: bottomResult.leftBottom,
-      scrollMetrics: bottomMetrics,
-      viewportRatio: bottomMetrics.clientHeight / bottomMetrics.scrollHeight,
-    });
+    // All heights should be positive
+    expect(topResult.leftHeight).toBeGreaterThan(0);
+    expect(topResult.rightHeight).toBeGreaterThan(0);
+    expect(middleResult.leftHeight).toBeGreaterThan(0);
+    expect(middleResult.rightHeight).toBeGreaterThan(0);
+    expect(bottomResult.leftHeight).toBeGreaterThan(0);
+    expect(bottomResult.rightHeight).toBeGreaterThan(0);
 
-    // With asymmetric lasso calculation, height can vary based on scroll position
-    // because it reflects what portion of each file is visible in the viewport.
-    // The lasso should remain within reasonable bounds at all positions.
-    // At middle and bottom positions, more of the file is typically fully visible,
-    // so the lasso height tends to stabilize to a consistent value.
-    const tolerance = heightAtMiddle * 0.10;
+    // Lasso position should move when scrolling (top position changes)
+    // Top should be near the top of the minimap, bottom should be near the bottom
+    expect(topResult.leftTop).toBeLessThan(middleResult.leftTop);
+    expect(middleResult.leftTop).toBeLessThan(bottomResult.leftTop);
 
-    // Heights at middle and bottom should be consistent with each other
-    expect(Math.abs(heightAtBottom - heightAtMiddle)).toBeLessThan(tolerance);
-
-    // All heights should be positive and reasonable
-    expect(heightAtTop).toBeGreaterThan(0);
-    expect(heightAtMiddle).toBeGreaterThan(0);
-    expect(heightAtBottom).toBeGreaterThan(0);
+    // Heights can vary based on visible content (diff regions have different line counts)
+    // At minimum, verify heights are within reasonable range (not zero, not absurdly large)
+    const minReasonableHeight = 5; // At least 5px
+    const maxReasonableHeight = 100; // At most 100px for this viewport
+    expect(topResult.leftHeight).toBeGreaterThan(minReasonableHeight);
+    expect(topResult.leftHeight).toBeLessThan(maxReasonableHeight);
+    expect(middleResult.leftHeight).toBeGreaterThan(minReasonableHeight);
+    expect(middleResult.leftHeight).toBeLessThan(maxReasonableHeight);
+    expect(bottomResult.leftHeight).toBeGreaterThan(minReasonableHeight);
+    expect(bottomResult.leftHeight).toBeLessThan(maxReasonableHeight);
   });
 
   test("lasso height reflects viewport-to-content ratio", async ({ page }) => {
@@ -351,7 +305,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // For a 500-line file with ~30-50 visible lines, viewportRatio should be ~0.06-0.10
     // So lasso should be roughly 6-10% of bar height
-    const lassoRatio = lassoResult.height / barHeight;
+    const lassoRatio = lassoResult.leftHeight / barHeight;
 
     // Verify lasso is a reasonable proportion (between 2% and 50% of bar)
     // This is a sanity check that the lasso is sized proportionally
@@ -359,8 +313,8 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     expect(lassoRatio).toBeLessThan(0.5);
   });
 
-  test("lasso position moves when scrolling but height stays constant", async ({ page }) => {
-    // Verify that scroll changes lasso POSITION but not SIZE
+  test("lasso path changes when navigating with keyboard", async ({ page }) => {
+    // Verify that keyboard navigation (J/K) changes the lasso position
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -373,7 +327,6 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
-    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
     await expect(page.getByText("Full File")).toBeVisible();
 
     // Hide comments to show lasso
@@ -381,14 +334,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-
-    // Wait for lasso to appear
     await waitForLasso(page);
 
     const lasso = minimap.locator(".minimap-lasso");
 
     // Force react-window to calculate correct scrollHeight by scrolling first
-    // React-window may overestimate total height before any scrolling occurs
     const minimapBox = await minimap.boundingBox();
     if (!minimapBox) throw new Error("Minimap bounding box not found");
 
@@ -402,7 +352,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Scroll back to top
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
-      minimapBox.y + 20 // Near top
+      minimapBox.y + 20
     );
     await waitForLasso(page);
 
@@ -413,18 +363,20 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Scroll down using keyboard
     await page.keyboard.press("j"); // Navigate to change
-
-    // Wait for scroll stabilization after keyboard navigation
     await waitForLasso(page);
 
     // Get new lasso path
     const newResult = await getLassoHeight(page);
 
-    // Path should change (position moved) - use negated toHaveAttribute with exact match
+    // Path should change (position moved)
     await expect(lasso).not.toHaveAttribute("d", initialPath);
 
-    // Left bar height should stay the same (within 5% tolerance for floating point)
-    const tolerance = initialResult.height * 0.05;
-    expect(Math.abs(newResult.height - initialResult.height)).toBeLessThan(tolerance);
+    // Both positions should have valid heights
+    expect(initialResult.leftHeight).toBeGreaterThan(0);
+    expect(newResult.leftHeight).toBeGreaterThan(0);
+
+    // Position should have changed (leftTop is different)
+    // Note: heights may vary based on visible content, which is correct behavior
+    expect(newResult.leftTop).not.toEqual(initialResult.leftTop);
   });
 });

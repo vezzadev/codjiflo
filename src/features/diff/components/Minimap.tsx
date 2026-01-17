@@ -96,14 +96,14 @@ function calculateVisibleLineRangesFromRows(
     if (!line) continue;
 
     // Track left side line numbers (deletions and context)
-    if (line.oldLineNumber !== null && line.oldLineNumber !== undefined) {
-      if (leftFirst === null) leftFirst = line.oldLineNumber;
+    if (line.oldLineNumber != null) {
+      leftFirst ??= line.oldLineNumber;
       leftLast = line.oldLineNumber;
     }
 
     // Track right side line numbers (additions and context)
-    if (line.newLineNumber !== null && line.newLineNumber !== undefined) {
-      if (rightFirst === null) rightFirst = line.newLineNumber;
+    if (line.newLineNumber != null) {
+      rightFirst ??= line.newLineNumber;
       rightLast = line.newLineNumber;
     }
   }
