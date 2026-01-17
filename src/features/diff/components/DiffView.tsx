@@ -7,7 +7,7 @@
  * S-3.3: View mode toggles
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, type KeyboardEvent } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import {
   useDiffPipeline,
@@ -28,6 +28,10 @@ import { IterationSelector } from '@/features/iterations';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
+
+/** Scroll amounts in pixels */
+const ARROW_SCROLL_AMOUNT = 60;
+const PAGE_SCROLL_RATIO = 0.85;
 
 /**
  * Main diff view component with support for inline and side-by-side modes.
@@ -90,6 +94,43 @@ export function DiffView() {
       );
     }
   }, [draft, pipeline]);
+
+  // Handler for keyboard scrolling in diff content area
+  const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    let scrollAmount: number | null = null;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        scrollAmount = ARROW_SCROLL_AMOUNT;
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        scrollAmount = -ARROW_SCROLL_AMOUNT;
+        break;
+      case 'PageDown':
+        e.preventDefault();
+        scrollAmount = containerHeight * PAGE_SCROLL_RATIO;
+        break;
+      case 'PageUp':
+        e.preventDefault();
+        scrollAmount = -containerHeight * PAGE_SCROLL_RATIO;
+        break;
+      case 'Home':
+        e.preventDefault();
+        target.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      case 'End':
+        e.preventDefault();
+        target.scrollTo({ top: target.scrollHeight, behavior: 'smooth' });
+        return;
+    }
+
+    if (scrollAmount !== null) {
+      target.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+    }
+  }, [containerHeight]);
 
   // Get full file content from iteration diff for accurate multi-line syntax highlighting
   const fullFileContent = useMemo(() => {
@@ -192,6 +233,7 @@ export function DiffView() {
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
+            onKeyDown={handleDiffKeyDown}
           >
             <InlineDiffTable
               key={pipeline.filename ?? 'diff-table'}
@@ -224,6 +266,7 @@ export function DiffView() {
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
+            onKeyDown={handleDiffKeyDown}
           >
             <SideBySideDiffView
               alignedLines={pipeline.alignedLines}

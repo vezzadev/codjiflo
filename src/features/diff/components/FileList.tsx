@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, type KeyboardEvent } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { useIterationAwareFiles, type IterationAwareFile } from '../hooks';
 import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
+
+/** Number of items to skip with PageUp/PageDown */
+const PAGE_JUMP_SIZE = 10;
 
 interface FileGroup {
   folder: string;
@@ -56,6 +59,7 @@ export function FileList() {
   const { selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
   const { files } = useIterationAwareFiles();
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const treeRef = useRef<HTMLDivElement>(null);
 
   const groupedFiles = useMemo(() => groupFilesByFolder(files), [files]);
 
@@ -67,6 +71,63 @@ export function FileList() {
       return next;
     });
   };
+
+  /**
+   * Get all focusable tree items in DOM order
+   */
+  const getTreeItems = useCallback((): HTMLElement[] => {
+    if (!treeRef.current) return [];
+    return Array.from(treeRef.current.querySelectorAll<HTMLElement>('[role="treeitem"]'));
+  }, []);
+
+  /**
+   * Handle keyboard navigation within the file tree
+   * Arrow keys move focus, PageUp/PageDown jump by PAGE_JUMP_SIZE
+   */
+  const handleTreeKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const items = getTreeItems();
+      if (items.length === 0) return;
+
+      const currentIndex = items.findIndex((item) => item === document.activeElement);
+      let nextIndex: number | null = null;
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+          break;
+        case 'PageDown':
+          e.preventDefault();
+          nextIndex = Math.min(currentIndex + PAGE_JUMP_SIZE, items.length - 1);
+          break;
+        case 'PageUp':
+          e.preventDefault();
+          nextIndex = Math.max(currentIndex - PAGE_JUMP_SIZE, 0);
+          break;
+        case 'Home':
+          e.preventDefault();
+          nextIndex = 0;
+          break;
+        case 'End':
+          e.preventDefault();
+          nextIndex = items.length - 1;
+          break;
+      }
+
+      if (nextIndex !== null) {
+        const nextItem = items[nextIndex];
+        if (nextItem) {
+          nextItem.focus();
+        }
+      }
+    },
+    [getTreeItems]
+  );
 
   if (error) {
     return (
@@ -98,7 +159,12 @@ export function FileList() {
   return (
     <nav aria-label="Changed files">
       {/* AC-1.3.7: File list is keyboard navigable */}
-      <div className="file-tree" role="tree">
+      <div
+        ref={treeRef}
+        className="file-tree"
+        role="tree"
+        onKeyDown={handleTreeKeyDown}
+      >
         {/* PR Description entry */}
         <div
           className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
