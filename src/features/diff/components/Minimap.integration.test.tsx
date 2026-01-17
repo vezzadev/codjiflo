@@ -696,8 +696,7 @@ describe('Minimap component', () => {
       );
 
       // File 1 should have deletions
-      let deletionRects = container.querySelectorAll('.minimap-deletion');
-      let additionRects = container.querySelectorAll('.minimap-addition');
+      const deletionRects = container.querySelectorAll('.minimap-deletion');
       expect(deletionRects.length).toBeGreaterThan(0);
 
       // Switch to file 2
@@ -712,8 +711,7 @@ describe('Minimap component', () => {
       );
 
       // File 2 should have additions, no deletions
-      deletionRects = container.querySelectorAll('.minimap-deletion');
-      additionRects = container.querySelectorAll('.minimap-addition');
+      const additionRects = container.querySelectorAll('.minimap-addition');
       expect(additionRects.length).toBeGreaterThan(0);
     });
 

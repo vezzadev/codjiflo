@@ -126,7 +126,7 @@ export function useMinimapScroll(
     }
 
     const maxScroll = scrollHeight - clientHeight;
-    const scrollRatio = maxScroll > 0 ? scrollTop / maxScroll : 0;
+    const scrollRatio = scrollTop / maxScroll;
     const viewportRatio = clientHeight / scrollHeight;
 
     return {
