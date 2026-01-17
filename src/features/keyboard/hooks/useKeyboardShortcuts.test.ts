@@ -464,6 +464,10 @@ describe('getShortcutsList', () => {
       { key: 'b', description: 'Toggle whitespace visibility' },
       { key: 'd', description: 'Toggle show/hide comments' },
       { key: 'p', description: 'Toggle text wrap' },
+      { key: '↑/↓ (files)', description: 'Navigate files (file list focused)' },
+      { key: 'PgUp/PgDn (files)', description: 'Jump 10 files (file list focused)' },
+      { key: 'PgUp/PgDn (diff)', description: 'Page scroll (diff area focused)' },
+      { key: 'Home/End (diff)', description: 'Jump to start/end (diff area focused)' },
     ]);
   });
 });

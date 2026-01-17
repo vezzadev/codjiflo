@@ -53,11 +53,23 @@ export function FileList() {
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+          // When no item is focused (currentIndex === -1), start at first item
+          nextIndex =
+            currentIndex === -1
+              ? 0
+              : currentIndex < items.length - 1
+                ? currentIndex + 1
+                : 0;
           break;
         case 'ArrowUp':
           e.preventDefault();
-          nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+          // When no item is focused (currentIndex === -1), start at first item
+          nextIndex =
+            currentIndex === -1
+              ? 0
+              : currentIndex > 0
+                ? currentIndex - 1
+                : items.length - 1;
           break;
         case 'PageDown':
           e.preventDefault();
