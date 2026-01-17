@@ -4,9 +4,9 @@
  * Provides a birds-eye view of the entire diff with:
  * - Two vertical bars (left: deletions, right: additions)
  * - Viewport lasso showing visible portion
- * - Click and drag navigation
+ * - Click and drag navigation (25% viewport positioning)
  *
- * See spec/functional/diff-viewing.md lines 268-293
+ * See spec/functional/diff-viewing.md "Overview Margin (Minimap)" section
  */
 
 import { useCallback, useRef, useState, type RefObject, useMemo } from 'react';
@@ -267,25 +267,25 @@ export function Minimap({
     visibleRanges,
   ]);
 
-  // Convert Y position to scroll ratio (0-1) with lasso-center positioning
-  // Both click and drag use this so lasso center is positioned at cursor
+  // Convert Y position to scroll ratio (0-1) with 25% viewport positioning
+  // Both click and drag position the target line at 25% of viewport height
+  // This provides context above and natural top-to-bottom reading flow
   const yToScrollRatio = useCallback(
     (y: number, side: 'left' | 'right'): number => {
       const barTop = side === 'left' ? leftBarTop : rightBarTop;
       const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
       const { viewportRatio } = scrollState;
 
-      // Lasso height and movement range
-      const lassoHeight = viewportRatio * barHeight;
-      const lassoMoveRange = barHeight - lassoHeight;
+      // Edge case: viewport shows all content (no scrolling possible)
+      if (viewportRatio >= 1) return 0;
 
-      // Edge case: lasso fills entire bar (no scrolling possible)
-      if (lassoMoveRange <= 0) return 0;
+      // Calculate which line the user clicked on (as ratio within the bar)
+      const clickRatio = (y - barTop) / barHeight;
 
-      // Map Y to scroll ratio such that lasso center follows mouse 1:1
-      // lassoCenterY = barTop + scrollRatio * lassoMoveRange + lassoHeight/2
-      // Solving for scrollRatio: scrollRatio = (Y - barTop - lassoHeight/2) / lassoMoveRange
-      const ratio = (y - barTop - lassoHeight / 2) / lassoMoveRange;
+      // Position clicked line at 25% of viewport height
+      // Formula: scrollRatio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio)
+      // This scrolls so the target line appears at 25% from the top
+      const ratio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio);
 
       return Math.max(0, Math.min(1, ratio));
     },
@@ -324,7 +324,7 @@ export function Minimap({
     [scrollContainerRef]
   );
 
-  // Handle click navigation - positions lasso center at click point
+  // Handle click navigation - positions clicked line at 25% of viewport
   const handleClick = useCallback(
     (event: React.MouseEvent<SVGSVGElement>) => {
       const svg = svgRef.current;
@@ -335,7 +335,7 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = getClickSide(x);
-      // Use lasso-aware calculation so click positions lasso center under cursor
+      // Position clicked line at 25% of viewport height
       const ratio = yToScrollRatio(y, side);
 
       // Navigate using scroll ratio for accurate positioning
@@ -384,7 +384,7 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = dragSideRef.current;
-      // Use drag-specific ratio calculation for 1:1 lasso tracking
+      // Position dragged line at 25% of viewport height
       const ratio = yToScrollRatio(y, side);
 
       // Navigate using scroll ratio

@@ -337,19 +337,21 @@ describe('Minimap component', () => {
       });
 
       // For containerHeight=500, PADDING_VERTICAL=10:
-      // renderAreaHeight = 480, barTop = 10
-      // viewportRatio = 0.5, lassoHeight = 0.5 * 480 = 240
-      // lassoMoveRange = 480 - 240 = 240
-      // Formula: ratio = (y - 10 - 120) / 240 = (y - 130) / 240
+      // 25% viewport positioning formula:
+      // clickRatio = (y - barTop) / barHeight = (y - 10) / 480
+      // ratio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio)
+      //       = (clickRatio - 0.125) / 0.5
       //
-      // For ratio=1.0 (scroll to bottom): y = 130 + 240 = 370
-      fireEvent.click(svg, { clientX: 45, clientY: 370 });
+      // For ratio=1.0 (scroll to bottom):
+      // 1.0 = (clickRatio - 0.125) / 0.5 => clickRatio = 0.625
+      // y = 0.625 * 480 + 10 = 310
+      fireEvent.click(svg, { clientX: 45, clientY: 310 });
 
       // maxScroll = 1000 - 500 = 500, scrollTop = 1.0 * 500 = 500
       expect(scrollable.scrollTop).toBe(500);
     });
 
-    it('click positions lasso center at click point (scrolls to top)', async () => {
+    it('click positions target line at 25% of viewport (scrolls to top)', async () => {
       const pipeline = createMockPipeline();
       const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
@@ -389,13 +391,16 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // For ratio=0 (scroll to top): y = 130
-      fireEvent.click(svg, { clientX: 45, clientY: 130 });
+      // 25% viewport positioning formula:
+      // ratio = (clickRatio - 0.125) / 0.5
+      // For ratio=0 (scroll to top): clickRatio = 0.125
+      // y = 0.125 * 480 + 10 = 70
+      fireEvent.click(svg, { clientX: 45, clientY: 70 });
 
       expect(scrollable.scrollTop).toBe(0);
     });
 
-    it('click positions lasso center at click point (scrolls to middle)', async () => {
+    it('click positions target line at 25% of viewport (scrolls to middle)', async () => {
       const pipeline = createMockPipeline();
       const scrollable = assertElement(scrollContainer.querySelector<HTMLElement>('[style*="overflow"]'), 'scrollable element not found');
 
@@ -415,6 +420,9 @@ describe('Minimap component', () => {
         />
       );
 
+      // Wait for useMinimapScroll's rAF-based scroll element detection
+      await waitForRAF();
+
       fireEvent.scroll(scrollable);
       await vi.waitFor(() => { /* Allow React to process scroll event */ });
 
@@ -432,8 +440,11 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // For ratio=0.5 (scroll to middle): y = 130 + 120 = 250
-      fireEvent.click(svg, { clientX: 45, clientY: 250 });
+      // 25% viewport positioning formula:
+      // ratio = (clickRatio - 0.125) / 0.5
+      // For ratio=0.5 (scroll to middle): clickRatio = 0.375
+      // y = 0.375 * 480 + 10 = 190
+      fireEvent.click(svg, { clientX: 45, clientY: 190 });
 
       // scrollTop = 0.5 * 500 = 250
       expect(scrollable.scrollTop).toBe(250);
@@ -469,7 +480,7 @@ describe('Minimap component', () => {
       expect(onNavigate).toHaveBeenCalled();
     });
 
-    it('drag uses 1:1 lasso tracking (accounts for lasso height)', async () => {
+    it('drag positions target line at 25% of viewport', async () => {
       // This test verifies the drag formula:
       // ratio = (y - barTop - lassoHeight/2) / (barHeight - lassoHeight)
       // This ensures lasso center follows mouse at the same speed
@@ -518,37 +529,30 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // For containerHeight=500, PADDING_VERTICAL=10:
-      // renderAreaHeight = 480, barTop = 10
-      // viewportRatio = 0.5, lassoHeight = 0.5 * 480 = 240
-      // lassoMoveRange = 480 - 240 = 240
+      // 25% viewport positioning formula:
+      // clickRatio = (y - barTop) / barHeight = (y - 10) / 480
+      // ratio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio)
+      //       = (clickRatio - 0.125) / 0.5
       //
-      // Drag formula: ratio = (y - barTop - lassoHeight/2) / lassoMoveRange
-      //             = (y - 10 - 120) / 240
-      //             = (y - 130) / 240
-      //
-      // For lasso center at middle of bar (y = 250):
-      // ratio = (250 - 130) / 240 = 0.5
-      // scrollTop = 0.5 * 500 = 250
+      // For ratio=0.5 (scroll to middle): clickRatio = 0.375
+      // y = 0.375 * 480 + 10 = 190
 
       // Start drag
-      fireEvent.mouseDown(svg, { clientX: 45, clientY: 250 });
+      fireEvent.mouseDown(svg, { clientX: 45, clientY: 190 });
       // Move to trigger drag calculation
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 250 });
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 190 });
 
-      // Should scroll to 50% (250) with 1:1 lasso tracking
+      // Should scroll to 50% (250) with 25% viewport positioning
       expect(scrollable.scrollTop).toBe(250);
 
-      // Now drag to where lasso center would be at bottom (y = 370)
-      // ratio = (370 - 130) / 240 = 1.0
-      // scrollTop = 1.0 * 500 = 500
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 370 });
+      // Now drag to bottom (ratio = 1.0)
+      // clickRatio = 0.625, y = 0.625 * 480 + 10 = 310
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 310 });
       expect(scrollable.scrollTop).toBe(500);
 
-      // And drag to where lasso center would be at top (y = 130)
-      // ratio = (130 - 130) / 240 = 0
-      // scrollTop = 0
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 130 });
+      // And drag to top (ratio = 0)
+      // clickRatio = 0.125, y = 0.125 * 480 + 10 = 70
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 70 });
       expect(scrollable.scrollTop).toBe(0);
     });
 
