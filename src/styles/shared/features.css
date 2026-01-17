@@ -327,6 +327,7 @@
   background-color: var(--diff-area-bg);
 }
 
+
 .diff-filename {
   margin: 0;
   font-size: 13px;
@@ -678,14 +679,32 @@
    VIRTUALIZED DIFF COMPONENTS
    ============================================ */
 
-/* Virtualized row wrapper */
-.virtualized-row {
-  overflow: hidden;
+/* Container wrapper for virtualized inline diff.
+ * Sets CSS variable --diff-scroll-width via JavaScript for syncing table widths. */
+.virtualized-inline-container {
+  height: 100%;
+  width: 100%;
 }
 
-.virtualized-row .diff-table {
-  table-layout: fixed;
+/* Virtualized row wrapper - enables horizontal scrolling for long lines.
+ * react-window sets rows to width: 100%, which clips content.
+ * We override this to allow rows to expand to fit wide content.
+ * The List container's overflow: auto then provides the horizontal scrollbar.
+ * !important is required to override react-window's inline style (width: 100%). */
+.virtualized-inline-list .virtualized-row {
+  width: max-content !important;
   min-width: 100%;
+  overflow: visible; /* Allow content to extend for horizontal scroll on parent */
+}
+
+/* Table inside virtualized rows.
+ * Uses --diff-scroll-width CSS variable (set by JS) to ensure ALL tables
+ * extend to the same width as the widest content. This ensures diff backgrounds
+ * (addition/deletion highlighting) extend to the full scrollable width. */
+.virtualized-row .diff-table {
+  table-layout: auto; /* Allow table to expand with content */
+  width: max-content; /* Allow horizontal scroll for long lines */
+  min-width: var(--diff-scroll-width, 100%);
 }
 
 /* Virtualized side-by-side container */

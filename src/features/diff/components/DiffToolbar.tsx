@@ -4,13 +4,13 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, File, ChevronUp, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
 // Icon color constants (defined outside components to avoid recreation on each render)
 const ICON_COLORS = {
-  w: 'var(--main-bg)',
+  w: 'var(--diff-area-bg)',
   r: 'var(--diff-delete-word)',
   g: 'var(--diff-add-word)',
   border: 'var(--combobox-border)',
@@ -65,31 +65,141 @@ function SxSIcon() {
   );
 }
 
-interface ToggleButtonProps {
-  isActive: boolean;
-  onClick: () => void;
-  icon?: React.ReactNode;
+interface ToolbarSelectOption<T extends string> {
+  value: T;
   label: string;
-  shortcut?: string;
-  ariaLabel: string;
-  className?: string;
+  icon?: React.ReactNode;
 }
 
-function ToggleButton({ isActive, onClick, icon, label, shortcut, ariaLabel, className }: ToggleButtonProps) {
-  const classes = ['btn-toggle', 'btn-toolbar', isActive ? 'active' : '', className].filter(Boolean).join(' ');
+interface ToolbarSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: ToolbarSelectOption<T>[];
+  ariaLabel: string;
+  tooltip?: string;
+}
+
+/** Custom dropdown that supports icons in options */
+function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, tooltip }: ToolbarSelectProps<T>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [baseId] = useState(() => `dropdown-${Math.random().toString(36).slice(2, 9)}`);
+
+  const selectedOption = options.find(opt => opt.value === value) ?? options[0];
+
+  // Close on click outside or focus leaving container
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      // Close if focus moves outside the container
+      // relatedTarget is null when clicking non-focusable elements (like options), so don't close in that case
+      if (e.relatedTarget && containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    containerRef.current?.addEventListener('focusout', handleFocusOut);
+
+    const container = containerRef.current;
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      container?.removeEventListener('focusout', handleFocusOut);
+    };
+  }, [isOpen]);
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(!isOpen);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const nextOption = options[Math.min(currentIndex + 1, options.length - 1)];
+          if (nextOption) onChange(nextOption.value);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        if (isOpen) {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const prevOption = options[Math.max(currentIndex - 1, 0)];
+          if (prevOption) onChange(prevOption.value);
+        }
+        break;
+    }
+  };
+
+  const handleOptionClick = (optValue: T) => {
+    onChange(optValue);
+    setIsOpen(false);
+  };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={isActive}
-      aria-label={ariaLabel}
-      title={shortcut ? `${ariaLabel} (${shortcut})` : ariaLabel}
-      className={classes}
-    >
-      {icon}
-      <span className="btn-label">{label}</span>
-    </button>
+    <div className="toolbar-dropdown" ref={containerRef}>
+      <button
+        type="button"
+        className="toolbar-dropdown-button"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${baseId}-listbox`}
+        aria-activedescendant={isOpen ? `${baseId}-option-${value}` : undefined}
+        title={tooltip}
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
+      >
+        {selectedOption?.icon}
+        <span className="toolbar-dropdown-label">{selectedOption?.label}</span>
+        <svg className="toolbar-dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
+          <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        </svg>
+      </button>
+      {isOpen && (
+        <ul
+          id={`${baseId}-listbox`}
+          className="toolbar-dropdown-listbox"
+          role="listbox"
+          aria-label={ariaLabel}
+        >
+          {options.map((opt) => (
+            <li
+              key={opt.value}
+              id={`${baseId}-option-${opt.value}`}
+              role="option"
+              aria-selected={opt.value === value}
+              className={`toolbar-dropdown-option ${opt.value === value ? 'selected' : ''}`}
+              onClick={() => handleOptionClick(opt.value)}
+            >
+              {opt.icon}
+              <span>{opt.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -321,11 +431,6 @@ export function DiffToolbar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Toggle between inline and split view
-  const handleViewModeToggle = useCallback(() => {
-    setViewMode(viewConfig.mode === 'inline' ? 'split' : 'inline');
-  }, [viewConfig.mode, setViewMode]);
-
   return (
     <div className="toolbar-right" role="toolbar" aria-label="Diff view controls">
       {/* Content Filter Slider (AC-3.3.5-15) */}
@@ -334,45 +439,46 @@ export function DiffToolbar() {
         onChange={setContentFilter}
       />
 
-      {/* View Mode Toggle - Single button (AC-3.3.1-4) */}
-      <ToggleButton
-        isActive={false}
-        onClick={handleViewModeToggle}
-        icon={viewConfig.mode === 'split' ? <SxSIcon /> : <InlineIcon />}
-        label={viewConfig.mode === 'split' ? 'SxS' : 'Inline'}
-        shortcut={viewConfig.mode === 'split' ? 'I' : 'X'}
-        ariaLabel={viewConfig.mode === 'split' ? 'Switch to inline view' : 'Switch to side-by-side view'}
-        className="btn-toolbar-wide"
+      {/* View Mode Select (AC-3.3.1-4) */}
+      <ToolbarSelect
+        value={viewConfig.mode}
+        onChange={setViewMode}
+        options={[
+          { value: 'inline', label: 'Inline', icon: <InlineIcon /> },
+          { value: 'split', label: 'Side-by-Side', icon: <SxSIcon /> },
+        ]}
+        ariaLabel="View mode"
+        tooltip="View mode (I: Inline, X: Side-by-Side)"
       />
 
-      {/* Full File Toggle (AC-3.1.10-11) */}
-      <ToggleButton
-        isActive={false}
-        onClick={toggleFullFile}
-        icon={<File className="w-4 h-4" aria-hidden />}
-        label={viewConfig.showFullFile ? 'Full' : 'Changes'}
-        ariaLabel={viewConfig.showFullFile ? 'Show changes only' : 'Show full file'}
-        className="btn-toolbar-wide"
+      {/* Full File Select (AC-3.1.10-11) */}
+      <ToolbarSelect
+        value={viewConfig.showFullFile ? 'full' : 'changes'}
+        onChange={(v) => {
+          const wantsFull = v === 'full';
+          if (wantsFull !== viewConfig.showFullFile) toggleFullFile();
+        }}
+        options={[
+          { value: 'changes', label: 'Changes', icon: <FileDiff className="w-4 h-4" aria-hidden /> },
+          { value: 'full', label: 'Full File', icon: <FileText className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="File content"
+        tooltip="File content (C: Changes, F: Full File)"
       />
 
-      {/* Whitespace Toggle (AC-3.5.4-5) */}
-      <ToggleButton
-        isActive={viewConfig.showWhitespace}
-        onClick={toggleWhitespace}
-        icon={
-          viewConfig.showWhitespace ? (
-            <Eye className="w-4 h-4" aria-hidden />
-          ) : (
-            <EyeOff className="w-4 h-4" aria-hidden />
-          )
-        }
-        label="a · b"
-        ariaLabel={
-          viewConfig.showWhitespace
-            ? 'Hide whitespace characters'
-            : 'Show whitespace characters'
-        }
-        className="btn-toolbar-wide"
+      {/* Whitespace Select (AC-3.5.4-5) */}
+      <ToolbarSelect
+        value={viewConfig.showWhitespace ? 'visible' : 'hidden'}
+        onChange={(v) => {
+          const wantsVisible = v === 'visible';
+          if (wantsVisible !== viewConfig.showWhitespace) toggleWhitespace();
+        }}
+        options={[
+          { value: 'hidden', label: 'WS: Hidden', icon: <EyeOff className="w-4 h-4" aria-hidden /> },
+          { value: 'visible', label: 'WS: Visible', icon: <Eye className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="Whitespace visibility"
+        tooltip="Whitespace visibility (B: Toggle)"
       />
 
       {/* Change Navigation Buttons */}

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@/tests/helpers';
+import { render, screen, fireEvent, within } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
 import { DiffToolbar } from './DiffToolbar';
 import { useDiffStore } from '../stores';
@@ -12,7 +12,8 @@ import { useDiffStore } from '../stores';
 vi.mock('lucide-react', () => ({
   Eye: () => <span data-testid="icon-eye" />,
   EyeOff: () => <span data-testid="icon-eyeoff" />,
-  File: () => <span data-testid="icon-file" />,
+  FileDiff: () => <span data-testid="icon-filediff" />,
+  FileText: () => <span data-testid="icon-filetext" />,
   ChevronUp: () => <span data-testid="icon-chevronup" />,
   ChevronDown: () => <span data-testid="icon-chevrondown" />,
 }));
@@ -42,10 +43,11 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('toolbar')).toHaveAttribute('aria-label', 'Diff view controls');
     });
 
-    it('renders view mode toggle button showing Inline by default', () => {
+    it('renders view mode dropdown showing Inline by default', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /switch to side-by-side view/i })).toBeInTheDocument();
-      expect(screen.getByText('Inline')).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('Inline');
     });
 
     it('renders content filter radiogroup', () => {
@@ -53,29 +55,37 @@ describe('DiffToolbar', () => {
       expect(screen.getByRole('radiogroup', { name: 'Content filter' })).toBeInTheDocument();
     });
 
-    it('renders full file toggle button', () => {
+    it('renders file content dropdown', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /show full file/i })).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('Changes');
     });
 
-    it('renders whitespace toggle button', () => {
+    it('renders whitespace visibility dropdown', () => {
       render(<DiffToolbar />);
-      expect(screen.getByRole('button', { name: /show whitespace characters/i })).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('WS: Hidden');
     });
   });
 
-  describe('view mode toggle', () => {
-    it('toggles to split mode when clicking button in inline mode', async () => {
+  describe('view mode dropdown', () => {
+    it('changes to split mode when selecting split option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      await user.click(toggleButton);
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'View mode' });
+      const splitOption = within(listbox).getByRole('option', { name: /Side-by-Side/i });
+      await user.click(splitOption);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
     });
 
-    it('toggles to inline mode when clicking button in split mode', async () => {
+    it('changes to inline mode when selecting inline option', async () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
@@ -83,19 +93,24 @@ describe('DiffToolbar', () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
-      await user.click(toggleButton);
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'View mode' });
+      const inlineOption = within(listbox).getByRole('option', { name: /Inline/i });
+      await user.click(inlineOption);
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('inline');
     });
 
-    it('shows SxS label when in split mode', () => {
+    it('shows split label when in split mode', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByText('SxS')).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveTextContent('Side-by-Side');
     });
   });
 
@@ -142,56 +157,67 @@ describe('DiffToolbar', () => {
     });
   });
 
-  describe('full file toggle', () => {
-    it('calls toggleFullFile when clicked', async () => {
+  describe('file content dropdown', () => {
+    it('enables full file when selecting full option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const button = screen.getByRole('button', { name: /show full file/i });
+      const button = screen.getByRole('button', { name: 'File content' });
       await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'File content' });
+      const fullOption = within(listbox).getByRole('option', { name: /Full File/i });
+      await user.click(fullOption);
 
       expect(useDiffStore.getState().viewConfig.showFullFile).toBe(true);
     });
 
-    it('shows correct label when full file is enabled', () => {
+    it('shows full label when full file is enabled', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showFullFile: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByRole('button', { name: /show changes only/i })).toBeInTheDocument();
-      expect(screen.getByText('Full')).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveTextContent('Full File');
     });
 
-    it('shows Changes label when showing changes only', () => {
+    it('shows changes label when showing changes only', () => {
       render(<DiffToolbar />);
-      expect(screen.getByText('Changes')).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveTextContent('Changes');
     });
   });
 
-  describe('whitespace toggle', () => {
-    it('calls toggleWhitespace when clicked', async () => {
+  describe('whitespace visibility dropdown', () => {
+    it('enables whitespace when selecting visible option', async () => {
       const user = userEvent.setup();
       render(<DiffToolbar />);
 
-      const button = screen.getByRole('button', { name: /show whitespace characters/i });
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
       await user.click(button);
+
+      const listbox = screen.getByRole('listbox', { name: 'Whitespace visibility' });
+      const visibleOption = within(listbox).getByRole('option', { name: /WS: Visible/i });
+      await user.click(visibleOption);
 
       expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(true);
     });
 
-    it('shows correct aria-label when whitespace is shown', () => {
+    it('shows visible label when whitespace is shown', () => {
       useDiffStore.setState({
         viewConfig: { ...useDiffStore.getState().viewConfig, showWhitespace: true },
       });
       render(<DiffToolbar />);
 
-      expect(screen.getByRole('button', { name: /hide whitespace characters/i })).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveTextContent('WS: Visible');
     });
 
-    it('shows a · b label', () => {
+    it('shows hidden label when whitespace is hidden', () => {
       render(<DiffToolbar />);
-      expect(screen.getByText('a · b')).toBeInTheDocument();
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveTextContent('WS: Hidden');
     });
 
     it('shows Eye icon when whitespace is shown', () => {
@@ -274,28 +300,67 @@ describe('DiffToolbar', () => {
   });
 
   describe('accessibility', () => {
-    it('view mode toggle button has aria-pressed attribute', () => {
+    it('view mode dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveAttribute('aria-label', 'View mode');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('view mode toggle stays unpressed when in split mode', () => {
-      useDiffStore.setState({
-        viewConfig: { ...useDiffStore.getState().viewConfig, mode: 'split' },
-      });
+    it('file content dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to inline view/i });
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+      const button = screen.getByRole('button', { name: 'File content' });
+      expect(button).toHaveAttribute('aria-label', 'File content');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('toggle button has title with keyboard shortcut', () => {
+    it('whitespace visibility dropdown has aria-label', () => {
       render(<DiffToolbar />);
 
-      const toggleButton = screen.getByRole('button', { name: /switch to side-by-side view/i });
-      expect(toggleButton).toHaveAttribute('title', expect.stringContaining('X'));
+      const button = screen.getByRole('button', { name: 'Whitespace visibility' });
+      expect(button).toHaveAttribute('aria-label', 'Whitespace visibility');
+      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
+    });
+
+    it('dropdown button has aria-expanded false when closed', () => {
+      render(<DiffToolbar />);
+
+      const button = screen.getByRole('button', { name: 'View mode' });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('dropdown button has aria-expanded true when open', async () => {
+      const user = userEvent.setup();
+      render(<DiffToolbar />);
+
+      const button = screen.getByRole('button', { name: 'View mode' });
+      await user.click(button);
+
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('dropdown closes when focus leaves via Tab', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <DiffToolbar />
+          <button data-testid="outside-button">Outside</button>
+        </>
+      );
+
+      const viewModeButton = screen.getByRole('button', { name: 'View mode' });
+
+      // Open dropdown
+      await user.click(viewModeButton);
+      expect(viewModeButton).toHaveAttribute('aria-expanded', 'true');
+
+      // Tab away from the dropdown
+      await user.tab();
+
+      // Dropdown should close
+      expect(viewModeButton).toHaveAttribute('aria-expanded', 'false');
     });
   });
 });

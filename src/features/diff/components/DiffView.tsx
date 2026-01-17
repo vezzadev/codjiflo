@@ -16,10 +16,8 @@ import {
   useIterationDiff,
 } from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
-import { SideBySideDiffView } from './SideBySideDiffView';
-import { VirtualizedInlineDiffTable } from './VirtualizedInlineDiffTable';
-import { VirtualizedSideBySideDiffView } from './VirtualizedSideBySideDiffView';
 import { InlineDiffTable } from './InlineDiffTable';
+import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { ShikiTokensProvider } from './ShikiTokensContext';
@@ -35,7 +33,7 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
  * Main diff view component with support for inline and side-by-side modes.
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading, currentChangeIndex, resetChangeIndex, setTotalChangeCount } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount } = useDiffStore();
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { selectedRange, getFileDiffByPath, isIterationMode } = useIterationDiff();
   const {
@@ -43,7 +41,6 @@ export function DiffView() {
     error: commentsError,
     announcement,
     currentUser,
-    addComment,
     addReply,
     editComment,
     deleteComment,
@@ -57,8 +54,8 @@ export function DiffView() {
   // Draft comment management
   const draft = useDraftComment();
 
-  // Virtualization support
-  const { containerHeight, containerRefCallback, scrollContainerRef } = useContainerHeight();
+  // Container height for virtualized rendering
+  const { containerHeight, containerRefCallback } = useContainerHeight();
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
@@ -81,63 +78,6 @@ export function DiffView() {
   useEffect(() => {
     setTotalChangeCount(pipeline.hunkIndices.length);
   }, [pipeline.hunkIndices.length, setTotalChangeCount]);
-
-  // Scroll to specific hunk when currentChangeIndex changes (non-virtualized views only)
-  // Virtualized views handle scrolling via scrollToRowIndex prop
-  useEffect(() => {
-    if (isShowingDescription || currentChangeIndex < 0 || pipeline.isVirtualized) return;
-
-    const frameId = requestAnimationFrame(() => {
-      const scrollContainer = scrollContainerRef.current;
-      if (!scrollContainer) return;
-
-      // Query DOM for the target element
-      const allRows = Array.from(scrollContainer.querySelectorAll('[data-line-type]'));
-      let hunkCount = 0;
-      let inHunk = false;
-      let targetElement: Element | null = null;
-
-      for (const row of allRows) {
-        const lineType = row.getAttribute('data-line-type');
-        const isChange = lineType === 'addition' || lineType === 'deletion';
-
-        if (isChange && !inHunk) {
-          if (hunkCount === currentChangeIndex) {
-            targetElement = row;
-            break;
-          }
-          hunkCount++;
-          inHunk = true;
-        } else if (!isChange) {
-          inHunk = false;
-        }
-      }
-
-      if (targetElement) {
-        const rootStyles = getComputedStyle(document.documentElement);
-        const lineHeight = parseFloat(rootStyles.getPropertyValue('--diff-line-height')) || 23;
-        const contextLines = parseFloat(rootStyles.getPropertyValue('--diff-scroll-context-lines')) || 3;
-        const contextOffset = contextLines * lineHeight;
-
-        const lineRect = targetElement.getBoundingClientRect();
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const scrollOffset = lineRect.top - containerRect.top + scrollContainer.scrollTop - contextOffset;
-        scrollContainer.scrollTop = Math.max(0, scrollOffset);
-      }
-    });
-
-    return () => cancelAnimationFrame(frameId);
-  }, [currentChangeIndex, isShowingDescription, pipeline.isVirtualized, scrollContainerRef]);
-
-  // Handler for starting comment (inline view only shows RIGHT side)
-  const handleStartCommentInline = useCallback(
-    (index: number) => {
-      const targetLine = pipeline.diffLines[index];
-      const side = targetLine?.type === 'deletion' ? 'LEFT' : 'RIGHT';
-      draft.startComment(index, side);
-    },
-    [pipeline.diffLines, draft]
-  );
 
   // Handler for submitting draft
   const handleSubmitDraft = useCallback(() => {
@@ -253,9 +193,8 @@ export function DiffView() {
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
           >
-            {pipeline.isVirtualized ? (
-              <VirtualizedInlineDiffTable
-              key={pipeline.filename ?? 'diff-table-virtualized'}
+            <InlineDiffTable
+              key={pipeline.filename ?? 'diff-table'}
               diffLines={pipeline.diffLines}
               language={pipeline.language}
               containerHeight={containerHeight}
@@ -269,7 +208,6 @@ export function DiffView() {
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={handleStartCommentInline}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
@@ -278,89 +216,39 @@ export function DiffView() {
               scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
             />
-          ) : (
-            <InlineDiffTable
-              key={pipeline.filename ?? 'diff-table'}
-              diffLines={pipeline.diffLines}
+          </div>
+        ) : (
+          <div
+            ref={containerRefCallback}
+            className="diff-content-area"
+            role="region"
+            aria-label={`Diff content for ${pipeline.filename}`}
+            tabIndex={0}
+          >
+            <SideBySideDiffView
+              alignedLines={pipeline.alignedLines}
               language={pipeline.language}
+              containerHeight={containerHeight}
               threadsByLineAndSide={pipeline.threadsByLineAndSide}
               currentUserLogin={currentUser.login}
               addReply={addReply}
               editComment={editComment}
               deleteComment={deleteComment}
               toggleResolved={toggleResolved}
+              contentFilter={pipeline.contentFilter}
               draftLineIndex={draft.draftLineIndex}
+              draftSide={draft.draftSide}
               draftBody={draft.draftBody}
               isSubmittingDraft={draft.isSubmitting}
               submitError={draft.submitError}
-              onStartComment={handleStartCommentInline}
               onCancelDraft={draft.cancelDraft}
               onChangeDraftBody={draft.setDraftBody}
               onSubmitDraft={handleSubmitDraft}
               showWhitespace={pipeline.showWhitespace}
-              lineNumberMode={pipeline.lineNumberMode}
+              scrollToRowIndex={pipeline.scrollToRowIndex}
               hasFullContent={hasFullContent}
             />
-          )}
-        </div>
-      ) : pipeline.isVirtualized ? (
-        <div
-          ref={containerRefCallback}
-          className="diff-content-area"
-          role="region"
-          aria-label={`Diff content for ${pipeline.filename}`}
-          tabIndex={0}
-        >
-          <VirtualizedSideBySideDiffView
-            alignedLines={pipeline.alignedLines}
-            language={pipeline.language}
-            containerHeight={containerHeight}
-            threadsByLineAndSide={pipeline.threadsByLineAndSide}
-            currentUserLogin={currentUser.login}
-            addReply={addReply}
-            editComment={editComment}
-            deleteComment={deleteComment}
-            toggleResolved={toggleResolved}
-            contentFilter={pipeline.contentFilter}
-            draftLineIndex={draft.draftLineIndex}
-            draftSide={draft.draftSide}
-            draftBody={draft.draftBody}
-            isSubmittingDraft={draft.isSubmitting}
-            submitError={draft.submitError}
-            onStartComment={draft.startComment}
-            onCancelDraft={draft.cancelDraft}
-            onChangeDraftBody={draft.setDraftBody}
-            onSubmitDraft={handleSubmitDraft}
-            showWhitespace={pipeline.showWhitespace}
-            scrollToRowIndex={pipeline.scrollToRowIndex}
-            hasFullContent={hasFullContent}
-          />
-        </div>
-      ) : (
-        <SideBySideDiffView
-          containerRef={scrollContainerRef}
-          alignedLines={pipeline.alignedLines}
-          language={pipeline.language}
-          threadsByLineAndSide={pipeline.threadsByLineAndSide}
-          currentUserLogin={currentUser.login}
-          addComment={addComment}
-          addReply={addReply}
-          editComment={editComment}
-          deleteComment={deleteComment}
-          toggleResolved={toggleResolved}
-          contentFilter={pipeline.contentFilter}
-          draftLineIndex={draft.draftLineIndex}
-          draftSide={draft.draftSide}
-          draftBody={draft.draftBody}
-          isSubmittingDraft={draft.isSubmitting}
-          submitError={draft.submitError}
-          onStartComment={draft.startComment}
-          onCancelDraft={draft.cancelDraft}
-          onChangeDraftBody={draft.setDraftBody}
-          onSubmitDraft={handleSubmitDraft}
-          showWhitespace={pipeline.showWhitespace}
-          hasFullContent={hasFullContent}
-        />
+          </div>
         )}
       </ShikiTokensProvider>
     </div>

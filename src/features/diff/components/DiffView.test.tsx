@@ -81,7 +81,6 @@ const mockDiffPipeline = {
   lineNumberMode: 'both' as const,
   hunkIndices: [],
   scrollToRowIndex: undefined,
-  isVirtualized: false,
   isFullFileChange: false,
   threadsByLineAndSide: new Map(),
   filename: undefined as string | undefined,
@@ -332,53 +331,6 @@ describe('DiffView', () => {
     render(<DiffView />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Comment posted.');
-  });
-
-  it('opens comment editor when clicking add comment button', async () => {
-    const mockStartComment = vi.fn();
-    vi.mocked(useDiffStore).mockReturnValue({
-      ...mockDefaultDiffState,
-      files: [
-        {
-          filename: 'src/index.ts',
-          status: FileChangeStatus.Modified,
-          additions: 1,
-          deletions: 0,
-          changes: 1,
-          patch: '@@ -1,3 +1,4 @@\n context\n+added line',
-        },
-      ],
-    });
-
-    vi.mocked(useDiffPipeline).mockReturnValue({
-      ...mockDiffPipeline,
-      filename: 'src/index.ts',
-      diffLines: [
-        { type: 'context', content: ' context', oldLineNumber: 1, newLineNumber: 1 },
-        { type: 'addition', content: '+added line', oldLineNumber: null, newLineNumber: 2 },
-      ],
-    });
-
-    vi.mocked(useDraftComment).mockReturnValue({
-      ...mockDraftComment,
-      startComment: mockStartComment,
-    });
-
-    render(<DiffView />);
-
-    // Find and click the add comment button on a diff line
-    const addCommentButtons = screen.getAllByRole('button', { name: /add comment/i });
-    expect(addCommentButtons.length).toBeGreaterThan(0);
-
-    const firstButton = addCommentButtons[0];
-    if (firstButton) {
-      fireEvent.click(firstButton);
-    }
-
-    // Draft hook should have been called to start comment
-    await waitFor(() => {
-      expect(mockStartComment).toHaveBeenCalled();
-    });
   });
 
   it('submits a comment successfully', async () => {

@@ -148,7 +148,18 @@ Iterations: 2`,
     // This tests the BUG: with wrong implementation, .diff-viewer scrolls
     // horizontally and takes the toolbar with it
     const scrollResult = await page.evaluate(() => {
-      // Try .diff-content-area first (correct implementation)
+      // Try .virtualized-inline-list first (correct implementation with react-window)
+      // This is the List component that handles horizontal scrolling
+      const virtualizedList = document.querySelector(".virtualized-inline-list");
+      if (virtualizedList && virtualizedList.scrollWidth > virtualizedList.clientWidth) {
+        const style = window.getComputedStyle(virtualizedList);
+        if (style.overflowX === "auto" || style.overflowX === "scroll") {
+          virtualizedList.scrollLeft = 300;
+          return { element: ".virtualized-inline-list", scrolled: virtualizedList.scrollLeft > 0 };
+        }
+      }
+
+      // Try .diff-content-area (alternative correct implementation)
       const contentArea = document.querySelector(".diff-content-area");
       if (contentArea && contentArea.scrollWidth > contentArea.clientWidth) {
         const style = window.getComputedStyle(contentArea);
@@ -174,6 +185,12 @@ Iterations: 2`,
 
     // Wait for scroll to settle by checking that scrollLeft has reached the expected value
     await page.waitForFunction(() => {
+      // Check virtualized list (primary scroll container)
+      const virtualizedList = document.querySelector(".virtualized-inline-list");
+      if (virtualizedList && virtualizedList.scrollLeft > 0) {
+        return true;
+      }
+      // Also check diff-content-area as fallback
       const contentArea = document.querySelector(".diff-content-area");
       if (contentArea && contentArea.scrollLeft > 0) {
         return true;
@@ -211,12 +228,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Get the content area
-    const contentArea = page.locator(".diff-content-area");
-    await expect(contentArea).toBeVisible();
+    // Get the virtualized list (the scrollable container)
+    const virtualizedList = page.locator(".virtualized-inline-list");
+    await expect(virtualizedList).toBeVisible();
 
-    // ASSERTION: Content area should allow horizontal scrolling
-    const canScroll = await contentArea.evaluate((el) => {
+    // ASSERTION: Virtualized list should allow horizontal scrolling
+    const canScroll = await virtualizedList.evaluate((el) => {
       // Check if element can scroll (has overflow: auto/scroll and content wider than container)
       const style = window.getComputedStyle(el);
       const overflowX = style.overflowX;
@@ -228,23 +245,190 @@ Iterations: 2`,
     expect(canScroll).toBe(true);
 
     // ASSERTION: Can scroll to reveal hidden content
-    const initialScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    const initialScrollLeft = await virtualizedList.evaluate((el) => el.scrollLeft);
     expect(initialScrollLeft).toBe(0);
 
     // Scroll right
-    await contentArea.evaluate((el) => {
+    await virtualizedList.evaluate((el) => {
       el.scrollLeft = 100;
     });
 
-    const newScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    const newScrollLeft = await virtualizedList.evaluate((el) => el.scrollLeft);
     expect(newScrollLeft).toBe(100);
 
     // Scroll back
-    await contentArea.evaluate((el) => {
+    await virtualizedList.evaluate((el) => {
       el.scrollLeft = 0;
     });
 
-    const resetScrollLeft = await contentArea.evaluate((el) => el.scrollLeft);
+    const resetScrollLeft = await virtualizedList.evaluate((el) => el.scrollLeft);
     expect(resetScrollLeft).toBe(0);
+  });
+
+  test("Virtualized rows expand to fit wide content (CSS fix validation)", async ({
+    page,
+  }) => {
+    // This test validates the CSS fix for issue #234:
+    // Without the fix, react-window sets rows to width: 100% which clips content.
+    // With the fix, rows use width: max-content to expand for long lines.
+
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("domcontentloaded");
+
+    // Click on the file with long lines
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("long-lines.ts").click();
+
+    // Wait for diff to render
+    await expect(
+      page.getByRole("heading", { name: "src/long-lines.ts" })
+    ).toBeVisible();
+
+    // Verify we're in inline view (not side-by-side)
+    const inlineList = page.locator(".virtualized-inline-list");
+    await expect(inlineList).toBeVisible();
+
+    // CRITICAL ASSERTION: At least one virtualized row should have width > viewport
+    // This validates that the CSS rule `width: max-content !important` is working.
+    // Without the fix, all rows would be constrained to container width.
+    const rowWidthResult = await page.evaluate(() => {
+      const list = document.querySelector(".virtualized-inline-list");
+      if (!list) return { error: "No virtualized-inline-list found" };
+
+      const containerWidth = list.clientWidth;
+      const rows = document.querySelectorAll(
+        ".virtualized-inline-list .virtualized-row"
+      );
+
+      // Find the widest row
+      let maxRowWidth = 0;
+      rows.forEach((row) => {
+        const width = (row as HTMLElement).offsetWidth;
+        if (width > maxRowWidth) {
+          maxRowWidth = width;
+        }
+      });
+
+      return {
+        containerWidth,
+        maxRowWidth,
+        hasWideRow: maxRowWidth > containerWidth,
+        rowCount: rows.length,
+      };
+    });
+
+    // ASSERTION: The widest row should expand beyond the container width
+    // This is the core behavior that was broken in issue #234
+    expect(rowWidthResult).not.toHaveProperty("error");
+    expect(rowWidthResult).toHaveProperty("rowCount");
+    expect(rowWidthResult).toHaveProperty("maxRowWidth");
+    expect(rowWidthResult).toHaveProperty("containerWidth");
+
+    // Type guard - after the assertions above, we know these exist
+    const { rowCount, maxRowWidth, containerWidth, hasWideRow } = rowWidthResult as {
+      rowCount: number;
+      maxRowWidth: number;
+      containerWidth: number;
+      hasWideRow: boolean;
+    };
+
+    expect(rowCount).toBeGreaterThan(0);
+    expect(hasWideRow).toBe(true);
+    // Verify the row is actually wider, not just equal
+    expect(maxRowWidth).toBeGreaterThan(containerWidth);
+  });
+
+  test("Full mode updates CSS variable for diff highlighting to extend on scroll", async ({
+    page,
+  }) => {
+    // This test validates the fix for issue #234 in Full mode:
+    // The CSS variable --diff-scroll-width must be updated when switching from
+    // Changes-only mode to Full mode, so diff highlighting (green/red backgrounds)
+    // extends to the full scroll width.
+
+    const config = getTestConfig();
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("domcontentloaded");
+
+    // Click on the file with long lines
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("long-lines.ts").click();
+
+    // Wait for diff to render - wait for the virtualized list to appear
+    const virtualizedList = page.locator(".virtualized-inline-list");
+    await expect(virtualizedList).toBeVisible();
+
+    // Wait for toolbar to render
+    const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(diffToolbar).toBeVisible();
+
+    // Find the File content dropdown button
+    const fileContentButton = diffToolbar.getByRole("button", { name: /File content/i });
+    await expect(fileContentButton).toBeVisible();
+
+    // Click to open the dropdown menu
+    await fileContentButton.click();
+
+    // Select "Full File" from the dropdown
+    const fullFileOption = page.getByRole("option", { name: /Full File/i });
+    await expect(fullFileOption).toBeVisible();
+    await fullFileOption.click();
+
+    // Wait for the view to update - button text changes to show "Full File"
+    await expect(fileContentButton.getByText(/Full/i)).toBeVisible();
+
+    // Wait for ResizeObserver to fire and update the CSS variable
+    // The CSS variable should match the scrollWidth
+    const cssVarHandle = await page.waitForFunction(() => {
+      const container = document.querySelector(".virtualized-inline-container");
+      const list = document.querySelector(".virtualized-inline-list");
+      if (!container || !list) return null;
+
+      const cssVar = getComputedStyle(container).getPropertyValue("--diff-scroll-width");
+      const scrollWidth = list.scrollWidth;
+      const clientWidth = list.clientWidth;
+      const needsScroll = scrollWidth > clientWidth;
+
+      // CSS variable should be set and match scroll width (if content is wider)
+      if (needsScroll) {
+        const cssWidthValue = parseInt(cssVar, 10);
+        // Variable should be close to scroll width (within 10px tolerance for rounding)
+        if (Math.abs(cssWidthValue - scrollWidth) < 10) {
+          return { cssVar, scrollWidth, clientWidth, needsScroll, match: true };
+        }
+        return null; // Keep waiting
+      }
+      // No scroll needed - CSS variable may or may not be set
+      return { cssVar, scrollWidth, clientWidth, needsScroll, match: true };
+    });
+
+    const cssVarResult = await cssVarHandle.jsonValue() as {
+      cssVar: string;
+      scrollWidth: number;
+      clientWidth?: number;
+      match: boolean;
+      needsScroll?: boolean;
+    };
+    expect(cssVarResult).not.toBeNull();
+    expect(cssVarResult).toHaveProperty("match", true);
+
+    // The CSS variable is correctly set to match scroll width.
+    // This ensures that when tables use `min-width: var(--diff-scroll-width)`,
+    // diff highlighting (green/red backgrounds) will extend to the full scroll width.
+    const cssVarValue = parseInt(cssVarResult.cssVar, 10);
+    const scrollWidth = cssVarResult.scrollWidth;
+
+    // If content needs horizontal scrolling, CSS variable should be set and match scroll width
+    // If no horizontal scroll is needed, the CSS variable may be empty (which is fine)
+    if (cssVarResult.needsScroll !== false && scrollWidth > 0) {
+      if (!Number.isNaN(cssVarValue)) {
+        // CSS variable is set - verify it matches scroll width
+        expect(Math.abs(cssVarValue - scrollWidth)).toBeLessThan(10);
+      }
+      // If CSS variable is empty (NaN), it means no scroll is needed
+    }
   });
 });

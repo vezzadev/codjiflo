@@ -4,16 +4,12 @@
  * Calculates navigation indices and scroll targets:
  * - Hunk indices for J/K navigation
  * - Scroll target for current change
- * - Virtualization threshold
  */
 
 import { useMemo } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../../stores';
 import { calculateHunkIndices, calculateAlignedHunkIndices } from '../../utils';
 import type { DiffDisplayOutput, DiffNavigationOutput } from './types';
-
-/** Threshold for enabling virtualization (500+ lines) */
-const VIRTUALIZATION_THRESHOLD = 500;
 
 /**
  * Hook to calculate navigation indices and scroll targets.
@@ -54,13 +50,9 @@ export function useDiffNavigation(display: DiffDisplayOutput): DiffNavigationOut
     return hunkIndices[currentChangeIndex];
   }, [currentChangeIndex, hunkIndices]);
 
-  // Determine if virtualization is needed
-  const isVirtualized = display.diffLines.length > VIRTUALIZATION_THRESHOLD;
-
   return {
     ...display,
     hunkIndices,
     scrollToRowIndex,
-    isVirtualized,
   };
 }

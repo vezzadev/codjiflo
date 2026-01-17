@@ -167,6 +167,110 @@
 }
 
 /* ============================================
+   TOOLBAR DROPDOWN (custom dropdown with icons)
+   ============================================ */
+.toolbar-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.toolbar-dropdown-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 25px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--main-fg);
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  cursor: pointer;
+}
+
+.toolbar-dropdown-button:hover {
+  background-color: var(--btn-hover);
+}
+
+.toolbar-dropdown-button:focus {
+  border-color: var(--focus-border);
+}
+
+.toolbar-dropdown-button[aria-expanded="true"] {
+  border-color: var(--focus-border);
+}
+
+.toolbar-dropdown-label {
+  white-space: nowrap;
+}
+
+.toolbar-dropdown-arrow {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Listbox dropdown */
+.toolbar-dropdown-listbox {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 100%;
+  margin: 2px 0 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background-color: var(--window-bg);
+  border: 1px solid var(--combobox-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Option items */
+.toolbar-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--main-fg);
+  background-color: var(--window-bg);
+}
+
+.toolbar-dropdown-option:hover {
+  background-color: var(--menu-hover);
+}
+
+.toolbar-dropdown-option.selected {
+  background-color: var(--menu-focus);
+}
+
+/* Icons in options - fixed width container for alignment */
+.toolbar-dropdown-option svg {
+  display: block;
+  flex: 0 0 24px;
+  height: 16px;
+}
+
+/* Text in options */
+.toolbar-dropdown-option span {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Icon sizing for lucide icons */
+.toolbar-dropdown-option svg.w-4 {
+  width: 14px;
+  height: 14px;
+}
+
+.toolbar-dropdown-button svg.w-4 {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================
    SLIDER
    ============================================ */
 .slider {
