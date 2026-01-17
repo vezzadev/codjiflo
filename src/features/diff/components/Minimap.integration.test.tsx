@@ -391,11 +391,15 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // 25% viewport positioning formula:
-      // ratio = (clickRatio - 0.125) / 0.5
-      // For ratio=0 (scroll to top): clickRatio = 0.125
-      // y = 0.125 * 480 + 10 = 70
-      fireEvent.click(svg, { clientX: 45, clientY: 70 });
+      // Row-based 25% viewport positioning:
+      // targetLine = Math.round(1 + clickRatio * (lineCount - 1))
+      // Then find row index and scroll to put that row at 25% of viewport
+      // With 6 rows, lineCount=5 (right side), scrollHeight=1000, rowHeight=166.67
+      //
+      // For scrollTop=0: need rowIndex=0, targetLine=1
+      // clickRatio * 4 < 0.5 => clickRatio < 0.125
+      // y = 0.1 * 480 + 10 = 58
+      fireEvent.click(svg, { clientX: 45, clientY: 58 });
 
       expect(scrollable.scrollTop).toBe(0);
     });
@@ -440,14 +444,17 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // 25% viewport positioning formula:
-      // ratio = (clickRatio - 0.125) / 0.5
-      // For ratio=0.5 (scroll to middle): clickRatio = 0.375
-      // y = 0.375 * 480 + 10 = 190
-      fireEvent.click(svg, { clientX: 45, clientY: 190 });
+      // Row-based 25% viewport positioning:
+      // With 6 rows, lineCount=5 (right side), scrollHeight=1000, rowHeight=166.67
+      // scrollTop = rowIndex * rowHeight - 0.25 * clientHeight
+      //
+      // For targetLine=3: clickRatio = (3-1)/(5-1) = 0.5, y = 0.5 * 480 + 10 = 250
+      // rowIndex for newLineNumber=3 is row 3
+      // scrollTop = 3 * 166.67 - 125 = 375
+      fireEvent.click(svg, { clientX: 45, clientY: 250 });
 
-      // scrollTop = 0.5 * 500 = 250
-      expect(scrollable.scrollTop).toBe(250);
+      // scrollTop = 3 * (1000/6) - 0.25 * 500 = 500 - 125 = 375
+      expect(scrollable.scrollTop).toBe(375);
     });
   });
 
@@ -529,30 +536,33 @@ describe('Minimap component', () => {
         toJSON: () => ({}),
       });
 
-      // 25% viewport positioning formula:
-      // clickRatio = (y - barTop) / barHeight = (y - 10) / 480
-      // ratio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio)
-      //       = (clickRatio - 0.125) / 0.5
+      // Row-based 25% viewport positioning:
+      // targetLine = Math.round(1 + clickRatio * (lineCount - 1))
+      // scrollTop = rowIndex * rowHeight - 0.25 * clientHeight
+      // With 6 rows, lineCount=5 (right side), scrollHeight=1000, rowHeight=166.67, clientHeight=500
       //
-      // For ratio=0.5 (scroll to middle): clickRatio = 0.375
-      // y = 0.375 * 480 + 10 = 190
+      // For targetLine=3: clickRatio = 0.5, y = 0.5 * 480 + 10 = 250
+      // rowIndex for newLineNumber=3 is row 3
+      // scrollTop = 3 * 166.67 - 125 = 375
 
-      // Start drag
-      fireEvent.mouseDown(svg, { clientX: 45, clientY: 190 });
+      // Start drag at position targeting rowIndex=3
+      fireEvent.mouseDown(svg, { clientX: 45, clientY: 250 });
       // Move to trigger drag calculation
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 190 });
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 250 });
 
-      // Should scroll to 50% (250) with 25% viewport positioning
-      expect(scrollable.scrollTop).toBe(250);
+      // Should scroll to rowIndex=3 position
+      expect(scrollable.scrollTop).toBe(375);
 
-      // Now drag to bottom (ratio = 1.0)
-      // clickRatio = 0.625, y = 0.625 * 480 + 10 = 310
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 310 });
+      // Now drag to bottom (targetLine=5, rowIndex=5)
+      // clickRatio = 1.0, y = 1.0 * 480 + 10 = 490
+      // scrollTop = 5 * 166.67 - 125 = 708.33 -> clamped to maxScroll = 500
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 490 });
       expect(scrollable.scrollTop).toBe(500);
 
-      // And drag to top (ratio = 0)
-      // clickRatio = 0.125, y = 0.125 * 480 + 10 = 70
-      fireEvent.mouseMove(svg, { clientX: 45, clientY: 70 });
+      // And drag to top (targetLine=1, rowIndex=0)
+      // clickRatio = 0, y = 10
+      // scrollTop = 0 * 166.67 - 125 = -125 -> clamped to 0
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 10 });
       expect(scrollable.scrollTop).toBe(0);
     });
 

@@ -164,6 +164,47 @@ function calculateVisibleLineRangesFromRows(
   };
 }
 
+/**
+ * Find the diff row index containing a specific line number
+ * @param diffLines - Array of parsed diff lines
+ * @param targetLine - The 1-indexed line number to find
+ * @param side - Which side ('left' for oldLineNumber, 'right' for newLineNumber)
+ * @returns Row index (0-indexed) or -1 if not found
+ */
+function findRowIndexByLineNumber(
+  diffLines: ParsedDiffLine[],
+  targetLine: number,
+  side: 'left' | 'right'
+): number {
+  const lineKey = side === 'left' ? 'oldLineNumber' : 'newLineNumber';
+
+  for (let i = 0; i < diffLines.length; i++) {
+    const line = diffLines[i];
+    if (line?.[lineKey] === targetLine) {
+      return i;
+    }
+  }
+
+  // If exact line not found, find the closest row
+  // (can happen if target line is in an addition-only or deletion-only region)
+  let closestIndex = -1;
+  let closestDistance = Infinity;
+
+  for (let i = 0; i < diffLines.length; i++) {
+    const line = diffLines[i];
+    const lineNum = line?.[lineKey];
+    if (lineNum !== null && lineNum !== undefined) {
+      const distance = Math.abs(lineNum - targetLine);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    }
+  }
+
+  return closestIndex;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -267,61 +308,50 @@ export function Minimap({
     visibleRanges,
   ]);
 
-  // Convert Y position to scroll ratio (0-1) with 25% viewport positioning
-  // Both click and drag position the target line at 25% of viewport height
-  // This provides context above and natural top-to-bottom reading flow
-  const yToScrollRatio = useCallback(
-    (y: number, side: 'left' | 'right'): number => {
-      const barTop = side === 'left' ? leftBarTop : rightBarTop;
-      const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
-      const { viewportRatio } = scrollState;
+  // Find the scroll element (matching useMinimapScroll logic)
+  const findScrollElement = useCallback((): HTMLElement | null => {
+    const container = scrollContainerRef.current;
+    if (!container) return null;
 
-      // Edge case: viewport shows all content (no scrolling possible)
-      if (viewportRatio >= 1) return 0;
+    // Find actual scroll container with LARGEST scroll range
+    const candidates = container.querySelectorAll<HTMLElement>('[style*="overflow"]');
+    let scrollEl: HTMLElement | null = null;
+    let maxScrollRange = 0;
 
-      // Calculate which line the user clicked on (as ratio within the bar)
-      const clickRatio = (y - barTop) / barHeight;
-
-      // Position clicked line at 25% of viewport height
-      // Formula: scrollRatio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio)
-      // This scrolls so the target line appears at 25% from the top
-      const ratio = (clickRatio - 0.25 * viewportRatio) / (1 - viewportRatio);
-
-      return Math.max(0, Math.min(1, ratio));
-    },
-    [barHeights, leftBarTop, rightBarTop, scrollState]
-  );
-
-  // Navigate to scroll position by ratio (0-1) - instant, no animation
-  const navigateToRatio = useCallback(
-    (ratio: number) => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-
-      // Find actual scroll container with LARGEST scroll range (matching useMinimapScroll logic)
-      const candidates = container.querySelectorAll<HTMLElement>('[style*="overflow"]');
-      let scrollEl: HTMLElement | null = null;
-      let maxScrollRange = 0;
-
-      for (const el of candidates) {
-        const scrollRange = el.scrollHeight - el.clientHeight;
-        if (scrollRange > maxScrollRange) {
-          maxScrollRange = scrollRange;
-          scrollEl = el;
-        }
+    for (const el of candidates) {
+      const scrollRange = el.scrollHeight - el.clientHeight;
+      if (scrollRange > maxScrollRange) {
+        maxScrollRange = scrollRange;
+        scrollEl = el;
       }
+    }
 
-      // Fallback for side-by-side view
-      if (!scrollEl || maxScrollRange <= 100) {
-        scrollEl = container.querySelector<HTMLElement>('.side-by-side-pane-left') ?? container;
-      }
+    // Fallback for side-by-side view
+    if (!scrollEl || maxScrollRange <= 100) {
+      scrollEl = container.querySelector<HTMLElement>('.side-by-side-pane-left') ?? container;
+    }
 
-      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
-      // Set scroll position directly from ratio - instant scrolling
+    return scrollEl;
+  }, [scrollContainerRef]);
+
+  // Navigate to put a specific row at 25% of viewport - instant, no animation
+  const navigateToRow = useCallback(
+    (rowIndex: number, totalRows: number) => {
+      const scrollEl = findScrollElement();
+      if (!scrollEl || totalRows <= 0) return;
+
+      const { scrollHeight, clientHeight } = scrollEl;
+      const rowHeight = scrollHeight / totalRows;
+
+      // Calculate scroll position to put target row at 25% of viewport
+      const targetScrollTop = (rowIndex * rowHeight) - (0.25 * clientHeight);
+
+      // Clamp to valid scroll range
+      const maxScroll = scrollHeight - clientHeight;
       // eslint-disable-next-line react-hooks/immutability -- We're modifying the DOM element's scroll position, not the ref
-      scrollEl.scrollTop = ratio * maxScroll;
+      scrollEl.scrollTop = Math.max(0, Math.min(maxScroll, targetScrollTop));
     },
-    [scrollContainerRef]
+    [findScrollElement]
   );
 
   // Handle click navigation - positions clicked line at 25% of viewport
@@ -335,20 +365,28 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = getClickSide(x);
-      // Position clicked line at 25% of viewport height
-      const ratio = yToScrollRatio(y, side);
+      const barTop = side === 'left' ? leftBarTop : rightBarTop;
+      const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
+      const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
+      const clickRatio = (y - barTop) / barHeight;
 
-      // Navigate using scroll ratio for accurate positioning
-      navigateToRatio(ratio);
+      // Target line calculation (1-indexed: lines 1 to lineCount)
+      const targetLine = Math.round(1 + clickRatio * (lineCount - 1));
+
+      // Find the diff row containing this line
+      const rowIndex = findRowIndexByLineNumber(diffLines, targetLine, side);
+
+      // Navigate to put that row at 25% of viewport
+      if (rowIndex >= 0) {
+        navigateToRow(rowIndex, diffLines.length);
+      }
 
       // Call external callback if provided (for testing/external tracking)
       if (onNavigate) {
-        const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
-        const lineNumber = Math.floor(ratio * lineCount);
-        onNavigate({ lineNumber, side, type: 'click' });
+        onNavigate({ lineNumber: targetLine, side, type: 'click' });
       }
     },
-    [onNavigate, yToScrollRatio, navigateToRatio, lineCounts]
+    [onNavigate, navigateToRow, diffLines, lineCounts, leftBarTop, rightBarTop, barHeights]
   );
 
   // Handle mouse down (start drag)
@@ -384,20 +422,28 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = dragSideRef.current;
-      // Position dragged line at 25% of viewport height
-      const ratio = yToScrollRatio(y, side);
+      const barTop = side === 'left' ? leftBarTop : rightBarTop;
+      const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
+      const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
+      const clickRatio = (y - barTop) / barHeight;
 
-      // Navigate using scroll ratio
-      navigateToRatio(ratio);
+      // Target line calculation (1-indexed: lines 1 to lineCount)
+      const targetLine = Math.round(1 + clickRatio * (lineCount - 1));
+
+      // Find the diff row containing this line
+      const rowIndex = findRowIndexByLineNumber(diffLines, targetLine, side);
+
+      // Navigate to put that row at 25% of viewport
+      if (rowIndex >= 0) {
+        navigateToRow(rowIndex, diffLines.length);
+      }
 
       // Call external callback if provided
       if (onNavigate) {
-        const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
-        const lineNumber = Math.floor(ratio * lineCount);
-        onNavigate({ lineNumber, side, type: 'drag' });
+        onNavigate({ lineNumber: targetLine, side, type: 'drag' });
       }
     },
-    [isDragging, showComments, yToScrollRatio, navigateToRatio, onNavigate, lineCounts]
+    [isDragging, showComments, navigateToRow, diffLines, onNavigate, lineCounts, leftBarTop, rightBarTop, barHeights]
   );
 
   // Handle mouse up (end drag)
