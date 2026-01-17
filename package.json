@@ -45,6 +45,7 @@
     "@swc/helpers": "^0.5.15",
     "esbuild": "^0.25.0",
     "path-to-regexp": "^8.0.0",
+    "tar": "^7.5.3",
     "undici": "^6.0.0"
   },
   "browserslist": {
