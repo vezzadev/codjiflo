@@ -123,9 +123,9 @@ async function run(): Promise<void> {
       const leftSnapshotIndex = (iteration.revision - 1) * 2;
       const rightSnapshotIndex = leftSnapshotIndex + 1;
 
-      // Get all artifact IDs for this iteration
-      // TODO: Query actual artifact IDs from database
-      const artifactIds: number[] = [];
+      // Get all artifact IDs that have snapshots for this iteration
+      const artifactIds = db.getArtifactIdsForSnapshotRange(leftSnapshotIndex, rightSnapshotIndex);
+      core.info(`Found ${artifactIds.length} artifacts for SpanTracker computation`);
 
       // Compute SpanTrackers
       core.info('Computing SpanTrackers...');

@@ -249,6 +249,22 @@ export class IterationDatabase {
   // SpanTracker Methods
   // --------------------------------------------------------------------------
 
+  /**
+   * Get all artifact IDs that have snapshots for a given snapshot range.
+   * Used to determine which artifacts need SpanTracker computation.
+   */
+  getArtifactIdsForSnapshotRange(leftSnapshotIndex: number, rightSnapshotIndex: number): number[] {
+    const rows = this.db.prepare<[number, number], { artifact_id: number }>(`
+      SELECT DISTINCT artifact_id
+      FROM artifact_snapshots
+      WHERE snapshot_index IN (?, ?)
+      GROUP BY artifact_id
+      HAVING COUNT(DISTINCT snapshot_index) = 2
+    `).all(leftSnapshotIndex, rightSnapshotIndex);
+
+    return rows.map((row) => row.artifact_id);
+  }
+
   insertSpanTracker(
     artifactId: number,
     leftSnapshotIndex: number,

@@ -44187,6 +44187,20 @@ class IterationDatabase {
     // --------------------------------------------------------------------------
     // SpanTracker Methods
     // --------------------------------------------------------------------------
+    /**
+     * Get all artifact IDs that have snapshots for a given snapshot range.
+     * Used to determine which artifacts need SpanTracker computation.
+     */
+    getArtifactIdsForSnapshotRange(leftSnapshotIndex, rightSnapshotIndex) {
+        const rows = this.db.prepare(`
+      SELECT DISTINCT artifact_id
+      FROM artifact_snapshots
+      WHERE snapshot_index IN (?, ?)
+      GROUP BY artifact_id
+      HAVING COUNT(DISTINCT snapshot_index) = 2
+    `).all(leftSnapshotIndex, rightSnapshotIndex);
+        return rows.map((row) => row.artifact_id);
+    }
     insertSpanTracker(artifactId, leftSnapshotIndex, rightSnapshotIndex) {
         const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO span_trackers (artifact_id, left_snapshot_index, right_snapshot_index)
@@ -44419,9 +44433,9 @@ async function run() {
             }
             const leftSnapshotIndex = (iteration.revision - 1) * 2;
             const rightSnapshotIndex = leftSnapshotIndex + 1;
-            // Get all artifact IDs for this iteration
-            // TODO: Query actual artifact IDs from database
-            const artifactIds = [];
+            // Get all artifact IDs that have snapshots for this iteration
+            const artifactIds = db.getArtifactIdsForSnapshotRange(leftSnapshotIndex, rightSnapshotIndex);
+            core.info(`Found ${artifactIds.length} artifacts for SpanTracker computation`);
             // Compute SpanTrackers
             core.info('Computing SpanTrackers...');
             const trackerInputs = (0, tracker_1.prepareSpanTrackerInputs)(db, artifactIds, leftSnapshotIndex, rightSnapshotIndex);
