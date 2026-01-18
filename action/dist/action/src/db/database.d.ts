@@ -80,6 +80,11 @@ export declare class IterationDatabase {
      * Get content by hash.
      */
     getContentBlob(contentHash: string): ContentBlobRow | undefined;
+    /**
+     * Get all artifact IDs that have snapshots for a given snapshot range.
+     * Used to determine which artifacts need SpanTracker computation.
+     */
+    getArtifactIdsForSnapshotRange(leftSnapshotIndex: number, rightSnapshotIndex: number): number[];
     insertSpanTracker(artifactId: number, leftSnapshotIndex: number, rightSnapshotIndex: number): number;
     insertSpanMapping(trackerId: number, leftStart: number | null, leftEnd: number | null, rightStart: number | null, rightEnd: number | null, mappingType: SpanMappingRow['mapping_type']): void;
     private hashContent;
