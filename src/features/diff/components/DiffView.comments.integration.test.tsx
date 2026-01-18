@@ -63,6 +63,9 @@ describe("DiffView comments integration", () => {
             line: 2,
             side: "RIGHT",
             isResolved: false,
+            originalLine: 2,
+            originalCommitId: "abc123",
+            trackedLine: null,
             comments: [
               {
                 id: "comment-1",
@@ -78,6 +81,8 @@ describe("DiffView comments integration", () => {
                 line: 2,
                 side: "RIGHT",
                 position: 2,
+                originalLine: 2,
+                originalCommitId: "abc123",
               },
             ],
           },

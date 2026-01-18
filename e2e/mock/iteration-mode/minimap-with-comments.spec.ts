@@ -98,6 +98,8 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       line: 51, // The added line
       side: "RIGHT",
       position: 4,
+      original_line: 51,
+      original_commit_id: "abc123",
     },
   ];
 

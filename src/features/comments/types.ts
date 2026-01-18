@@ -19,6 +19,10 @@ export interface Comment {
   position: number | null;
   inReplyTo?: string;
   isPending?: boolean;
+  /** Line number when comment was created (for outdated comments) */
+  originalLine: number | null;
+  /** Commit SHA when comment was originally created */
+  originalCommitId: string | null;
 }
 
 export interface ReviewThread {
@@ -29,4 +33,10 @@ export interface ReviewThread {
   side: CommentSide;
   comments: Comment[];
   isResolved: boolean;
+  /** Line number when thread was created (from root comment) */
+  originalLine: number | null;
+  /** Commit SHA when thread was created */
+  originalCommitId: string | null;
+  /** Computed current position via SpanTracker (null if not tracked or deleted) */
+  trackedLine: number | null;
 }

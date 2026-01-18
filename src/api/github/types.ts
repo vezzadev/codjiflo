@@ -51,6 +51,12 @@ export interface GitHubReviewComment {
   side: "LEFT" | "RIGHT";
   position: number | null;
   in_reply_to_id?: number;
+  /** Line number when comment was created (for outdated comments) */
+  original_line: number | null;
+  /** Current HEAD commit SHA */
+  commit_id: string;
+  /** Commit SHA when comment was originally created */
+  original_commit_id: string;
 }
 
 /**

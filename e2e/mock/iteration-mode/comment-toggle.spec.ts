@@ -98,6 +98,8 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
       line: 51,
       side: "RIGHT",
       position: 4,
+      original_line: 51,
+      original_commit_id: "abc123",
     },
   ];
 
