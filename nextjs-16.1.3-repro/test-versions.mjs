@@ -50,10 +50,20 @@ async function testVersion(version) {
     // Try dev server (with timeout)
     console.log('\nTrying dev server (10 second timeout)...');
     try {
-      execSync('timeout 10 npm run dev || true', {
+      // Use a cross-platform approach with Node.js child_process
+      const { spawn } = await import('child_process');
+      const devProcess = spawn('npm', ['run', 'dev'], {
         stdio: 'inherit',
-        shell: true
+        shell: true,
+        timeout: 10000
       });
+      
+      // Wait for 10 seconds
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      
+      // Kill the process
+      devProcess.kill();
+      
       console.log('✅ Dev server started successfully');
     } catch (error) {
       console.log('❌ Dev server failed to start');

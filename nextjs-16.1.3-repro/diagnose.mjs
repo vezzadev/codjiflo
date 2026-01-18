@@ -33,7 +33,7 @@ if (import.meta.dirname) {
 console.log('\n=== Next.js Version ===');
 try {
   const pkg = await import('./node_modules/next/package.json', {
-    assert: { type: 'json' }
+    with: { type: 'json' }
   });
   console.log('Next.js version:', pkg.default.version);
 } catch (error) {
