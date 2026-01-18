@@ -65,7 +65,7 @@ export interface MockComment {
   /** Line number when the comment was originally created */
   original_line: number | null;
   /** Commit SHA when the comment was originally created */
-  original_commit_id: string | null;
+  original_commit_id: string;
 }
 
 // ============================================================================
