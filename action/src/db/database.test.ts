@@ -310,6 +310,89 @@ describe('IterationDatabase', () => {
     });
   });
 
+  describe('getArtifactIdsForSnapshotRange', () => {
+    it('should return empty array when no artifacts exist', () => {
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toEqual([]);
+    });
+
+    it('should return artifact ID when both snapshots exist', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      db.insertArtifactSnapshot(artifactId, 0, 'file.txt', 'content v1');
+      db.insertArtifactSnapshot(artifactId, 1, 'file.txt', 'content v2');
+
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toEqual([artifactId]);
+    });
+
+    it('should return empty array when artifact has only left snapshot', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      db.insertArtifactSnapshot(artifactId, 0, 'file.txt', 'content');
+
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when artifact has only right snapshot', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      db.insertArtifactSnapshot(artifactId, 1, 'file.txt', 'content');
+
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toEqual([]);
+    });
+
+    it('should return multiple artifact IDs when multiple artifacts have both snapshots', () => {
+      const artifact1 = db.getOrCreateArtifact('file-1');
+      const artifact2 = db.getOrCreateArtifact('file-2');
+      const artifact3 = db.getOrCreateArtifact('file-3');
+
+      // artifact1: has both snapshots
+      db.insertArtifactSnapshot(artifact1, 0, 'file1.txt', 'v1');
+      db.insertArtifactSnapshot(artifact1, 1, 'file1.txt', 'v2');
+
+      // artifact2: has both snapshots
+      db.insertArtifactSnapshot(artifact2, 0, 'file2.txt', 'v1');
+      db.insertArtifactSnapshot(artifact2, 1, 'file2.txt', 'v2');
+
+      // artifact3: has only left snapshot
+      db.insertArtifactSnapshot(artifact3, 0, 'file3.txt', 'v1');
+
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toHaveLength(2);
+      expect(result).toContain(artifact1);
+      expect(result).toContain(artifact2);
+      expect(result).not.toContain(artifact3);
+    });
+
+    it('should work with non-consecutive snapshot indices', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      db.insertArtifactSnapshot(artifactId, 2, 'file.txt', 'content v1');
+      db.insertArtifactSnapshot(artifactId, 5, 'file.txt', 'content v2');
+
+      const result = db.getArtifactIdsForSnapshotRange(2, 5);
+      expect(result).toEqual([artifactId]);
+    });
+
+    it('should not return artifact when snapshots exist at other indices', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      // Artifact has snapshots at 0 and 1, but we query for 2 and 3
+      db.insertArtifactSnapshot(artifactId, 0, 'file.txt', 'content v1');
+      db.insertArtifactSnapshot(artifactId, 1, 'file.txt', 'content v2');
+
+      const result = db.getArtifactIdsForSnapshotRange(2, 3);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle deleted files (null content) in snapshots', () => {
+      const artifactId = db.getOrCreateArtifact('file-1');
+      db.insertArtifactSnapshot(artifactId, 0, 'file.txt', 'content');
+      db.insertArtifactSnapshot(artifactId, 1, null, null); // File deleted
+
+      const result = db.getArtifactIdsForSnapshotRange(0, 1);
+      expect(result).toEqual([artifactId]);
+    });
+  });
+
   describe('export', () => {
     it('should export database as Buffer', () => {
       db.insertIteration({
