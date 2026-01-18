@@ -1,0 +1,17 @@
+{
+  "name": "nextjs-16.1.3-repro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "diagnose": "node diagnose.mjs"
+  },
+  "dependencies": {
+    "next": "16.1.3",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  }
+}
