@@ -53,6 +53,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -64,6 +67,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -94,6 +99,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -105,6 +113,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -129,6 +139,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -140,6 +153,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -163,6 +178,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -174,6 +192,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -187,6 +207,85 @@ describe("useCommentsStore", () => {
     expect(useCommentsStore.getState().threads[0]?.isResolved).toBe(false);
   });
 
+  it("updates tracked positions for threads", () => {
+    useCommentsStore.setState({
+      threads: [
+        {
+          id: "thread-1",
+          path: "src/example.ts",
+          line: null, // Outdated comment
+          side: "RIGHT",
+          isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
+          comments: [],
+        },
+        {
+          id: "thread-2",
+          path: "src/example.ts",
+          line: 20,
+          side: "RIGHT",
+          isResolved: false,
+          originalLine: 20,
+          originalCommitId: "abc123",
+          trackedLine: null,
+          comments: [],
+        },
+      ],
+    });
+
+    // Simulate SpanTracker tracking thread-1 to line 15
+    const updates = new Map<string, number | null>();
+    updates.set("thread-1", 15);
+    updates.set("thread-2", null); // Line was deleted
+
+    useCommentsStore.getState().updateTrackedPositions(updates);
+
+    const { threads } = useCommentsStore.getState();
+    expect(threads[0]?.trackedLine).toBe(15);
+    expect(threads[1]?.trackedLine).toBeNull();
+  });
+
+  it("only updates threads that are in the updates map", () => {
+    useCommentsStore.setState({
+      threads: [
+        {
+          id: "thread-1",
+          path: "src/example.ts",
+          line: 10,
+          side: "RIGHT",
+          isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
+          comments: [],
+        },
+        {
+          id: "thread-2",
+          path: "src/example.ts",
+          line: 20,
+          side: "RIGHT",
+          isResolved: false,
+          originalLine: 20,
+          originalCommitId: "abc123",
+          trackedLine: 25, // Already tracked
+          comments: [],
+        },
+      ],
+    });
+
+    // Only update thread-1
+    const updates = new Map<string, number | null>();
+    updates.set("thread-1", 15);
+
+    useCommentsStore.getState().updateTrackedPositions(updates);
+
+    const { threads } = useCommentsStore.getState();
+    expect(threads[0]?.trackedLine).toBe(15);
+    expect(threads[1]?.trackedLine).toBe(25); // Unchanged
+  });
+
   it("deletes a comment and removes empty threads", async () => {
     useCommentsStore.setState({
       threads: [
@@ -196,6 +295,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -207,6 +309,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -228,6 +332,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [
             {
               id: "comment-1",
@@ -239,6 +346,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
             {
               id: "comment-2",
@@ -250,6 +359,8 @@ describe("useCommentsStore", () => {
               line: 10,
               side: "RIGHT",
               position: 1,
+              originalLine: 10,
+              originalCommitId: "abc123",
             },
           ],
         },
@@ -285,6 +396,9 @@ describe("useCommentsStore", () => {
           line: 10,
           side: "RIGHT",
           isResolved: false,
+          originalLine: 10,
+          originalCommitId: "abc123",
+          trackedLine: null,
           comments: [],
         },
       ],
@@ -514,6 +628,9 @@ describe("useCommentsStore", () => {
             line: 10,
             side: "RIGHT",
             isResolved: false,
+            originalLine: 10,
+            originalCommitId: "abc123",
+            trackedLine: null,
             comments: [], // Empty comments array
           },
         ],
@@ -535,6 +652,9 @@ describe("useCommentsStore", () => {
             line: 10,
             side: "RIGHT",
             isResolved: false,
+            originalLine: 10,
+            originalCommitId: "abc123",
+            trackedLine: null,
             comments: [
               {
                 id: "comment-1",
@@ -546,6 +666,8 @@ describe("useCommentsStore", () => {
                 line: 10,
                 side: "RIGHT",
                 position: 1,
+                originalLine: 10,
+                originalCommitId: "abc123",
               },
             ],
           },
@@ -555,6 +677,9 @@ describe("useCommentsStore", () => {
             line: 20,
             side: "RIGHT",
             isResolved: false,
+            originalLine: 20,
+            originalCommitId: "abc123",
+            trackedLine: null,
             comments: [
               {
                 id: "comment-2",
@@ -566,6 +691,8 @@ describe("useCommentsStore", () => {
                 line: 20,
                 side: "RIGHT",
                 position: 2,
+                originalLine: 20,
+                originalCommitId: "abc123",
               },
             ],
           },

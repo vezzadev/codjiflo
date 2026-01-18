@@ -22,7 +22,7 @@ import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { ShikiTokensProvider } from './ShikiTokensContext';
 import { Minimap } from './Minimap';
-import { useCommentsStore } from '@/features/comments';
+import { useCommentsStore, useCommentTracking } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
@@ -55,6 +55,9 @@ export function DiffView() {
 
   // Draft comment management
   const draft = useDraftComment();
+
+  // Track comment positions through iterations (side-effect only)
+  useCommentTracking();
 
   // Container height for virtualized rendering
   const { containerHeight, containerRefCallback } = useContainerHeight();

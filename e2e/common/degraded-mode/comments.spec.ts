@@ -55,6 +55,8 @@ test.describe("Inline comments flow (S-2.x)", () => {
       line: 2,
       side: "RIGHT",
       position: 2,
+      original_line: 2,
+      original_commit_id: "abc123",
     },
   ];
 

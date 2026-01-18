@@ -98,6 +98,8 @@ diff --git a/src/example.ts b/src/example.ts
       line: 3, // The added line
       side: "RIGHT",
       position: 3,
+      original_line: 3,
+      original_commit_id: "abc123",
     },
     {
       id: 1002,
@@ -114,6 +116,8 @@ diff --git a/src/example.ts b/src/example.ts
       side: "RIGHT",
       position: 3,
       in_reply_to_id: 1001, // This is a reply to the first comment
+      original_line: 3,
+      original_commit_id: "abc123",
     },
   ];
 

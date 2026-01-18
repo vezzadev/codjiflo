@@ -28,6 +28,8 @@ interface CommentsState {
   editComment: (commentId: string, body: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
   toggleResolved: (threadId: string) => void;
+  /** Update tracked positions for threads (from SpanTracker) */
+  updateTrackedPositions: (updates: Map<string, number | null>) => void;
   clearError: () => void;
   clearAnnouncement: () => void;
   reset: () => void;
@@ -72,6 +74,8 @@ const mapGitHubComment = (comment: GitHubReviewComment): Comment => ({
   line: comment.line,
   side: comment.side,
   position: comment.position,
+  originalLine: comment.original_line,
+  originalCommitId: comment.original_commit_id,
   ...(comment.in_reply_to_id != null
     ? { inReplyTo: comment.in_reply_to_id.toString() }
     : {}),
@@ -112,6 +116,9 @@ const groupCommentsIntoThreads = (comments: GitHubReviewComment[]): ReviewThread
       side: comment.side,
       comments: [mapped],
       isResolved: false,
+      originalLine: comment.original_line,
+      originalCommitId: comment.original_commit_id,
+      trackedLine: null,
     });
   });
 
@@ -160,6 +167,8 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       line,
       side,
       position,
+      originalLine: line,
+      originalCommitId: null,
     };
 
     const existingThreadIndex = threads.findIndex(
@@ -186,6 +195,9 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
           side,
           comments: [newComment],
           isResolved: false,
+          originalLine: line,
+          originalCommitId: null,
+          trackedLine: null,
         },
       ],
       announcement: 'Comment posted.',
@@ -210,6 +222,8 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
         line: thread.line,
         side: thread.side,
         position: lastComment?.position ?? null,
+        originalLine: thread.originalLine,
+        originalCommitId: thread.originalCommitId,
         ...(lastComment?.id ? { inReplyTo: lastComment.id } : {}),
       };
       return { ...thread, comments: [...thread.comments, newComment] };
@@ -254,6 +268,16 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
         thread.id === threadId ? { ...thread, isResolved: !thread.isResolved } : thread
       ),
     });
+  },
+
+  updateTrackedPositions: (updates) => {
+    const { threads } = get();
+    const updatedThreads = threads.map((thread) => {
+      const trackedLine = updates.get(thread.id);
+      if (trackedLine === undefined) return thread;
+      return { ...thread, trackedLine };
+    });
+    set({ threads: updatedThreads });
   },
 
   clearError: () => set({ error: null }),

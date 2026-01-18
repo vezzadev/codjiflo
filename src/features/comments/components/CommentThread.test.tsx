@@ -10,6 +10,9 @@ const mockThread: ReviewThread = {
   line: 10,
   side: "RIGHT",
   isResolved: false,
+  originalLine: 10,
+  originalCommitId: "abc123",
+  trackedLine: null,
   comments: [
     {
       id: "comment-1",
@@ -25,6 +28,8 @@ const mockThread: ReviewThread = {
       line: 10,
       side: "RIGHT",
       position: 1,
+      originalLine: 10,
+      originalCommitId: "abc123",
     },
   ],
 };

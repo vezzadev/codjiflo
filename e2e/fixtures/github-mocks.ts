@@ -57,11 +57,15 @@ export interface MockComment {
   created_at: string;
   updated_at: string;
   path: string;
-  line: number;
+  line: number | null;
   side: "LEFT" | "RIGHT";
   position: number;
   /** If set, this comment is a reply to the comment with this ID */
   in_reply_to_id?: number;
+  /** Line number when the comment was originally created */
+  original_line: number | null;
+  /** Commit SHA when the comment was originally created */
+  original_commit_id: string | null;
 }
 
 // ============================================================================

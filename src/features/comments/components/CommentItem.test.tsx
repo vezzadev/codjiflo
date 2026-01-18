@@ -18,6 +18,8 @@ const mockComment: Comment = {
   line: 10,
   side: "RIGHT",
   position: 1,
+  originalLine: 10,
+  originalCommitId: "abc123",
 };
 
 describe("CommentItem", () => {

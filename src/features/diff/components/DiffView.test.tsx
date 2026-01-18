@@ -479,6 +479,9 @@ describe('DiffView', () => {
       line: 2,
       side: 'RIGHT' as const,
       isResolved: false,
+      originalLine: 2,
+      originalCommitId: 'abc123',
+      trackedLine: null,
       comments: [
         {
           id: 'comment-1',
@@ -490,6 +493,8 @@ describe('DiffView', () => {
           line: 2,
           side: 'RIGHT' as const,
           position: 1,
+          originalLine: 2,
+          originalCommitId: 'abc123',
         },
       ],
     };
