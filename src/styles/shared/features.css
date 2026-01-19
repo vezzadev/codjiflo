@@ -114,6 +114,15 @@
 
 .diff-line-focused .diff-code {
   cursor: text;
+  user-select: text;
+  /* Show a visible caret in the focused row */
+  caret-color: var(--main-fg);
+}
+
+/* Make text selection more visible in focused rows */
+.diff-line-focused .diff-code::selection {
+  background-color: var(--focus-border);
+  color: inherit;
 }
 
 .diff-line-addition {
