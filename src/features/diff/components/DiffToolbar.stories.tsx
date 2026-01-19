@@ -1,7 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DiffToolbar } from "./DiffToolbar";
 import { useDiffStore } from "../stores";
-import { useEffect } from "react";
+
+// Base configuration shared across stories
+const baseViewConfig = {
+  mode: 'inline' as const,
+  filter: 'both' as const,
+  showFullFile: false,
+  showWhitespace: false,
+  showComments: true,
+};
+
+const baseState = {
+  viewConfig: baseViewConfig,
+  currentChangeIndex: 0,
+  totalChangeCount: 5,
+};
 
 const meta = {
   title: "Features/Diff/DiffToolbar",
@@ -17,6 +31,10 @@ const meta = {
       </div>
     ),
   ],
+  beforeEach: () => {
+    // Reset store to default state before each story
+    useDiffStore.setState(baseState);
+  },
 } satisfies Meta<typeof DiffToolbar>;
 
 export default meta;
@@ -25,47 +43,17 @@ type Story = StoryObj<typeof meta>;
 /**
  * Default toolbar with inline view mode and "both" filter selected.
  */
-export const Default: Story = {
-  render: () => {
-    // Reset store to default state
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
-  },
-};
+export const Default: Story = {};
 
 /**
  * Toolbar with split view mode.
  */
 export const SplitView: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'split',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, mode: 'split' },
+    });
   },
 };
 
@@ -74,22 +62,11 @@ export const SplitView: Story = {
  * Demonstrates the filter thumb at the left position showing deletions only.
  */
 export const FilterLeftOnly: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'left',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, filter: 'left' },
+    });
   },
 };
 
@@ -97,47 +74,18 @@ export const FilterLeftOnly: Story = {
  * Content filter in "both" position.
  * Demonstrates the filter thumb in the center showing both additions and deletions.
  */
-export const FilterBoth: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
-  },
-};
+export const FilterBoth: Story = {};
 
 /**
  * Content filter in "right only" position.
  * Demonstrates the filter thumb at the right position showing additions only.
  */
 export const FilterRightOnly: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'right',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, filter: 'right' },
+    });
   },
 };
 
@@ -145,22 +93,11 @@ export const FilterRightOnly: Story = {
  * Toolbar with full file view enabled.
  */
 export const FullFileView: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: true,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, showFullFile: true },
+    });
   },
 };
 
@@ -168,22 +105,11 @@ export const FullFileView: Story = {
  * Toolbar with whitespace visible.
  */
 export const WhitespaceVisible: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: true,
-          showComments: true,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, showWhitespace: true },
+    });
   },
 };
 
@@ -191,22 +117,11 @@ export const WhitespaceVisible: Story = {
  * Toolbar with comments hidden.
  */
 export const CommentsHidden: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: false,
-        },
-        currentChangeIndex: 0,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      viewConfig: { ...baseViewConfig, showComments: false },
+    });
   },
 };
 
@@ -214,21 +129,10 @@ export const CommentsHidden: Story = {
  * Toolbar with navigation at last change.
  */
 export const NavigationAtEnd: Story = {
-  render: () => {
-    useEffect(() => {
-      useDiffStore.setState({
-        viewConfig: {
-          mode: 'inline',
-          filter: 'both',
-          showFullFile: false,
-          showWhitespace: false,
-          showComments: true,
-        },
-        currentChangeIndex: 4,
-        totalChangeCount: 5,
-      });
-    }, []);
-
-    return <DiffToolbar />;
+  play: () => {
+    useDiffStore.setState({
+      ...baseState,
+      currentChangeIndex: 4,
+    });
   },
 };
