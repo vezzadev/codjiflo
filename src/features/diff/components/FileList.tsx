@@ -1,51 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
-import { useIterationAwareFiles, type IterationAwareFile } from '../hooks';
+import { useIterationAwareFiles } from '../hooks';
+import { groupFilesByFolder, getBasename } from '../utils';
 import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
-
-interface FileGroup {
-  folder: string;
-  files: IterationAwareFile[];
-}
-
-/**
- * Get parent directory path from a filename
- */
-function getParentPath(filename: string): string {
-  const lastSlash = filename.lastIndexOf('/');
-  if (lastSlash === -1) return '/';
-  return '/' + filename.substring(0, lastSlash);
-}
-
-/**
- * Get basename from a filename
- */
-function getBasename(filename: string): string {
-  const lastSlash = filename.lastIndexOf('/');
-  if (lastSlash === -1) return filename;
-  return filename.substring(lastSlash + 1);
-}
-
-/**
- * Group files by their parent directory
- */
-export function groupFilesByFolder(files: IterationAwareFile[]): FileGroup[] {
-  const groups = new Map<string, IterationAwareFile[]>();
-  for (const file of files) {
-    const folder = getParentPath(file.filename);
-    const existing = groups.get(folder);
-    if (existing) {
-      existing.push(file);
-    } else {
-      groups.set(folder, [file]);
-    }
-  }
-  // Sort folders alphabetically, root "/" first
-  return Array.from(groups.entries())
-    .sort(([a], [b]) => (a === '/' ? -1 : b === '/' ? 1 : a.localeCompare(b)))
-    .map(([folder, files]) => ({ folder, files }));
-}
 
 /**
  * List of changed files in the PR

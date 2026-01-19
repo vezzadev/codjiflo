@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
-import { FileList, groupFilesByFolder } from './FileList';
+import { FileList } from './FileList';
+import { groupFilesByFolder } from '../utils';
 import { useDiffStore } from '../stores';
 import { FileChangeStatus } from '@/api/types';
 import type { IterationAwareFile } from '../hooks';

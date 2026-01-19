@@ -114,24 +114,21 @@ describe('useKeyboardShortcuts', () => {
 
   describe('iteration-aware file navigation (Issue #189)', () => {
     it('navigates through files in sorted order regardless of originalIndex order (Issue #261)', () => {
-      // This test verifies the fix for Issue #261: files sorted alphabetically
-      // should be navigated in alphabetical order, not originalIndex order.
+      // This test verifies the fix for Issue #261: keyboard navigation follows
+      // display order (grouped by folder), not originalIndex order.
       //
-      // Setup: Files sorted alphabetically but originalIndex is NOT sequential:
-      // - Position 0: zebra.ts (originalIndex: 0) - 'z' comes LAST alphabetically
-      // - Position 1: alpha.ts (originalIndex: 1) - 'a' comes FIRST alphabetically
-      // - Position 2: middle.ts (originalIndex: 2) - 'm' comes MIDDLE alphabetically
-      //
-      // After alphabetical sorting by useFileDisplayOrder:
+      // Files in display order (as returned by useFileDisplayOrder):
       // - Position 0: alpha.ts (originalIndex: 1)
       // - Position 1: middle.ts (originalIndex: 2)
       // - Position 2: zebra.ts (originalIndex: 0)
       //
-      // When on alpha.ts (originalIndex: 1) and pressing 's':
-      // - Should navigate to middle.ts (originalIndex: 2)
-      // - NOT to middle.ts via sequential originalIndex (which would be originalIndex + 1 = 2)
-      //   (In this case they happen to match, but the test below verifies the pattern)
-      const unsortedFiles: IterationAwareFile[] = [
+      // Note: originalIndex values are non-sequential because they represent
+      // positions in the original API response, not the display order.
+      //
+      // When on zebra.ts (originalIndex: 0, display position 2) and pressing 'w':
+      // - Should navigate to middle.ts (originalIndex: 2, display position 1)
+      // - NOT to the file with originalIndex - 1
+      const filesInDisplayOrder: IterationAwareFile[] = [
         {
           filename: 'alpha.ts', // First alphabetically
           status: FileChangeStatus.Modified,
@@ -162,7 +159,7 @@ describe('useKeyboardShortcuts', () => {
       ];
 
       vi.mocked(useFileDisplayOrder).mockReturnValue({
-        files: unsortedFiles,
+        files: filesInDisplayOrder,
         isIterationMode: false,
         totalFilesInPR: 3,
       });
