@@ -16,6 +16,7 @@ CodjiFlo is a code review tool inspired by Microsoft's CodeFlow, used by ~40,000
 - **Before/During/After toggle** - Quickly switch between file states for context
 - **Iteration comparison** - View changes between any two review versions
 - **Comment persistence** - Comments follow code through iterations as lines move
+- **Diff minimap** - Identify size and location of changes at a glance
 
 ### Multi-Platform Support
 
