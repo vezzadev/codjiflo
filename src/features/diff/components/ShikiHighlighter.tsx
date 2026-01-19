@@ -3,11 +3,14 @@ import type { ThemedToken } from 'shiki';
 import { getHighlighter, type ShikiLanguage } from '@/lib/shiki';
 import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
 import { useShikiTokens, type TokenSide } from './ShikiTokensContext';
+import type { TextWrap } from '../types';
 
 interface ShikiHighlighterProps {
   code: string;
   language: string;
   showWhitespace?: boolean;
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap?: TextWrap;
   /**
    * Line number for context-aware highlighting (1-based).
    * When provided with `side` and ShikiTokensProvider has full content,
@@ -99,10 +102,12 @@ export function ShikiHighlighter({
   code,
   language,
   showWhitespace = false,
+  textWrap = 'nowrap',
   lineNumber,
   side,
   lineIndex,
 }: ShikiHighlighterProps) {
+  const codeClasses = ['diff-code', textWrap === 'wrap' ? 'word-wrap' : ''].filter(Boolean).join(' ');
   const theme = useSyntaxTheme();
   const tokensContext = useShikiTokens();
   const [tokens, setTokens] = useState<ThemedToken[][] | null>(null);
@@ -169,7 +174,7 @@ export function ShikiHighlighter({
   // Handle empty lines consistently to maintain line height
   if (code === '') {
     return (
-      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
+      <span className={codeClasses} role="presentation" data-testid="shiki-highlighter">
         &nbsp;
       </span>
     );
@@ -178,7 +183,7 @@ export function ShikiHighlighter({
   // Use context tokens if available (handles multi-line constructs correctly)
   if (contextTokens) {
     return (
-      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
+      <span className={codeClasses} role="presentation" data-testid="shiki-highlighter">
         {renderTokens([contextTokens], showWhitespace)}
       </span>
     );
@@ -187,14 +192,14 @@ export function ShikiHighlighter({
   // While loading, show unhighlighted code to prevent layout shift
   if (!tokens) {
     return (
-      <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
+      <span className={codeClasses} role="presentation" data-testid="shiki-highlighter">
         {showWhitespace ? insertWhitespaceMarkers(code) : code}
       </span>
     );
   }
 
   return (
-    <span className="diff-code" role="presentation" data-testid="shiki-highlighter">
+    <span className={codeClasses} role="presentation" data-testid="shiki-highlighter">
       {renderTokens(tokens, showWhitespace)}
     </span>
   );

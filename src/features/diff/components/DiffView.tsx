@@ -201,6 +201,7 @@ export function DiffView() {
             }}
             className="diff-content-area diff-content-with-minimap diff-content-wrapper"
             data-view-mode="inline"
+            data-text-wrap={pipeline.textWrap}
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
@@ -229,6 +230,7 @@ export function DiffView() {
               hasFullContent={hasFullContent}
               showComments={viewConfig.showComments}
               onVisibleRangeChange={setVisibleRowRange}
+              textWrap={pipeline.textWrap}
             />
             <Minimap
               pipeline={pipeline}
@@ -247,6 +249,7 @@ export function DiffView() {
             }}
             className="diff-content-area diff-content-with-minimap diff-content-wrapper"
             data-view-mode="split"
+            data-text-wrap={pipeline.textWrap}
             role="region"
             aria-label={`Diff content for ${pipeline.filename}`}
             tabIndex={0}
@@ -275,6 +278,7 @@ export function DiffView() {
               hasFullContent={hasFullContent}
               showComments={viewConfig.showComments}
               onVisibleRangeChange={setVisibleRowRange}
+              textWrap={pipeline.textWrap}
             />
             <Minimap
               pipeline={pipeline}

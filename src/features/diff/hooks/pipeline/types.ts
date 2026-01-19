@@ -16,6 +16,7 @@ import type {
   FullFileDiff,
   ContentFilter,
   DiffViewMode,
+  TextWrap,
 } from '../../types';
 
 // ============================================================================
@@ -95,6 +96,8 @@ export interface DiffDisplayOutput extends DiffShapeOutput {
   contentFilter: ContentFilter;
   /** Line number display mode derived from content filter */
   lineNumberMode: 'left' | 'both' | 'right';
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap: TextWrap;
 }
 
 // ============================================================================

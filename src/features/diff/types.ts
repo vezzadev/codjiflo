@@ -6,6 +6,7 @@ import type { FileChange } from '@/api/types';
 
 export type DiffViewMode = 'inline' | 'split';
 export type ContentFilter = 'both' | 'left' | 'right';
+export type TextWrap = 'nowrap' | 'wrap';
 
 export interface DiffViewConfig {
   mode: DiffViewMode;
@@ -15,6 +16,8 @@ export interface DiffViewConfig {
   showWhitespace: boolean;
   /** When true, show inline comment threads; when false, hide comments and show minimap lasso */
   showComments: boolean;
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap: TextWrap;
 }
 
 // ============================================================================
@@ -106,6 +109,7 @@ export interface DiffState {
   toggleFullFile: () => void;
   toggleWhitespace: () => void;
   toggleComments: () => void;
+  setTextWrap: (wrap: TextWrap) => void;
 
   // Change navigation actions
   scrollToNextChange: () => void;

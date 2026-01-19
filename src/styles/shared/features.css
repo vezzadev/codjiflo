@@ -219,6 +219,21 @@
   margin: 0;
 }
 
+/* Word wrap for diff code */
+.diff-code.word-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Word wrap for code blocks in comments when wrap is enabled */
+[data-text-wrap="wrap"] .comment-thread pre,
+[data-text-wrap="wrap"] .comment-thread code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 /* Word-level diff highlighting */
 .word-diff-added {
   background-color: var(--diff-add-word);

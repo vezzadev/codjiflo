@@ -8,7 +8,7 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
-import type { AlignedDiffLine } from '../types';
+import type { AlignedDiffLine, TextWrap } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
 import type { VisibleRowRange } from './InlineDiffTable';
@@ -47,6 +47,8 @@ interface SideBySideDiffViewProps {
   showComments?: boolean;
   /** Callback when visible row range changes (for minimap synchronization) */
   onVisibleRangeChange?: (range: VisibleRowRange) => void;
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap?: TextWrap;
 }
 
 interface RowData {
@@ -70,6 +72,7 @@ interface RowData {
   showWhitespace: boolean;
   hasFullContent: boolean;
   showComments: boolean;
+  textWrap: TextWrap;
 }
 
 /**
@@ -112,6 +115,7 @@ function SideBySideRow({
   showWhitespace,
   hasFullContent,
   showComments,
+  textWrap,
 }: RowComponentProps<RowData>) {
 
   const pair = alignedLines[index];
@@ -149,6 +153,7 @@ function SideBySideRow({
                     singleLineNumber
                     showWhitespace={showWhitespace}
                     hasFullContent={hasFullContent}
+                    textWrap={textWrap}
                   />
                 ) : (
                   <DiffLineSpacer />
@@ -206,6 +211,7 @@ function SideBySideRow({
                     singleLineNumber
                     showWhitespace={showWhitespace}
                     hasFullContent={hasFullContent}
+                    textWrap={textWrap}
                   />
                 ) : (
                   <DiffLineSpacer />
@@ -278,6 +284,7 @@ export function SideBySideDiffView({
   hasFullContent = false,
   showComments = true,
   onVisibleRangeChange,
+  textWrap = 'nowrap',
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
 
@@ -291,13 +298,13 @@ export function SideBySideDiffView({
     [onVisibleRangeChange]
   );
 
-  // Generate key for dynamic row height cache based on comments
-  // This ensures rows are re-measured when comments are added/removed
+  // Generate key for dynamic row height cache based on comments and text wrap
+  // This ensures rows are re-measured when comments are added/removed or text wrap changes
   const dynamicHeightKey = useMemo(() => {
     const commentCount = threadsByLineAndSide.size;
     const hasDraft = draftLineIndex !== null;
-    return `${commentCount}-${String(hasDraft)}-${String(draftLineIndex ?? 'none')}-${draftSide ?? 'none'}`;
-  }, [threadsByLineAndSide.size, draftLineIndex, draftSide]);
+    return `${commentCount}-${String(hasDraft)}-${String(draftLineIndex ?? 'none')}-${draftSide ?? 'none'}-${textWrap}`;
+  }, [threadsByLineAndSide.size, draftLineIndex, draftSide, textWrap]);
 
   // Use dynamic row heights to accommodate comment threads
   const dynamicRowHeight = useDynamicRowHeight({
@@ -407,6 +414,7 @@ export function SideBySideDiffView({
       showWhitespace,
       hasFullContent,
       showComments,
+      textWrap,
     }),
     [
       filteredLines,
@@ -429,6 +437,7 @@ export function SideBySideDiffView({
       showWhitespace,
       hasFullContent,
       showComments,
+      textWrap,
     ]
   );
 
