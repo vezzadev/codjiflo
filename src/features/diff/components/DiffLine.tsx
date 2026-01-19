@@ -1,4 +1,4 @@
-import type { ParsedDiffLine, WordDiffSegment } from '../types';
+import type { ParsedDiffLine, WordDiffSegment, TextWrap } from '../types';
 import { ShikiHighlighter } from './ShikiHighlighter';
 import type { TokenSide } from './ShikiTokensContext';
 
@@ -23,6 +23,8 @@ interface DiffLineProps {
    * When true, tokens are looked up by actual line number instead of array index.
    */
   hasFullContent?: boolean;
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap?: TextWrap;
 }
 
 const LINE_TYPE_CLASSES: Record<string, string> = {
@@ -97,12 +99,15 @@ function renderVisibleWhitespace(content: string): React.ReactNode {
 function WordDiffContent({
   segments,
   showWhitespace = false,
+  textWrap = 'nowrap',
 }: {
   segments: WordDiffSegment[];
   showWhitespace?: boolean;
+  textWrap?: TextWrap;
 }) {
+  const codeClasses = ['diff-code', textWrap === 'wrap' ? 'word-wrap' : ''].filter(Boolean).join(' ');
   return (
-    <span className="diff-code" role="presentation">
+    <span className={codeClasses} role="presentation">
       {segments.map((segment, index) => (
         <span
           key={index}
@@ -129,6 +134,7 @@ export function DiffLine({
   lineNumberMode = 'both',
   lineIndex,
   hasFullContent = false,
+  textWrap = 'nowrap',
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
@@ -190,14 +196,15 @@ export function DiffLine({
         {/* S-3.5: Show whitespace characters when enabled */}
         <span aria-hidden="true">
           {line.type === 'header' ? (
-            <pre className="diff-code">{line.content}</pre>
+            <pre className={`diff-code${textWrap === 'wrap' ? ' word-wrap' : ''}`}>{line.content}</pre>
           ) : hasWordDiff && line.wordDiff ? (
-            <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} />
+            <WordDiffContent segments={line.wordDiff} showWhitespace={showWhitespace} textWrap={textWrap} />
           ) : (
             <ShikiHighlighter
               code={line.content}
               language={language}
               showWhitespace={showWhitespace}
+              textWrap={textWrap}
               {...(tokenLineNumber !== undefined && tokenSide !== undefined && {
                 lineNumber: tokenLineNumber,
                 side: tokenSide,

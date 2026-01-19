@@ -18,6 +18,8 @@ vi.mock('lucide-react', () => ({
   ChevronDown: () => <span data-testid="icon-chevrondown" />,
   MessageSquare: () => <span data-testid="icon-messagesquare" />,
   MessageSquareOff: () => <span data-testid="icon-messagesquareoff" />,
+  AlignJustify: () => <span data-testid="icon-alignjustify" />,
+  WrapText: () => <span data-testid="icon-wraptext" />,
 }));
 
 describe('DiffToolbar', () => {
@@ -30,6 +32,7 @@ describe('DiffToolbar', () => {
         showFullFile: false,
         showWhitespace: false,
         showComments: true,
+        textWrap: 'nowrap',
       },
       currentChangeIndex: -1,
       totalChangeCount: 0,
@@ -256,6 +259,26 @@ describe('DiffToolbar', () => {
       fireEvent.keyDown(window, { key: 'x' });
 
       expect(useDiffStore.getState().viewConfig.mode).toBe('split');
+    });
+
+    it('pressing P toggles text wrap from nowrap to wrap', () => {
+      render(<DiffToolbar />);
+
+      expect(useDiffStore.getState().viewConfig.textWrap).toBe('nowrap');
+      fireEvent.keyDown(window, { key: 'p' });
+
+      expect(useDiffStore.getState().viewConfig.textWrap).toBe('wrap');
+    });
+
+    it('pressing P toggles text wrap from wrap to nowrap', () => {
+      useDiffStore.setState({
+        viewConfig: { ...useDiffStore.getState().viewConfig, textWrap: 'wrap' },
+      });
+      render(<DiffToolbar />);
+
+      fireEvent.keyDown(window, { key: 'p' });
+
+      expect(useDiffStore.getState().viewConfig.textWrap).toBe('nowrap');
     });
 
     it('ignores keyboard shortcuts when typing in input', () => {

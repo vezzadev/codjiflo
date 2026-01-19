@@ -5,7 +5,7 @@
 import { useMemo, useEffect, useRef, useCallback } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine } from './DiffLine';
-import type { ParsedDiffLine } from '../types';
+import type { ParsedDiffLine, TextWrap } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
 
@@ -50,6 +50,8 @@ export interface InlineDiffTableProps {
   showComments?: boolean;
   /** Callback when visible row range changes (for minimap synchronization) */
   onVisibleRangeChange?: (range: VisibleRowRange) => void;
+  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+  textWrap?: TextWrap;
 }
 
 interface RowData {
@@ -72,6 +74,7 @@ interface RowData {
   lineNumberMode: 'left' | 'both' | 'right';
   hasFullContent: boolean;
   showComments: boolean;
+  textWrap: TextWrap;
 }
 
 /**
@@ -99,6 +102,7 @@ function DiffRow({
   lineNumberMode,
   hasFullContent,
   showComments,
+  textWrap,
 }: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
@@ -127,6 +131,7 @@ function DiffRow({
             lineNumberMode={lineNumberMode}
             lineIndex={index}
             hasFullContent={hasFullContent}
+            textWrap={textWrap}
           />
           {showDraftHere && (
             <tr>
@@ -192,6 +197,7 @@ export function InlineDiffTable({
   hasFullContent = false,
   showComments = true,
   onVisibleRangeChange,
+  textWrap = 'nowrap',
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -206,13 +212,13 @@ export function InlineDiffTable({
     [onVisibleRangeChange]
   );
 
-  // Generate key for dynamic row height cache based on comments
-  // This ensures rows are re-measured when comments are added/removed
+  // Generate key for dynamic row height cache based on comments and text wrap
+  // This ensures rows are re-measured when comments are added/removed or text wrap changes
   const dynamicHeightKey = useMemo(() => {
     const commentCount = threadsByLineAndSide.size;
     const hasDraft = draftLineIndex !== null;
-    return `${commentCount}-${String(hasDraft)}-${String(draftLineIndex ?? 'none')}`;
-  }, [threadsByLineAndSide.size, draftLineIndex]);
+    return `${commentCount}-${String(hasDraft)}-${String(draftLineIndex ?? 'none')}-${textWrap}`;
+  }, [threadsByLineAndSide.size, draftLineIndex, textWrap]);
 
   // Use dynamic row heights to accommodate comment threads
   const dynamicRowHeight = useDynamicRowHeight({
@@ -382,6 +388,7 @@ export function InlineDiffTable({
       lineNumberMode,
       hasFullContent,
       showComments,
+      textWrap,
     }),
     [
       diffLines,
@@ -403,6 +410,7 @@ export function InlineDiffTable({
       lineNumberMode,
       hasFullContent,
       showComments,
+      textWrap,
     ]
   );
 

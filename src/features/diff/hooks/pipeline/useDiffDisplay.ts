@@ -33,5 +33,6 @@ export function useDiffDisplay(shaped: DiffShapeOutput): DiffDisplayOutput {
     showWhitespace: viewConfig.showWhitespace,
     contentFilter: viewConfig.filter,
     lineNumberMode,
+    textWrap: viewConfig.textWrap,
   };
 }

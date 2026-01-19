@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff } from 'lucide-react';
+import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff, AlignJustify, WrapText } from 'lucide-react';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
@@ -349,6 +349,7 @@ export function DiffToolbar() {
     toggleFullFile,
     toggleWhitespace,
     toggleComments,
+    setTextWrap,
     scrollToNextChange,
     scrollToPreviousChange,
     currentChangeIndex,
@@ -427,9 +428,14 @@ export function DiffToolbar() {
           event.preventDefault();
           toggleComments();
           break;
+        case 'p':
+          // P for text wrap toggle
+          event.preventDefault();
+          setTextWrap(viewConfig.textWrap === 'wrap' ? 'nowrap' : 'wrap');
+          break;
       }
     },
-    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, toggleFullFile, toggleWhitespace, toggleComments]
+    [setViewMode, setContentFilter, viewConfig.mode, viewConfig.showFullFile, viewConfig.textWrap, toggleFullFile, toggleWhitespace, toggleComments, setTextWrap]
   );
 
   useEffect(() => {
@@ -485,6 +491,18 @@ export function DiffToolbar() {
         ]}
         ariaLabel="Whitespace visibility"
         tooltip="Whitespace visibility (B: Toggle)"
+      />
+
+      {/* Text Wrap Select */}
+      <ToolbarSelect
+        value={viewConfig.textWrap}
+        onChange={setTextWrap}
+        options={[
+          { value: 'nowrap', label: 'No Wrap', icon: <AlignJustify className="w-4 h-4" aria-hidden /> },
+          { value: 'wrap', label: 'Wrap', icon: <WrapText className="w-4 h-4" aria-hidden /> },
+        ]}
+        ariaLabel="Text wrap"
+        tooltip="Text wrap (P: Toggle)"
       />
 
       {/* Separator before comments */}

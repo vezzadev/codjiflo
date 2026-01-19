@@ -245,6 +245,7 @@ describe('useDiffStore', () => {
           showFullFile: true,
           showWhitespace: true,
           showComments: false,
+          textWrap: 'nowrap',
         },
       });
 
@@ -372,6 +373,7 @@ describe('useDiffStore', () => {
           showFullFile: false,
           showWhitespace: false,
           showComments: true,
+          textWrap: 'nowrap',
         },
       });
     });
@@ -398,6 +400,7 @@ describe('useDiffStore', () => {
             showFullFile: true,
             showWhitespace: true,
             showComments: false,
+            textWrap: 'nowrap',
           },
         });
 
@@ -459,6 +462,44 @@ describe('useDiffStore', () => {
         });
         useDiffStore.getState().toggleWhitespace();
         expect(useDiffStore.getState().viewConfig.showWhitespace).toBe(false);
+      });
+    });
+
+    describe('setTextWrap', () => {
+      it('sets textWrap to wrap', () => {
+        useDiffStore.getState().setTextWrap('wrap');
+        expect(useDiffStore.getState().viewConfig.textWrap).toBe('wrap');
+      });
+
+      it('sets textWrap to nowrap', () => {
+        useDiffStore.setState({
+          viewConfig: { ...useDiffStore.getState().viewConfig, textWrap: 'wrap' },
+        });
+        useDiffStore.getState().setTextWrap('nowrap');
+        expect(useDiffStore.getState().viewConfig.textWrap).toBe('nowrap');
+      });
+
+      it('preserves other viewConfig properties', () => {
+        useDiffStore.setState({
+          viewConfig: {
+            mode: 'split',
+            filter: 'left',
+            showFullFile: true,
+            showWhitespace: true,
+            showComments: false,
+            textWrap: 'nowrap',
+          },
+        });
+
+        useDiffStore.getState().setTextWrap('wrap');
+
+        const config = useDiffStore.getState().viewConfig;
+        expect(config.textWrap).toBe('wrap');
+        expect(config.mode).toBe('split');
+        expect(config.filter).toBe('left');
+        expect(config.showFullFile).toBe(true);
+        expect(config.showWhitespace).toBe(true);
+        expect(config.showComments).toBe(false);
       });
     });
   });

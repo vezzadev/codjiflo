@@ -13,6 +13,7 @@ const DEFAULT_VIEW_CONFIG: DiffViewConfig = {
   showFullFile: false,
   showWhitespace: false,
   showComments: true,
+  textWrap: 'nowrap',
 };
 
 export const useDiffStore = create<DiffState>()(
@@ -111,6 +112,15 @@ export const useDiffStore = create<DiffState>()(
           viewConfig: {
             ...state.viewConfig,
             showComments: !state.viewConfig.showComments,
+          },
+        }));
+      },
+
+      setTextWrap: (wrap) => {
+        set((state) => ({
+          viewConfig: {
+            ...state.viewConfig,
+            textWrap: wrap,
           },
         }));
       },

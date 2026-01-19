@@ -84,6 +84,7 @@ const mockDiffPipeline = {
   showWhitespace: false,
   contentFilter: 'both' as const,
   lineNumberMode: 'both' as const,
+  textWrap: 'nowrap' as const,
   hunkIndices: [],
   scrollToRowIndex: undefined,
   isFullFileChange: false,
