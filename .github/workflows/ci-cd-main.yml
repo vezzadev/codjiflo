@@ -108,3 +108,181 @@ jobs:
         env:
           CODJIFLO_E2E_GITHUB_TOKEN: ${{ secrets.CODJIFLO_E2E_GITHUB_TOKEN }}
         run: npm run test:e2e:prod
+
+  # ============================================================================
+  # E2E STRESS TESTS - Parallel (largest free VM for open source)
+  # ============================================================================
+  # Runs e2e and e2e:prod 10 times each in parallel using matrix strategy
+  # Uses ubuntu-latest-16-core (free for public repos with larger runners enabled)
+  # If larger runners aren't available, change to ubuntu-latest
+  # ============================================================================
+
+  e2e-stress-parallel-mock:
+    runs-on: ubuntu-latest-16-core
+    needs: [deploy-main]
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 1
+        run: npm ci
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E tests (mock mode) - Run ${{ matrix.run }}/10
+        timeout-minutes: 5
+        run: npm run test:e2e
+
+  e2e-stress-parallel-prod:
+    runs-on: ubuntu-latest-16-core
+    needs: [deploy-main]
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 1
+        run: npm ci
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Wait for deployment to serve new commit
+        run: |
+          EXPECTED_COMMIT="${{ github.sha }}"
+          URL="https://codjiflo.vza.net/api/health"
+          for i in {1..30}; do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
+              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
+              exit 0
+            fi
+            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for deployment"
+          exit 1
+
+      - name: Run E2E tests (prod mode) - Run ${{ matrix.run }}/10
+        timeout-minutes: 5
+        env:
+          CODJIFLO_E2E_GITHUB_TOKEN: ${{ secrets.CODJIFLO_E2E_GITHUB_TOKEN }}
+        run: npm run test:e2e:prod
+
+  # ============================================================================
+  # E2E STRESS TESTS - Sequential (ubuntu-latest)
+  # ============================================================================
+  # Runs e2e and e2e:prod 10 times each sequentially on standard runner
+  # ============================================================================
+
+  e2e-stress-sequential-mock:
+    runs-on: ubuntu-latest
+    needs: [deploy-main]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 1
+        run: npm ci
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E tests (mock mode) - 10x sequential
+        timeout-minutes: 30
+        run: |
+          for i in {1..10}; do
+            echo "========================================"
+            echo "=== Mock E2E Run $i/10 ==="
+            echo "========================================"
+            npm run test:e2e
+          done
+
+  e2e-stress-sequential-prod:
+    runs-on: ubuntu-latest
+    needs: [deploy-main]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 1
+        run: npm ci
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Wait for deployment to serve new commit
+        run: |
+          EXPECTED_COMMIT="${{ github.sha }}"
+          URL="https://codjiflo.vza.net/api/health"
+          for i in {1..30}; do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
+              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
+              exit 0
+            fi
+            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for deployment"
+          exit 1
+
+      - name: Run E2E tests (prod mode) - 10x sequential
+        timeout-minutes: 30
+        env:
+          CODJIFLO_E2E_GITHUB_TOKEN: ${{ secrets.CODJIFLO_E2E_GITHUB_TOKEN }}
+        run: |
+          for i in {1..10}; do
+            echo "========================================"
+            echo "=== Prod E2E Run $i/10 ==="
+            echo "========================================"
+            npm run test:e2e:prod
+          done
