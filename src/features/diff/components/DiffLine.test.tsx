@@ -95,7 +95,7 @@ describe('DiffLine', () => {
     expect(screen.getByText('Deleted:')).toBeInTheDocument(); // sr-only text
   });
 
-  it('renders context line with both line numbers', () => {
+  it('renders context line with new line number in default mode', () => {
     const line: ParsedDiffLine = {
       type: 'context',
       content: 'unchanged line',
@@ -111,8 +111,9 @@ describe('DiffLine', () => {
       </table>
     );
 
-    expect(screen.getByText('10')).toBeInTheDocument();
+    // Default "both" mode shows only new line number
     expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.queryByText('10')).not.toBeInTheDocument();
   });
 
   it('has screen reader accessible text for addition', () => {
@@ -318,7 +319,7 @@ describe('DiffLine', () => {
       expect(screen.queryByText('5')).not.toBeInTheDocument();
     });
 
-    it('shows both line numbers in inline mode (no side prop)', () => {
+    it('shows only new line number in inline mode (no side prop)', () => {
       const line: ParsedDiffLine = {
         type: 'context',
         content: 'unchanged',
@@ -334,8 +335,9 @@ describe('DiffLine', () => {
         </table>
       );
 
-      expect(screen.getByText('5')).toBeInTheDocument();
+      // Default inline mode shows only new line number
       expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.queryByText('5')).not.toBeInTheDocument();
     });
   });
 
@@ -381,7 +383,7 @@ describe('DiffLine', () => {
       expect(screen.queryByText('5')).not.toBeInTheDocument();
     });
 
-    it('shows both line numbers when lineNumberMode is both (default)', () => {
+    it('shows only new line number when lineNumberMode is both (default)', () => {
       const line: ParsedDiffLine = {
         type: 'context',
         content: 'unchanged',
@@ -397,8 +399,9 @@ describe('DiffLine', () => {
         </table>
       );
 
-      expect(screen.getByText('5')).toBeInTheDocument();
+      // "both" mode shows only new line number (annotation column is reserved for future use)
       expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.queryByText('5')).not.toBeInTheDocument();
     });
 
     it('singleLineNumber takes precedence over lineNumberMode', () => {
