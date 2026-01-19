@@ -35,7 +35,17 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     updated_at: "2024-01-02T15:00:00Z",
   };
 
+  // Mock files matching PR #6 structure for consistent display order testing
+  // Display order: "/" (root) first, then folders alphabetically
   const mockFiles: MockFile[] = [
+    {
+      filename: "vite.config.debug.ts",
+      status: "modified",
+      additions: 21,
+      deletions: 2,
+      changes: 23,
+      patch: "@@ -1,5 +1,24 @@\n import { defineConfig } from 'vite';\n+// Debug config",
+    },
     {
       filename: "e2e/app.spec.ts",
       status: "modified",
@@ -309,13 +319,14 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await page.locator("text=Files").first().click();
 
     // [AC-1.5.1] Press s to go to first file (next file)
-    // Note: keyboard navigation follows original file index order (from GitHub API),
-    // not the visual folder-grouped order shown in the tree
+    // Note: keyboard navigation follows display order (folder-grouped, "/" first)
+    // Issue #261: Changed from original index order to match visual tree order
     await page.keyboard.press("s");
 
-    // The file at original index 0 should be selected (e2e/app.spec.ts in both modes)
-    const firstFileByIndex = fileNav.getByRole("treeitem", { name: /app\.spec\.ts/ });
-    await expect(firstFileByIndex).toHaveAttribute("aria-current", "location");
+    // The first file in display order should be selected
+    // Both modes have vite.config.debug.ts in root "/" folder (comes first)
+    const firstFileInDisplayOrder = fileNav.getByRole("treeitem", { name: /vite\.config\.debug\.ts/ });
+    await expect(firstFileInDisplayOrder).toHaveAttribute("aria-current", "location");
 
     // [AC-1.5.1] Press w to go back to PR Description (previous file)
     await page.keyboard.press("w");
