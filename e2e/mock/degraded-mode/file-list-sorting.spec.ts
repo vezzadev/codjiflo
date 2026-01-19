@@ -117,4 +117,72 @@ test.describe("File List Sorting", () => {
     expect(packageBox?.y).toBeLessThan(readmeBox?.y ?? Infinity);
     expect(alphaBox?.y).toBeLessThan(zebraBox?.y ?? Infinity);
   });
+
+  test("keyboard navigation follows alphabetical display order (Issue #261)", async ({
+    page,
+  }) => {
+    // This test verifies that pressing 's' (next file) navigates through files
+    // in the same alphabetical order as displayed in the file list.
+    //
+    // Mock files are in unsorted order: zebra, alpha, README, package.json
+    // Expected display/navigation order: package.json, README.md, src/alpha.ts, src/zebra.ts
+    await page.goto(config.pageUrl);
+
+    // Wait for file list to load
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+
+    // Start from PR description (default selection)
+    const prDescription = fileNav.getByRole("treeitem", {
+      name: /Pull Request Description/i,
+    });
+    await expect(prDescription).toHaveAttribute("aria-current", "location");
+
+    // Press 's' to go to first file (should be package.json - first alphabetically in root)
+    await page.keyboard.press("s");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /package\.json/ })
+    ).toHaveClass(/selected/);
+
+    // Press 's' to go to next file (should be README.md - second in root)
+    await page.keyboard.press("s");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /README\.md/ })
+    ).toHaveClass(/selected/);
+
+    // Press 's' to go to next file (should be src/alpha.ts - first in src/ folder)
+    await page.keyboard.press("s");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /alpha\.ts/ })
+    ).toHaveClass(/selected/);
+
+    // Press 's' to go to next file (should be src/zebra.ts - last file)
+    await page.keyboard.press("s");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /zebra\.ts/ })
+    ).toHaveClass(/selected/);
+
+    // Now test backward navigation with 'w'
+    // Press 'w' to go back (should be src/alpha.ts)
+    await page.keyboard.press("w");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /alpha\.ts/ })
+    ).toHaveClass(/selected/);
+
+    // Press 'w' again (should be README.md)
+    await page.keyboard.press("w");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /README\.md/ })
+    ).toHaveClass(/selected/);
+
+    // Press 'w' again (should be package.json)
+    await page.keyboard.press("w");
+    await expect(
+      fileNav.getByRole("treeitem", { name: /package\.json/ })
+    ).toHaveClass(/selected/);
+
+    // Press 'w' again (should go back to PR description)
+    await page.keyboard.press("w");
+    await expect(prDescription).toHaveAttribute("aria-current", "location");
+  });
 });

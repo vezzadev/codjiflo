@@ -113,6 +113,82 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('iteration-aware file navigation (Issue #189)', () => {
+    it('navigates through files in sorted order regardless of originalIndex order (Issue #261)', () => {
+      // This test verifies the fix for Issue #261: files sorted alphabetically
+      // should be navigated in alphabetical order, not originalIndex order.
+      //
+      // Setup: Files sorted alphabetically but originalIndex is NOT sequential:
+      // - Position 0: zebra.ts (originalIndex: 0) - 'z' comes LAST alphabetically
+      // - Position 1: alpha.ts (originalIndex: 1) - 'a' comes FIRST alphabetically
+      // - Position 2: middle.ts (originalIndex: 2) - 'm' comes MIDDLE alphabetically
+      //
+      // After alphabetical sorting by useIterationAwareFiles:
+      // - Position 0: alpha.ts (originalIndex: 1)
+      // - Position 1: middle.ts (originalIndex: 2)
+      // - Position 2: zebra.ts (originalIndex: 0)
+      //
+      // When on alpha.ts (originalIndex: 1) and pressing 's':
+      // - Should navigate to middle.ts (originalIndex: 2)
+      // - NOT to middle.ts via sequential originalIndex (which would be originalIndex + 1 = 2)
+      //   (In this case they happen to match, but the test below verifies the pattern)
+      const unsortedFiles: IterationAwareFile[] = [
+        {
+          filename: 'alpha.ts', // First alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 1, // Middle in original API order
+        },
+        {
+          filename: 'middle.ts', // Middle alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 2, // Last in original API order
+        },
+        {
+          filename: 'zebra.ts', // Last alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 0, // FIRST in original API order
+        },
+      ];
+
+      vi.mocked(useIterationAwareFiles).mockReturnValue({
+        files: unsortedFiles,
+        isIterationMode: false,
+        totalFilesInPR: 3,
+      });
+
+      // Start on zebra.ts (originalIndex: 0, which is LAST in sorted order)
+      vi.mocked(useDiffStore).mockImplementation((selector) => {
+        const state = {
+          selectedFileIndex: 0, // zebra.ts by originalIndex
+          selectFile: mockSelectFile,
+          scrollToNextChange: mockScrollToNextChange,
+          scrollToPreviousChange: mockScrollToPreviousChange,
+        };
+        return selector(state as never);
+      });
+
+      renderHook(() => useKeyboardShortcuts());
+
+      // Press 'w' to go to previous file
+      const wEvent = new KeyboardEvent('keydown', { key: 'w' });
+      window.dispatchEvent(wEvent);
+
+      // zebra.ts is at position 2 (last) in sorted array
+      // Previous file should be middle.ts (originalIndex: 2)
+      expect(mockSelectFile).toHaveBeenCalledWith(2);
+    });
+
     it('navigates to next file when s is pressed', () => {
       // Selected on first file (index 0)
       vi.mocked(useDiffStore).mockImplementation((selector) => {
