@@ -790,11 +790,11 @@
 }
 
 .minimap-deletion {
-  fill: var(--diff-delete-word);
+  fill: var(--diff-delete-line);
 }
 
 .minimap-addition {
-  fill: var(--diff-add-word);
+  fill: var(--diff-add-line);
 }
 
 .minimap-lasso {
