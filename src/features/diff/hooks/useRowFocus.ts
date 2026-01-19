@@ -90,6 +90,11 @@ export function useRowFocus(totalRows: number) {
    * Handle keyboard navigation on a focused row.
    */
   const handleRowKeyDown = useCallback((event: React.KeyboardEvent, rowIndex: number) => {
+    // Let Shift+Arrow pass through for native text selection
+    if (event.shiftKey && event.key.startsWith('Arrow')) {
+      return;
+    }
+
     switch (event.key) {
       case 'ArrowUp':
         // Move focus to previous row
@@ -115,10 +120,18 @@ export function useRowFocus(totalRows: number) {
         window.getSelection()?.removeAllRanges();
         break;
 
-      // Let Shift+Arrow keys pass through for native text selection
-      // Let Arrow Left/Right pass through for cursor movement
+      // Arrow Left/Right pass through for cursor movement
     }
   }, [totalRows, focusRow, clearRowFocus]);
+
+  /**
+   * Handle beforeinput to block text editing in contentEditable mode.
+   * We make diff rows contentEditable to show a caret, but block actual edits.
+   */
+  const handleBeforeInput = useCallback((event: React.FormEvent) => {
+    // Block all text input - we only want selection, not editing
+    event.preventDefault();
+  }, []);
 
   /**
    * Effect to focus the row element when focusedRowIndex changes.
@@ -138,6 +151,7 @@ export function useRowFocus(totalRows: number) {
     clearRowFocus,
     handleRowClick,
     handleRowKeyDown,
+    handleBeforeInput,
     registerRowRef,
     focusRow,
   };
