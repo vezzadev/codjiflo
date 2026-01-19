@@ -787,6 +787,7 @@
 .minimap-bar-disabled {
   fill: var(--control-disabled);
   opacity: 0.3;
+  pointer-events: none;
 }
 
 .minimap-deletion {

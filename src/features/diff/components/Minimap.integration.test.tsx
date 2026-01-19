@@ -634,6 +634,186 @@ describe('Minimap component', () => {
       const rightBar = container.querySelector('.minimap-bar-right');
       expect(rightBar).toHaveClass('minimap-bar-disabled');
     });
+
+    it('does not respond to clicks on disabled left bar (right-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'right' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
+
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // Click on left bar (x < 30)
+      fireEvent.click(svg, { clientX: 15, clientY: 100 });
+
+      // Should NOT call onNavigate for disabled left bar
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it('does not respond to clicks on disabled right bar (left-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'left' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      const { container } = render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = assertElement(container.querySelector<SVGSVGElement>('svg'), 'svg element not found');
+
+      svg.getBoundingClientRect = () => ({
+        top: 0,
+        left: 0,
+        bottom: 500,
+        right: 60,
+        width: 60,
+        height: 500,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      });
+
+      // Click on right bar (x >= 30)
+      fireEvent.click(svg, { clientX: 45, clientY: 100 });
+
+      // Should NOT call onNavigate for disabled right bar
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it('responds to clicks on enabled right bar (right-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'right' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /minimap/i });
+
+      // Click on right bar (x >= 30) - this should work
+      fireEvent.click(svg, { clientX: 45, clientY: 100 });
+
+      // Should call onNavigate for enabled right bar
+      expect(onNavigate).toHaveBeenCalledWith(
+        expect.objectContaining({ side: 'right' })
+      );
+    });
+
+    it('responds to clicks on enabled left bar (left-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'left' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /minimap/i });
+
+      // Click on left bar (x < 30) - this should work
+      fireEvent.click(svg, { clientX: 15, clientY: 100 });
+
+      // Should call onNavigate for enabled left bar
+      expect(onNavigate).toHaveBeenCalledWith(
+        expect.objectContaining({ side: 'left' })
+      );
+    });
+
+    it('does not respond to drag on disabled left bar (right-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'right' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /minimap/i });
+
+      // Try to drag on left bar
+      fireEvent.mouseDown(svg, { clientX: 15, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 15, clientY: 200 });
+
+      // Should NOT call onNavigate for disabled left bar
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it('does not respond to drag on disabled right bar (left-only filter)', () => {
+      const pipeline = createMockPipeline({ contentFilter: 'left' });
+      const containerRef = { current: scrollContainer };
+      const onNavigate = vi.fn();
+
+      render(
+        <Minimap
+          pipeline={pipeline}
+          containerHeight={500}
+          scrollContainerRef={containerRef}
+          showFullFile={true}
+          showComments={false}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /minimap/i });
+
+      // Try to drag on right bar
+      fireEvent.mouseDown(svg, { clientX: 45, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 45, clientY: 200 });
+
+      // Should NOT call onNavigate for disabled right bar
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
   });
 
   describe('side-by-side mode', () => {
