@@ -37,7 +37,7 @@ const LINE_HEIGHT = 23;
  * Main diff view component with support for inline and side-by-side modes.
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig, clearPendingScroll } = useDiffStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const { selectedRange, getFileDiffByPath, isIterationMode } = useIterationDiff();
@@ -272,6 +272,7 @@ export function DiffView() {
               showComments={viewConfig.showComments}
               onVisibleRangeChange={setVisibleRowRange}
               textWrap={pipeline.textWrap}
+              onScrollComplete={clearPendingScroll}
             />
             <Minimap
               pipeline={pipeline}
@@ -321,6 +322,7 @@ export function DiffView() {
               showComments={viewConfig.showComments}
               onVisibleRangeChange={setVisibleRowRange}
               textWrap={pipeline.textWrap}
+              onScrollComplete={clearPendingScroll}
             />
             <Minimap
               pipeline={pipeline}

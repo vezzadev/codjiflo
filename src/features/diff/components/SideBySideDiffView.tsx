@@ -47,8 +47,10 @@ interface SideBySideDiffViewProps {
   showComments?: boolean;
   /** Callback when visible row range changes (for minimap synchronization) */
   onVisibleRangeChange?: (range: VisibleRowRange) => void;
-  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+/** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
   textWrap?: TextWrap;
+  /** Callback when scroll completes (to clear pending scroll request) */
+  onScrollComplete?: () => void;
 }
 
 interface RowData {
@@ -284,7 +286,8 @@ export function SideBySideDiffView({
   hasFullContent = false,
   showComments = true,
   onVisibleRangeChange,
-  textWrap = 'nowrap',
+textWrap = 'nowrap',
+  onScrollComplete,
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
 
@@ -325,11 +328,19 @@ export function SideBySideDiffView({
     });
   }, [alignedLines, contentFilter]);
 
-  // Scroll to row when scrollToRowIndex changes (J/K navigation)
+  // Scroll to row when scrollToRowIndex changes (J/K navigation or file switch auto-scroll)
+  // Note: Only depend on scrollToRowIndex and onScrollComplete, not data arrays or filter.
+  // This prevents re-triggering the scroll when view mode changes (e.g., full-file toggle).
+  // The other values are used for calculation but read from current closure.
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
       // Early return if list is empty
-      if (filteredLines.length === 0) return;
+      if (filteredLines.length === 0) {
+        requestAnimationFrame(() => {
+          onScrollComplete?.();
+        });
+        return;
+      }
 
       let effectiveIndex = Math.min(scrollToRowIndex, alignedLines.length - 1);
 
@@ -375,21 +386,18 @@ export function SideBySideDiffView({
         effectiveIndex = filteredIndex;
       }
 
-      // Read context lines from CSS variable for consistency with non-virtualized views
-      let contextLines = 3;
-      const rootStyles = getComputedStyle(document.documentElement);
-      const cssValue = rootStyles.getPropertyValue('--diff-scroll-context-lines');
-      const parsed = parseInt(cssValue, 10);
-      if (!Number.isNaN(parsed) && parsed >= 0) {
-        contextLines = parsed;
-      }
-
-      // Calculate target index with context, clamped to valid range
+      // Clamp to valid range and center the target row in the viewport
       const maxIndex = Math.max(0, filteredLines.length - 1);
-      const targetIndex = Math.min(Math.max(0, effectiveIndex - contextLines), maxIndex);
-      listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
+      const clampedIndex = Math.min(effectiveIndex, maxIndex);
+      listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
+      // Clear the pending scroll request after browser has painted
+      // This ensures react-window has finished the scroll before we clear the state
+      requestAnimationFrame(() => {
+        onScrollComplete?.();
+      });
     }
-  }, [scrollToRowIndex, alignedLines, contentFilter, filteredLines.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only scrollToRowIndex should trigger scroll; other values read from closure
+  }, [scrollToRowIndex, onScrollComplete]);
 
   // Memoize row props to prevent unnecessary re-renders
   const rowProps = useMemo<RowData>(

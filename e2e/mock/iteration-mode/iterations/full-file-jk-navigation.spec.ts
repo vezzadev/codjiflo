@@ -182,25 +182,29 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const fileContentDropdown = toolbar.getByRole("button", { name: "File content" });
     await expect(fileContentDropdown).toContainText("Full File");
 
-    // Navigation buttons should be ready (multiple hunks detected)
-    await expect(nextChangeBtn).toBeEnabled();
-    await expect(prevChangeBtn).toBeDisabled();
-
-    // Press J to navigate to first change
-    await page.keyboard.press("j");
-
-    // After first J, we're at index 0 (first hunk)
-    // Previous should still be disabled (at first change), Next should be enabled
+    // With auto-scroll on first file visit, we're automatically positioned at
+    // the first change (index 0). Navigation buttons should reflect this:
+    // - Prev is disabled (at first change)
+    // - Next is enabled (more changes available)
     await expect(prevChangeBtn).toBeDisabled();
     await expect(nextChangeBtn).toBeEnabled();
 
-    // Press J again to move to second change
+    // Press J to navigate to second change (already at first change from auto-scroll)
     await page.keyboard.press("j");
 
-    // Now at index 1, Previous should be enabled (can go back)
+    // After first J, we're at index 1 (second hunk)
+    // Both buttons should be enabled
+    await expect(prevChangeBtn).toBeEnabled();
+    await expect(nextChangeBtn).toBeEnabled();
+
+    // Press J again to move to third change
+    await page.keyboard.press("j");
+
+    // Now at index 2, both still enabled
     await expect(prevChangeBtn).toBeEnabled();
 
-    // Press K to go back to first change
+    // Press K twice to go back to first change (2 -> 1 -> 0)
+    await page.keyboard.press("k");
     await page.keyboard.press("k");
 
     // Back to index 0, Previous should be disabled again

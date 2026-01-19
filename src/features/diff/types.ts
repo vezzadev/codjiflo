@@ -96,6 +96,11 @@ export interface DiffState {
   /** Total number of hunks (change groups) in current file, set by DiffView */
   totalChangeCount: number;
 
+  /** Track files that have been visited (auto-scrolled) this session */
+  visitedFileIndices: Set<number>;
+  /** One-shot scroll request: index into hunkIndices to scroll to (null = no pending scroll) */
+  pendingScrollToChange: number | null;
+
   // File actions
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
   selectFile: (index: number) => void;
@@ -116,6 +121,7 @@ export interface DiffState {
   scrollToPreviousChange: () => void;
   resetChangeIndex: () => void;
   setTotalChangeCount: (count: number) => void;
+  clearPendingScroll: () => void;
 }
 
 /**

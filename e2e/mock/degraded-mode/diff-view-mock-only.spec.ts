@@ -166,37 +166,41 @@ test.describe("Diff View - Mock Only Tests", () => {
       name: /Next change/i,
     });
 
-    // Wait for hunk count to be calculated (buttons should be enabled)
-    await expect(nextChangeButton).toBeEnabled();
+    // With auto-scroll on first file visit, we're automatically positioned at
+    // the first change (index 0). With many hunks:
+    // - Prev is disabled (at first change)
+    // - Next is enabled (more changes available)
     await expect(prevChangeButton).toBeDisabled();
+    await expect(nextChangeButton).toBeEnabled();
 
     // Focus the page body for keyboard navigation
     await page.locator("body").click();
 
-    // Press J to navigate to first change
+    // Press J to navigate to second change (we're already at first change from auto-scroll)
     await page.keyboard.press("j");
 
-    // After first J press, we should be at index 0
-    // Prev should still be disabled (at start), Next should be enabled (many more hunks)
-    await expect(prevChangeButton).toBeDisabled();
+    // After first J press, we should be at index 1 (second change)
+    // Both buttons enabled (can go back to 0, can go forward)
+    await expect(prevChangeButton).toBeEnabled();
     await expect(nextChangeButton).toBeEnabled();
 
     // Press J a few more times to navigate through changes
     await page.keyboard.press("j");
     await page.keyboard.press("j");
 
-    // Now we're at index 2, both buttons should be enabled
+    // Now we're at index 3, both buttons should be enabled
     await expect(prevChangeButton).toBeEnabled();
     await expect(nextChangeButton).toBeEnabled();
 
     // Press K to go back
     await page.keyboard.press("k");
 
-    // Still both enabled (we're at index 1)
+    // Still both enabled (we're at index 2)
     await expect(prevChangeButton).toBeEnabled();
     await expect(nextChangeButton).toBeEnabled();
 
-    // Go back to start
+    // Go back to start (need 2 more K presses: 2 -> 1 -> 0)
+    await page.keyboard.press("k");
     await page.keyboard.press("k");
 
     // Now at index 0, prev disabled

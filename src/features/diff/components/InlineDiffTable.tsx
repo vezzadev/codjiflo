@@ -50,8 +50,10 @@ export interface InlineDiffTableProps {
   showComments?: boolean;
   /** Callback when visible row range changes (for minimap synchronization) */
   onVisibleRangeChange?: (range: VisibleRowRange) => void;
-  /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
+/** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
   textWrap?: TextWrap;
+  /** Callback when scroll completes (to clear pending scroll request) */
+  onScrollComplete?: () => void;
 }
 
 interface RowData {
@@ -197,7 +199,8 @@ export function InlineDiffTable({
   hasFullContent = false,
   showComments = true,
   onVisibleRangeChange,
-  textWrap = 'nowrap',
+textWrap = 'nowrap',
+  onScrollComplete,
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -226,23 +229,23 @@ export function InlineDiffTable({
     key: dynamicHeightKey,
   });
 
-  // Scroll to row when scrollToRowIndex changes (J/K navigation)
+  // Scroll to row when scrollToRowIndex changes (J/K navigation or file switch auto-scroll)
+  // Note: Only depend on scrollToRowIndex and onScrollComplete, not diffLines.length.
+  // This prevents re-triggering the scroll when view mode changes (e.g., full-file toggle).
   useEffect(() => {
     if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current && diffLines.length > 0) {
-      // Read context lines from CSS variable for consistency with non-virtualized views
-      let contextLines = 3;
-      const rootStyles = getComputedStyle(document.documentElement);
-      const cssValue = rootStyles.getPropertyValue('--diff-scroll-context-lines');
-      const parsed = parseInt(cssValue, 10);
-      if (!Number.isNaN(parsed) && parsed >= 0) {
-        contextLines = parsed;
-      }
-      // Clamp scrollToRowIndex to valid range before calculating target
+      // Clamp scrollToRowIndex to valid range
       const clampedIndex = Math.min(scrollToRowIndex, diffLines.length - 1);
-      const targetIndex = Math.max(0, clampedIndex - contextLines);
-      listRef.current.scrollToRow({ index: targetIndex, align: 'start' });
+      // Center the target row in the viewport
+      listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
+      // Clear the pending scroll request after browser has painted
+      // This ensures react-window has finished the scroll before we clear the state
+      requestAnimationFrame(() => {
+        onScrollComplete?.();
+      });
     }
-  }, [scrollToRowIndex, diffLines.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- diffLines.length intentionally excluded to prevent re-scroll on mode change
+  }, [scrollToRowIndex, onScrollComplete]);
 
   // Update CSS variable for scroll width so all tables can extend to match widest content.
   // This ensures diff backgrounds (addition/deletion) extend to the full scroll width.

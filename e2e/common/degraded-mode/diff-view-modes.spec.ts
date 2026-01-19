@@ -508,22 +508,20 @@ const baz = 'qux';
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
       await expect(diffRegion).toBeVisible();
 
-      // Wait for hunk count to be calculated (Next button becomes enabled when changes exist)
-      await expect(nextChangeButton).toBeEnabled();
-
-      // At start, Previous button should be disabled (no previous change)
+      // With auto-scroll on first file visit, we're automatically positioned at
+      // the first change (index 0). Our mock diff has only 1 hunk, so:
+      // - Prev is disabled (at first change, can't go back)
+      // - Next is disabled (only 1 hunk, no more changes)
       await expect(prevChangeButton).toBeDisabled();
+      await expect(nextChangeButton).toBeDisabled();
 
       // Focus the diff region for keyboard navigation
       await diffRegion.click();
 
-      // Press J to navigate to first change
-      // Note: Our mock diff has only 1 hunk, so after pressing J we're at the only change
+      // Press J - should do nothing since we're already at the only change
       await page.keyboard.press("j");
 
-      // After pressing J, we're at index 0 (the first and only hunk)
-      // Both buttons should be disabled since we're at both the start and end
-      // (there's only 1 hunk group: deletion + additions are consecutive)
+      // Both buttons should still be disabled (still at the only hunk)
       await expect(prevChangeButton).toBeDisabled();
       await expect(nextChangeButton).toBeDisabled();
 

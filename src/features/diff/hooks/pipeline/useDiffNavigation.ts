@@ -20,7 +20,7 @@ import type { DiffDisplayOutput, DiffNavigationOutput } from './types';
 export function useDiffNavigation(display: DiffDisplayOutput): DiffNavigationOutput {
   const {
     selectedFileIndex,
-    currentChangeIndex,
+    pendingScrollToChange,
   } = useDiffStore();
 
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
@@ -42,13 +42,14 @@ export function useDiffNavigation(display: DiffDisplayOutput): DiffNavigationOut
     }
   }, [isShowingDescription, display.isFullFileChange, display.viewMode, display.diffLines, display.alignedLines]);
 
-  // Get the row index to scroll to for the current change
+  // Get the row index to scroll to for the pending change request
+  // This is a one-shot value that gets cleared after scroll completes
   const scrollToRowIndex = useMemo(() => {
-    if (currentChangeIndex < 0 || currentChangeIndex >= hunkIndices.length) {
+    if (pendingScrollToChange === null || pendingScrollToChange >= hunkIndices.length) {
       return undefined;
     }
-    return hunkIndices[currentChangeIndex];
-  }, [currentChangeIndex, hunkIndices]);
+    return hunkIndices[pendingScrollToChange];
+  }, [pendingScrollToChange, hunkIndices]);
 
   return {
     ...display,

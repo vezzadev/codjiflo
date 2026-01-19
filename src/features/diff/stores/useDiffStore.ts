@@ -26,6 +26,8 @@ export const useDiffStore = create<DiffState>()(
       viewConfig: DEFAULT_VIEW_CONFIG,
       currentChangeIndex: -1,
       totalChangeCount: 0,
+      visitedFileIndices: new Set<number>(),
+      pendingScrollToChange: null,
 
       loadFiles: async (owner, repo, number) => {
         set({ isLoading: true, error: null });
@@ -56,23 +58,76 @@ export const useDiffStore = create<DiffState>()(
         // Note: In iteration mode, artifact-only files may have indices >= GitHub files.length
         // DiffView handles missing files gracefully via useIterationAwareFiles
         if (index === PR_DESCRIPTION_INDEX || index >= 0) {
-          set({ selectedFileIndex: index, currentChangeIndex: -1 });
+          const { visitedFileIndices } = get();
+          const isFirstVisit = !visitedFileIndices.has(index);
+
+          if (isFirstVisit) {
+            // First visit: auto-scroll to first change
+            const newVisited = new Set(visitedFileIndices);
+            newVisited.add(index);
+            set({
+              selectedFileIndex: index,
+              currentChangeIndex: 0,
+              pendingScrollToChange: 0,
+              visitedFileIndices: newVisited,
+            });
+          } else {
+            // Revisit: preserve scroll position (no pending scroll)
+            set({
+              selectedFileIndex: index,
+              currentChangeIndex: -1,
+            });
+          }
         }
       },
 
       selectNextFile: () => {
-        const { selectedFileIndex, files } = get();
+        const { selectedFileIndex, files, visitedFileIndices } = get();
         // From description (-1) go to first file (0), then continue through files
         if (selectedFileIndex < files.length - 1) {
-          set({ selectedFileIndex: selectedFileIndex + 1, currentChangeIndex: -1 });
+          const nextIndex = selectedFileIndex + 1;
+          const isFirstVisit = !visitedFileIndices.has(nextIndex);
+
+          if (isFirstVisit) {
+            const newVisited = new Set(visitedFileIndices);
+            newVisited.add(nextIndex);
+            set({
+              selectedFileIndex: nextIndex,
+              currentChangeIndex: 0,
+              pendingScrollToChange: 0,
+              visitedFileIndices: newVisited,
+            });
+          } else {
+            set({
+              selectedFileIndex: nextIndex,
+              currentChangeIndex: -1,
+            });
+          }
         }
       },
 
       selectPreviousFile: () => {
-        const { selectedFileIndex } = get();
+        const { selectedFileIndex, visitedFileIndices } = get();
         // Allow going back to description (-1)
         if (selectedFileIndex > PR_DESCRIPTION_INDEX) {
-          set({ selectedFileIndex: selectedFileIndex - 1, currentChangeIndex: -1 });
+          const prevIndex = selectedFileIndex - 1;
+          const isFirstVisit = !visitedFileIndices.has(prevIndex);
+
+          if (isFirstVisit) {
+            const newVisited = new Set(visitedFileIndices);
+            newVisited.add(prevIndex);
+            set({
+              selectedFileIndex: prevIndex,
+              currentChangeIndex: 0,
+              pendingScrollToChange: 0,
+              visitedFileIndices: newVisited,
+            });
+          } else {
+            set({
+              selectedFileIndex: prevIndex,
+              currentChangeIndex: -1,
+            });
+          }
         }
       },
 
@@ -134,7 +189,11 @@ export const useDiffStore = create<DiffState>()(
           currentChangeIndex >= totalChangeCount ? -1 : currentChangeIndex;
         // Only advance if there are more hunks
         if (normalizedIndex < totalChangeCount - 1) {
-          set({ currentChangeIndex: normalizedIndex + 1 });
+          const newIndex = normalizedIndex + 1;
+          set({ currentChangeIndex: newIndex, pendingScrollToChange: newIndex });
+        } else if (normalizedIndex >= 0 && totalChangeCount > 0) {
+          // Can't advance but still re-center on current change (useful after mode toggle)
+          set({ pendingScrollToChange: normalizedIndex });
         }
       },
 
@@ -147,7 +206,11 @@ export const useDiffStore = create<DiffState>()(
             ? totalChangeCount - 1
             : currentChangeIndex;
         if (normalizedIndex > 0) {
-          set({ currentChangeIndex: normalizedIndex - 1 });
+          const newIndex = normalizedIndex - 1;
+          set({ currentChangeIndex: newIndex, pendingScrollToChange: newIndex });
+        } else if (normalizedIndex >= 0 && totalChangeCount > 0) {
+          // Can't go back but still re-center on current change (useful after mode toggle)
+          set({ pendingScrollToChange: normalizedIndex });
         }
       },
 
@@ -159,6 +222,10 @@ export const useDiffStore = create<DiffState>()(
         set({ totalChangeCount: count });
       },
 
+      clearPendingScroll: () => {
+        set({ pendingScrollToChange: null });
+      },
+
       reset: () => set({
         files: [],
         selectedFileIndex: PR_DESCRIPTION_INDEX,
@@ -166,6 +233,8 @@ export const useDiffStore = create<DiffState>()(
         error: null,
         currentChangeIndex: -1,
         totalChangeCount: 0,
+        visitedFileIndices: new Set<number>(),
+        pendingScrollToChange: null,
         // Keep viewConfig on reset - it's a user preference
       }),
     }),

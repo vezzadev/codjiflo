@@ -141,7 +141,12 @@ describe('useDiffStore', () => {
 
   describe('selectFile', () => {
     beforeEach(() => {
-      useDiffStore.setState({ files: mockFiles, selectedFileIndex: 0 });
+      useDiffStore.setState({
+        files: mockFiles,
+        selectedFileIndex: 0,
+        visitedFileIndices: new Set<number>(),
+        pendingScrollToChange: null,
+      });
     });
 
     it('selects a valid file index', () => {
@@ -169,11 +174,51 @@ describe('useDiffStore', () => {
 
       expect(useDiffStore.getState().selectedFileIndex).toBe(10);
     });
+
+    it('sets pendingScrollToChange on first visit to a file', () => {
+      useDiffStore.getState().selectFile(1);
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
+      expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+      expect(useDiffStore.getState().visitedFileIndices.has(1)).toBe(true);
+    });
+
+    it('does not set pendingScrollToChange on revisit', () => {
+      // First visit
+      useDiffStore.getState().selectFile(1);
+      expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
+
+      // Clear pending scroll (simulating scroll completion)
+      useDiffStore.getState().clearPendingScroll();
+
+      // Go to another file
+      useDiffStore.getState().selectFile(2);
+      useDiffStore.getState().clearPendingScroll();
+
+      // Revisit file 1
+      useDiffStore.getState().selectFile(1);
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
+      expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
+    });
+
+    it('adds file to visitedFileIndices on first visit', () => {
+      expect(useDiffStore.getState().visitedFileIndices.has(1)).toBe(false);
+
+      useDiffStore.getState().selectFile(1);
+
+      expect(useDiffStore.getState().visitedFileIndices.has(1)).toBe(true);
+    });
   });
 
   describe('selectNextFile', () => {
     beforeEach(() => {
-      useDiffStore.setState({ files: mockFiles, selectedFileIndex: 0 });
+      useDiffStore.setState({
+        files: mockFiles,
+        selectedFileIndex: 0,
+        visitedFileIndices: new Set<number>(),
+        pendingScrollToChange: null,
+      });
     });
 
     it('moves to the next file', () => {
@@ -189,11 +234,33 @@ describe('useDiffStore', () => {
 
       expect(useDiffStore.getState().selectedFileIndex).toBe(2);
     });
+
+    it('sets pendingScrollToChange on first visit', () => {
+      useDiffStore.getState().selectNextFile();
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
+      expect(useDiffStore.getState().visitedFileIndices.has(1)).toBe(true);
+    });
+
+    it('does not set pendingScrollToChange on revisit', () => {
+      // Mark file 1 as already visited
+      useDiffStore.setState({ visitedFileIndices: new Set([1]) });
+
+      useDiffStore.getState().selectNextFile();
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
+      expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
+    });
   });
 
   describe('selectPreviousFile', () => {
     beforeEach(() => {
-      useDiffStore.setState({ files: mockFiles, selectedFileIndex: 2 });
+      useDiffStore.setState({
+        files: mockFiles,
+        selectedFileIndex: 2,
+        visitedFileIndices: new Set<number>(),
+        pendingScrollToChange: null,
+      });
     });
 
     it('moves to the previous file', () => {
@@ -216,6 +283,23 @@ describe('useDiffStore', () => {
       useDiffStore.getState().selectPreviousFile();
 
       expect(useDiffStore.getState().selectedFileIndex).toBe(PR_DESCRIPTION_INDEX);
+    });
+
+    it('sets pendingScrollToChange on first visit', () => {
+      useDiffStore.getState().selectPreviousFile();
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
+      expect(useDiffStore.getState().visitedFileIndices.has(1)).toBe(true);
+    });
+
+    it('does not set pendingScrollToChange on revisit', () => {
+      // Mark file 1 as already visited
+      useDiffStore.setState({ visitedFileIndices: new Set([1]) });
+
+      useDiffStore.getState().selectPreviousFile();
+
+      expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
+      expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
     });
   });
 
@@ -258,6 +342,20 @@ describe('useDiffStore', () => {
       expect(viewConfig.showWhitespace).toBe(true);
       expect(viewConfig.showComments).toBe(false);
     });
+
+    it('clears visitedFileIndices on reset', () => {
+      const visited = new Set([0, 1, 2]);
+      useDiffStore.setState({
+        files: mockFiles,
+        visitedFileIndices: visited,
+        pendingScrollToChange: 0,
+      });
+
+      useDiffStore.getState().reset();
+
+      expect(useDiffStore.getState().visitedFileIndices.size).toBe(0);
+      expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
+    });
   });
 
   // Change Navigation Tests
@@ -267,32 +365,38 @@ describe('useDiffStore', () => {
         files: mockFiles,
         currentChangeIndex: -1,
         totalChangeCount: 5,
+        pendingScrollToChange: null,
       });
     });
 
     describe('scrollToNextChange', () => {
-      it('advances to the next change', () => {
+      it('advances to the next change and sets pendingScrollToChange', () => {
         useDiffStore.setState({ currentChangeIndex: 0 });
 
         useDiffStore.getState().scrollToNextChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(1);
       });
 
-      it('advances from -1 to 0 (first change)', () => {
+      it('advances from -1 to 0 (first change) and sets pendingScrollToChange', () => {
         useDiffStore.setState({ currentChangeIndex: -1 });
 
         useDiffStore.getState().scrollToNextChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
       });
 
-      it('does not advance past the last change', () => {
+      it('does not advance past the last change but re-centers', () => {
         useDiffStore.setState({ currentChangeIndex: 4, totalChangeCount: 5 });
 
         useDiffStore.getState().scrollToNextChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(4);
+        // pendingScrollToChange is set for re-centering even if we can't advance
+        // This is useful after mode toggles when row indices change
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(4);
       });
 
       it('normalizes out-of-range index after view mode change', () => {
@@ -303,24 +407,29 @@ describe('useDiffStore', () => {
 
         // Should normalize to -1 and then advance to 0
         expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
       });
     });
 
     describe('scrollToPreviousChange', () => {
-      it('goes back to the previous change', () => {
+      it('goes back to the previous change and sets pendingScrollToChange', () => {
         useDiffStore.setState({ currentChangeIndex: 2 });
 
         useDiffStore.getState().scrollToPreviousChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(1);
       });
 
-      it('does not go before index 0', () => {
-        useDiffStore.setState({ currentChangeIndex: 0 });
+      it('does not go before index 0 but re-centers', () => {
+        useDiffStore.setState({ currentChangeIndex: 0, totalChangeCount: 5 });
 
         useDiffStore.getState().scrollToPreviousChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(0);
+        // pendingScrollToChange is set for re-centering even if we can't go back
+        // This is useful after mode toggles when row indices change
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(0);
       });
 
       it('does nothing when at index -1', () => {
@@ -329,6 +438,7 @@ describe('useDiffStore', () => {
         useDiffStore.getState().scrollToPreviousChange();
 
         expect(useDiffStore.getState().currentChangeIndex).toBe(-1);
+        expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
       });
 
       it('normalizes out-of-range index after view mode change', () => {
@@ -339,6 +449,7 @@ describe('useDiffStore', () => {
 
         // Should normalize to 2 (last valid index) and then go back to 1
         expect(useDiffStore.getState().currentChangeIndex).toBe(1);
+        expect(useDiffStore.getState().pendingScrollToChange).toBe(1);
       });
     });
 
@@ -358,6 +469,16 @@ describe('useDiffStore', () => {
         useDiffStore.getState().setTotalChangeCount(10);
 
         expect(useDiffStore.getState().totalChangeCount).toBe(10);
+      });
+    });
+
+    describe('clearPendingScroll', () => {
+      it('clears pendingScrollToChange to null', () => {
+        useDiffStore.setState({ pendingScrollToChange: 3 });
+
+        useDiffStore.getState().clearPendingScroll();
+
+        expect(useDiffStore.getState().pendingScrollToChange).toBeNull();
       });
     });
   });
