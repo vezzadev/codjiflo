@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Content Filter Slider Test</title>
+  <style>
+    /* Color variables from light theme */
+    :root {
+      --main-bg: #F0F0F0;
+      --main-fg: #1E1E1E;
+      --control-bg: #DDDDDD;
+      --combobox-border: #ACACAC;
+      --diff-add-word: rgba(40, 180, 90, 0.5);
+      --diff-delete-word: rgba(220, 80, 80, 0.5);
+      --treeview-selected: #3399FF;
+    }
+
+    body {
+      margin: 40px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--main-bg);
+      color: var(--main-fg);
+    }
+
+    .content-filter-slider {
+      display: flex;
+      align-items: center;
+      user-select: none;
+      margin: 20px 0;
+    }
+
+    .content-filter-track {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 90px;
+      height: 12px;
+      background-color: var(--control-bg);
+      cursor: pointer;
+    }
+
+    .content-filter-indicator {
+      flex: 1;
+      height: 100%;
+      border: 1px solid var(--combobox-border);
+    }
+
+    .content-filter-indicator-left {
+      background-color: var(--diff-add-word);
+      border-right: none;
+    }
+
+    .content-filter-indicator-right {
+      background-color: var(--diff-delete-word);
+      border-left: none;
+    }
+
+    .content-filter-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 70px;
+      height: 24px;
+      background-color: var(--main-bg);
+      border: 1px solid var(--combobox-border);
+      transition: left 0.15s ease;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .content-filter-thumb:active {
+      cursor: grabbing;
+    }
+
+    .content-filter-thumb-label {
+      font-size: 11px;
+      white-space: nowrap;
+      color: var(--main-fg);
+    }
+
+    /* OLD STYLING - NO SELECTION INDICATOR */
+    .old .content-filter-thumb-left {
+      left: 0;
+    }
+
+    .old .content-filter-thumb-both {
+      left: calc(50% - 35px);
+    }
+
+    .old .content-filter-thumb-right {
+      left: calc(100% - 70px);
+    }
+
+    /* NEW STYLING - WITH SELECTION INDICATOR */
+    .new .content-filter-thumb-left {
+      left: 0;
+      border-color: var(--treeview-selected);
+      border-width: 2px;
+    }
+
+    .new .content-filter-thumb-both {
+      left: calc(50% - 35px);
+      border-color: var(--treeview-selected);
+      border-width: 2px;
+    }
+
+    .new .content-filter-thumb-right {
+      left: calc(100% - 70px);
+      border-color: var(--treeview-selected);
+      border-width: 2px;
+    }
+
+    h2 {
+      margin-top: 40px;
+    }
+
+    .label {
+      font-size: 12px;
+      margin-bottom: 10px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Content Filter Slider - Before & After Fix</h1>
+
+  <h2>❌ BEFORE (Wrong - No Selection Indicator)</h2>
+  <div class="old">
+    <div class="label">Position: Left Only</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-left">
+          <span class="content-filter-thumb-label">Left Only</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="label">Position: Show Both</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-both">
+          <span class="content-filter-thumb-label">Show Both</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="label">Position: Right Only</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-right">
+          <span class="content-filter-thumb-label">Right Only</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>✅ AFTER (Correct - With Blue Selection Border)</h2>
+  <div class="new">
+    <div class="label">Position: Left Only</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-left">
+          <span class="content-filter-thumb-label">Left Only</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="label">Position: Show Both</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-both">
+          <span class="content-filter-thumb-label">Show Both</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="label">Position: Right Only</div>
+    <div class="content-filter-slider">
+      <div class="content-filter-track">
+        <span class="content-filter-indicator content-filter-indicator-left"></span>
+        <span class="content-filter-indicator content-filter-indicator-right"></span>
+        <div class="content-filter-thumb content-filter-thumb-right">
+          <span class="content-filter-thumb-label">Right Only</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

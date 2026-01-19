@@ -415,14 +415,20 @@
 
 .content-filter-thumb-left {
   left: 0;
+  border-color: var(--treeview-selected);
+  border-width: 2px;
 }
 
 .content-filter-thumb-both {
   left: calc(50% - 35px); /* Center: 50% minus half thumb width (70px/2) */
+  border-color: var(--treeview-selected);
+  border-width: 2px;
 }
 
 .content-filter-thumb-right {
   left: calc(100% - 70px); /* Right edge minus thumb width */
+  border-color: var(--treeview-selected);
+  border-width: 2px;
 }
 
 
