@@ -170,8 +170,9 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(nextChangeButton).toBeEnabled();
     await expect(prevChangeButton).toBeDisabled();
 
-    // Focus the page body for keyboard navigation
-    await page.locator("body").click();
+    // Focus the page for keyboard navigation by clicking the file heading
+    // (not the diff area, which would trigger row focus mode and disable J/K)
+    await page.getByRole("heading", { name: "src/large-file.ts" }).click();
 
     // Press J to navigate to first change
     await page.keyboard.press("j");
