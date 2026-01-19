@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts, getShortcutsList } from './useKeyboardShortcuts';
 import { useDiffStore } from '@/features/diff';
-import { useIterationAwareFiles } from '@/features/diff/hooks';
+import { useFileDisplayOrder } from '@/features/diff/hooks';
 import { PR_DESCRIPTION_INDEX } from '@/features/diff/stores';
 import type { IterationAwareFile } from '@/features/diff/hooks/useIterationAwareFiles';
 import { FileChangeStatus } from '@/api/types';
@@ -12,7 +12,7 @@ vi.mock('@/features/diff', () => ({
 }));
 
 vi.mock('@/features/diff/hooks', () => ({
-  useIterationAwareFiles: vi.fn(),
+  useFileDisplayOrder: vi.fn(),
 }));
 
 describe('useKeyboardShortcuts', () => {
@@ -63,8 +63,8 @@ describe('useKeyboardShortcuts', () => {
       return selector(state as never);
     });
 
-    // Mock useIterationAwareFiles to return mock files
-    vi.mocked(useIterationAwareFiles).mockReturnValue({
+    // Mock useFileDisplayOrder to return mock files
+    vi.mocked(useFileDisplayOrder).mockReturnValue({
       files: mockFiles,
       isIterationMode: false,
       totalFilesInPR: 3,
@@ -122,7 +122,7 @@ describe('useKeyboardShortcuts', () => {
       // - Position 1: alpha.ts (originalIndex: 1) - 'a' comes FIRST alphabetically
       // - Position 2: middle.ts (originalIndex: 2) - 'm' comes MIDDLE alphabetically
       //
-      // After alphabetical sorting by useIterationAwareFiles:
+      // After alphabetical sorting by useFileDisplayOrder:
       // - Position 0: alpha.ts (originalIndex: 1)
       // - Position 1: middle.ts (originalIndex: 2)
       // - Position 2: zebra.ts (originalIndex: 0)
@@ -161,7 +161,7 @@ describe('useKeyboardShortcuts', () => {
         },
       ];
 
-      vi.mocked(useIterationAwareFiles).mockReturnValue({
+      vi.mocked(useFileDisplayOrder).mockReturnValue({
         files: unsortedFiles,
         isIterationMode: false,
         totalFilesInPR: 3,
@@ -312,7 +312,7 @@ describe('useKeyboardShortcuts', () => {
     });
 
     it('handles empty file list when s is pressed from PR description', () => {
-      vi.mocked(useIterationAwareFiles).mockReturnValue({
+      vi.mocked(useFileDisplayOrder).mockReturnValue({
         files: [],
         isIterationMode: false,
         totalFilesInPR: 0,
