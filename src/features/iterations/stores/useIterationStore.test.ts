@@ -303,6 +303,7 @@ describe('useIterationStore', () => {
     });
 
     it('should handle loading errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       mockLoad.mockRejectedValue(new Error('Network error'));
 
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
@@ -310,6 +311,10 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.isLoading).toBe(false);
       expect(state.error).toBe('Network error');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load iterations')
+      );
+      consoleSpy.mockRestore();
     });
 
     it('should invalidate cached range with fromSnapshot:0 after rebase (issue #151)', async () => {
