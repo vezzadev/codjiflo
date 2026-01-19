@@ -122,6 +122,7 @@ export const useIterationStore = create<IterationState>()(
 
       loadIterations: async (owner, repo, prNumber) => {
         const prKey = getPrKey(owner, repo, prNumber);
+        console.info(`[CodjiFlo] Loading iterations for ${prKey}`);
         set({ isLoading: true, error: null, currentPrKey: prKey });
 
         try {
@@ -130,6 +131,7 @@ export const useIterationStore = create<IterationState>()(
 
           if (!result) {
             // No artifact found - trigger graceful degradation
+            console.info(`[CodjiFlo] Entering degraded mode: no artifact found for ${prKey}`);
             set({
               isLoading: false,
               isDegraded: true,
@@ -152,6 +154,10 @@ export const useIterationStore = create<IterationState>()(
           // Create SpanTracker service
           const spanTrackerReader = new SQLiteSpanTrackerReader(db);
           const spanTrackerService = new SpanTrackerService(spanTrackerReader);
+
+          console.info(
+            `[CodjiFlo] Loaded ${iterations.length} iteration(s) and ${artifacts.length} artifact(s) for ${prKey}`
+          );
 
           // Set default selection (full diff: base to latest)
           // Uses the base snapshot of the latest iteration to handle rebases correctly.
@@ -209,6 +215,7 @@ export const useIterationStore = create<IterationState>()(
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Failed to load iterations';
+          console.error(`[CodjiFlo] Failed to load iterations for ${prKey}: ${message}`);
           set({
             isLoading: false,
             error: message,
