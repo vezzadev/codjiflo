@@ -140,6 +140,24 @@
   border-right: 1px solid var(--combobox-border);
 }
 
+/* Annotation gutter column (left) - for code coverage, lint markers */
+.diff-gutter-annotation {
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  padding: 2px 4px;
+  text-align: center;
+  border-right: none; /* Visually connected to line number gutter */
+}
+
+/* Override table constraints for annotation gutter */
+.diff-table .diff-gutter-annotation,
+.side-by-side-pane .diff-gutter-annotation {
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+}
+
 .diff-gutter-addition {
   color: var(--diff-add-fg);
   background-color: var(--diff-add-gutter);

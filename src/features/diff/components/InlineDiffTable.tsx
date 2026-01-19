@@ -113,8 +113,8 @@ function DiffRow({
   ];
 
   const showDraftHere = draftLineIndex === index;
-  // Column count: line number cols + content col (marker column removed)
-  const colSpan = lineNumberMode === 'both' ? 3 : 2;
+  // Column count: annotation + line number + content (always 3)
+  const colSpan = 3;
 
   return (
     <div style={style} className="virtualized-row" role="presentation">
@@ -304,8 +304,8 @@ export function InlineDiffTable({
       font-weight: ${codeStyles.fontWeight};
       letter-spacing: ${codeStyles.letterSpacing};
     `;
-    // Add line number column widths (approx 80px for two columns + gutter)
-    const lineNumberWidth = lineNumberMode === 'both' ? 120 : 80;
+    // Add gutter column widths: annotation (24px) + line number (48px) = 72px
+    const lineNumberWidth = 72;
     measurer.textContent = longestContent;
     container.appendChild(measurer);
 
