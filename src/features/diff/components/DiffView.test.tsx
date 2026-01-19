@@ -1003,16 +1003,17 @@ describe('DiffView', () => {
 
       const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
       const scrollable = getScrollableList(diffRegion);
-      // Mock scrollHeight property
+      // Mock scrollHeight and clientHeight properties
       Object.defineProperty(scrollable, 'scrollHeight', { value: 5000, configurable: true });
+      Object.defineProperty(scrollable, 'clientHeight', { value: 600, configurable: true });
       scrollable.scrollTo = vi.fn();
 
       // Focus the diff area and press End
       fireEvent.keyDown(diffRegion, { key: 'End' });
 
-      // Should scroll to bottom
+      // Should scroll to bottom (scrollHeight - clientHeight positions last content at bottom)
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(scrollable.scrollTo).toHaveBeenCalledWith({ top: 5000, behavior: 'smooth' });
+      expect(scrollable.scrollTo).toHaveBeenCalledWith({ top: 4400, behavior: 'smooth' });
     });
   });
 

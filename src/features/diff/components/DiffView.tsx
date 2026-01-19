@@ -129,7 +129,8 @@ export function DiffView() {
         return;
       case 'End':
         e.preventDefault();
-        scrollable.scrollTo({ top: scrollable.scrollHeight, behavior: 'smooth' });
+        // Scroll to max position: scrollHeight - clientHeight puts the last content at the bottom
+        scrollable.scrollTo({ top: scrollable.scrollHeight - scrollable.clientHeight, behavior: 'smooth' });
         return;
     }
 
