@@ -395,8 +395,8 @@
   width: 70px;
   height: 24px;
   background-color: var(--main-bg);
-  border: 2px solid var(--treeview-selected);
-  transition: left 0.15s ease;
+  border: 1px solid var(--combobox-border);
+  transition: left 0.15s ease, border-color 0.15s ease, border-width 0.15s ease;
   cursor: grab;
   display: flex;
   align-items: center;
@@ -405,6 +405,11 @@
 
 .content-filter-thumb:active {
   cursor: grabbing;
+}
+
+/* Show selection state when radiogroup has focus */
+.content-filter-slider:focus .content-filter-thumb {
+  border: 2px solid var(--treeview-selected);
 }
 
 .content-filter-thumb-label {
