@@ -21,6 +21,11 @@ export function useRowFocus(totalRows: number) {
   // Track refs to row elements for focus management
   const rowRefsMap = useRef<Map<number, HTMLTableRowElement>>(new Map());
 
+  // Clear stale row refs when totalRows changes (e.g., file switch)
+  useEffect(() => {
+    rowRefsMap.current.clear();
+  }, [totalRows]);
+
   /**
    * Register a row element ref for focus management.
    * Call this in the row component with the tr element.

@@ -96,8 +96,10 @@ export interface DiffState {
   /** Total number of hunks (change groups) in current file, set by DiffView */
   totalChangeCount: number;
 
-  /** Row-level focus state for keyboard text selection (transient, not persisted) */
-  /** Focused row index, null = no row focused */
+  /**
+   * Row-level focus state for keyboard text selection (transient, not persisted).
+   * Focused row index, null = no row focused.
+   */
   focusedRowIndex: number | null;
 
   // File actions
