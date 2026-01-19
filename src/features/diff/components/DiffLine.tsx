@@ -199,11 +199,8 @@ export function DiffLine({
       role={canFocus ? 'row' : 'presentation'}
       tabIndex={canFocus ? (isFocused ? 0 : -1) : undefined}
       aria-rowindex={canFocus ? rowIndex + 1 : undefined}
-      contentEditable={canFocus && isFocused ? true : undefined}
-      suppressContentEditableWarning={canFocus && isFocused ? true : undefined}
       onClick={canFocus && onRowClick ? (e) => onRowClick(e, rowIndex) : undefined}
       onKeyDown={canFocus && onRowKeyDown ? (e) => onRowKeyDown(e, rowIndex) : undefined}
-      onBeforeInput={canFocus && isFocused && onBeforeInput ? onBeforeInput : undefined}
       ref={canFocus && registerRowRef ? (el) => registerRowRef(rowIndex, el) : undefined}
     >
       {/* Gutter columns - always two: annotation + line number */}
@@ -224,7 +221,14 @@ export function DiffLine({
 
       {/* AC-1.4.9: Screen reader accessible */}
       {/* AC-3.4.6: Screen reader announces modifications */}
-      <td className="diff-content" role="presentation">
+      {/* contentEditable on diff-content only (not gutter) for text selection with visible caret */}
+      <td
+        className="diff-content"
+        role="presentation"
+        contentEditable={canFocus && isFocused ? true : undefined}
+        suppressContentEditableWarning={canFocus && isFocused ? true : undefined}
+        onBeforeInput={canFocus && isFocused && onBeforeInput ? onBeforeInput : undefined}
+      >
         <span className="sr-only">
           {line.type === 'addition' && 'Added: '}
           {line.type === 'deletion' && 'Deleted: '}

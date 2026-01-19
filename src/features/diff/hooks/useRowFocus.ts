@@ -90,14 +90,14 @@ export function useRowFocus(totalRows: number) {
    * Handle keyboard navigation on a focused row.
    */
   const handleRowKeyDown = useCallback((event: React.KeyboardEvent, rowIndex: number) => {
-    // Let Shift+Arrow pass through for native text selection
-    if (event.shiftKey && event.key.startsWith('Arrow')) {
+    // Let Shift+Left/Right pass through for native text selection within a row
+    if (event.shiftKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
       return;
     }
 
     switch (event.key) {
       case 'ArrowUp':
-        // Move focus to previous row
+        // Move focus to previous row (with or without Shift)
         if (rowIndex > 0) {
           event.preventDefault();
           focusRow(rowIndex - 1);
@@ -105,7 +105,7 @@ export function useRowFocus(totalRows: number) {
         break;
 
       case 'ArrowDown':
-        // Move focus to next row
+        // Move focus to next row (with or without Shift)
         if (rowIndex < totalRows - 1) {
           event.preventDefault();
           focusRow(rowIndex + 1);
