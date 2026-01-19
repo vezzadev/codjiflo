@@ -634,11 +634,27 @@ Multiple margin types for comment display:
 | CommentTextMargin | Full comment content |
 | CommentStatusMargin | Thread status icons |
 
-### Line Number Margin
+### Gutter Columns
 
-- Toggleable via settings
-- Shows line numbers for both sides
-- Highlights lines with comments
+The diff gutter always has two columns:
+
+| Column | Width | Purpose |
+|--------|-------|---------|
+| **Annotation** (left) | 24px | Reserved for future annotations (code coverage, lint markers) |
+| **Line Number** (right) | 48px | Displays line numbers based on content filter mode |
+
+**Line Number Display by Content Filter:**
+
+| Filter Mode | Line Numbers Shown |
+|-------------|-------------------|
+| **Both** | New (right) line numbers only |
+| **Left** | Old (left) line numbers |
+| **Right** | New (right) line numbers |
+
+The annotation column is currently empty but provides a consistent location for future features like:
+- Code coverage indicators
+- Linting/error markers
+- Breakpoint toggles
 
 ---
 
