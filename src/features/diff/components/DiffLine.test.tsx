@@ -5,7 +5,8 @@ import type { ParsedDiffLine } from '../types';
 
 // Mock ShikiHighlighter to avoid async loading issues
 vi.mock('./ShikiHighlighter', () => ({
-  ShikiHighlighter: ({ code, showWhitespace }: { code: string; showWhitespace?: boolean }) => {
+  ShikiHighlighter: ({ code, showWhitespace, textWrap }: { code: string; showWhitespace?: boolean; textWrap?: string }) => {
+    const classes = ['diff-code', textWrap === 'wrap' ? 'word-wrap' : ''].filter(Boolean).join(' ');
     // Render visible whitespace markers if enabled
     if (showWhitespace) {
       const parts: React.ReactNode[] = [];
@@ -29,9 +30,9 @@ vi.mock('./ShikiHighlighter', () => ({
       if (nonWsStart < code.length) {
         parts.push(code.slice(nonWsStart));
       }
-      return <span className="diff-code" data-testid="shiki-highlighter">{parts.length > 0 ? parts : code}</span>;
+      return <span className={classes} data-testid="shiki-highlighter">{parts.length > 0 ? parts : code}</span>;
     }
-    return <span className="diff-code" data-testid="shiki-highlighter">{code}</span>;
+    return <span className={classes} data-testid="shiki-highlighter">{code}</span>;
   },
 }));
 
@@ -604,6 +605,94 @@ describe('DiffLine', () => {
       const spacer = screen.getByTestId('diff-line-spacer');
       expect(spacer).toHaveClass('diff-line');
       expect(spacer).toHaveClass('diff-line-spacer');
+    });
+  });
+
+  // Text wrap tests
+  describe('textWrap', () => {
+    it('applies word-wrap class when textWrap is wrap', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'const foo = "bar";',
+        oldLineNumber: null,
+        newLineNumber: 1,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" textWrap="wrap" />
+          </tbody>
+        </table>
+      );
+
+      const codeElement = screen.getByTestId('shiki-highlighter');
+      expect(codeElement).toHaveClass('word-wrap');
+    });
+
+    it('does not apply word-wrap class when textWrap is nowrap', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'const foo = "bar";',
+        oldLineNumber: null,
+        newLineNumber: 1,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" textWrap="nowrap" />
+          </tbody>
+        </table>
+      );
+
+      const codeElement = screen.getByTestId('shiki-highlighter');
+      expect(codeElement).not.toHaveClass('word-wrap');
+    });
+
+    it('defaults to nowrap when textWrap is not specified', () => {
+      const line: ParsedDiffLine = {
+        type: 'context',
+        content: 'unchanged line',
+        oldLineNumber: 1,
+        newLineNumber: 1,
+      };
+
+      render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" />
+          </tbody>
+        </table>
+      );
+
+      const codeElement = screen.getByTestId('shiki-highlighter');
+      expect(codeElement).not.toHaveClass('word-wrap');
+    });
+
+    it('applies word-wrap class to word diff content when textWrap is wrap', () => {
+      const line: ParsedDiffLine = {
+        type: 'addition',
+        content: 'new value',
+        oldLineNumber: null,
+        newLineNumber: 1,
+        wordDiff: [
+          { text: 'new', type: 'added' },
+          { text: ' value', type: 'unchanged' },
+        ],
+      };
+
+      const { container } = render(
+        <table>
+          <tbody>
+            <DiffLine line={line} language="typescript" textWrap="wrap" />
+          </tbody>
+        </table>
+      );
+
+      // Word diff content should have word-wrap class on the diff-code element
+      const diffCode = container.querySelector('.diff-code');
+      expect(diffCode).toHaveClass('word-wrap');
     });
   });
 });
