@@ -226,6 +226,11 @@
   overflow-wrap: break-word;
 }
 
+/* Allow wrapped content to expand cell height */
+[data-text-wrap="wrap"] .diff-content {
+  overflow: visible;
+}
+
 /* Word wrap for code blocks in comments when wrap is enabled */
 [data-text-wrap="wrap"] .comment-thread pre,
 [data-text-wrap="wrap"] .comment-thread code {
@@ -747,6 +752,20 @@
   table-layout: auto; /* Allow table to expand with content */
   width: max-content; /* Allow horizontal scroll for long lines */
   min-width: var(--diff-scroll-width, 100%);
+}
+
+/* Word wrap overrides - must come AFTER max-content rules to take precedence.
+ * When word wrap is enabled, constrain row/table width to container width
+ * so that text can wrap instead of extending horizontally. */
+[data-text-wrap="wrap"] .virtualized-inline-list .virtualized-row {
+  width: 100% !important;
+  min-width: unset;
+}
+
+[data-text-wrap="wrap"] .virtualized-row .diff-table {
+  width: 100%;
+  min-width: unset;
+  table-layout: fixed;
 }
 
 /* Virtualized side-by-side container */

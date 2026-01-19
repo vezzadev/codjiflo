@@ -187,53 +187,7 @@ Iterations: 2`,
     await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
   });
 
-  test("Word wrap applies CSS class to diff code elements", async ({ page }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-    await page.waitForLoadState("domcontentloaded");
-
-    // Click on the file with long lines
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible();
-    await fileNav.getByText("long-lines.ts").click();
-
-    // Wait for diff to render
-    await expect(
-      page.getByRole("heading", { name: "src/long-lines.ts" })
-    ).toBeVisible();
-
-    // Check initial state - no word-wrap class
-    const diffCodeWithoutWrap = await page.evaluate(() => {
-      const codes = document.querySelectorAll(".diff-code");
-      return Array.from(codes).some((el) => el.classList.contains("word-wrap"));
-    });
-    expect(diffCodeWithoutWrap).toBe(false);
-
-    // Press P to enable wrap
-    await page.keyboard.press("p");
-
-    // Check that word-wrap class is applied
-    const diffCodeWithWrap = await page.evaluate(() => {
-      const codes = document.querySelectorAll(".diff-code");
-      return (
-        codes.length > 0 &&
-        Array.from(codes).every((el) => el.classList.contains("word-wrap"))
-      );
-    });
-    expect(diffCodeWithWrap).toBe(true);
-
-    // Press P to disable wrap
-    await page.keyboard.press("p");
-
-    // Check that word-wrap class is removed
-    const diffCodeAfterDisable = await page.evaluate(() => {
-      const codes = document.querySelectorAll(".diff-code");
-      return Array.from(codes).some((el) => el.classList.contains("word-wrap"));
-    });
-    expect(diffCodeAfterDisable).toBe(false);
-  });
-
-  test("Data attribute is set on diff container for CSS targeting", async ({
+  test("Long lines actually wrap to multiple lines when wrap is enabled", async ({
     page,
   }) => {
     const config = getTestConfig();
@@ -250,21 +204,90 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Check initial data attribute on the diff content area
-    const initialAttr = await page.evaluate(() => {
-      const container = document.querySelector(".diff-content-area");
-      return container?.getAttribute("data-text-wrap");
-    });
-    expect(initialAttr).toBe("nowrap");
+    // Helper to get row heights and identify which has the long line
+    const getRowHeights = async () => {
+      return page.evaluate(() => {
+        const rows = document.querySelectorAll(".virtualized-row");
+        const heights: { content: string; height: number }[] = [];
+        rows.forEach((row) => {
+          const rect = row.getBoundingClientRect();
+          const content = (row.textContent || "").substring(0, 50);
+          heights.push({ content, height: rect.height });
+        });
+        return heights;
+      });
+    };
 
-    // Press P to enable wrap
+    // With wrap disabled (default), measure row heights
+    const heightsNoWrap = await getRowHeights();
+    const longLineRowNoWrap = heightsNoWrap.find((r) =>
+      r.content.includes("veryLongVariableName")
+    );
+    const shortLineRowNoWrap = heightsNoWrap.find((r) =>
+      r.content.includes("short = 'value'")
+    );
+
+    // Both rows should exist
+    if (!longLineRowNoWrap || !shortLineRowNoWrap) {
+      throw new Error("Expected rows not found in diff");
+    }
+
+    // Without wrap, rows should be similar height (within 5px tolerance)
+    expect(
+      Math.abs(longLineRowNoWrap.height - shortLineRowNoWrap.height)
+    ).toBeLessThan(5);
+
+    // Enable wrap with keyboard shortcut
     await page.keyboard.press("p");
 
-    // Check data attribute changed
-    const wrapAttr = await page.evaluate(() => {
-      const container = document.querySelector(".diff-content-area");
-      return container?.getAttribute("data-text-wrap");
-    });
-    expect(wrapAttr).toBe("wrap");
+    // Wait for CSS to apply
+    await expect(
+      page.getByRole("button", { name: /Text wrap/i }).getByText(/^Wrap$/i)
+    ).toBeVisible();
+
+    // Re-measure row heights with wrap enabled
+    const heightsWithWrap = await getRowHeights();
+    const longLineRowWithWrap = heightsWithWrap.find((r) =>
+      r.content.includes("veryLongVariableName")
+    );
+    const shortLineRowWithWrap = heightsWithWrap.find((r) =>
+      r.content.includes("short = 'value'")
+    );
+
+    if (!longLineRowWithWrap || !shortLineRowWithWrap) {
+      throw new Error("Expected rows not found in diff after enabling wrap");
+    }
+
+    // With wrap enabled, the long line row should be significantly taller
+    // (at least 1.5x taller, indicating multiple wrapped lines)
+    expect(longLineRowWithWrap.height).toBeGreaterThan(
+      shortLineRowWithWrap.height * 1.5
+    );
+
+    // Disable wrap again
+    await page.keyboard.press("p");
+
+    // Wait for CSS to apply
+    await expect(
+      page.getByRole("button", { name: /Text wrap/i }).getByText(/No Wrap/i)
+    ).toBeVisible();
+
+    // Re-measure - heights should be back to similar
+    const heightsAfterDisable = await getRowHeights();
+    const longLineRowAfter = heightsAfterDisable.find((r) =>
+      r.content.includes("veryLongVariableName")
+    );
+    const shortLineRowAfter = heightsAfterDisable.find((r) =>
+      r.content.includes("short = 'value'")
+    );
+
+    if (!longLineRowAfter || !shortLineRowAfter) {
+      throw new Error("Expected rows not found in diff after disabling wrap");
+    }
+
+    // After disabling, rows should be similar height again
+    expect(
+      Math.abs(longLineRowAfter.height - shortLineRowAfter.height)
+    ).toBeLessThan(5);
   });
 });
