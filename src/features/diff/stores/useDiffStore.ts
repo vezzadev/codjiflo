@@ -141,6 +141,8 @@ export const useDiffStore = create<DiffState>()(
       setContentFilter: (filter) => {
         set((state) => ({
           viewConfig: { ...state.viewConfig, filter },
+          // Reset visited files so they auto-scroll to first change in new mode
+          visitedFileIndices: new Set<number>(),
         }));
       },
 
@@ -150,6 +152,8 @@ export const useDiffStore = create<DiffState>()(
             ...state.viewConfig,
             showFullFile: !state.viewConfig.showFullFile,
           },
+          // Reset visited files so they auto-scroll to first change in new mode
+          visitedFileIndices: new Set<number>(),
         }));
       },
 

@@ -233,17 +233,27 @@ textWrap = 'nowrap',
   // Note: Only depend on scrollToRowIndex and onScrollComplete, not diffLines.length.
   // This prevents re-triggering the scroll when view mode changes (e.g., full-file toggle).
   useEffect(() => {
-    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current && diffLines.length > 0) {
-      // Clamp scrollToRowIndex to valid range
-      const clampedIndex = Math.min(scrollToRowIndex, diffLines.length - 1);
-      // Center the target row in the viewport
-      listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
-      // Clear the pending scroll request after browser has painted
-      // This ensures react-window has finished the scroll before we clear the state
+    if (scrollToRowIndex === undefined || scrollToRowIndex < 0 || !listRef.current) {
+      return;
+    }
+
+    // Early return if list is empty (e.g., loading state)
+    if (diffLines.length === 0) {
       requestAnimationFrame(() => {
         onScrollComplete?.();
       });
+      return;
     }
+
+    // Clamp scrollToRowIndex to valid range
+    const clampedIndex = Math.min(scrollToRowIndex, diffLines.length - 1);
+    // Center the target row in the viewport
+    listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
+    // Clear the pending scroll request after browser has painted
+    // This ensures react-window has finished the scroll before we clear the state
+    requestAnimationFrame(() => {
+      onScrollComplete?.();
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- diffLines.length intentionally excluded to prevent re-scroll on mode change
   }, [scrollToRowIndex, onScrollComplete]);
 
