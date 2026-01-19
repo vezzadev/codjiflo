@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts, getShortcutsList } from './useKeyboardShortcuts';
 import { useDiffStore } from '@/features/diff';
-import { useIterationAwareFiles } from '@/features/diff/hooks';
+import { useFileDisplayOrder } from '@/features/diff/hooks';
 import { PR_DESCRIPTION_INDEX } from '@/features/diff/stores';
 import type { IterationAwareFile } from '@/features/diff/hooks/useIterationAwareFiles';
 import { FileChangeStatus } from '@/api/types';
@@ -12,7 +12,7 @@ vi.mock('@/features/diff', () => ({
 }));
 
 vi.mock('@/features/diff/hooks', () => ({
-  useIterationAwareFiles: vi.fn(),
+  useFileDisplayOrder: vi.fn(),
 }));
 
 describe('useKeyboardShortcuts', () => {
@@ -63,8 +63,8 @@ describe('useKeyboardShortcuts', () => {
       return selector(state as never);
     });
 
-    // Mock useIterationAwareFiles to return mock files
-    vi.mocked(useIterationAwareFiles).mockReturnValue({
+    // Mock useFileDisplayOrder to return mock files
+    vi.mocked(useFileDisplayOrder).mockReturnValue({
       files: mockFiles,
       isIterationMode: false,
       totalFilesInPR: 3,
@@ -113,6 +113,79 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('iteration-aware file navigation (Issue #189)', () => {
+    it('navigates through files in sorted order regardless of originalIndex order (Issue #261)', () => {
+      // This test verifies the fix for Issue #261: keyboard navigation follows
+      // display order (grouped by folder), not originalIndex order.
+      //
+      // Files in display order (as returned by useFileDisplayOrder):
+      // - Position 0: alpha.ts (originalIndex: 1)
+      // - Position 1: middle.ts (originalIndex: 2)
+      // - Position 2: zebra.ts (originalIndex: 0)
+      //
+      // Note: originalIndex values are non-sequential because they represent
+      // positions in the original API response, not the display order.
+      //
+      // When on zebra.ts (originalIndex: 0, display position 2) and pressing 'w':
+      // - Should navigate to middle.ts (originalIndex: 2, display position 1)
+      // - NOT to the file with originalIndex - 1
+      const filesInDisplayOrder: IterationAwareFile[] = [
+        {
+          filename: 'alpha.ts', // First alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 1, // Middle in original API order
+        },
+        {
+          filename: 'middle.ts', // Middle alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 2, // Last in original API order
+        },
+        {
+          filename: 'zebra.ts', // Last alphabetically
+          status: FileChangeStatus.Modified,
+          additions: 5,
+          deletions: 2,
+          changes: 7,
+          patch: '',
+          originalIndex: 0, // FIRST in original API order
+        },
+      ];
+
+      vi.mocked(useFileDisplayOrder).mockReturnValue({
+        files: filesInDisplayOrder,
+        isIterationMode: false,
+        totalFilesInPR: 3,
+      });
+
+      // Start on zebra.ts (originalIndex: 0, which is LAST in sorted order)
+      vi.mocked(useDiffStore).mockImplementation((selector) => {
+        const state = {
+          selectedFileIndex: 0, // zebra.ts by originalIndex
+          selectFile: mockSelectFile,
+          scrollToNextChange: mockScrollToNextChange,
+          scrollToPreviousChange: mockScrollToPreviousChange,
+        };
+        return selector(state as never);
+      });
+
+      renderHook(() => useKeyboardShortcuts());
+
+      // Press 'w' to go to previous file
+      const wEvent = new KeyboardEvent('keydown', { key: 'w' });
+      window.dispatchEvent(wEvent);
+
+      // zebra.ts is at position 2 (last) in sorted array
+      // Previous file should be middle.ts (originalIndex: 2)
+      expect(mockSelectFile).toHaveBeenCalledWith(2);
+    });
+
     it('navigates to next file when s is pressed', () => {
       // Selected on first file (index 0)
       vi.mocked(useDiffStore).mockImplementation((selector) => {
@@ -236,7 +309,7 @@ describe('useKeyboardShortcuts', () => {
     });
 
     it('handles empty file list when s is pressed from PR description', () => {
-      vi.mocked(useIterationAwareFiles).mockReturnValue({
+      vi.mocked(useFileDisplayOrder).mockReturnValue({
         files: [],
         isIterationMode: false,
         totalFilesInPR: 0,

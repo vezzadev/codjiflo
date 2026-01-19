@@ -161,32 +161,21 @@ export function DiffLine({
 
   return (
     <tr className={rowClasses} data-testid="diff-line" data-line-type={line.type} role="presentation">
-      {/* Line numbers - show one or two columns based on mode */}
-      {singleLineNumber ? (
-        <td className={gutterClasses} role="presentation" aria-hidden="true">
-          {displayLineNumber ?? ''}
-        </td>
-      ) : lineNumberMode === 'left' ? (
-        /* AC-3.3.14: Left filter shows only old line numbers */
-        <td className={gutterClasses} role="presentation" aria-hidden="true">
-          {line.oldLineNumber ?? ''}
-        </td>
-      ) : lineNumberMode === 'right' ? (
-        /* AC-3.3.15: Right filter shows only new line numbers */
-        <td className={gutterClasses} role="presentation" aria-hidden="true">
-          {line.newLineNumber ?? ''}
-        </td>
-      ) : (
-        <>
-          {/* AC-1.4.4: Line numbers - both mode shows old and new */}
-          <td className={gutterClasses} role="presentation" aria-hidden="true">
-            {line.oldLineNumber ?? ''}
-          </td>
-          <td className={gutterClasses} role="presentation" aria-hidden="true">
-            {line.newLineNumber ?? ''}
-          </td>
-        </>
-      )}
+      {/* Gutter columns - always two: annotation + line number */}
+      <td className={`diff-gutter diff-gutter-annotation ${GUTTER_TYPE_CLASSES[line.type]}`} role="presentation" aria-hidden="true">
+        {/* Annotation placeholder for future use (code coverage, lint markers) */}
+      </td>
+      <td className={gutterClasses} role="presentation" aria-hidden="true">
+        {singleLineNumber ? (
+          displayLineNumber ?? ''
+        ) : lineNumberMode === 'left' ? (
+          /* AC-3.3.14: Left filter shows only old line numbers */
+          line.oldLineNumber ?? ''
+        ) : (
+          /* AC-3.3.15: Right filter and 'both' mode show new line numbers */
+          line.newLineNumber ?? ''
+        )}
+      </td>
 
       {/* AC-1.4.9: Screen reader accessible */}
       {/* AC-3.4.6: Screen reader announces modifications */}
@@ -228,6 +217,7 @@ export function DiffLine({
 export function DiffLineSpacer() {
   return (
     <tr className="diff-line diff-line-spacer" data-testid="diff-line-spacer" aria-hidden="true">
+      <td className="diff-gutter diff-gutter-annotation diff-gutter-spacer" />
       <td className="diff-gutter diff-gutter-spacer" />
       <td className="diff-content">
         <span className="diff-code">&nbsp;</span>

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDiffStore } from '@/features/diff';
-import { useIterationAwareFiles } from '@/features/diff/hooks';
+import { useFileDisplayOrder } from '@/features/diff/hooks';
 import { PR_DESCRIPTION_INDEX } from '@/features/diff/stores';
 
 /**
@@ -13,7 +13,8 @@ export function useKeyboardShortcuts() {
   const selectFile = useDiffStore((s) => s.selectFile);
   const scrollToNextChange = useDiffStore((s) => s.scrollToNextChange);
   const scrollToPreviousChange = useDiffStore((s) => s.scrollToPreviousChange);
-  const { files } = useIterationAwareFiles();
+  // Issue #261: Use display order (grouped by folder) for navigation
+  const { files } = useFileDisplayOrder();
 
   // Iteration-aware file navigation (Issue #189)
   // Navigate through the same file list that FileList displays

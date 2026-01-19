@@ -1268,6 +1268,7 @@ a:hover {
   --diff-hunk-gutter: #E6EAEF;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
 }
 
 .diff-visual-studio-dark-hc,
@@ -1310,6 +1311,7 @@ a:hover {
   --diff-hunk-gutter: #E6EAEF;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
 }
 
 .diff-codeflow-classic-dark-hc,
@@ -1352,6 +1354,7 @@ a:hover {
   --diff-hunk-gutter: #E6EAEF;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
 }
 
 .diff-codeflow-redgreen-dark-hc,
