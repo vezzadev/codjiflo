@@ -80,6 +80,13 @@ interface VisibleLineRangesResult {
 }
 
 /**
+ * Minimum number of visible lines required to use visibleRange calculation.
+ * Below this threshold, we use anchor-based calculation to avoid jitter
+ * when borderline context lines enter/exit the viewport during scroll.
+ */
+const MIN_VISIBLE_LINES_FOR_RANGE = 3;
+
+/**
  * Calculate visible line ranges from row indices and diff lines
  *
  * This function maps visible row indices (from react-window) to actual file
@@ -88,6 +95,12 @@ interface VisibleLineRangesResult {
  * When one side has no visible lines (e.g., viewing pure additions), it also
  * provides an "anchor" - the last line number from that side before the visible
  * range. This allows consistent lasso positioning during transitions.
+ *
+ * To prevent jitter at boundaries, when only 1-2 lines are visible on a side,
+ * we treat it as "no visible lines" and use anchor-based positioning instead.
+ * This provides smoother transitions when scrolling through regions where
+ * one side has sparse content (e.g., scrolling through additions where only
+ * occasional context lines appear on the left).
  */
 function calculateVisibleLineRangesFromRows(
   startIndex: number,
@@ -107,6 +120,8 @@ function calculateVisibleLineRangesFromRows(
   let leftLast: number | null = null;
   let rightFirst: number | null = null;
   let rightLast: number | null = null;
+  let leftCount = 0;
+  let rightCount = 0;
 
   for (let i = firstRow; i <= lastRow; i++) {
     const line = diffLines[i];
@@ -116,23 +131,31 @@ function calculateVisibleLineRangesFromRows(
     if (line.oldLineNumber != null) {
       leftFirst ??= line.oldLineNumber;
       leftLast = line.oldLineNumber;
+      leftCount++;
     }
 
     // Track right side line numbers (additions and context)
     if (line.newLineNumber != null) {
       rightFirst ??= line.newLineNumber;
       rightLast = line.newLineNumber;
+      rightCount++;
     }
   }
 
   // Find anchor positions by looking at rows before the visible range
-  // These are used when one side has no visible content
+  // These are used when one side has no visible content (or too few lines)
   let leftAnchor: number | null = null;
   let rightAnchor: number | null = null;
 
-  if (leftFirst === null) {
-    // No left lines in visible range - find the last left line before it
-    for (let i = firstRow - 1; i >= 0; i--) {
+  // Use anchor-based calculation when visible lines are below threshold
+  // This prevents jitter when borderline context lines enter/exit viewport
+  const useLeftAnchor = leftFirst === null || leftCount < MIN_VISIBLE_LINES_FOR_RANGE;
+  const useRightAnchor = rightFirst === null || rightCount < MIN_VISIBLE_LINES_FOR_RANGE;
+
+  if (useLeftAnchor) {
+    // Find the last left line before or within the visible range
+    // Start from lastRow to find the most recent left line
+    for (let i = lastRow; i >= 0; i--) {
       const line = diffLines[i];
       if (line?.oldLineNumber != null) {
         leftAnchor = line.oldLineNumber;
@@ -141,9 +164,9 @@ function calculateVisibleLineRangesFromRows(
     }
   }
 
-  if (rightFirst === null) {
-    // No right lines in visible range - find the last right line before it
-    for (let i = firstRow - 1; i >= 0; i--) {
+  if (useRightAnchor) {
+    // Find the last right line before or within the visible range
+    for (let i = lastRow; i >= 0; i--) {
       const line = diffLines[i];
       if (line?.newLineNumber != null) {
         rightAnchor = line.newLineNumber;
@@ -153,14 +176,15 @@ function calculateVisibleLineRangesFromRows(
   }
 
   return {
-    left: leftFirst !== null && leftLast !== null
+    // Only return visible range if we have enough lines (not borderline)
+    left: leftFirst !== null && leftLast !== null && !useLeftAnchor
       ? { firstLine: leftFirst, lastLine: leftLast }
       : null,
-    right: rightFirst !== null && rightLast !== null
+    right: rightFirst !== null && rightLast !== null && !useRightAnchor
       ? { firstLine: rightFirst, lastLine: rightLast }
       : null,
-    leftAnchor,
-    rightAnchor,
+    leftAnchor: useLeftAnchor ? leftAnchor : null,
+    rightAnchor: useRightAnchor ? rightAnchor : null,
   };
 }
 
