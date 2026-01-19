@@ -8,53 +8,7 @@
 
 import { useMemo } from 'react';
 import { useIterationAwareFiles, type IterationAwareFile } from './useIterationAwareFiles';
-
-interface FileGroup {
-  folder: string;
-  files: IterationAwareFile[];
-}
-
-/**
- * Get parent directory path from a filename
- */
-function getParentPath(filename: string): string {
-  const lastSlash = filename.lastIndexOf('/');
-  if (lastSlash === -1) return '/';
-  return '/' + filename.substring(0, lastSlash);
-}
-
-/**
- * Group files by their parent directory
- * Note: This is duplicated from FileList.tsx to avoid circular dependencies.
- * The canonical implementation is in FileList.tsx - keep them in sync.
- */
-function groupFilesByFolder(files: IterationAwareFile[]): FileGroup[] {
-  const groups = new Map<string, IterationAwareFile[]>();
-  for (const file of files) {
-    const folder = getParentPath(file.filename);
-    const existing = groups.get(folder);
-    if (existing) {
-      existing.push(file);
-    } else {
-      groups.set(folder, [file]);
-    }
-  }
-  // Sort folders alphabetically, root "/" first
-  return Array.from(groups.entries())
-    .sort(([a], [b]) => (a === '/' ? -1 : b === '/' ? 1 : a.localeCompare(b)))
-    .map(([folder, files]) => ({ folder, files }));
-}
-
-/**
- * Flatten grouped files into display order
- */
-function flattenGroupedFiles(groups: FileGroup[]): IterationAwareFile[] {
-  const result: IterationAwareFile[] = [];
-  for (const group of groups) {
-    result.push(...group.files);
-  }
-  return result;
-}
+import { groupFilesByFolder, flattenGroupedFiles } from '../utils';
 
 interface FileDisplayOrderResult {
   /** Files in display order (matching FileList visual order) */
