@@ -25,6 +25,18 @@ interface DiffLineProps {
   hasFullContent?: boolean;
   /** Text wrap mode: 'nowrap' for horizontal scroll, 'wrap' for line wrapping */
   textWrap?: TextWrap;
+  /** Row index for focus management (0-indexed) */
+  rowIndex?: number;
+  /** Whether this row is currently focused for keyboard navigation */
+  isFocused?: boolean;
+  /** Click handler for row focus */
+  onRowClick?: (e: React.MouseEvent, index: number) => void;
+  /** Keyboard handler for row navigation */
+  onRowKeyDown?: (e: React.KeyboardEvent, index: number) => void;
+  /** Handler to block text input in contentEditable mode */
+  onBeforeInput?: (e: React.FormEvent) => void;
+  /** Callback to register row ref for focus management */
+  registerRowRef?: (index: number, element: HTMLTableRowElement | null) => void;
 }
 
 const LINE_TYPE_CLASSES: Record<string, string> = {
@@ -135,6 +147,12 @@ export function DiffLine({
   lineIndex,
   hasFullContent = false,
   textWrap = 'nowrap',
+  rowIndex,
+  isFocused = false,
+  onRowClick,
+  onRowKeyDown,
+  onBeforeInput,
+  registerRowRef,
 }: DiffLineProps) {
   const hasWordDiff = line.wordDiff && line.wordDiff.length > 0;
 
@@ -162,11 +180,32 @@ export function DiffLine({
       ? line.newLineNumber
       : null;
 
-  const rowClasses = ['diff-line', LINE_TYPE_CLASSES[line.type]].filter(Boolean).join(' ');
+  const rowClasses = [
+    'diff-line',
+    LINE_TYPE_CLASSES[line.type],
+    isFocused ? 'diff-line-focused' : '',
+  ].filter(Boolean).join(' ');
   const gutterClasses = ['diff-gutter', GUTTER_TYPE_CLASSES[line.type]].filter(Boolean).join(' ');
 
+  // Skip focus behavior for header rows (hunk separators)
+  const isCodeRow = line.type !== 'header';
+  const canFocus = isCodeRow && rowIndex !== undefined;
+
   return (
-    <tr className={rowClasses} data-testid="diff-line" data-line-type={line.type} role="presentation">
+    <tr
+      className={rowClasses}
+      data-testid="diff-line"
+      data-line-type={line.type}
+      role={canFocus ? 'row' : 'presentation'}
+      tabIndex={canFocus ? (isFocused ? 0 : -1) : undefined}
+      aria-rowindex={canFocus ? rowIndex + 1 : undefined}
+      contentEditable={canFocus && isFocused ? true : undefined}
+      suppressContentEditableWarning={canFocus && isFocused ? true : undefined}
+      onClick={canFocus && onRowClick ? (e) => onRowClick(e, rowIndex) : undefined}
+      onKeyDown={canFocus && onRowKeyDown ? (e) => onRowKeyDown(e, rowIndex) : undefined}
+      onBeforeInput={canFocus && isFocused && onBeforeInput ? onBeforeInput : undefined}
+      ref={canFocus && registerRowRef ? (el) => registerRowRef(rowIndex, el) : undefined}
+    >
       {/* Gutter columns - always two: annotation + line number */}
       <td className={`diff-gutter diff-gutter-annotation ${GUTTER_TYPE_CLASSES[line.type]}`} role="presentation" aria-hidden="true">
         {/* Annotation placeholder for future use (code coverage, lint markers) */}

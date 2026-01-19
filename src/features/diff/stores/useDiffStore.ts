@@ -26,6 +26,7 @@ export const useDiffStore = create<DiffState>()(
       viewConfig: DEFAULT_VIEW_CONFIG,
       currentChangeIndex: -1,
       totalChangeCount: 0,
+      focusedRowIndex: null,
 
       loadFiles: async (owner, repo, number) => {
         set({ isLoading: true, error: null });
@@ -56,7 +57,7 @@ export const useDiffStore = create<DiffState>()(
         // Note: In iteration mode, artifact-only files may have indices >= GitHub files.length
         // DiffView handles missing files gracefully via useIterationAwareFiles
         if (index === PR_DESCRIPTION_INDEX || index >= 0) {
-          set({ selectedFileIndex: index, currentChangeIndex: -1 });
+          set({ selectedFileIndex: index, currentChangeIndex: -1, focusedRowIndex: null });
         }
       },
 
@@ -159,6 +160,15 @@ export const useDiffStore = create<DiffState>()(
         set({ totalChangeCount: count });
       },
 
+      // Row focus actions (for keyboard text selection)
+      setFocusedRow: (index) => {
+        set({ focusedRowIndex: index });
+      },
+
+      clearRowFocus: () => {
+        set({ focusedRowIndex: null });
+      },
+
       reset: () => set({
         files: [],
         selectedFileIndex: PR_DESCRIPTION_INDEX,
@@ -166,6 +176,7 @@ export const useDiffStore = create<DiffState>()(
         error: null,
         currentChangeIndex: -1,
         totalChangeCount: 0,
+        focusedRowIndex: null,
         // Keep viewConfig on reset - it's a user preference
       }),
     }),

@@ -5,6 +5,7 @@ export { useSyntaxTheme } from './useSyntaxTheme';
 export { useDiffPipeline } from './useDiffPipeline';
 export { useDraftComment } from './useDraftComment';
 export { useContainerHeight } from './useContainerHeight';
+export { useRowFocus, useIsRowFocusActive } from './useRowFocus';
 
 export type { IterationAwareFile } from './useIterationAwareFiles';
 export type { UseDraftCommentReturn } from './useDraftComment';

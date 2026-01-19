@@ -8,6 +8,7 @@ import { DiffLine } from './DiffLine';
 import type { ParsedDiffLine, TextWrap } from '../types';
 import type { ReviewThread } from '@/features/comments';
 import { CommentThread, CommentEditor } from '@/features/comments';
+import { useRowFocus } from '../hooks/useRowFocus';
 
 /** Default line height from CSS variables (--diff-line-height) */
 const DEFAULT_ROW_HEIGHT = 23;
@@ -75,6 +76,12 @@ interface RowData {
   hasFullContent: boolean;
   showComments: boolean;
   textWrap: TextWrap;
+  // Row focus props
+  focusedRowIndex: number | null;
+  onRowClick: (e: React.MouseEvent, index: number) => void;
+  onRowKeyDown: (e: React.KeyboardEvent, index: number) => void;
+  onBeforeInput: (e: React.FormEvent) => void;
+  registerRowRef: (index: number, element: HTMLTableRowElement | null) => void;
 }
 
 /**
@@ -103,6 +110,11 @@ function DiffRow({
   hasFullContent,
   showComments,
   textWrap,
+  focusedRowIndex,
+  onRowClick,
+  onRowKeyDown,
+  onBeforeInput,
+  registerRowRef,
 }: RowComponentProps<RowData>) {
 
   const line = diffLines[index];
@@ -132,6 +144,12 @@ function DiffRow({
             lineIndex={index}
             hasFullContent={hasFullContent}
             textWrap={textWrap}
+            rowIndex={index}
+            isFocused={focusedRowIndex === index}
+            onRowClick={onRowClick}
+            onRowKeyDown={onRowKeyDown}
+            onBeforeInput={onBeforeInput}
+            registerRowRef={registerRowRef}
           />
           {showDraftHere && (
             <tr>
@@ -201,6 +219,15 @@ export function InlineDiffTable({
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Row focus management for keyboard text selection
+  const {
+    focusedRowIndex,
+    handleRowClick,
+    handleRowKeyDown,
+    handleBeforeInput,
+    registerRowRef,
+  } = useRowFocus(diffLines.length);
 
   // Handle visible rows change from react-window
   const handleRowsRendered = useCallback(
@@ -389,6 +416,11 @@ export function InlineDiffTable({
       hasFullContent,
       showComments,
       textWrap,
+      focusedRowIndex,
+      onRowClick: handleRowClick,
+      onRowKeyDown: handleRowKeyDown,
+      onBeforeInput: handleBeforeInput,
+      registerRowRef,
     }),
     [
       diffLines,
@@ -411,6 +443,11 @@ export function InlineDiffTable({
       hasFullContent,
       showComments,
       textWrap,
+      focusedRowIndex,
+      handleRowClick,
+      handleRowKeyDown,
+      handleBeforeInput,
+      registerRowRef,
     ]
   );
 

@@ -13,6 +13,7 @@ vi.mock('@/features/diff', () => ({
 
 vi.mock('@/features/diff/hooks', () => ({
   useFileDisplayOrder: vi.fn(),
+  useIsRowFocusActive: vi.fn(() => false),
 }));
 
 describe('useKeyboardShortcuts', () => {

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDiffStore } from '@/features/diff';
-import { useFileDisplayOrder } from '@/features/diff/hooks';
+import { useFileDisplayOrder, useIsRowFocusActive } from '@/features/diff/hooks';
 import { PR_DESCRIPTION_INDEX } from '@/features/diff/stores';
 
 /**
@@ -15,6 +15,7 @@ export function useKeyboardShortcuts() {
   const scrollToPreviousChange = useDiffStore((s) => s.scrollToPreviousChange);
   // Issue #261: Use display order (grouped by folder) for navigation
   const { files } = useFileDisplayOrder();
+  const isRowFocusActive = useIsRowFocusActive();
 
   // Iteration-aware file navigation (Issue #189)
   // Navigate through the same file list that FileList displays
@@ -73,13 +74,17 @@ export function useKeyboardShortcuts() {
 
     switch (event.key) {
       // j = Next change (within file)
+      // Disabled when row focus is active (user is using arrow keys for text selection)
       case 'j':
+        if (isRowFocusActive) return;
         event.preventDefault();
         scrollToNextChange();
         break;
 
       // k = Previous change (within file)
+      // Disabled when row focus is active (user is using arrow keys for text selection)
       case 'k':
+        if (isRowFocusActive) return;
         event.preventDefault();
         scrollToPreviousChange();
         break;
@@ -106,7 +111,7 @@ export function useKeyboardShortcuts() {
         break;
       }
     }
-  }, [selectNextFile, selectPreviousFile, scrollToNextChange, scrollToPreviousChange]);
+  }, [selectNextFile, selectPreviousFile, scrollToNextChange, scrollToPreviousChange, isRowFocusActive]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

@@ -106,6 +106,16 @@
   filter: brightness(0.95);
 }
 
+/* Focused row for keyboard text selection */
+.diff-line-focused {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.diff-line-focused .diff-code {
+  cursor: text;
+}
+
 .diff-line-addition {
   background-color: var(--diff-add-line);
   color: var(--diff-add-fg);

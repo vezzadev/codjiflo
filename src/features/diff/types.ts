@@ -96,6 +96,10 @@ export interface DiffState {
   /** Total number of hunks (change groups) in current file, set by DiffView */
   totalChangeCount: number;
 
+  /** Row-level focus state for keyboard text selection (transient, not persisted) */
+  /** Focused row index, null = no row focused */
+  focusedRowIndex: number | null;
+
   // File actions
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
   selectFile: (index: number) => void;
@@ -116,6 +120,10 @@ export interface DiffState {
   scrollToPreviousChange: () => void;
   resetChangeIndex: () => void;
   setTotalChangeCount: (count: number) => void;
+
+  // Row focus actions (for keyboard text selection)
+  setFocusedRow: (index: number | null) => void;
+  clearRowFocus: () => void;
 }
 
 /**
