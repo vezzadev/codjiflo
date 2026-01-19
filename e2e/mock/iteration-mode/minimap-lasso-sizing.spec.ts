@@ -225,7 +225,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Wait for lasso to move to the top area AND stabilize
     await expect.poll(async () => {
       const res1 = await getLassoHeight(page);
-      await page.waitForTimeout(50);
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const res2 = await getLassoHeight(page);
       // Ensure stability and condition
       if (res1.leftTop !== res2.leftTop) return null;
@@ -247,7 +247,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Wait for lasso to move down AND stabilize
     await expect.poll(async () => {
       const res1 = await getLassoHeight(page);
-      await page.waitForTimeout(50);
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const res2 = await getLassoHeight(page);
       if (res1.leftTop !== res2.leftTop) return null;
       return res1.leftTop;
@@ -268,7 +268,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     // Wait for lasso to move down AND stabilize
     await expect.poll(async () => {
       const res1 = await getLassoHeight(page);
-      await page.waitForTimeout(50);
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const res2 = await getLassoHeight(page);
       if (res1.leftTop !== res2.leftTop) return null;
       return res1.leftTop;

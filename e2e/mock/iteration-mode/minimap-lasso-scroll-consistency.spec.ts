@@ -209,8 +209,9 @@ ${patchAddedLines}
         // If path hasn't changed from start of loop, keep waiting
         if (path1 === lastPath) return null;
         
-        // Check for stability
-        await page.waitForTimeout(50); 
+        // Check for stability: wait 2 frames to ensure render settles
+        await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+        
         const path2 = await getPath();
         return path1 === path2 ? path1 : null;
       }, { message: `Wait for lasso update & stabilize iteration ${i}` }).toBeTruthy();
