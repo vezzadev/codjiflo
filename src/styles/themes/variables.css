@@ -734,7 +734,6 @@ a:hover {
   --diff-hunk-gutter: #B6E3FF;
   --diff-hunk-fg: #59636E;
   --diff-empty-line: #F6F8FA;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-dark {
@@ -773,7 +772,6 @@ a:hover {
   --diff-hunk-gutter: #9CD7FF;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-dark-hc {
@@ -853,7 +851,6 @@ a:hover {
   --diff-hunk-gutter: #E2C5F1;
   --diff-hunk-fg: #59636E;
   --diff-empty-line: #F6F8FA;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-protanopia-dark {
@@ -892,7 +889,6 @@ a:hover {
   --diff-hunk-gutter: #E0B8F7;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-protanopia-dark-hc {
@@ -972,7 +968,6 @@ a:hover {
   --diff-hunk-gutter: #B6E3FF;
   --diff-hunk-fg: #59636E;
   --diff-empty-line: #F6F8FA;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-tritanopia-dark {
@@ -1011,7 +1006,6 @@ a:hover {
   --diff-hunk-gutter: #9CD7FF;
   --diff-hunk-fg: #454C54;
   --diff-empty-line: #E6EAEF;
-  --diff-area-bg: #FFFFFF;
 }
 
 .diff-github-tritanopia-dark-hc {
