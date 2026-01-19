@@ -202,12 +202,18 @@ ${patchAddedLines}
     for (let i = 0; i < 5; i++) {
       await scrollDiffBy(page, scrollPixels);
       
-      // Wait for lasso path to change
+      // Wait for lasso path to change AND stabilize
+      // This ensures we don't capture transient render states (jitter)
       await expect.poll(async () => {
-        const currentPath = await getPath();
-        const changed = currentPath !== lastPath;
-        return changed;
-      }, { message: `Wait for lasso update iteration ${i}` }).toBe(true);
+        const path1 = await getPath();
+        // If path hasn't changed from start of loop, keep waiting
+        if (path1 === lastPath) return null;
+        
+        // Check for stability
+        await page.waitForTimeout(50); 
+        const path2 = await getPath();
+        return path1 === path2 ? path1 : null;
+      }, { message: `Wait for lasso update & stabilize iteration ${i}` }).toBeTruthy();
 
       lastPath = await getPath();
       measurements.push(await getLassoLeftTopY(page));
@@ -237,22 +243,10 @@ ${patchAddedLines}
     expect(totalMovement).toBeGreaterThan(0);
 
     // Key assertion: No erratic backward jumps
-    // Bug fixed: When scrolling through added-only lines, the lasso used to jump backwards
-    // erratically (e.g., -44px). The fix ensures smooth forward movement.
-    //
-    // Note: Zero deltas are expected when small scrolls don't change visible row ranges
-    // (react-window uses row-level granularity). That's correct behavior.
-    //
-    // We verify:
-    // 1. No large negative deltas (erratic backward jumps)
-    // 2. Overall movement is in the expected direction (forward when scrolling down)
+    // We expect smooth forward movement. Small negative values due to rounding are okay.
     const minDelta = Math.min(...deltas);
-    // Increased from 10 to 30 to account for observed jitter (up to -22px) when using expect.poll
-    // with virtualized lists, where anchor calculations can fluctuate slightly during scrolls.
-    const maxNegativeJump = 30; 
+    const maxNegativeJump = 10;
     expect(minDelta).toBeGreaterThan(-maxNegativeJump);
 
-    // Overall direction should be forward (positive) when scrolling down
-    expect(m5).toBeGreaterThanOrEqual(m0);
   });
 });

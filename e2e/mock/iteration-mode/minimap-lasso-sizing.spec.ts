@@ -222,10 +222,14 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.y + 12
     );
     
-    // Wait for lasso to move to the top area (leftTop should be small)
+    // Wait for lasso to move to the top area AND stabilize
     await expect.poll(async () => {
-      const res = await getLassoHeight(page);
-      return res.leftTop;
+      const res1 = await getLassoHeight(page);
+      await page.waitForTimeout(50);
+      const res2 = await getLassoHeight(page);
+      // Ensure stability and condition
+      if (res1.leftTop !== res2.leftTop) return null;
+      return res1.leftTop;
     }, { message: "Wait for lasso to move to top" }).toBeLessThan(50);
 
     // Get lasso at top of file
@@ -240,10 +244,13 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.y + minimapBox.height * 0.5
     );
     
-    // Wait for lasso to move down (must be significantly below top)
+    // Wait for lasso to move down AND stabilize
     await expect.poll(async () => {
-      const res = await getLassoHeight(page);
-      return res.leftTop;
+      const res1 = await getLassoHeight(page);
+      await page.waitForTimeout(50);
+      const res2 = await getLassoHeight(page);
+      if (res1.leftTop !== res2.leftTop) return null;
+      return res1.leftTop;
     }, { message: "Wait for lasso to move to middle" }).toBeGreaterThan(topResult.leftTop + 20);
 
     // Get lasso at middle
@@ -258,10 +265,13 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.y + minimapBox.height * 0.9
     );
     
-    // Wait for lasso to move down (must be significantly below middle)
+    // Wait for lasso to move down AND stabilize
     await expect.poll(async () => {
-      const res = await getLassoHeight(page);
-      return res.leftTop;
+      const res1 = await getLassoHeight(page);
+      await page.waitForTimeout(50);
+      const res2 = await getLassoHeight(page);
+      if (res1.leftTop !== res2.leftTop) return null;
+      return res1.leftTop;
     }, { message: "Wait for lasso to move to bottom" }).toBeGreaterThan(middleResult.leftTop + 20);
 
     // Get lasso at bottom
