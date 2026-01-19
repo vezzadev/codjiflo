@@ -938,66 +938,47 @@ describe('DiffView', () => {
       });
     };
 
-    it('ArrowDown scrolls the diff content area down', () => {
+    // Helper to get the scrollable virtualized list element inside the diff region
+    const getScrollableList = (diffRegion: HTMLElement): HTMLElement => {
+      const scrollable = diffRegion.querySelector('.virtualized-inline-list');
+      if (!scrollable) {
+        throw new Error('Virtualized list not found');
+      }
+      return scrollable as HTMLElement;
+    };
+
+    it('PageDown scrolls the diff content area by a page minus 3 lines for context', () => {
       setupKeyboardTest();
       render(<DiffView />);
 
       const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
-      diffRegion.scrollBy = vi.fn();
-
-      // Focus the diff area and press ArrowDown
-      fireEvent.keyDown(diffRegion, { key: 'ArrowDown' });
-
-      // Should scroll down by 2 lines (2 * 23 = 46px)
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollBy).toHaveBeenCalledWith({ top: 46, behavior: 'smooth' });
-    });
-
-    it('ArrowUp scrolls the diff content area up', () => {
-      setupKeyboardTest();
-      render(<DiffView />);
-
-      const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
-      diffRegion.scrollBy = vi.fn();
-
-      // Focus the diff area and press ArrowUp
-      fireEvent.keyDown(diffRegion, { key: 'ArrowUp' });
-
-      // Should scroll up by 2 lines (2 * 23 = -46px)
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollBy).toHaveBeenCalledWith({ top: -46, behavior: 'smooth' });
-    });
-
-    it('PageDown scrolls the diff content area by a page', () => {
-      setupKeyboardTest();
-      render(<DiffView />);
-
-      const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
-      diffRegion.scrollBy = vi.fn();
+      const scrollable = getScrollableList(diffRegion);
+      scrollable.scrollBy = vi.fn();
 
       // Focus the diff area and press PageDown
       fireEvent.keyDown(diffRegion, { key: 'PageDown' });
 
-      // Should scroll down by floor(containerHeight / LINE_HEIGHT) * LINE_HEIGHT
+      // Should scroll down by (floor(containerHeight / LINE_HEIGHT) - 3) * LINE_HEIGHT
       // containerHeight = 600, LINE_HEIGHT = 23
-      // floor(600 / 23) = 26 lines, 26 * 23 = 598px
+      // floor(600 / 23) = 26 lines, 26 - 3 = 23 lines, 23 * 23 = 529px
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollBy).toHaveBeenCalledWith({ top: 598, behavior: 'smooth' });
+      expect(scrollable.scrollBy).toHaveBeenCalledWith({ top: 529, behavior: 'smooth' });
     });
 
-    it('PageUp scrolls the diff content area up by a page', () => {
+    it('PageUp scrolls the diff content area up by a page minus 3 lines for context', () => {
       setupKeyboardTest();
       render(<DiffView />);
 
       const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
-      diffRegion.scrollBy = vi.fn();
+      const scrollable = getScrollableList(diffRegion);
+      scrollable.scrollBy = vi.fn();
 
       // Focus the diff area and press PageUp
       fireEvent.keyDown(diffRegion, { key: 'PageUp' });
 
-      // Should scroll up by floor(containerHeight / LINE_HEIGHT) * LINE_HEIGHT
+      // Should scroll up by (floor(containerHeight / LINE_HEIGHT) - 3) * LINE_HEIGHT
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollBy).toHaveBeenCalledWith({ top: -598, behavior: 'smooth' });
+      expect(scrollable.scrollBy).toHaveBeenCalledWith({ top: -529, behavior: 'smooth' });
     });
 
     it('Home scrolls to the top of the diff content area', () => {
@@ -1005,14 +986,15 @@ describe('DiffView', () => {
       render(<DiffView />);
 
       const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
-      diffRegion.scrollTo = vi.fn();
+      const scrollable = getScrollableList(diffRegion);
+      scrollable.scrollTo = vi.fn();
 
       // Focus the diff area and press Home
       fireEvent.keyDown(diffRegion, { key: 'Home' });
 
       // Should scroll to top
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+      expect(scrollable.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
     });
 
     it('End scrolls to the bottom of the diff content area', () => {
@@ -1020,16 +1002,17 @@ describe('DiffView', () => {
       render(<DiffView />);
 
       const diffRegion = screen.getByRole('region', { name: /Diff content for src\/index.ts/i });
+      const scrollable = getScrollableList(diffRegion);
       // Mock scrollHeight property
-      Object.defineProperty(diffRegion, 'scrollHeight', { value: 5000, configurable: true });
-      diffRegion.scrollTo = vi.fn();
+      Object.defineProperty(scrollable, 'scrollHeight', { value: 5000, configurable: true });
+      scrollable.scrollTo = vi.fn();
 
       // Focus the diff area and press End
       fireEvent.keyDown(diffRegion, { key: 'End' });
 
       // Should scroll to bottom
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(diffRegion.scrollTo).toHaveBeenCalledWith({ top: 5000, behavior: 'smooth' });
+      expect(scrollable.scrollTo).toHaveBeenCalledWith({ top: 5000, behavior: 'smooth' });
     });
   });
 

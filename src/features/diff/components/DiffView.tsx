@@ -32,8 +32,6 @@ const ANNOUNCEMENT_TIMEOUT_MS = 4000;
 
 /** Line height matching CSS --diff-line-height and DEFAULT_ROW_HEIGHT */
 const LINE_HEIGHT = 23;
-/** Number of lines to scroll with arrow keys */
-const ARROW_SCROLL_LINES = 2;
 
 /**
  * Main diff view component with support for inline and side-by-side modes.
@@ -106,41 +104,37 @@ export function DiffView() {
 
   // Handler for keyboard scrolling in diff content area
   const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
+    // Find the actual scrollable element (virtualized list) inside the region
+    const scrollable = e.currentTarget.querySelector('.virtualized-inline-list, .virtualized-split-list');
+    if (!scrollable) return;
+
     let scrollLines: number | null = null;
 
-    // Calculate whole number of lines that fit in viewport for page scroll
+    // Calculate lines per page, leaving 3 lines visible for context
     const linesPerPage = Math.floor(containerHeight / LINE_HEIGHT);
+    const pageScrollLines = Math.max(1, linesPerPage - 3);
 
     switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        scrollLines = ARROW_SCROLL_LINES;
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        scrollLines = -ARROW_SCROLL_LINES;
-        break;
       case 'PageDown':
         e.preventDefault();
-        scrollLines = linesPerPage;
+        scrollLines = pageScrollLines;
         break;
       case 'PageUp':
         e.preventDefault();
-        scrollLines = -linesPerPage;
+        scrollLines = -pageScrollLines;
         break;
       case 'Home':
         e.preventDefault();
-        target.scrollTo({ top: 0, behavior: 'smooth' });
+        scrollable.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       case 'End':
         e.preventDefault();
-        target.scrollTo({ top: target.scrollHeight, behavior: 'smooth' });
+        scrollable.scrollTo({ top: scrollable.scrollHeight, behavior: 'smooth' });
         return;
     }
 
     if (scrollLines !== null) {
-      target.scrollBy({ top: scrollLines * LINE_HEIGHT, behavior: 'smooth' });
+      scrollable.scrollBy({ top: scrollLines * LINE_HEIGHT, behavior: 'smooth' });
     }
   }, [containerHeight]);
 
