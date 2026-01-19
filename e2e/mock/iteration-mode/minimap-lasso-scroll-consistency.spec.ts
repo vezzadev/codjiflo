@@ -190,30 +190,27 @@ ${patchAddedLines}
     // Collect measurements while scrolling down through added lines
     const measurements: number[] = [];
     const scrollPixels = 40; // 2 lines worth (~20px per line)
+    
+    const lasso = minimap.locator(".minimap-lasso");
+    const getPath = async () => lasso.getAttribute("d");
 
     // Initial measurement
+    let lastPath = await getPath();
     measurements.push(await getLassoLeftTopY(page));
 
     // Scroll down and measure 5 times
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
+    for (let i = 0; i < 5; i++) {
+      await scrollDiffBy(page, scrollPixels);
+      
+      // Wait for lasso path to change
+      await expect.poll(async () => {
+        const currentPath = await getPath();
+        return currentPath !== lastPath;
+      }, { message: `Wait for lasso update iteration ${i}` }).toBe(true);
 
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
+      lastPath = await getPath();
+      measurements.push(await getLassoLeftTopY(page));
+    }
 
     // We now have exactly 6 measurements [0..5]
     const m0 = measurements[0] ?? 0;

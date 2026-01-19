@@ -217,7 +217,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBoxInit.x + minimapBoxInit.width / 2,
       minimapBoxInit.y + 20
     );
-    await waitForLasso(page);
+    
+    // Wait for lasso to move to the top area (leftTop should be small)
+    await expect.poll(async () => {
+      const res = await getLassoHeight(page);
+      return res.leftTop;
+    }, { message: "Wait for lasso to move to top" }).toBeLessThan(50);
 
     // Get lasso at top of file
     const topResult = await getLassoHeight(page);
@@ -230,7 +235,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.5
     );
-    await waitForLasso(page);
+    
+    // Wait for lasso to move down (must be significantly below top)
+    await expect.poll(async () => {
+      const res = await getLassoHeight(page);
+      return res.leftTop;
+    }, { message: "Wait for lasso to move to middle" }).toBeGreaterThan(topResult.leftTop + 20);
 
     // Get lasso at middle
     const middleResult = await getLassoHeight(page);
@@ -240,7 +250,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.9
     );
-    await waitForLasso(page);
+    
+    // Wait for lasso to move down (must be significantly below middle)
+    await expect.poll(async () => {
+      const res = await getLassoHeight(page);
+      return res.leftTop;
+    }, { message: "Wait for lasso to move to bottom" }).toBeGreaterThan(middleResult.leftTop + 20);
 
     // Get lasso at bottom
     const bottomResult = await getLassoHeight(page);
