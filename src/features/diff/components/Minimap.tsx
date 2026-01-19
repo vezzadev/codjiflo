@@ -220,6 +220,10 @@ export function Minimap({
 }: MinimapProps) {
   const { diffLines, alignedLines, viewMode, contentFilter, filename } = pipeline;
 
+  // Determine if bars should be disabled based on content filter
+  const isLeftDisabled = contentFilter === 'right';
+  const isRightDisabled = contentFilter === 'left';
+
   // Scroll tracking - pass filename as contentKey to refresh state when file changes
   const { scrollState } = useMinimapScroll(scrollContainerRef, containerHeight, filename);
 
@@ -365,6 +369,12 @@ export function Minimap({
       const y = event.clientY - rect.top;
 
       const side = getClickSide(x);
+      
+      // Don't handle clicks on disabled bars
+      if ((side === 'left' && isLeftDisabled) || (side === 'right' && isRightDisabled)) {
+        return;
+      }
+
       const barTop = side === 'left' ? leftBarTop : rightBarTop;
       const barHeight = side === 'left' ? barHeights.leftHeight : barHeights.rightHeight;
       const lineCount = side === 'left' ? lineCounts.leftLineCount : lineCounts.rightLineCount;
@@ -386,7 +396,7 @@ export function Minimap({
         onNavigate({ lineNumber: targetLine, side, type: 'click' });
       }
     },
-    [onNavigate, navigateToRow, diffLines, lineCounts, leftBarTop, rightBarTop, barHeights]
+    [onNavigate, navigateToRow, diffLines, lineCounts, leftBarTop, rightBarTop, barHeights, isLeftDisabled, isRightDisabled]
   );
 
   // Handle mouse down (start drag)
@@ -401,13 +411,20 @@ export function Minimap({
       const rect = svg.getBoundingClientRect();
       const x = event.clientX - rect.left;
 
-      dragSideRef.current = getClickSide(x);
+      const side = getClickSide(x);
+      
+      // Don't allow drag on disabled bars
+      if ((side === 'left' && isLeftDisabled) || (side === 'right' && isRightDisabled)) {
+        return;
+      }
+
+      dragSideRef.current = side;
       setIsDragging(true);
 
       // Prevent text selection during drag
       event.preventDefault();
     },
-    [showComments]
+    [showComments, isLeftDisabled, isRightDisabled]
   );
 
   // Handle mouse move (during drag)
@@ -484,10 +501,6 @@ export function Minimap({
       );
     });
   };
-
-  // Determine if bars should be disabled based on content filter
-  const isLeftDisabled = contentFilter === 'right';
-  const isRightDisabled = contentFilter === 'left';
 
   return (
     <svg
