@@ -356,6 +356,7 @@
   display: flex;
   align-items: center;
   user-select: none;
+  outline: none; /* Remove default focus outline to prevent double highlighting */
 }
 
 .content-filter-track {
