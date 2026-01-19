@@ -54,22 +54,22 @@ export function FileList() {
         case 'ArrowDown':
           e.preventDefault();
           // When no item is focused (currentIndex === -1), start at first item
-          nextIndex =
-            currentIndex === -1
-              ? 0
-              : currentIndex < items.length - 1
-                ? currentIndex + 1
-                : 0;
+          // Otherwise move to next item, stopping at the end (no wrap)
+          if (currentIndex === -1) {
+            nextIndex = 0;
+          } else if (currentIndex < items.length - 1) {
+            nextIndex = currentIndex + 1;
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
           // When no item is focused (currentIndex === -1), start at first item
-          nextIndex =
-            currentIndex === -1
-              ? 0
-              : currentIndex > 0
-                ? currentIndex - 1
-                : items.length - 1;
+          // Otherwise move to previous item, stopping at the start (no wrap)
+          if (currentIndex === -1) {
+            nextIndex = 0;
+          } else if (currentIndex > 0) {
+            nextIndex = currentIndex - 1;
+          }
           break;
         case 'PageDown':
           e.preventDefault();

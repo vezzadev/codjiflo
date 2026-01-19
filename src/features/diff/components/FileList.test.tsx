@@ -225,7 +225,7 @@ describe('FileList', () => {
       expect(document.activeElement).toBe(treeitems[1]); // folder header
     });
 
-    it('ArrowDown wraps to first item when at end', async () => {
+    it('ArrowDown stays at last item when at end (no wrap)', async () => {
       const user = userEvent.setup();
       setupKeyboardTest();
       render(<FileList />);
@@ -237,12 +237,11 @@ describe('FileList', () => {
       // Press ArrowDown
       await user.keyboard('{ArrowDown}');
 
-      // Should wrap to first item (PR description)
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
-      expect(document.activeElement).toBe(prDescription);
+      // Should stay at last item (no wrap)
+      expect(document.activeElement).toBe(file3);
     });
 
-    it('ArrowUp wraps to last item when at start', async () => {
+    it('ArrowUp stays at first item when at start (no wrap)', async () => {
       const user = userEvent.setup();
       setupKeyboardTest();
       render(<FileList />);
@@ -254,9 +253,8 @@ describe('FileList', () => {
       // Press ArrowUp
       await user.keyboard('{ArrowUp}');
 
-      // Should wrap to last item (file3.ts)
-      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
-      expect(document.activeElement).toBe(file3);
+      // Should stay at first item (no wrap)
+      expect(document.activeElement).toBe(prDescription);
     });
 
     it('ArrowDown focuses first item when no item is focused', () => {
