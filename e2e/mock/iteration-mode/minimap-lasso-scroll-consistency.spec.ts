@@ -7,6 +7,12 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import {
+  waitForLasso,
+  waitForLassoStable,
+  scrollDiffBy,
+  getLassoLeftTopY,
+} from "../../fixtures/minimap-helpers";
 
 test.describe("Minimap lasso scroll consistency", () => {
   const owner = "test";
@@ -108,49 +114,6 @@ ${patchAddedLines}
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  /**
-   * Extract the left side top Y position from the lasso path.
-   *
-   * The lasso path format starts with:
-   *   M (LEFT_BAR_X + r) leftTop
-   * So leftTop is at coords[1]
-   */
-  async function getLassoLeftTopY(page: import("@playwright/test").Page): Promise<number> {
-    const minimap = page.getByRole("img", { name: /minimap/i });
-    const lasso = minimap.locator(".minimap-lasso");
-    const pathD = await lasso.getAttribute("d");
-
-    if (!pathD) return 0;
-
-    const numbers = pathD.match(/[\d.]+/g);
-    if (!numbers || numbers.length < 2) return 0;
-
-    return Number(numbers[1]);
-  }
-
-  /**
-   * Wait for the minimap lasso to become visible
-   */
-  async function waitForLasso(page: import("@playwright/test").Page): Promise<void> {
-    const minimap = page.getByRole("img", { name: /minimap/i });
-    const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
-  }
-
-  /**
-   * Scroll the diff viewer by a specific number of pixels
-   */
-  async function scrollDiffBy(page: import("@playwright/test").Page, pixels: number): Promise<void> {
-    await page.evaluate((px) => {
-      const diffRegion = document.querySelector('[aria-label^="Diff content"]');
-      if (!diffRegion) return;
-      const listContainer = diffRegion.querySelector('[style*="overflow"]');
-      if (listContainer) {
-        listContainer.scrollTop += px;
-      }
-    }, pixels);
-  }
-
   test("lasso left top Y changes consistently when scrolling through added lines", async ({ page }) => {
     // This test verifies that when scrolling through a section of ONLY added lines
     // (where left side has no line numbers), the lasso position changes consistently.
@@ -182,7 +145,7 @@ ${patchAddedLines}
 
     // Navigate to the added lines section using J key (jump to next change)
     await page.keyboard.press("j");
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Verify we're in the added lines section (should see "ADDED" text)
     await expect(page.getByText(/const ADDED/).first()).toBeVisible();
@@ -191,29 +154,23 @@ ${patchAddedLines}
     const measurements: number[] = [];
     const scrollPixels = 40; // 2 lines worth (~20px per line)
 
+    // Prime the lasso calculation by doing a small scroll first
+    // This ensures the visible row range is fully updated and the lasso
+    // is using the anchor-based calculation (not stale scroll-ratio based)
+    await scrollDiffBy(page, 1);
+    await waitForLassoStable(page);
+
     // Initial measurement
     measurements.push(await getLassoLeftTopY(page));
 
     // Scroll down and measure 5 times
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
-
-    await scrollDiffBy(page, scrollPixels);
-    await waitForLasso(page);
-    measurements.push(await getLassoLeftTopY(page));
+    // Use waitForLassoStable to ensure the lasso has finished animating
+    // before taking measurements
+    for (let i = 0; i < 5; i++) {
+      await scrollDiffBy(page, scrollPixels);
+      await waitForLassoStable(page);
+      measurements.push(await getLassoLeftTopY(page));
+    }
 
     // We now have exactly 6 measurements [0..5]
     const m0 = measurements[0] ?? 0;

@@ -7,6 +7,11 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import {
+  waitForLasso,
+  waitForLassoStable,
+  getLassoHeight,
+} from "../../fixtures/minimap-helpers";
 
 test.describe("Minimap lasso sizing during scroll", () => {
   const owner = "test";
@@ -99,82 +104,6 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  /**
-   * Helper to extract lasso heights from SVG path
-   *
-   * The lasso path format from generateLassoPath is:
-   *   M (LEFT_BAR_X + r) leftTop           -> coords[0], coords[1]
-   *   L leftBarRight leftTop               -> coords[2], coords[3]
-   *   L rightBarLeft rightTop              -> coords[4], coords[5]
-   *   L (rightBarRight - r) rightTop       -> coords[6], coords[7]
-   *   Q rightBarRight rightTop rightBarRight (rightTop + r)  -> coords[8-11]
-   *   L rightBarRight (rightBottom - r)    -> coords[12], coords[13]
-   *   Q rightBarRight rightBottom (rightBarRight - r) rightBottom  -> coords[14-17]
-   *   L rightBarLeft rightBottom           -> coords[18], coords[19]
-   *   L leftBarRight leftBottom            -> coords[20], coords[21]
-   *   L (LEFT_BAR_X + r) leftBottom        -> coords[22], coords[23]
-   *   Q LEFT_BAR_X leftBottom LEFT_BAR_X (leftBottom - r)  -> coords[24-27]
-   *   L LEFT_BAR_X (leftTop + r)           -> coords[28], coords[29]
-   *   Q LEFT_BAR_X leftTop (LEFT_BAR_X + r) leftTop  -> coords[30-33]
-   *   Z
-   *
-   * We extract both LEFT and RIGHT bar heights.
-   * - leftTop at coords[1], leftBottom at coords[21]
-   * - rightTop at coords[5], rightBottom at coords[19]
-   */
-  interface LassoHeights {
-    leftHeight: number;
-    rightHeight: number;
-    path: string;
-    leftTop: number;
-    leftBottom: number;
-    rightTop: number;
-    rightBottom: number;
-  }
-
-  async function getLassoHeight(page: import("@playwright/test").Page): Promise<LassoHeights> {
-    const minimap = page.getByRole("img", { name: /minimap/i });
-    const lasso = minimap.locator(".minimap-lasso");
-    const pathD = await lasso.getAttribute("d");
-
-    if (!pathD) return { leftHeight: 0, rightHeight: 0, path: "", leftTop: 0, leftBottom: 0, rightTop: 0, rightBottom: 0 };
-
-    // Extract all numbers from the path
-    const numbers = pathD.match(/[\d.]+/g);
-    if (!numbers || numbers.length < 22) return { leftHeight: 0, rightHeight: 0, path: pathD, leftTop: 0, leftBottom: 0, rightTop: 0, rightBottom: 0 };
-
-    // Convert to numbers
-    const coords = numbers.map(Number);
-
-    // Left bar: leftTop at index 1, leftBottom at index 21
-    const leftTop = coords[1] ?? 0;
-    const leftBottom = coords[21] ?? 0;
-
-    // Right bar: rightTop at index 5, rightBottom at index 19
-    const rightTop = coords[5] ?? 0;
-    const rightBottom = coords[19] ?? 0;
-
-    return {
-      leftHeight: leftBottom - leftTop,
-      rightHeight: rightBottom - rightTop,
-      path: pathD,
-      leftTop,
-      leftBottom,
-      rightTop,
-      rightBottom,
-    };
-  }
-
-  /**
-   * Wait for the minimap lasso to become visible
-   * This waits for the scroll container to be found AND viewportRatio to be calculated
-   */
-  async function waitForLasso(page: import("@playwright/test").Page): Promise<void> {
-    const minimap = page.getByRole("img", { name: /minimap/i });
-    const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
-  }
-
   test("lasso reflects visible content and moves when scrolling", async ({ page }) => {
     // This test verifies that:
     // 1. The lasso height reflects visible line counts (can vary based on visible content)
@@ -202,45 +131,51 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLasso(page);
 
     // Force react-window to calculate correct scrollHeight by scrolling
-    const minimapBoxInit = await minimap.boundingBox();
-    if (!minimapBoxInit) throw new Error("Minimap bounding box not found");
+    let minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
 
     // Scroll to middle to force height calculation
     await page.mouse.click(
-      minimapBoxInit.x + minimapBoxInit.width / 2,
-      minimapBoxInit.y + minimapBoxInit.height * 0.5
+      minimapBox.x + minimapBox.width / 2,
+      minimapBox.y + minimapBox.height * 0.5
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
-    // Scroll back to top
+    // Scroll back to top - re-fetch bounding box in case layout shifted
+    minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
     await page.mouse.click(
-      minimapBoxInit.x + minimapBoxInit.width / 2,
-      minimapBoxInit.y + 20
+      minimapBox.x + minimapBox.width / 2,
+      minimapBox.y + 20
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Get lasso at top of file
     const topResult = await getLassoHeight(page);
 
-    // Scroll to middle using minimap click
-    const minimapBox = await minimap.boundingBox();
+    // Scroll to middle using minimap click - re-fetch bounding box
+    minimapBox = await minimap.boundingBox();
     if (!minimapBox) throw new Error("Minimap bounding box not found");
 
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.5
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Get lasso at middle
     const middleResult = await getLassoHeight(page);
 
-    // Scroll to bottom
+    // Scroll to bottom - re-fetch bounding box
+    minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.9
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Get lasso at bottom
     const bottomResult = await getLassoHeight(page);
@@ -339,7 +274,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const lasso = minimap.locator(".minimap-lasso");
 
     // Force react-window to calculate correct scrollHeight by scrolling first
-    const minimapBox = await minimap.boundingBox();
+    let minimapBox = await minimap.boundingBox();
     if (!minimapBox) throw new Error("Minimap bounding box not found");
 
     // Scroll to middle to force height calculation
@@ -347,14 +282,17 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + minimapBox.height * 0.5
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
-    // Scroll back to top
+    // Scroll back to top - re-fetch bounding box
+    minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
       minimapBox.y + 20
     );
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Get initial lasso path
     const initialPath = await lasso.getAttribute("d");
@@ -363,7 +301,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // Scroll down using keyboard
     await page.keyboard.press("j"); // Navigate to change
-    await waitForLasso(page);
+    await waitForLassoStable(page);
 
     // Get new lasso path
     const newResult = await getLassoHeight(page);
