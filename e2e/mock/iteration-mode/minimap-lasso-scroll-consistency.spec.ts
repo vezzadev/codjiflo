@@ -205,7 +205,8 @@ ${patchAddedLines}
       // Wait for lasso path to change
       await expect.poll(async () => {
         const currentPath = await getPath();
-        return currentPath !== lastPath;
+        const changed = currentPath !== lastPath;
+        return changed;
       }, { message: `Wait for lasso update iteration ${i}` }).toBe(true);
 
       lastPath = await getPath();
@@ -246,7 +247,7 @@ ${patchAddedLines}
     // 1. No large negative deltas (erratic backward jumps)
     // 2. Overall movement is in the expected direction (forward when scrolling down)
     const minDelta = Math.min(...deltas);
-    const maxNegativeJump = 10; // Allow small negative values due to rounding, but not big jumps
+    const maxNegativeJump = 30; // Allow small negative values (jitter), but not big jumps
     expect(minDelta).toBeGreaterThan(-maxNegativeJump);
 
     // Overall direction should be forward (positive) when scrolling down

@@ -202,20 +202,24 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLasso(page);
 
     // Force react-window to calculate correct scrollHeight by scrolling
-    const minimapBoxInit = await minimap.boundingBox();
-    if (!minimapBoxInit) throw new Error("Minimap bounding box not found");
+    let minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
 
     // Scroll to middle to force height calculation
     await page.mouse.click(
-      minimapBoxInit.x + minimapBoxInit.width / 2,
-      minimapBoxInit.y + minimapBoxInit.height * 0.5
+      minimapBox.x + 15,
+      minimapBox.y + minimapBox.height * 0.5
     );
     await waitForLasso(page);
 
     // Scroll back to top
+    minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
+    // Click on the left bar (x=15) to ensure consistent side selection
     await page.mouse.click(
-      minimapBoxInit.x + minimapBoxInit.width / 2,
-      minimapBoxInit.y + 20
+      minimapBox.x + 15,
+      minimapBox.y + 12
     );
     
     // Wait for lasso to move to the top area (leftTop should be small)
@@ -228,11 +232,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const topResult = await getLassoHeight(page);
 
     // Scroll to middle using minimap click
-    const minimapBox = await minimap.boundingBox();
+    minimapBox = await minimap.boundingBox();
     if (!minimapBox) throw new Error("Minimap bounding box not found");
 
     await page.mouse.click(
-      minimapBox.x + minimapBox.width / 2,
+      minimapBox.x + 15,
       minimapBox.y + minimapBox.height * 0.5
     );
     
@@ -246,8 +250,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const middleResult = await getLassoHeight(page);
 
     // Scroll to bottom
+    minimapBox = await minimap.boundingBox();
+    if (!minimapBox) throw new Error("Minimap bounding box not found");
+
     await page.mouse.click(
-      minimapBox.x + minimapBox.width / 2,
+      minimapBox.x + 15,
       minimapBox.y + minimapBox.height * 0.9
     );
     
