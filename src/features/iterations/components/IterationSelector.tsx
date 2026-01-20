@@ -7,9 +7,13 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
+import { Skeleton } from '@/components/ui';
 import { useIterationStore, selectSelectedRange } from '../stores';
 import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
+
+// Number of skeleton tabs to show while loading
+const SKELETON_TAB_COUNT = 3;
 
 // ============================================================================
 // Types
@@ -219,8 +223,40 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     return { start: minRev, end: maxRev };
   }, [dragState]);
 
-  // Don't render if degraded mode or no iterations
-  if (isDegraded || iterations.length === 0) {
+  // Don't render if degraded mode
+  if (isDegraded) {
+    return null;
+  }
+
+  // Show skeleton while loading with no iterations yet
+  if (isLoading && iterations.length === 0) {
+    const classes = ['iteration-tabs-container', className].filter(Boolean).join(' ');
+    return (
+      <div
+        data-testid="iteration-selector"
+        className={classes}
+        role="toolbar"
+        aria-label="Iteration range selector loading"
+      >
+        <div className="iteration-tabs" role="group" aria-busy="true">
+          {Array.from({ length: SKELETON_TAB_COUNT }).map((_, i) => {
+            const isLast = i === SKELETON_TAB_COUNT - 1;
+            return (
+              <Skeleton
+                key={i}
+                className={`iteration-tab-skeleton${isLast ? ' active' : ''}`}
+                width="64px"
+                height="36px"
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no iterations (and not loading)
+  if (iterations.length === 0) {
     return null;
   }
 

@@ -71,15 +71,40 @@ describe('IterationSelector', () => {
       expect(container.firstChild).toBeNull();
     });
 
-    it('returns null when iterations array is empty', () => {
+    it('returns null when iterations array is empty and not loading', () => {
       setupMockState({
         iterations: [],
         selectedRange: null,
         isDegraded: false,
+        isLoading: false,
       });
 
       const { container } = render(<IterationSelector />);
       expect(container.firstChild).toBeNull();
+    });
+
+    it('shows skeleton tabs when loading with no iterations', () => {
+      setupMockState({
+        iterations: [],
+        selectedRange: null,
+        isDegraded: false,
+        isLoading: true,
+      });
+
+      render(<IterationSelector />);
+
+      // Should show the container with skeleton loading state
+      const selector = screen.getByTestId('iteration-selector');
+      expect(selector).toBeInTheDocument();
+      expect(selector).toHaveAttribute('aria-label', 'Iteration range selector loading');
+
+      // Should show skeleton tabs
+      const skeletons = selector.querySelectorAll('.iteration-tab-skeleton');
+      expect(skeletons).toHaveLength(3);
+
+      // Group should indicate loading
+      const group = selector.querySelector('[role="group"]');
+      expect(group).toHaveAttribute('aria-busy', 'true');
     });
 
     it('renders iteration tabs when iterations exist', () => {
