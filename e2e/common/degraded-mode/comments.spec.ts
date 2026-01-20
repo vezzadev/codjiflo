@@ -117,10 +117,9 @@ test.describe("Inline comments flow (S-2.x)", () => {
       await expect(fileListItem).toBeVisible();
       await expect(fileListItem).toHaveAttribute("aria-current", "location");
 
-      // The diff content should be rendered in a table
-      // Use .first() since virtualized rendering creates multiple tables (one per visible row)
-      const diffTable = page.locator('table').first();
-      await expect(diffTable).toBeVisible();
+      // The diff content should be rendered in CodeMirror
+      const diffRegion = page.getByRole('region', { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
 
       // Verify the existing comment is displayed (comments load async)
       const threadRegion = page.getByRole('region', { name: 'Thread on line 2 (added line)' });

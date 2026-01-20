@@ -69,11 +69,20 @@ export function useMinimapScroll(
   const initializedRef = useRef(false);
 
   // Find the scrollable element within the container
-  // Returns null if no valid scrollable element is found (react-window not yet rendered)
+  // Returns null if no valid scrollable element is found (CodeMirror/react-window not yet rendered)
   const findScrollableElement = useCallback((): HTMLElement | null => {
     const container = containerRef.current;
     if (!container) {
       return null;
+    }
+
+    // First try CodeMirror scroller (primary for CodeMirror 6 diff view)
+    const cmScroller = container.querySelector<HTMLElement>('.cm-scroller');
+    if (cmScroller) {
+      const cmScrollRange = cmScroller.scrollHeight - cmScroller.clientHeight;
+      if (cmScrollRange > 100) {
+        return cmScroller;
+      }
     }
 
     // For react-window, look for element with overflow style

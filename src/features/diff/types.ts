@@ -20,6 +20,15 @@ export interface DiffViewConfig {
   textWrap: TextWrap;
 }
 
+/**
+ * Visible row range for virtualized scrolling
+ * Used by Minimap to show lasso position
+ */
+export interface VisibleRowRange {
+  startIndex: number;
+  stopIndex: number;
+}
+
 // ============================================================================
 // Diff Line Types
 // ============================================================================

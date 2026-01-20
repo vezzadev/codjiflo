@@ -207,7 +207,8 @@ Iterations: 2`,
     // Helper to get row heights and identify which has the long line
     const getRowHeights = async () => {
       return page.evaluate(() => {
-        const rows = document.querySelectorAll(".virtualized-row");
+        // CodeMirror uses .cm-line for each line
+        const rows = document.querySelectorAll(".cm-line");
         const heights: { content: string; height: number }[] = [];
         rows.forEach((row) => {
           const rect = row.getBoundingClientRect();

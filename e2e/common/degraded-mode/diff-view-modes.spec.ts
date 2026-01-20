@@ -469,9 +469,9 @@ const baz = 'qux';
       await expect(rightPane).toHaveAttribute("aria-label", "Modified version");
 
       // [AC-3.2.2-3] Left shows base, right shows head content
-      // Verify the panes contain content (visual check)
-      await expect(leftPane.locator("table")).toBeVisible();
-      await expect(rightPane.locator("table")).toBeVisible();
+      // Verify the panes contain content (CodeMirror editors)
+      await expect(leftPane.locator(".cm-content")).toBeVisible();
+      await expect(rightPane.locator(".cm-content")).toBeVisible();
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");
