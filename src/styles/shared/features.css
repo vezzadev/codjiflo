@@ -462,7 +462,7 @@
   transform: translateY(-50%);
   width: 70px;
   height: 25px;
-  background-color: var(--main-bg);
+  background-color: var(--listview-header);
   border: 1px solid var(--combobox-border);
   transition: left 0.15s ease;
   cursor: grab;
