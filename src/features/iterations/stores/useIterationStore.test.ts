@@ -12,6 +12,7 @@ import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types'
 
 // Create mock implementations that will be controlled by tests
 const mockLoad = vi.fn();
+const mockFindArtifactReference = vi.fn();
 const mockGetIterations = vi.fn();
 const mockGetAllArtifacts = vi.fn();
 const mockClose = vi.fn();
@@ -21,6 +22,7 @@ const mockClearCache = vi.fn();
 vi.mock('../artifact-loader', () => ({
   ArtifactLoader: class MockArtifactLoader {
     load = mockLoad;
+    findArtifactReference = mockFindArtifactReference;
   },
 }));
 
@@ -100,10 +102,15 @@ describe('useIterationStore', () => {
     // Reset all mocks
     vi.clearAllMocks();
     mockLoad.mockReset();
+    mockFindArtifactReference.mockReset();
     mockGetIterations.mockReset();
     mockGetAllArtifacts.mockReset();
     mockClose.mockReset();
     mockClearCache.mockReset();
+
+    // Default: findArtifactReference returns the mock reference
+    // Tests can override this when needed (e.g., for degraded mode)
+    mockFindArtifactReference.mockResolvedValue(createMockReference());
   });
 
   describe('loadIterations', () => {
