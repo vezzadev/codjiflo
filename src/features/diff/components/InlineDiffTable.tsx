@@ -204,15 +204,39 @@ textWrap = 'nowrap',
 }: InlineDiffTableProps) {
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Track whether the List has rendered at least once (for initial scroll timing)
+  const hasRenderedRef = useRef(false);
+  // Store pending scroll request to execute after first render
+  const pendingScrollRef = useRef<number | null>(null);
 
   // Handle visible rows change from react-window
   const handleRowsRendered = useCallback(
     (visibleRows: { startIndex: number; stopIndex: number }) => {
+      // Mark that the list has rendered
+      hasRenderedRef.current = true;
+
+      // If there's a pending scroll, execute it after the browser has painted
+      // This ensures react-window's internal state is fully initialized
+      if (pendingScrollRef.current !== null) {
+        const targetIndex = pendingScrollRef.current;
+        pendingScrollRef.current = null;
+        // Wait for next animation frame to ensure List is fully ready
+        requestAnimationFrame(() => {
+          if (listRef.current) {
+            listRef.current.scrollToRow({ index: targetIndex, align: 'center' });
+            // Clear the pending scroll request after another frame
+            requestAnimationFrame(() => {
+              onScrollComplete?.();
+            });
+          }
+        });
+      }
+
       if (onVisibleRangeChange) {
         onVisibleRangeChange(visibleRows);
       }
     },
-    [onVisibleRangeChange]
+    [onVisibleRangeChange, onScrollComplete]
   );
 
   // Generate key for dynamic row height cache based on comments and text wrap
@@ -229,11 +253,17 @@ textWrap = 'nowrap',
     key: dynamicHeightKey,
   });
 
+  // Reset hasRendered flag when diffLines change (new file selected)
+  useEffect(() => {
+    hasRenderedRef.current = false;
+    pendingScrollRef.current = null;
+  }, [diffLines]);
+
   // Scroll to row when scrollToRowIndex changes (J/K navigation or file switch auto-scroll)
   // Note: Only depend on scrollToRowIndex and onScrollComplete, not diffLines.length.
   // This prevents re-triggering the scroll when view mode changes (e.g., full-file toggle).
   useEffect(() => {
-    if (scrollToRowIndex === undefined || scrollToRowIndex < 0 || !listRef.current) {
+    if (scrollToRowIndex === undefined || scrollToRowIndex < 0) {
       return;
     }
 
@@ -247,13 +277,20 @@ textWrap = 'nowrap',
 
     // Clamp scrollToRowIndex to valid range
     const clampedIndex = Math.min(scrollToRowIndex, diffLines.length - 1);
-    // Center the target row in the viewport
-    listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
-    // Clear the pending scroll request after browser has painted
-    // This ensures react-window has finished the scroll before we clear the state
-    requestAnimationFrame(() => {
-      onScrollComplete?.();
-    });
+
+    // If the list hasn't rendered yet, queue the scroll for after first render
+    if (!hasRenderedRef.current) {
+      pendingScrollRef.current = clampedIndex;
+      return;
+    }
+
+    // List is already rendered, scroll immediately
+    if (listRef.current) {
+      listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
+      requestAnimationFrame(() => {
+        onScrollComplete?.();
+      });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- diffLines.length intentionally excluded to prevent re-scroll on mode change
   }, [scrollToRowIndex, onScrollComplete]);
 

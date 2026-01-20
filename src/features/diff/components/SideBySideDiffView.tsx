@@ -5,7 +5,7 @@
  * Uses react-window for performant rendering of large diffs.
  */
 
-import { useMemo, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback, useRef } from 'react';
 import { List, useListRef, useDynamicRowHeight, type RowComponentProps } from 'react-window';
 import { DiffLine, DiffLineSpacer } from './DiffLine';
 import type { AlignedDiffLine, TextWrap } from '../types';
@@ -290,15 +290,39 @@ textWrap = 'nowrap',
   onScrollComplete,
 }: SideBySideDiffViewProps) {
   const listRef = useListRef(null);
+  // Track whether the List has rendered at least once (for initial scroll timing)
+  const hasRenderedRef = useRef(false);
+  // Store pending scroll request to execute after first render
+  const pendingScrollRef = useRef<number | null>(null);
 
   // Handle visible rows change from react-window
   const handleRowsRendered = useCallback(
     (visibleRows: { startIndex: number; stopIndex: number }) => {
+      // Mark that the list has rendered
+      hasRenderedRef.current = true;
+
+      // If there's a pending scroll, execute it after the browser has painted
+      // This ensures react-window's internal state is fully initialized
+      if (pendingScrollRef.current !== null) {
+        const targetIndex = pendingScrollRef.current;
+        pendingScrollRef.current = null;
+        // Wait for next animation frame to ensure List is fully ready
+        requestAnimationFrame(() => {
+          if (listRef.current) {
+            listRef.current.scrollToRow({ index: targetIndex, align: 'center' });
+            // Clear the pending scroll request after another frame
+            requestAnimationFrame(() => {
+              onScrollComplete?.();
+            });
+          }
+        });
+      }
+
       if (onVisibleRangeChange) {
         onVisibleRangeChange(visibleRows);
       }
     },
-    [onVisibleRangeChange]
+    [onVisibleRangeChange, onScrollComplete]
   );
 
   // Generate key for dynamic row height cache based on comments and text wrap
@@ -328,70 +352,90 @@ textWrap = 'nowrap',
     });
   }, [alignedLines, contentFilter]);
 
+  // Reset hasRendered flag when alignedLines change (new file selected)
+  useEffect(() => {
+    hasRenderedRef.current = false;
+    pendingScrollRef.current = null;
+  }, [alignedLines]);
+
+  // Helper to calculate effective index with filtering
+  const calculateEffectiveIndex = useCallback((targetIndex: number) => {
+    let effectiveIndex = Math.min(targetIndex, alignedLines.length - 1);
+
+    // When filtering is active, map the unfiltered index to the corresponding
+    // index in the filtered list (or the nearest visible line).
+    if (contentFilter !== 'both') {
+      let filteredIndex = -1;
+      let lastKeptIndex = -1;
+
+      for (let i = 0; i < alignedLines.length; i++) {
+        const pair = alignedLines[i];
+        if (!pair) continue;
+        const keep =
+          contentFilter === 'left'
+            ? pair.left !== null || pair.right?.type !== 'addition'
+            : pair.right !== null || pair.left?.type !== 'deletion';
+
+        if (keep) {
+          lastKeptIndex++;
+
+          // Exact match: this unfiltered index is visible
+          if (i === targetIndex) {
+            filteredIndex = lastKeptIndex;
+            break;
+          }
+
+          // If we've passed the target unfiltered index without an exact match,
+          // then the target was filtered out. Scroll to the closest previous
+          // visible line (lastKeptIndex).
+          if (i > targetIndex && filteredIndex === -1) {
+            filteredIndex = lastKeptIndex;
+            break;
+          }
+        }
+      }
+
+      if (filteredIndex === -1) {
+        // If no kept lines were found at or before the target, fall back to
+        // the last visible line (or 0 if there are no visible lines).
+        filteredIndex = lastKeptIndex === -1 ? 0 : lastKeptIndex;
+      }
+
+      effectiveIndex = filteredIndex;
+    }
+
+    // Clamp to valid range
+    const maxIndex = Math.max(0, filteredLines.length - 1);
+    return Math.min(effectiveIndex, maxIndex);
+  }, [alignedLines, contentFilter, filteredLines.length]);
+
   // Scroll to row when scrollToRowIndex changes (J/K navigation or file switch auto-scroll)
   // Note: Only depend on scrollToRowIndex and onScrollComplete, not data arrays or filter.
   // This prevents re-triggering the scroll when view mode changes (e.g., full-file toggle).
-  // The other values are used for calculation but read from current closure.
   useEffect(() => {
-    if (scrollToRowIndex !== undefined && scrollToRowIndex >= 0 && listRef.current) {
-      // Early return if list is empty
-      if (filteredLines.length === 0) {
-        requestAnimationFrame(() => {
-          onScrollComplete?.();
-        });
-        return;
-      }
+    if (scrollToRowIndex === undefined || scrollToRowIndex < 0) {
+      return;
+    }
 
-      let effectiveIndex = Math.min(scrollToRowIndex, alignedLines.length - 1);
+    // Early return if list is empty
+    if (filteredLines.length === 0) {
+      requestAnimationFrame(() => {
+        onScrollComplete?.();
+      });
+      return;
+    }
 
-      // When filtering is active, map the unfiltered index to the corresponding
-      // index in the filtered list (or the nearest visible line).
-      if (contentFilter !== 'both') {
-        let filteredIndex = -1;
-        let lastKeptIndex = -1;
+    const clampedIndex = calculateEffectiveIndex(scrollToRowIndex);
 
-        for (let i = 0; i < alignedLines.length; i++) {
-          const pair = alignedLines[i];
-          if (!pair) continue;
-          const keep =
-            contentFilter === 'left'
-              ? pair.left !== null || pair.right?.type !== 'addition'
-              : pair.right !== null || pair.left?.type !== 'deletion';
+    // If the list hasn't rendered yet, queue the scroll for after first render
+    if (!hasRenderedRef.current) {
+      pendingScrollRef.current = clampedIndex;
+      return;
+    }
 
-          if (keep) {
-            lastKeptIndex++;
-
-            // Exact match: this unfiltered index is visible
-            if (i === scrollToRowIndex) {
-              filteredIndex = lastKeptIndex;
-              break;
-            }
-
-            // If we've passed the target unfiltered index without an exact match,
-            // then the target was filtered out. Scroll to the closest previous
-            // visible line (lastKeptIndex).
-            if (i > scrollToRowIndex && filteredIndex === -1) {
-              filteredIndex = lastKeptIndex;
-              break;
-            }
-          }
-        }
-
-        if (filteredIndex === -1) {
-          // If no kept lines were found at or before the target, fall back to
-          // the last visible line (or 0 if there are no visible lines).
-          filteredIndex = lastKeptIndex === -1 ? 0 : lastKeptIndex;
-        }
-
-        effectiveIndex = filteredIndex;
-      }
-
-      // Clamp to valid range and center the target row in the viewport
-      const maxIndex = Math.max(0, filteredLines.length - 1);
-      const clampedIndex = Math.min(effectiveIndex, maxIndex);
+    // List is already rendered, scroll immediately
+    if (listRef.current) {
       listRef.current.scrollToRow({ index: clampedIndex, align: 'center' });
-      // Clear the pending scroll request after browser has painted
-      // This ensures react-window has finished the scroll before we clear the state
       requestAnimationFrame(() => {
         onScrollComplete?.();
       });
