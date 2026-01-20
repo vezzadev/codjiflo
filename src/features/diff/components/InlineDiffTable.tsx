@@ -253,11 +253,11 @@ textWrap = 'nowrap',
     key: dynamicHeightKey,
   });
 
-  // Reset hasRendered flag when diffLines change (new file selected)
-  useEffect(() => {
-    hasRenderedRef.current = false;
-    pendingScrollRef.current = null;
-  }, [diffLines]);
+  // Note: We don't need a useEffect to reset hasRenderedRef when diffLines changes.
+  // When the filename changes, the component remounts (via key prop in DiffView),
+  // which resets all refs to their initial values. When view mode toggles (causing
+  // diffLines to change without a filename change), we want hasRenderedRef to stay
+  // true so J/K navigation scrolls execute immediately instead of being queued.
 
   // Scroll to row when scrollToRowIndex changes (J/K navigation or file switch auto-scroll)
   // Note: Only depend on scrollToRowIndex and onScrollComplete, not diffLines.length.

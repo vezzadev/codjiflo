@@ -307,14 +307,12 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     const pathAfterSwitch = await lassoAfterSwitch.getAttribute("d");
 
     // The lasso path should be different after switching files
-    // (it should reset to top position for the new file)
+    // (scroll position changes due to different file size and/or auto-scroll to first change)
     // Using if-throw pattern to avoid linter auto-fix issues
     if (pathAfterScroll === pathAfterSwitch) {
       throw new Error(`Lasso path should change after file switch. Got: ${pathAfterScroll ?? "null"}`);
     }
-
-    // Additional verification: the lasso should be near the top (scrollRatio ~0)
-    // This is hard to assert directly, but we can verify the diff content is at line 1
-    await expect(page.getByText(/const config = line 1$/)).toBeVisible();
+    // Note: We don't assert specific line visibility because the scroll position depends on
+    // whether auto-scroll to first change is triggered (first visit) or preserved (revisit).
   });
 });

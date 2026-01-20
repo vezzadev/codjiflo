@@ -352,11 +352,11 @@ textWrap = 'nowrap',
     });
   }, [alignedLines, contentFilter]);
 
-  // Reset hasRendered flag when alignedLines change (new file selected)
-  useEffect(() => {
-    hasRenderedRef.current = false;
-    pendingScrollRef.current = null;
-  }, [alignedLines]);
+  // Note: We don't need a useEffect to reset hasRenderedRef when alignedLines changes.
+  // When the filename changes, the component remounts (via key prop in DiffView),
+  // which resets all refs to their initial values. When view mode toggles (causing
+  // alignedLines to change without a filename change), we want hasRenderedRef to stay
+  // true so J/K navigation scrolls execute immediately instead of being queued.
 
   // Helper to calculate effective index with filtering
   const calculateEffectiveIndex = useCallback((targetIndex: number) => {

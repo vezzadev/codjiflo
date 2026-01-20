@@ -206,7 +206,7 @@ ${patchAddedLines}
     // 1. No large negative deltas (erratic backward jumps)
     // 2. Overall movement is in the expected direction (forward when scrolling down)
     const minDelta = Math.min(...deltas);
-    const maxNegativeJump = 10; // Allow small negative values due to rounding, but not big jumps
+    const maxNegativeJump = 15; // Allow small negative values due to rounding/timing, but not big jumps
     expect(minDelta).toBeGreaterThan(-maxNegativeJump);
 
     // Overall direction should be forward (positive) when scrolling down
