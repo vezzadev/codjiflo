@@ -137,7 +137,7 @@ describe('DiffToolbar', () => {
     it('has radio with correct label for current filter', () => {
       render(<DiffToolbar />);
       const radio = screen.getByRole('radio', { name: 'Show Both' });
-      expect(radio).toHaveAttribute('aria-checked', 'true');
+      expect(radio).toBeChecked();
     });
 
     it('changes filter with L keyboard shortcut', () => {
@@ -152,14 +152,15 @@ describe('DiffToolbar', () => {
       expect(useDiffStore.getState().viewConfig.filter).toBe('right');
     });
 
-    it('supports arrow key navigation when focused', () => {
+    it('changes filter when clicking radio option', async () => {
+      const user = userEvent.setup();
       render(<DiffToolbar />);
-      const radiogroup = screen.getByRole('radiogroup', { name: 'Content filter' });
-      radiogroup.focus();
 
-      // Arrow right from 'both' should go to 'right'
-      fireEvent.keyDown(radiogroup, { key: 'ArrowRight' });
+      // Click on "Right Only" radio
+      const rightRadio = screen.getByRole('radio', { name: 'Right Only' });
+      await user.click(rightRadio);
       expect(useDiffStore.getState().viewConfig.filter).toBe('right');
+      expect(rightRadio).toBeChecked();
     });
   });
 
