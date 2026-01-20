@@ -7,7 +7,6 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Skeleton } from '@/components/ui';
 import { useIterationStore, selectSelectedRange } from '../stores';
 import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
@@ -242,11 +241,11 @@ export function IterationSelector({ className }: IterationSelectorProps) {
           {Array.from({ length: SKELETON_TAB_COUNT }).map((_, i) => {
             const isLast = i === SKELETON_TAB_COUNT - 1;
             return (
-              <Skeleton
+              <div
                 key={i}
-                className={`iteration-tab-skeleton${isLast ? ' active' : ''}`}
-                width="64px"
-                height="36px"
+                className={`skeleton iteration-tab-skeleton${isLast ? ' active' : ''}`}
+                aria-hidden="true"
+                role="presentation"
               />
             );
           })}

@@ -596,12 +596,15 @@
 /* Skeleton loading state */
 .iteration-tab-skeleton {
   aspect-ratio: 16 / 9;
+  min-height: 36px;
+  min-width: 64px;
   border: 1px solid var(--combobox-border);
   border-bottom: none;
 }
 
 .iteration-tab-skeleton.active {
   background-color: var(--treeview-selected);
+  animation: none;
 }
 
 /* Loading indicator */

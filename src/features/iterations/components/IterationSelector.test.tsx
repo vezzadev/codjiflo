@@ -102,6 +102,11 @@ describe('IterationSelector', () => {
       const skeletons = selector.querySelectorAll('.iteration-tab-skeleton');
       expect(skeletons).toHaveLength(3);
 
+      // Last skeleton should have active class to indicate selection position
+      expect(skeletons[2]).toHaveClass('active');
+      expect(skeletons[0]).not.toHaveClass('active');
+      expect(skeletons[1]).not.toHaveClass('active');
+
       // Group should indicate loading
       const group = selector.querySelector('[role="group"]');
       expect(group).toHaveAttribute('aria-busy', 'true');
