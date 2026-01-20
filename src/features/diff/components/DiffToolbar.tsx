@@ -228,40 +228,6 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
     right: 'Drag for Left Only (L) or Both (O)',
   };
 
-  // Keyboard navigation for the radiogroup
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    const currentIndex = FILTER_POSITIONS.indexOf(value);
-    let newIndex = currentIndex;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        event.preventDefault();
-        newIndex = Math.max(0, currentIndex - 1);
-        break;
-      case 'ArrowRight':
-      case 'ArrowDown':
-        event.preventDefault();
-        newIndex = Math.min(FILTER_POSITIONS.length - 1, currentIndex + 1);
-        break;
-      case 'Home':
-        event.preventDefault();
-        newIndex = 0;
-        break;
-      case 'End':
-        event.preventDefault();
-        newIndex = FILTER_POSITIONS.length - 1;
-        break;
-      default:
-        return;
-    }
-
-    const newPosition = FILTER_POSITIONS[newIndex];
-    if (newIndex !== currentIndex && newPosition) {
-      onChange(newPosition);
-    }
-  }, [value, onChange]);
-
   const updatePositionFromMouse = useCallback((clientX: number) => {
     if (!trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
@@ -306,35 +272,46 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
   }, [isDragging, updatePositionFromMouse]);
 
   return (
-    <div
+    <fieldset
       className="content-filter-slider"
       role="radiogroup"
       aria-label="Content filter"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
       title={dragHints[value]}
     >
+      <legend className="sr-only">Content filter</legend>
       <div
         ref={trackRef}
         className="content-filter-track"
         onMouseDown={handleMouseDown}
       >
         {/* Color indicators: red (left/deletions) and green (right/additions) */}
-        <span className="content-filter-indicator content-filter-indicator-left" />
-        <span className="content-filter-indicator content-filter-indicator-right" />
+        <span className="content-filter-indicator content-filter-indicator-left" aria-hidden="true" />
+        <span className="content-filter-indicator content-filter-indicator-right" aria-hidden="true" />
 
-        {/* Thumb with label */}
-        <div
-          className={`content-filter-thumb content-filter-thumb-${value}`}
-          role="radio"
-          aria-checked={true}
-          aria-label={FILTER_LABELS[value]}
-        >
-          <span className="content-filter-thumb-label">{FILTER_LABELS[value]}</span>
-        </div>
+        {/* Semantic radio inputs with visual thumb */}
+        {FILTER_POSITIONS.map((position) => (
+          <label
+            key={position}
+            className={`content-filter-option content-filter-option-${position}`}
+          >
+            <input
+              type="radio"
+              name="content-filter"
+              value={position}
+              checked={value === position}
+              onChange={() => onChange(position)}
+              className="sr-only"
+            />
+            <span
+              className={`content-filter-thumb ${value === position ? 'content-filter-thumb-active' : ''}`}
+              aria-hidden="true"
+            >
+              {FILTER_LABELS[position]}
+            </span>
+          </label>
+        ))}
       </div>
-
-    </div>
+    </fieldset>
   );
 }
 

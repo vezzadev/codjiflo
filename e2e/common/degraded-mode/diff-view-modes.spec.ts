@@ -204,13 +204,12 @@ const baz = 'qux';
       });
       await expect(contentFilter).toBeVisible();
 
-      // [AC-3.3.7] Both is default - check the radio label
-      const currentRadio = contentFilter.getByRole("radio");
-      await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
+      // [AC-3.3.7] Both is default - check the checked radio
+      await expect(contentFilter.getByLabel("Show Both")).toBeChecked();
 
       // [AC-3.3.6] Left Only - use keyboard shortcut 'l'
       await page.keyboard.press("l");
-      await expect(currentRadio).toHaveAttribute("aria-label", "Left Only");
+      await expect(contentFilter.getByLabel("Left Only")).toBeChecked();
       // Use .first() since react-window renders each row with its own pane element
       await expect(
         page.getByRole("region", { name: "Original version" }).first()
@@ -222,7 +221,7 @@ const baz = 'qux';
 
       // [AC-3.3.8] Right Only - use keyboard shortcut 'r'
       await page.keyboard.press("r");
-      await expect(currentRadio).toHaveAttribute("aria-label", "Right Only");
+      await expect(contentFilter.getByLabel("Right Only")).toBeChecked();
       await expect(
         page.getByRole("region", { name: "Modified version" }).first()
       ).toBeVisible();
@@ -233,7 +232,7 @@ const baz = 'qux';
 
       // Back to Both - use keyboard shortcut 'o'
       await page.keyboard.press("o");
-      await expect(currentRadio).toHaveAttribute("aria-label", "Show Both");
+      await expect(contentFilter.getByLabel("Show Both")).toBeChecked();
       // Use .first() since virtualized rendering creates multiple panes
       await expect(
         page.getByRole("region", { name: "Original version" }).first()
