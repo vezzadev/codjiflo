@@ -483,6 +483,12 @@
   display: flex;
 }
 
+/* Show focus indicator on thumb when radio is focused */
+.content-filter-option input:focus-visible + .content-filter-thumb {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 1px;
+}
+
 /* Position thumbs relative to track (accounting for label offset) */
 /* Track is 90px, thumb is 70px */
 /* Left: thumb at track position 0, label at 0 → offset 0 */

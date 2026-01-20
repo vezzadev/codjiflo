@@ -240,6 +240,20 @@ const baz = 'qux';
       await expect(
         page.getByRole("region", { name: "Modified version" }).first()
       ).toBeVisible();
+
+      // Content filter radio is keyboard focusable
+      const bothRadio = contentFilter.getByLabel("Show Both");
+      await bothRadio.focus();
+      await expect(bothRadio).toBeFocused();
+
+      // Arrow keys navigate between radio options
+      await page.keyboard.press("ArrowRight");
+      await expect(contentFilter.getByLabel("Right Only")).toBeChecked();
+      await expect(contentFilter.getByLabel("Right Only")).toBeFocused();
+
+      await page.keyboard.press("ArrowLeft");
+      await expect(contentFilter.getByLabel("Show Both")).toBeChecked();
+      await expect(contentFilter.getByLabel("Show Both")).toBeFocused();
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");
