@@ -1,7 +1,6 @@
 export { useIterationDiff } from './useIterationDiff';
 export { useIterationAwareFiles } from './useIterationAwareFiles';
 export { useFileDisplayOrder } from './useFileDisplayOrder';
-export { useSyntaxTheme } from './useSyntaxTheme';
 export { useDiffPipeline } from './useDiffPipeline';
 export { useDraftComment } from './useDraftComment';
 export { useContainerHeight } from './useContainerHeight';

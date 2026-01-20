@@ -71,6 +71,13 @@ export async function waitForLassoStable(
  */
 export async function scrollDiffBy(page: Page, pixels: number): Promise<void> {
   await page.evaluate((px) => {
+    // CodeMirror uses .cm-scroller for scrolling
+    const cmScroller = document.querySelector('.cm-scroller');
+    if (cmScroller) {
+      cmScroller.scrollTop += px;
+      return;
+    }
+    // Fallback for diff region
     const diffRegion = document.querySelector('[aria-label^="Diff content"]');
     if (!diffRegion) return;
     const listContainer = diffRegion.querySelector('[style*="overflow"]');

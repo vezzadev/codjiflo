@@ -15,15 +15,17 @@ test.describe("Comment toggle with 'd' shortcut", () => {
   const prNumber = 800;
 
   // Create content for test file
-  const createContent = (lineCount: number, prefix: string) => {
-    return Array.from({ length: lineCount }, (_, i) => `${prefix} line ${i + 1}`).join("\n");
+  // startLine allows continuing line numbering (e.g., for headContent after inserted line)
+  const createContent = (lineCount: number, prefix: string, startLine = 1) => {
+    return Array.from({ length: lineCount }, (_, i) => `${prefix} line ${i + startLine}`).join("\n");
   };
 
   const baseContent = createContent(100, "const base =");
+  // headContent: lines 1-50 unchanged, then added line at 51, then base lines 51-100 shifted to 52-101
   const headContent =
     createContent(50, "const base =") +
     "\nconst added = 'new line';\n" +
-    createContent(49, "const base =");
+    createContent(50, "const base =", 51); // Lines 51-100 from base, now at positions 52-101
 
   const initialFiles = {
     "src/commented-file.ts": baseContent,

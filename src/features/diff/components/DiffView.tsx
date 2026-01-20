@@ -16,14 +16,13 @@ import {
   useIterationDiff,
 } from '../hooks';
 import { DiffToolbar } from './DiffToolbar';
-import { InlineDiffTable, type VisibleRowRange } from './InlineDiffTable';
-import { SideBySideDiffView } from './SideBySideDiffView';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
-import { ShikiTokensProvider } from './ShikiTokensContext';
 import { Minimap } from './Minimap';
-import { useCommentsStore, useCommentTracking } from '@/features/comments';
+import { UnifiedDiffEditor, SplitDiffEditor, CommentPortalManager } from './codemirror';
+import { useCommentsStore, useCommentTracking, type ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
+import type { VisibleRowRange } from '../types';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
 
@@ -40,7 +39,6 @@ export function DiffView() {
   const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
-  const { selectedRange, getFileDiffByPath, isIterationMode } = useIterationDiff();
   const {
     isLoading: isLoadingComments,
     error: commentsError,
@@ -55,6 +53,7 @@ export function DiffView() {
 
   // Pipeline: all diff computation in one composable hook
   const pipeline = useDiffPipeline();
+  const { selectedRange } = useIterationDiff();
 
   // Draft comment management
   const draft = useDraftComment();
@@ -68,6 +67,17 @@ export function DiffView() {
   // Track visible row range from react-window for accurate minimap lasso positioning
   const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
 
+  // Build threads-by-id map for the portal manager
+  const threadsById = useMemo(() => {
+    const map = new Map<string, ReviewThread>();
+    pipeline.threadsByLineAndSide.forEach((threads) => {
+      for (const thread of threads) {
+        map.set(thread.id, thread);
+      }
+    });
+    return map;
+  }, [pipeline.threadsByLineAndSide]);
+
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
@@ -80,10 +90,10 @@ export function DiffView() {
     return () => window.clearTimeout(timer);
   }, [announcement, clearAnnouncement]);
 
-  // Reset change navigation when iteration selection changes
+  // Reset change navigation when selected file or iteration range changes
   useEffect(() => {
     resetChangeIndex();
-  }, [selectedRange, resetChangeIndex]);
+  }, [selectedFileIndex, selectedRange, resetChangeIndex]);
 
   // Sync hunk count to store for navigation controls
   useEffect(() => {
@@ -104,8 +114,8 @@ export function DiffView() {
 
   // Handler for keyboard scrolling in diff content area
   const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    // Find the actual scrollable element (virtualized list) inside the region
-    const scrollable = e.currentTarget.querySelector('.virtualized-inline-list, .virtualized-split-list');
+    // Find the actual scrollable element (CodeMirror scroller) inside the region
+    const scrollable = e.currentTarget.querySelector('.cm-scroller');
     if (!scrollable) return;
 
     let scrollLines: number | null = null;
@@ -138,26 +148,6 @@ export function DiffView() {
       scrollable.scrollBy({ top: scrollLines * LINE_HEIGHT, behavior: 'smooth' });
     }
   }, [containerHeight]);
-
-  // Get full file content from iteration diff for accurate multi-line syntax highlighting
-  const fullFileContent = useMemo(() => {
-    if (!isIterationMode || !pipeline.filename) {
-      return { oldContent: undefined, newContent: undefined };
-    }
-    const iterationDiff = getFileDiffByPath(pipeline.filename);
-    return {
-      oldContent: iterationDiff?.base?.content,
-      newContent: iterationDiff?.head?.content,
-    };
-  }, [isIterationMode, pipeline.filename, getFileDiffByPath]);
-
-  const hasFullContent = fullFileContent.oldContent !== undefined || fullFileContent.newContent !== undefined;
-
-  // Fallback: extract line contents for non-iteration mode (multi-line comment support)
-  const visibleLines = useMemo(() => {
-    if (hasFullContent) return undefined;
-    return pipeline.diffLines.map(line => line.content);
-  }, [pipeline.diffLines, hasFullContent]);
 
   // Loading state
   if (isLoading || (isShowingDescription && isPRLoading) || pipeline._isLoadingFullFile) {
@@ -226,113 +216,131 @@ export function DiffView() {
         <div className="diff-loading-banner">Loading comments...</div>
       )}
 
-      {/* Diff content - wrapped with ShikiTokensProvider for multi-line comment support */}
-      <ShikiTokensProvider
-        {...(fullFileContent.oldContent !== undefined && { oldContent: fullFileContent.oldContent })}
-        {...(fullFileContent.newContent !== undefined && { newContent: fullFileContent.newContent })}
-        {...(visibleLines !== undefined && { visibleLines })}
-        language={pipeline.language}
+      {/* Diff content - CodeMirror handles syntax highlighting internally */}
+      <CommentPortalManager
+        threadsById={threadsById}
+        currentUserLogin={currentUser.login}
+        addReply={addReply}
+        editComment={editComment}
+        deleteComment={deleteComment}
+        toggleResolved={toggleResolved}
+        draftBody={draft.draftBody}
+        isSubmittingDraft={draft.isSubmitting}
+        submitError={draft.submitError}
+        onCancelDraft={draft.cancelDraft}
+        onChangeDraftBody={draft.setDraftBody}
+        onSubmitDraft={handleSubmitDraft}
       >
-        {pipeline.viewMode === 'inline' ? (
-          <div
-            ref={(el) => {
-              containerRefCallback(el);
-              scrollContainerRef.current = el;
-            }}
-            className="diff-content-area diff-content-with-minimap diff-content-wrapper"
-            data-view-mode="inline"
-            data-text-wrap={pipeline.textWrap}
-            role="region"
-            aria-label={`Diff content for ${pipeline.filename}`}
-            tabIndex={0}
-            onKeyDown={handleDiffKeyDown}
-          >
-            <InlineDiffTable
-              key={pipeline.filename ?? 'diff-table'}
-              diffLines={pipeline.diffLines}
-              language={pipeline.language}
-              containerHeight={containerHeight}
-              threadsByLineAndSide={pipeline.threadsByLineAndSide}
-              currentUserLogin={currentUser.login}
-              addReply={addReply}
-              editComment={editComment}
-              deleteComment={deleteComment}
-              toggleResolved={toggleResolved}
-              draftLineIndex={draft.draftLineIndex}
-              draftBody={draft.draftBody}
-              isSubmittingDraft={draft.isSubmitting}
-              submitError={draft.submitError}
-              onCancelDraft={draft.cancelDraft}
-              onChangeDraftBody={draft.setDraftBody}
-              onSubmitDraft={handleSubmitDraft}
-              showWhitespace={pipeline.showWhitespace}
-              lineNumberMode={pipeline.lineNumberMode}
-              scrollToRowIndex={pipeline.scrollToRowIndex}
-              hasFullContent={hasFullContent}
-              showComments={viewConfig.showComments}
-              onVisibleRangeChange={setVisibleRowRange}
-              textWrap={pipeline.textWrap}
-            />
-            <Minimap
-              pipeline={pipeline}
-              containerHeight={containerHeight}
-              scrollContainerRef={scrollContainerRef}
-              showFullFile={viewConfig.showFullFile}
-              showComments={viewConfig.showComments}
-              visibleRowRange={visibleRowRange}
-            />
-          </div>
-        ) : (
-          <div
-            ref={(el) => {
-              containerRefCallback(el);
-              scrollContainerRef.current = el;
-            }}
-            className="diff-content-area diff-content-with-minimap diff-content-wrapper"
-            data-view-mode="split"
-            data-text-wrap={pipeline.textWrap}
-            role="region"
-            aria-label={`Diff content for ${pipeline.filename}`}
-            tabIndex={0}
-            onKeyDown={handleDiffKeyDown}
-          >
-            <SideBySideDiffView
-              alignedLines={pipeline.alignedLines}
-              language={pipeline.language}
-              containerHeight={containerHeight}
-              threadsByLineAndSide={pipeline.threadsByLineAndSide}
-              currentUserLogin={currentUser.login}
-              addReply={addReply}
-              editComment={editComment}
-              deleteComment={deleteComment}
-              toggleResolved={toggleResolved}
-              contentFilter={pipeline.contentFilter}
-              draftLineIndex={draft.draftLineIndex}
-              draftSide={draft.draftSide}
-              draftBody={draft.draftBody}
-              isSubmittingDraft={draft.isSubmitting}
-              submitError={draft.submitError}
-              onCancelDraft={draft.cancelDraft}
-              onChangeDraftBody={draft.setDraftBody}
-              onSubmitDraft={handleSubmitDraft}
-              showWhitespace={pipeline.showWhitespace}
-              scrollToRowIndex={pipeline.scrollToRowIndex}
-              hasFullContent={hasFullContent}
-              showComments={viewConfig.showComments}
-              onVisibleRangeChange={setVisibleRowRange}
-              textWrap={pipeline.textWrap}
-            />
-            <Minimap
-              pipeline={pipeline}
-              containerHeight={containerHeight}
-              scrollContainerRef={scrollContainerRef}
-              showFullFile={viewConfig.showFullFile}
-              showComments={viewConfig.showComments}
-              visibleRowRange={visibleRowRange}
-            />
-          </div>
-        )}
-      </ShikiTokensProvider>
+        {(portalCallbacks) =>
+          pipeline.viewMode === 'inline' ? (
+            <div
+              ref={(el) => {
+                containerRefCallback(el);
+                scrollContainerRef.current = el;
+              }}
+              className="diff-content-area diff-content-with-minimap diff-content-wrapper"
+              data-view-mode="inline"
+              data-text-wrap={pipeline.textWrap}
+              role="region"
+              aria-label={`Diff content for ${pipeline.filename}`}
+              tabIndex={0}
+              onKeyDown={handleDiffKeyDown}
+            >
+              <UnifiedDiffEditor
+                key={pipeline.filename ?? 'diff-editor'}
+                diffLines={pipeline.diffLines}
+                language={pipeline.language}
+                containerHeight={containerHeight}
+                threadsByLineAndSide={pipeline.threadsByLineAndSide}
+                currentUserLogin={currentUser.login}
+                addReply={addReply}
+                editComment={editComment}
+                deleteComment={deleteComment}
+                toggleResolved={toggleResolved}
+                draftLineIndex={draft.draftLineIndex}
+                draftBody={draft.draftBody}
+                isSubmittingDraft={draft.isSubmitting}
+                submitError={draft.submitError}
+                onCancelDraft={draft.cancelDraft}
+                onChangeDraftBody={draft.setDraftBody}
+                onSubmitDraft={handleSubmitDraft}
+                showWhitespace={pipeline.showWhitespace}
+                lineNumberMode={pipeline.lineNumberMode}
+                scrollToRowIndex={pipeline.scrollToRowIndex}
+                showComments={viewConfig.showComments}
+                onVisibleRangeChange={setVisibleRowRange}
+                textWrap={pipeline.textWrap}
+                hunkIndices={pipeline.hunkIndices}
+                onMountThread={portalCallbacks.onMountThread}
+                onUnmountThread={portalCallbacks.onUnmountThread}
+                onMountDraft={portalCallbacks.onMountDraft}
+                onUnmountDraft={portalCallbacks.onUnmountDraft}
+              />
+              <Minimap
+                pipeline={pipeline}
+                containerHeight={containerHeight}
+                scrollContainerRef={scrollContainerRef}
+                showFullFile={viewConfig.showFullFile}
+                showComments={viewConfig.showComments}
+                visibleRowRange={visibleRowRange}
+              />
+            </div>
+          ) : (
+            <div
+              ref={(el) => {
+                containerRefCallback(el);
+                scrollContainerRef.current = el;
+              }}
+              className="diff-content-area diff-content-with-minimap diff-content-wrapper"
+              data-view-mode="split"
+              data-text-wrap={pipeline.textWrap}
+              role="region"
+              aria-label={`Diff content for ${pipeline.filename}`}
+              tabIndex={0}
+              onKeyDown={handleDiffKeyDown}
+            >
+              <SplitDiffEditor
+                alignedLines={pipeline.alignedLines}
+                language={pipeline.language}
+                containerHeight={containerHeight}
+                threadsByLineAndSide={pipeline.threadsByLineAndSide}
+                currentUserLogin={currentUser.login}
+                addReply={addReply}
+                editComment={editComment}
+                deleteComment={deleteComment}
+                toggleResolved={toggleResolved}
+                contentFilter={pipeline.contentFilter}
+                draftLineIndex={draft.draftLineIndex}
+                draftSide={draft.draftSide}
+                draftBody={draft.draftBody}
+                isSubmittingDraft={draft.isSubmitting}
+                submitError={draft.submitError}
+                onCancelDraft={draft.cancelDraft}
+                onChangeDraftBody={draft.setDraftBody}
+                onSubmitDraft={handleSubmitDraft}
+                showWhitespace={pipeline.showWhitespace}
+                scrollToRowIndex={pipeline.scrollToRowIndex}
+                showComments={viewConfig.showComments}
+                onVisibleRangeChange={setVisibleRowRange}
+                textWrap={pipeline.textWrap}
+                hunkIndices={pipeline.hunkIndices}
+                onMountThread={portalCallbacks.onMountThread}
+                onUnmountThread={portalCallbacks.onUnmountThread}
+                onMountDraft={portalCallbacks.onMountDraft}
+                onUnmountDraft={portalCallbacks.onUnmountDraft}
+              />
+              <Minimap
+                pipeline={pipeline}
+                containerHeight={containerHeight}
+                scrollContainerRef={scrollContainerRef}
+                showFullFile={viewConfig.showFullFile}
+                showComments={viewConfig.showComments}
+                visibleRowRange={visibleRowRange}
+              />
+            </div>
+          )
+        }
+      </CommentPortalManager>
     </div>
   );
 }

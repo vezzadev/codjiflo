@@ -176,8 +176,9 @@ line5
     // Count the number of changed lines (additions + deletions)
     // Should be 2 (one deletion "line2", one addition "modified line2")
     // NOT 4 (which would include line4 changes if comparing to old base)
-    const additionLines = diffViewer.locator(".diff-line-addition");
-    const deletionLines = diffViewer.locator(".diff-line-deletion");
+    // Use data-line-type attribute for CodeMirror compatibility
+    const additionLines = diffViewer.locator('[data-line-type="addition"]');
+    const deletionLines = diffViewer.locator('[data-line-type="deletion"]');
 
     // Wait for diff content to stabilize
     await expect(additionLines.first()).toBeVisible();
@@ -217,8 +218,9 @@ line5
     const diffViewer = page.locator(".diff-viewer");
     await expect(diffViewer).toBeVisible();
 
-    const additionLines = diffViewer.locator(".diff-line-addition");
-    const deletionLines = diffViewer.locator(".diff-line-deletion");
+    // Use data-line-type attribute for CodeMirror compatibility
+    const additionLines = diffViewer.locator('[data-line-type="addition"]');
+    const deletionLines = diffViewer.locator('[data-line-type="deletion"]');
 
     await expect(additionLines.first()).toBeVisible();
 

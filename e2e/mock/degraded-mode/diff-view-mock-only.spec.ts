@@ -72,11 +72,13 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(diffRegion).toBeVisible();
 
     // Before enabling whitespace visibility, verify syntax highlighting is present.
-    // Shiki uses inline styles, so we check for spans with color styles.
-    // Wait for Shiki to finish async loading and render highlighted code.
-    // Example: <span style="color: rgb(215, 58, 73)">const</span>
-    const syntaxSpanLocator = diffRegion.locator('span[style*="color"]');
+    // CodeMirror uses classes for syntax highlighting. Wait for syntax tokens to appear
+    // by checking for .ͼ (CodeMirror highlight class prefix) or .tok- classes.
+    // Language loading is async so we need to wait.
+    const syntaxSpanLocator = diffRegion.locator('.cm-line span[class]');
     await expect(syntaxSpanLocator.first()).toBeVisible();
+
+    // Count spans with any class (syntax highlighting adds classes to spans)
     const syntaxSpansBefore = await syntaxSpanLocator.count();
     expect(syntaxSpansBefore).toBeGreaterThan(0);
 
@@ -84,11 +86,11 @@ test.describe("Diff View - Mock Only Tests", () => {
     await page.locator("body").click();
     await page.keyboard.press("b");
 
-    // Verify whitespace indicators are visible (· for spaces)
-    await expect(diffRegion.locator('.whitespace-visible').first()).toBeVisible();
+    // Verify whitespace indicators are visible (CodeMirror uses .cm-highlightSpace)
+    await expect(diffRegion.locator('.cm-highlightSpace').first()).toBeVisible();
 
-    // After enabling whitespace visibility, syntax highlighting should still be present
-    const syntaxSpansAfter = await diffRegion.locator('span[style*="color:"]').count();
+    // After enabling whitespace visibility, syntax highlighting spans should still be present
+    const syntaxSpansAfter = await diffRegion.locator('.cm-line span[class]').count();
     expect(syntaxSpansAfter).toBeGreaterThan(0);
 
     // The count should be similar (whitespace toggle shouldn't remove syntax spans)

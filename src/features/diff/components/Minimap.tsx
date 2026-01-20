@@ -23,8 +23,7 @@ import {
   type DiffRegion,
   type VisibleLineRange,
 } from '../utils/minimap-mapping';
-import type { VisibleRowRange } from './InlineDiffTable';
-import type { ParsedDiffLine } from '../types';
+import type { ParsedDiffLine, VisibleRowRange } from '../types';
 
 // ============================================================================
 // Types
@@ -340,6 +339,12 @@ export function Minimap({
   const findScrollElement = useCallback((): HTMLElement | null => {
     const container = scrollContainerRef.current;
     if (!container) return null;
+
+    // First try CodeMirror scroller (primary for CodeMirror 6 diff view)
+    const cmScroller = container.querySelector<HTMLElement>('.cm-scroller');
+    if (cmScroller && cmScroller.scrollHeight > cmScroller.clientHeight) {
+      return cmScroller;
+    }
 
     // Find actual scroll container with LARGEST scroll range
     const candidates = container.querySelectorAll<HTMLElement>('[style*="overflow"]');
