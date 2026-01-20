@@ -394,6 +394,11 @@
   display: flex;
   align-items: center;
   user-select: none;
+  /* Reset fieldset defaults */
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 
 .content-filter-track {
@@ -426,7 +431,32 @@
   border-left: none;
 }
 
+/* Radio option labels - positioned to cover their respective areas */
+.content-filter-option {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+}
+
+.content-filter-option-left {
+  left: 0;
+  width: 33.33%;
+}
+
+.content-filter-option-both {
+  left: 33.33%;
+  width: 33.34%;
+}
+
+.content-filter-option-right {
+  left: 66.67%;
+  width: 33.33%;
+}
+
+/* Thumb - hidden by default, shown only when active */
 .content-filter-thumb {
+  display: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -436,31 +466,38 @@
   border: 1px solid var(--combobox-border);
   transition: left 0.15s ease;
   cursor: grab;
-  display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--main-fg);
+  pointer-events: none; /* Allow clicks to pass through to the track */
 }
 
 .content-filter-thumb:active {
   cursor: grabbing;
 }
 
-.content-filter-thumb-label {
-  font-size: 11px;
-  white-space: nowrap;
-  color: var(--main-fg);
+/* Show thumb only when its radio is checked */
+.content-filter-option input:checked + .content-filter-thumb {
+  display: flex;
 }
 
-.content-filter-thumb-left {
+/* Position thumbs relative to track (accounting for label offset) */
+/* Track is 90px, thumb is 70px */
+/* Left: thumb at track position 0, label at 0 → offset 0 */
+.content-filter-option-left .content-filter-thumb {
   left: 0;
 }
 
-.content-filter-thumb-both {
-  left: calc(50% - 35px); /* Center: 50% minus half thumb width (70px/2) */
+/* Both: thumb at track center (45px - 35px = 10px), label at 33.33% (30px) → offset -20px */
+.content-filter-option-both .content-filter-thumb {
+  left: -20px;
 }
 
-.content-filter-thumb-right {
-  left: calc(100% - 70px); /* Right edge minus thumb width */
+/* Right: thumb at track end (90px - 70px = 20px), label at 66.67% (60px) → offset -40px */
+.content-filter-option-right .content-filter-thumb {
+  left: -40px;
 }
 
 
