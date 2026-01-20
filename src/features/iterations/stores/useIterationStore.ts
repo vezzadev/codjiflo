@@ -127,7 +127,14 @@ export const useIterationStore = create<IterationState>()(
 
         try {
           const loader = new ArtifactLoader(owner, repo, prNumber);
-          const result = await loader.load();
+
+          // Get artifact reference early (from PR comment) so UI can show iteration count
+          const earlyReference = await loader.findArtifactReference();
+          if (earlyReference) {
+            set({ artifactReference: earlyReference });
+          }
+
+          const result = await loader.load(earlyReference ?? undefined);
 
           if (!result) {
             // No artifact found - trigger graceful degradation

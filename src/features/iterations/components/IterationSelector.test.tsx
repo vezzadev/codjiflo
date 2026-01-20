@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IterationSelector } from './IterationSelector';
-import type { Iteration, IterationRange } from '../types';
+import type { Iteration, IterationRange, ArtifactReference } from '../types';
 
 // Store state that tests can configure
 interface MockStoreState {
@@ -10,6 +10,7 @@ interface MockStoreState {
   selectRange: ReturnType<typeof vi.fn>;
   isLoading: boolean;
   isDegraded: boolean;
+  artifactReference: ArtifactReference | null;
 }
 
 let currentMockState: MockStoreState;
@@ -49,6 +50,7 @@ function setupMockState(state: Partial<MockStoreState>) {
     selectRange: mockSelectRange,
     isLoading: false,
     isDegraded: false,
+    artifactReference: null,
     ...state,
   };
   return { mockSelectRange: currentMockState.selectRange };
@@ -83,12 +85,13 @@ describe('IterationSelector', () => {
       expect(container.firstChild).toBeNull();
     });
 
-    it('shows skeleton tabs when loading with no iterations', () => {
+    it('shows skeleton tabs when loading with no iterations (default count)', () => {
       setupMockState({
         iterations: [],
         selectedRange: null,
         isDegraded: false,
         isLoading: true,
+        artifactReference: null,
       });
 
       render(<IterationSelector />);
@@ -98,7 +101,7 @@ describe('IterationSelector', () => {
       expect(selector).toBeInTheDocument();
       expect(selector).toHaveAttribute('aria-label', 'Iteration range selector loading');
 
-      // Should show skeleton tabs
+      // Should show default 3 skeleton tabs when artifactReference is null
       const skeletons = selector.querySelectorAll('.iteration-tab-skeleton');
       expect(skeletons).toHaveLength(3);
 
@@ -110,6 +113,33 @@ describe('IterationSelector', () => {
       // Group should indicate loading
       const group = selector.querySelector('[role="group"]');
       expect(group).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('shows skeleton tabs matching artifactReference.iterationCount', () => {
+      setupMockState({
+        iterations: [],
+        selectedRange: null,
+        isDegraded: false,
+        isLoading: true,
+        artifactReference: {
+          iterationCount: 5,
+          timestamp: '2024-01-15T10:00:00Z',
+          artifactId: 12345,
+          runId: 67890,
+        },
+      });
+
+      render(<IterationSelector />);
+
+      const selector = screen.getByTestId('iteration-selector');
+      const skeletons = selector.querySelectorAll('.iteration-tab-skeleton');
+
+      // Should show 5 skeleton tabs matching iterationCount
+      expect(skeletons).toHaveLength(5);
+
+      // Last skeleton (5th) should have active class
+      expect(skeletons[4]).toHaveClass('active');
+      expect(skeletons[0]).not.toHaveClass('active');
     });
 
     it('renders iteration tabs when iterations exist', () => {

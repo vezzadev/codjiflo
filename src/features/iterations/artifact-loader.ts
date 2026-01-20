@@ -53,10 +53,11 @@ export class ArtifactLoader {
   /**
    * Main entry point: Load the iteration artifact.
    * Returns the SQLite database if found, null if no artifact exists.
+   * @param prefetchedReference - Optional pre-fetched reference to avoid duplicate API call
    */
-  async load(): Promise<{ db: SQLiteDatabase; reference: ArtifactReference } | null> {
-    // 1. Find the CodjiFlo comment
-    const reference = await this.findArtifactReference();
+  async load(prefetchedReference?: ArtifactReference): Promise<{ db: SQLiteDatabase; reference: ArtifactReference } | null> {
+    // 1. Find the CodjiFlo comment (skip if already fetched)
+    const reference = prefetchedReference ?? await this.findArtifactReference();
     if (!reference) {
       return null;
     }

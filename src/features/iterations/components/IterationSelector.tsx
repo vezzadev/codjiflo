@@ -11,8 +11,8 @@ import { useIterationStore, selectSelectedRange } from '../stores';
 import type { Iteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
 
-// Number of skeleton tabs to show while loading
-const SKELETON_TAB_COUNT = 3;
+// Default number of skeleton tabs when iteration count is unknown
+const DEFAULT_SKELETON_TAB_COUNT = 3;
 
 // ============================================================================
 // Types
@@ -96,7 +96,7 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectRange, isLoading, isDegraded } = useIterationStore();
+  const { iterations, selectRange, isLoading, isDegraded, artifactReference } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -229,6 +229,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
   // Show skeleton while loading with no iterations yet
   if (isLoading && iterations.length === 0) {
+    const skeletonCount = artifactReference?.iterationCount ?? DEFAULT_SKELETON_TAB_COUNT;
     const classes = ['iteration-tabs-container', className].filter(Boolean).join(' ');
     return (
       <div
@@ -238,8 +239,8 @@ export function IterationSelector({ className }: IterationSelectorProps) {
         aria-label="Iteration range selector loading"
       >
         <div className="iteration-tabs" role="group" aria-busy="true">
-          {Array.from({ length: SKELETON_TAB_COUNT }).map((_, i) => {
-            const isLast = i === SKELETON_TAB_COUNT - 1;
+          {Array.from({ length: skeletonCount }).map((_, i) => {
+            const isLast = i === skeletonCount - 1;
             return (
               <div
                 key={i}
