@@ -593,6 +593,17 @@
   font-weight: 700;
 }
 
+/* Skeleton loading state */
+.iteration-tab-skeleton {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+}
+
+.iteration-tab-skeleton.active {
+  background-color: var(--treeview-selected);
+}
+
 /* Loading indicator */
 .iteration-loading {
   display: flex;
