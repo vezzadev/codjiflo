@@ -466,17 +466,12 @@
   background-color: var(--listview-header);
   border: 1px solid var(--combobox-border);
   transition: left 0.15s ease;
-  cursor: grab;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   white-space: nowrap;
   color: var(--main-fg);
   pointer-events: none; /* Allow clicks to pass through to the track */
-}
-
-.content-filter-thumb:active {
-  cursor: grabbing;
 }
 
 /* Hover effect when hovering over the track */
