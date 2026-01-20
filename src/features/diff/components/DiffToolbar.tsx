@@ -301,9 +301,10 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
               checked={value === position}
               onChange={() => onChange(position)}
               className="sr-only"
+              aria-label={FILTER_LABELS[position]}
             />
             <span
-              className={`content-filter-thumb ${value === position ? 'content-filter-thumb-active' : ''}`}
+              className="content-filter-thumb"
               aria-hidden="true"
             >
               {FILTER_LABELS[position]}
