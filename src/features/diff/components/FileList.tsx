@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback, useRef, type KeyboardEvent } from 'react';
+import { useState, useMemo, useCallback, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
+import { Search, X } from 'lucide-react';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { useIterationAwareFiles } from '../hooks';
 import { groupFilesByFolder, getBasename } from '../utils';
@@ -17,9 +18,41 @@ export function FileList() {
   const { selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
   const { files } = useIterationAwareFiles();
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const [filterText, setFilterText] = useState('');
   const treeRef = useRef<HTMLDivElement>(null);
+  const filterInputRef = useRef<HTMLInputElement>(null);
 
-  const groupedFiles = useMemo(() => groupFilesByFolder(files), [files]);
+  // Filter files by filename (case-insensitive match)
+  const filteredFiles = useMemo(() => {
+    if (!filterText.trim()) return files;
+    const lowerFilter = filterText.toLowerCase();
+    return files.filter((file) => file.filename.toLowerCase().includes(lowerFilter));
+  }, [files, filterText]);
+
+  const groupedFiles = useMemo(() => groupFilesByFolder(filteredFiles), [filteredFiles]);
+
+  // File count for header
+  const fileCount = files.length;
+  const filteredCount = filteredFiles.length;
+  const showFilteredCount = filterText.trim() && filteredCount !== fileCount;
+
+  const handleFilterChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setFilterText(e.target.value);
+  }, []);
+
+  const handleFilterKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setFilterText('');
+      filterInputRef.current?.blur();
+    }
+    // Prevent tree keyboard navigation from triggering when in filter input
+    e.stopPropagation();
+  }, []);
+
+  const clearFilter = useCallback(() => {
+    setFilterText('');
+    filterInputRef.current?.focus();
+  }, []);
 
   const toggleFolder = (folder: string) => {
     setCollapsedFolders((prev) => {
@@ -128,6 +161,38 @@ export function FileList() {
 
   return (
     <nav aria-label="Changed files">
+      {/* Header with integrated filter */}
+      <div className="file-explorer-header">
+        <span className="file-explorer-title">
+          Files
+          <span className="file-count">
+            ({showFilteredCount ? `${filteredCount}/${fileCount}` : fileCount})
+          </span>
+        </span>
+        <div className="file-explorer-filter-inline">
+          <Search size={14} className="filter-icon" aria-hidden="true" />
+          <input
+            ref={filterInputRef}
+            type="text"
+            className="textbox file-filter-input"
+            placeholder="Filter..."
+            value={filterText}
+            onChange={handleFilterChange}
+            onKeyDown={handleFilterKeyDown}
+            aria-label="Filter files by name"
+          />
+          {filterText && (
+            <button
+              type="button"
+              className="btn-icon filter-clear"
+              onClick={clearFilter}
+              aria-label="Clear filter"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      </div>
       {/* AC-1.3.7: File list is keyboard navigable */}
       <div
         ref={treeRef}
@@ -135,26 +200,28 @@ export function FileList() {
         role="tree"
         onKeyDown={handleTreeKeyDown}
       >
-        {/* PR Description entry */}
-        <div
-          className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
-          role="treeitem"
-          onClick={() => selectFile(PR_DESCRIPTION_INDEX)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              selectFile(PR_DESCRIPTION_INDEX);
-            }
-          }}
-          tabIndex={0}
-          aria-current={isDescriptionSelected ? 'location' : undefined}
-          aria-label="Pull Request Description"
-        >
-          <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }} aria-hidden="true">
-            PR
-          </span>
-          <span className="tree-label" aria-hidden="true">Pull Request Description</span>
-        </div>
+        {/* PR Description entry - hidden when filtering */}
+        {!filterText && (
+          <div
+            className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
+            role="treeitem"
+            onClick={() => selectFile(PR_DESCRIPTION_INDEX)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectFile(PR_DESCRIPTION_INDEX);
+              }
+            }}
+            tabIndex={0}
+            aria-current={isDescriptionSelected ? 'location' : undefined}
+            aria-label="Pull Request Description"
+          >
+            <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }} aria-hidden="true">
+              PR
+            </span>
+            <span className="tree-label" aria-hidden="true">Pull Request Description</span>
+          </div>
+        )}
         {groupedFiles.map(({ folder, files: folderFiles }) => {
           const isCollapsed = collapsedFolders.has(folder);
           return (

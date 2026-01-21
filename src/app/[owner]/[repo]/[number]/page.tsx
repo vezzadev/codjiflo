@@ -186,13 +186,7 @@ function PullRequestContent({ params }: PRPageProps) {
       <DegradedModeBanner />
 
       <div className="main-layout" style={{ gridTemplateColumns: `${String(leftPaneWidth)}px 1fr` }}>
-        <LeftPane
-          header={
-            <div className="file-explorer-header">
-              <span>Files</span>
-            </div>
-          }
-        >
+        <LeftPane>
           <FileList />
           <ResizeHandle direction="horizontal" onResize={resizeLeftPane} />
         </LeftPane>
