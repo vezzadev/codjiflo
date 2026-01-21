@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useDraftComment } from './useDraftComment';
 import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
@@ -18,7 +18,7 @@ vi.mock('@/features/comments', () => ({
 }));
 
 vi.mock('../utils', () => ({
-  getDiffLinePosition: vi.fn((lines, index) => index + 1),
+  getDiffLinePosition: vi.fn((_lines: unknown[], index: number) => index + 1),
 }));
 
 describe('useDraftComment', () => {
@@ -47,7 +47,7 @@ describe('useDraftComment', () => {
 
     vi.mocked(useCommentsStore).mockReturnValue({
       addComment: mockAddComment,
-    } as unknown as ReturnType<typeof useCommentsStore>);
+    } as ReturnType<typeof useCommentsStore>);
   });
 
   it('returns initial state with no draft', () => {
@@ -241,14 +241,14 @@ describe('useDraftComment', () => {
 
     // Start submission (don't await)
     act(() => {
-      result.current.submitComment(mockDiffLines, mockAlignedLines, 'test.ts', 'inline');
+      void result.current.submitComment(mockDiffLines, mockAlignedLines, 'test.ts', 'inline');
     });
 
     expect(result.current.isSubmitting).toBe(true);
 
     // Complete submission
     await act(async () => {
-      resolvePromise!();
+      resolvePromise();
       await pendingPromise;
     });
 

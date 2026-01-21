@@ -7,6 +7,13 @@ import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
 import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight } from '../hooks';
 
+// Silence unused import warnings - these are used in type assertions below
+void useIterationDiff;
+void useIterationAwareFiles;
+void useDiffPipeline;
+void useDraftComment;
+void useContainerHeight;
+
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
   isLoadingContent: false,
@@ -62,7 +69,7 @@ vi.mock('./codemirror', async () => {
 
   interface MockThread {
     id: string;
-    comments: Array<{ body: string; author: { login: string } }>;
+    comments: { body: string; author: { login: string } }[];
   }
 
   interface UnifiedEditorProps {
@@ -85,7 +92,7 @@ vi.mock('./codemirror', async () => {
   }
 
   interface SplitEditorProps {
-    alignedLines: Array<{ left: MockDiffLine | null; right: MockDiffLine | null }>;
+    alignedLines: { left: MockDiffLine | null; right: MockDiffLine | null }[];
     threadsByLineAndSide?: Map<string, MockThread[]>;
     currentUserLogin?: string;
     addReply?: (threadId: string, body: string) => Promise<void>;
@@ -155,7 +162,7 @@ vi.mock('./codemirror', async () => {
             onReply: addReply ?? (() => Promise.resolve()),
             onEdit: editComment ?? (() => Promise.resolve()),
             onDelete: deleteComment ?? (() => Promise.resolve()),
-            onToggleResolved: toggleResolved ?? (() => {}),
+            onToggleResolved: toggleResolved ?? (() => { /* noop */ }),
           })
         )
       ),
@@ -168,9 +175,9 @@ vi.mock('./codemirror', async () => {
         },
           React.createElement(CommentEditor, {
             value: draftBody ?? '',
-            onChange: onChangeDraftBody ?? (() => {}),
-            onSubmit: onSubmitDraft ?? (() => {}),
-            onCancel: onCancelDraft ?? (() => {}),
+            onChange: onChangeDraftBody ?? (() => { /* noop */ }),
+            onSubmit: onSubmitDraft ?? (() => { /* noop */ }),
+            onCancel: onCancelDraft ?? (() => { /* noop */ }),
             isSubmitting: isSubmittingDraft ?? false,
             submitLabel: 'Comment',
             label: 'New comment',
@@ -231,7 +238,7 @@ vi.mock('./codemirror', async () => {
             onReply: addReply ?? (() => Promise.resolve()),
             onEdit: editComment ?? (() => Promise.resolve()),
             onDelete: deleteComment ?? (() => Promise.resolve()),
-            onToggleResolved: toggleResolved ?? (() => {}),
+            onToggleResolved: toggleResolved ?? (() => { /* noop */ }),
           })
         )
       ),
@@ -243,9 +250,9 @@ vi.mock('./codemirror', async () => {
         },
           React.createElement(CommentEditor, {
             value: draftBody ?? '',
-            onChange: onChangeDraftBody ?? (() => {}),
-            onSubmit: onSubmitDraft ?? (() => {}),
-            onCancel: onCancelDraft ?? (() => {}),
+            onChange: onChangeDraftBody ?? (() => { /* noop */ }),
+            onSubmit: onSubmitDraft ?? (() => { /* noop */ }),
+            onCancel: onCancelDraft ?? (() => { /* noop */ }),
             isSubmitting: isSubmittingDraft ?? false,
             submitLabel: 'Comment',
             label: 'New comment',
@@ -259,10 +266,10 @@ vi.mock('./codemirror', async () => {
   const MockCommentPortalManager = ({ children }: { children: (callbacks: Record<string, () => void>) => React.ReactNode }) => {
     return React.createElement(React.Fragment, null,
       children({
-        onMountThread: () => {},
-        onUnmountThread: () => {},
-        onMountDraft: () => {},
-        onUnmountDraft: () => {},
+        onMountThread: () => { /* noop */ },
+        onUnmountThread: () => { /* noop */ },
+        onMountDraft: () => { /* noop */ },
+        onUnmountDraft: () => { /* noop */ },
       })
     );
   };

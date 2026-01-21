@@ -12,7 +12,7 @@ import {
 } from './scroll-sync';
 
 // Mock EditorView for syncScrollPosition tests
-function createMockEditorView(scrollTop: number = 0, scrollLeft: number = 0) {
+function createMockEditorView(scrollTop = 0, scrollLeft = 0) {
   return {
     scrollDOM: {
       scrollTop,
@@ -193,14 +193,15 @@ describe('syncScrollPosition', () => {
 
 describe('ScrollSyncConfig', () => {
   it('accepts all configuration options', () => {
-    const mockPartner = createMockEditorView();
+    type PartnerType = NonNullable<Parameters<typeof createScrollSync>[0]>['partner'];
+    const mockPartner: PartnerType = createMockEditorView() as PartnerType;
     const onScroll = vi.fn();
 
     const state = EditorState.create({
       doc: 'test content',
       extensions: [
         createScrollSync({
-          partner: mockPartner as unknown as Parameters<typeof createScrollSync>[0]['partner'],
+          partner: mockPartner,
           direction: 'bidirectional',
           onScroll,
           debounceMs: 100,

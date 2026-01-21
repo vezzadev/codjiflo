@@ -165,7 +165,7 @@ export class MockTransaction {
   constructor(
     public readonly state: MockEditorState,
     public readonly effects: MockStateEffect<unknown>[] = [],
-    public readonly docChanged: boolean = false
+    public readonly docChanged = false
   ) {}
 }
 
@@ -198,11 +198,13 @@ export class MockEditorState {
     effects?: MockStateEffect<unknown> | MockStateEffect<unknown>[];
     changes?: unknown;
   }): { state: MockEditorState } {
-    const effects = spec.effects
+    // Effects are parsed but not used in mock - just validate the structure
+    const _effects = spec.effects
       ? Array.isArray(spec.effects)
         ? spec.effects
         : [spec.effects]
       : [];
+    void _effects;
 
     const newState = new MockEditorState(this.doc, this.extensions);
     newState.fieldValues = new Map(this.fieldValues);
@@ -336,7 +338,7 @@ export abstract class MockWidgetType {
     return -1;
   }
 
-  ignoreEvent?(event: Event): boolean {
+  ignoreEvent?(): boolean {
     return true;
   }
 }
@@ -387,20 +389,20 @@ export class MockEditorView {
     return { from: 0, to: this.state.doc.length };
   }
 
-  get documentTop(): number {
-    return 0;
-  }
+  readonly documentTop = 0;
 
   dispatch(tr: MockTransaction | { effects?: MockStateEffect<unknown> | MockStateEffect<unknown>[] }): void {
-    const effects = 'effects' in tr && tr.effects
-      ? Array.isArray(tr.effects) ? tr.effects : [tr.effects]
+    const trEffects = 'effects' in tr ? tr.effects : undefined;
+    const effectsArray = trEffects
+      ? Array.isArray(trEffects) ? trEffects : [trEffects]
       : [];
 
-    const transaction = tr instanceof MockTransaction
+    // Transaction is constructed but not used - mock just updates state
+    void (tr instanceof MockTransaction
       ? tr
-      : new MockTransaction(this.state, effects);
+      : new MockTransaction(this.state, effectsArray));
 
-    const { state: newState } = this.state.update({ effects });
+    const { state: newState } = this.state.update({ effects: effectsArray });
     this.state = newState;
 
     const update: MockViewUpdate = {
