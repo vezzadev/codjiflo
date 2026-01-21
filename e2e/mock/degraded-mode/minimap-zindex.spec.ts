@@ -196,21 +196,12 @@ test.describe("Minimap Z-Index Bug", () => {
     const listbox = page.getByRole("listbox", { name: "View mode" });
     await expect(listbox).toBeVisible();
 
-    const listboxZIndex = await listbox.evaluate((el) => {
-      return window.getComputedStyle(el).zIndex;
-    });
-
     // The dropdown's effective z-index should be higher than the minimap's
     // Since they're in different stacking contexts, we need to check the parent contexts
     const diffHeader = page.locator(".diff-header");
     const diffHeaderZIndex = await diffHeader.evaluate((el) => {
       return window.getComputedStyle(el).zIndex;
     });
-
-    // Log the z-index values for debugging
-    console.log(`Minimap z-index: ${minimapZIndex}`);
-    console.log(`Diff header z-index: ${diffHeaderZIndex}`);
-    console.log(`Listbox z-index: ${listboxZIndex}`);
 
     // The diff-header should have a higher z-index than the minimap
     // to ensure its dropdown children appear above the minimap
