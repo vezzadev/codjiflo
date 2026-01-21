@@ -5,7 +5,7 @@ import { useDiffStore } from '../stores';
 import { useCommentsStore } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import { FileChangeStatus } from '@/api/types';
-import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight } from '../hooks';
+import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight, useScrollPreservation } from '../hooks';
 
 // Silence unused import warnings - these are used in type assertions below
 void useIterationDiff;
@@ -13,6 +13,7 @@ void useIterationAwareFiles;
 void useDiffPipeline;
 void useDraftComment;
 void useContainerHeight;
+void useScrollPreservation;
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -338,12 +339,18 @@ const mockContainerHeight = {
   scrollContainerRef: { current: null },
 };
 
+const mockScrollPreservation = {
+  attachScrollListener: vi.fn(),
+  restoreScrollPosition: vi.fn(),
+};
+
 vi.mock('../hooks', () => ({
   useIterationDiff: vi.fn(() => mockIterationDiff),
   useIterationAwareFiles: vi.fn(() => mockIterationAwareFiles),
   useDiffPipeline: vi.fn(() => mockDiffPipeline),
   useDraftComment: vi.fn(() => mockDraftComment),
   useContainerHeight: vi.fn(() => mockContainerHeight),
+  useScrollPreservation: vi.fn(() => mockScrollPreservation),
 }));
 
 const mockDefaultCommentsState = {

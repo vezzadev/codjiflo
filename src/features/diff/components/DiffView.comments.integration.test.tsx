@@ -205,6 +205,10 @@ vi.mock('../hooks', async () => {
       containerRefCallback: vi.fn(),
       containerHeight: 500,
     })),
+    useScrollPreservation: vi.fn(() => ({
+      attachScrollListener: vi.fn(),
+      restoreScrollPosition: vi.fn(),
+    })),
   };
 });
 
