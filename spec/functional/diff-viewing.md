@@ -727,6 +727,32 @@ function determineViewContext(left: Span, right: Span): CommentViewContext {
 - Navigation is disabled for fully added/deleted files (every line is a change)
 - Toolbar buttons show disabled state at navigation boundaries
 
+### Go to Line
+
+**Trigger:** `Ctrl+G` (or `Cmd+G` on Mac)
+
+Opens a compact modal in the top-right of the diff area with a line number input field.
+
+**Line Number Interpretation:**
+
+| View Mode | Line Number Source |
+|-----------|-------------------|
+| Inline (default) | Row index in diff |
+| Split - Both sides | Row index in aligned diff |
+| Split - Right only | Row index in aligned diff |
+| Split - Left only | Row index in aligned diff |
+
+When the user enters a line number and presses Enter:
+1. Modal closes
+2. View scrolls to center the target line in the viewport
+3. If line number is out of range, clamps to valid range
+
+**Modal Behavior:**
+- Auto-focuses input on open
+- Closes on: Escape, Enter (after navigation), or blur (with delay)
+- Shows validation error for non-numeric or invalid input
+- Placeholder shows valid line range (e.g., "1-500")
+
 ### Selection & Comments
 
 ```typescript

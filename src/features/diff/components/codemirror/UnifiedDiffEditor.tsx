@@ -96,7 +96,7 @@ export interface UnifiedDiffEditorHandle {
   /** Get the CodeMirror EditorView */
   getView: () => EditorView | null;
   /** Scroll to a specific line */
-  scrollToLine: (line: number) => void;
+  scrollToLine: (line: number, align?: 'start' | 'center' | 'end') => void;
   /** Get the scroll container element */
   getScrollElement: () => HTMLElement | null;
 }
@@ -349,8 +349,8 @@ export const UnifiedDiffEditor = forwardRef<UnifiedDiffEditorHandle, UnifiedDiff
       ref,
       () => ({
         getView: () => viewRef.current,
-        scrollToLine: (line: number) => {
-          editorRef.current?.scrollToLine(line, 'start');
+        scrollToLine: (line: number, align: 'start' | 'center' | 'end' = 'start') => {
+          editorRef.current?.scrollToLine(line, align);
         },
         getScrollElement: () => viewRef.current?.scrollDOM ?? null,
       }),

@@ -19,7 +19,14 @@ import { DiffToolbar } from './DiffToolbar';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { Minimap } from './Minimap';
-import { UnifiedDiffEditor, SplitDiffEditor, CommentPortalManager } from './codemirror';
+import { GoToLineModal } from './GoToLineModal';
+import {
+  UnifiedDiffEditor,
+  SplitDiffEditor,
+  CommentPortalManager,
+  type UnifiedDiffEditorHandle,
+  type SplitDiffEditorHandle,
+} from './codemirror';
 import { useCommentsStore, useCommentTracking, type ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
@@ -66,6 +73,11 @@ export function DiffView() {
 
   // Track visible row range from react-window for accurate minimap lasso positioning
   const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
+
+  // Go to Line modal state
+  type GoToLineState = 'hidden' | 'visible';
+  const [goToLineState, setGoToLineState] = useState<GoToLineState>('hidden');
+  const editorRef = useRef<UnifiedDiffEditorHandle | SplitDiffEditorHandle | null>(null);
 
   // Build threads-by-id map for the portal manager
   const threadsById = useMemo(() => {
@@ -116,6 +128,13 @@ export function DiffView() {
 
   // Handler for keyboard scrolling in diff content area
   const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    // Handle Ctrl+G for Go to Line
+    if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+      e.preventDefault();
+      setGoToLineState('visible');
+      return;
+    }
+
     // Find the actual scrollable element (CodeMirror scroller) inside the region
     const scrollable = e.currentTarget.querySelector('.cm-scroller');
     if (!scrollable) return;
@@ -150,6 +169,15 @@ export function DiffView() {
       scrollable.scrollBy({ top: scrollLines * LINE_HEIGHT, behavior: 'smooth' });
     }
   }, [containerHeight]);
+
+  // Handler for Go to Line modal
+  const handleGoToLine = useCallback((line: number) => {
+    editorRef.current?.scrollToLine(line, 'center');
+  }, []);
+
+  const handleCloseGoToLine = useCallback(() => {
+    setGoToLineState('hidden');
+  }, []);
 
   // Loading state
   if (isLoading || (isShowingDescription && isPRLoading) || pipeline._isLoadingFullFile) {
@@ -249,6 +277,7 @@ export function DiffView() {
               onKeyDown={handleDiffKeyDown}
             >
               <UnifiedDiffEditor
+                ref={(handle) => { editorRef.current = handle; }}
                 key={pipeline.filename ?? 'diff-editor'}
                 diffLines={pipeline.diffLines}
                 language={pipeline.language}
@@ -286,6 +315,13 @@ export function DiffView() {
                 showComments={viewConfig.showComments}
                 visibleRowRange={visibleRowRange}
               />
+              {goToLineState === 'visible' && (
+                <GoToLineModal
+                  onClose={handleCloseGoToLine}
+                  onGoToLine={handleGoToLine}
+                  maxLine={pipeline.diffLines.length}
+                />
+              )}
             </div>
           ) : (
             <div
@@ -302,6 +338,7 @@ export function DiffView() {
               onKeyDown={handleDiffKeyDown}
             >
               <SplitDiffEditor
+                ref={(handle) => { editorRef.current = handle; }}
                 alignedLines={pipeline.alignedLines}
                 language={pipeline.language}
                 containerHeight={containerHeight}
@@ -339,6 +376,13 @@ export function DiffView() {
                 showComments={viewConfig.showComments}
                 visibleRowRange={visibleRowRange}
               />
+              {goToLineState === 'visible' && (
+                <GoToLineModal
+                  onClose={handleCloseGoToLine}
+                  onGoToLine={handleGoToLine}
+                  maxLine={pipeline.alignedLines.length}
+                />
+              )}
             </div>
           )
         }

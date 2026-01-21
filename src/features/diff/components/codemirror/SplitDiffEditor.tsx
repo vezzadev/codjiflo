@@ -100,7 +100,7 @@ export interface SplitDiffEditorHandle {
   /** Get the right editor view */
   getRightView: () => EditorView | null;
   /** Scroll both editors to a specific line */
-  scrollToLine: (line: number) => void;
+  scrollToLine: (line: number, align?: 'start' | 'center' | 'end') => void;
   /** Get the scroll container element */
   getScrollElement: () => HTMLElement | null;
 }
@@ -485,9 +485,9 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
       () => ({
         getLeftView: () => leftViewRef.current,
         getRightView: () => rightViewRef.current,
-        scrollToLine: (line: number) => {
-          leftEditorRef.current?.scrollToLine(line, 'start');
-          rightEditorRef.current?.scrollToLine(line, 'start');
+        scrollToLine: (line: number, align: 'start' | 'center' | 'end' = 'start') => {
+          leftEditorRef.current?.scrollToLine(line, align);
+          rightEditorRef.current?.scrollToLine(line, align);
         },
         getScrollElement: () => leftViewRef.current?.scrollDOM ?? null,
       }),

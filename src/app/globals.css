@@ -27,3 +27,4 @@
 /* Modal Styles */
 @import '../styles/modals/modal-base.css';
 @import '../styles/modals/theme-modal.css';
+@import '../styles/modals/go-to-line-modal.css';
