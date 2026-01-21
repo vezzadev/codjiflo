@@ -96,9 +96,11 @@ export function DiffView() {
   }, [selectedFileIndex, selectedRange, resetChangeIndex]);
 
   // Sync hunk count to store for navigation controls
+  // Must include selectedFileIndex in dependencies to ensure effect runs even when
+  // new file has same hunkIndices.length as previous file (Issue #324)
   useEffect(() => {
     setTotalChangeCount(pipeline.hunkIndices.length);
-  }, [pipeline.hunkIndices.length, setTotalChangeCount]);
+  }, [pipeline.hunkIndices.length, setTotalChangeCount, selectedFileIndex]);
 
   // Handler for submitting draft
   const handleSubmitDraft = useCallback(() => {
