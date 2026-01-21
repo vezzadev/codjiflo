@@ -175,6 +175,23 @@ enum AcquisitionState {
 
 ### Filtering
 
+The file explorer header contains an inline filter input for quick file name filtering.
+
+#### Filter UI
+
+| Element | Description |
+|---------|-------------|
+| Search icon | Visual indicator (non-interactive) |
+| Filter input | Text input with placeholder "Filter by file name" |
+| Clear button | X icon button, visible only when filter has text |
+
+#### Filter Behavior
+
+- **Case-insensitive substring match**: Filters files by filename
+- **PR Description**: Shown when filter matches "Pull Request Description" or when empty
+- **Escape key**: Clears filter and blurs input
+- **Real-time**: Filtering updates immediately as user types
+
 ```typescript
 interface FileExplorerFilter {
   // Name filter
