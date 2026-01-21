@@ -337,24 +337,14 @@ describe('FileList', () => {
       ]));
     };
 
-    it('displays total file count in header', () => {
-      setupFilterTest();
-      render(<FileList />);
-
-      expect(screen.getByText('Files')).toBeInTheDocument();
-      expect(screen.getByText('(4)')).toBeInTheDocument();
-    });
-
-    it('filters files by filename and updates count', async () => {
+    it('filters files by filename', async () => {
       const user = userEvent.setup();
       setupFilterTest();
       render(<FileList />);
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
 
-      // Should show filtered count
-      expect(screen.getByText('(2/4)')).toBeInTheDocument();
       // Should show matching files
       expect(screen.getByText('login.ts')).toBeInTheDocument();
       expect(screen.getByText('logout.ts')).toBeInTheDocument();
@@ -371,7 +361,7 @@ describe('FileList', () => {
       // PR description visible initially
       expect(screen.getByText('Pull Request Description')).toBeInTheDocument();
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
 
       // PR description hidden when filtering
@@ -386,7 +376,7 @@ describe('FileList', () => {
       // Clear button not visible initially
       expect(screen.queryByLabelText('Clear filter')).not.toBeInTheDocument();
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
 
       // Clear button visible
@@ -398,17 +388,16 @@ describe('FileList', () => {
       setupFilterTest();
       render(<FileList />);
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
 
-      // Verify filter is active
-      expect(screen.getByText('(2/4)')).toBeInTheDocument();
+      // Verify filter is active - non-matching files hidden
+      expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
 
       // Click clear button
       await user.click(screen.getByLabelText('Clear filter'));
 
       // Filter should be cleared
-      expect(screen.getByText('(4)')).toBeInTheDocument();
       expect(filterInput).toHaveValue('');
       // All files visible again
       expect(screen.getByText('helpers.ts')).toBeInTheDocument();
@@ -419,15 +408,18 @@ describe('FileList', () => {
       setupFilterTest();
       render(<FileList />);
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
+
+      // Verify filter is active
+      expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
 
       // Press Escape
       await user.keyboard('{Escape}');
 
       // Filter should be cleared
-      expect(screen.getByText('(4)')).toBeInTheDocument();
       expect(filterInput).toHaveValue('');
+      expect(screen.getByText('helpers.ts')).toBeInTheDocument();
     });
 
     it('filter is case-insensitive', async () => {
@@ -435,12 +427,12 @@ describe('FileList', () => {
       setupFilterTest();
       render(<FileList />);
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'AUTH');
 
       // Should still find files with lowercase 'auth'
-      expect(screen.getByText('(2/4)')).toBeInTheDocument();
       expect(screen.getByText('login.ts')).toBeInTheDocument();
+      expect(screen.getByText('logout.ts')).toBeInTheDocument();
     });
 
     it('shows empty state when no files match filter', async () => {
@@ -448,13 +440,12 @@ describe('FileList', () => {
       setupFilterTest();
       render(<FileList />);
 
-      const filterInput = screen.getByPlaceholderText('Filter...');
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'nonexistent');
 
-      // Should show 0 filtered
-      expect(screen.getByText('(0/4)')).toBeInTheDocument();
-      // No file items visible (only header elements remain)
+      // No file items visible
       expect(screen.queryByText('login.ts')).not.toBeInTheDocument();
+      expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
     });
   });
 });

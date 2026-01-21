@@ -53,15 +53,16 @@ describe('FileList filter integration', () => {
     expect(useDiffStore.getState().selectedFileIndex).toBe(1);
 
     // Filter to show only api files
-    const filterInput = screen.getByPlaceholderText('Filter...');
+    const filterInput = screen.getByPlaceholderText('Filter by file name');
     await user.type(filterInput, 'api');
 
     // Selection should be preserved (file still visible)
     expect(screen.getByText('types.ts')).toBeInTheDocument();
-    expect(screen.getByText('(2/3)')).toBeInTheDocument();
+    // Non-matching file should be hidden
+    expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
   });
 
-  it('counts update in real-time as user types', async () => {
+  it('filters in real-time as user types', async () => {
     const user = userEvent.setup();
 
     act(() => {
@@ -80,22 +81,19 @@ describe('FileList filter integration', () => {
 
     render(<FileList />);
 
-    const filterInput = screen.getByPlaceholderText('Filter...');
+    const filterInput = screen.getByPlaceholderText('Filter by file name');
 
-    // Type 'a' - should match all auth* files
+    // Type 'a' - should match auth*, author*, authorization* (not utils)
     await user.type(filterInput, 'a');
-    expect(screen.getByText('(3/4)')).toBeInTheDocument();
+    expect(screen.getByText('auth.ts')).toBeInTheDocument();
+    expect(screen.getByText('author.ts')).toBeInTheDocument();
+    expect(screen.getByText('authorization.ts')).toBeInTheDocument();
+    expect(screen.queryByText('utils.ts')).not.toBeInTheDocument();
 
-    // Type 'u' (now 'au') - still matches auth*, author*, authorization*
-    await user.type(filterInput, 'u');
-    expect(screen.getByText('(3/4)')).toBeInTheDocument();
-
-    // Type 'tho' (now 'autho') - matches author*, authorization*
-    await user.type(filterInput, 'tho');
-    expect(screen.getByText('(2/4)')).toBeInTheDocument();
-
-    // Type 'r.' (now 'author.') - matches only author.ts
-    await user.type(filterInput, 'r.');
-    expect(screen.getByText('(1/4)')).toBeInTheDocument();
+    // Type 'uthor.' (now 'author.') - matches only author.ts
+    await user.type(filterInput, 'uthor.');
+    expect(screen.getByText('author.ts')).toBeInTheDocument();
+    expect(screen.queryByText('auth.ts')).not.toBeInTheDocument();
+    expect(screen.queryByText('authorization.ts')).not.toBeInTheDocument();
   });
 });

@@ -31,11 +31,6 @@ export function FileList() {
 
   const groupedFiles = useMemo(() => groupFilesByFolder(filteredFiles), [filteredFiles]);
 
-  // File count for header
-  const fileCount = files.length;
-  const filteredCount = filteredFiles.length;
-  const showFilteredCount = filterText.trim() && filteredCount !== fileCount;
-
   const handleFilterChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setFilterText(e.target.value);
   }, []);
@@ -163,19 +158,13 @@ export function FileList() {
     <nav aria-label="Changed files">
       {/* Header with integrated filter */}
       <div className="file-explorer-header">
-        <span className="file-explorer-title">
-          Files
-          <span className="file-count">
-            ({showFilteredCount ? `${filteredCount}/${fileCount}` : fileCount})
-          </span>
-        </span>
         <div className="file-explorer-filter-inline">
           <Search size={14} className="filter-icon" aria-hidden="true" />
           <input
             ref={filterInputRef}
             type="text"
             className="textbox file-filter-input"
-            placeholder="Filter..."
+            placeholder="Filter by file name"
             value={filterText}
             onChange={handleFilterChange}
             onKeyDown={handleFilterKeyDown}

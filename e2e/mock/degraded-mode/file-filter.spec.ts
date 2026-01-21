@@ -49,34 +49,26 @@ test.describe("File Filter in Header", () => {
     });
   });
 
-  test("filter input is visible in header with file count", async ({ page }) => {
+  test("filter input is visible in header", async ({ page }) => {
     await page.goto(config.pageUrl);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    // Header shows Files label and count within the file navigation
-    const header = fileNav.locator(".file-explorer-header");
-    await expect(header.getByText("Files")).toBeVisible();
-    await expect(header.getByText("(4)")).toBeVisible();
-
     // Filter input is in header
-    const filterInput = page.getByPlaceholder("Filter...");
+    const filterInput = page.getByPlaceholder("Filter by file name");
     await expect(filterInput).toBeVisible();
   });
 
-  test("filtering shows matching files and updates count", async ({ page }) => {
+  test("filtering shows matching files and hides non-matching", async ({ page }) => {
     await page.goto(config.pageUrl);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
     // Type in filter
-    const filterInput = page.getByPlaceholder("Filter...");
+    const filterInput = page.getByPlaceholder("Filter by file name");
     await filterInput.fill("auth");
-
-    // Count updates to filtered/total
-    await expect(page.getByText("(2/4)")).toBeVisible();
 
     // Only auth files visible
     await expect(fileNav.getByRole("treeitem", { name: /login\.ts/ })).toBeVisible();
@@ -90,7 +82,8 @@ test.describe("File Filter in Header", () => {
   test("clear button appears and clears filter", async ({ page }) => {
     await page.goto(config.pageUrl);
 
-    const filterInput = page.getByPlaceholder("Filter...");
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    const filterInput = page.getByPlaceholder("Filter by file name");
     const clearButton = page.getByLabel("Clear filter");
 
     // Clear button not visible initially
@@ -98,32 +91,37 @@ test.describe("File Filter in Header", () => {
 
     // Type in filter
     await filterInput.fill("auth");
-    await expect(page.getByText("(2/4)")).toBeVisible();
 
     // Clear button now visible
     await expect(clearButton).toBeVisible();
+
+    // Verify filter is active
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).not.toBeVisible();
 
     // Click clear
     await clearButton.click();
 
     // Filter cleared, all files visible
-    await expect(page.getByText("(4)")).toBeVisible();
     await expect(filterInput).toHaveValue("");
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeVisible();
   });
 
   test("Escape key clears filter", async ({ page }) => {
     await page.goto(config.pageUrl);
 
-    const filterInput = page.getByPlaceholder("Filter...");
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    const filterInput = page.getByPlaceholder("Filter by file name");
     await filterInput.fill("auth");
-    await expect(page.getByText("(2/4)")).toBeVisible();
+
+    // Verify filter is active
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).not.toBeVisible();
 
     // Press Escape
     await filterInput.press("Escape");
 
     // Filter cleared
-    await expect(page.getByText("(4)")).toBeVisible();
     await expect(filterInput).toHaveValue("");
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeVisible();
   });
 
   test("PR description hidden when filter is active", async ({ page }) => {
@@ -136,7 +134,7 @@ test.describe("File Filter in Header", () => {
     await expect(prDescription).toBeVisible();
 
     // Apply filter
-    const filterInput = page.getByPlaceholder("Filter...");
+    const filterInput = page.getByPlaceholder("Filter by file name");
     await filterInput.fill("auth");
 
     // PR description hidden
