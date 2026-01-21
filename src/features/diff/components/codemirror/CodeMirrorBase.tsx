@@ -201,6 +201,7 @@ export const CodeMirrorBase = forwardRef<CodeMirrorBaseHandle, CodeMirrorBasePro
         basicSetup={basicSetup}
         editable={!readOnly}
         onCreateEditor={handleCreateEditor}
+        theme="none"
       />
     );
   }

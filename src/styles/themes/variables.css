@@ -332,6 +332,8 @@
   --imgdiff-bg: #313131;
   --findinfiles-bg: #313131;
 
+  --diff-area-bg: var(--main-bg);
+
   --window-bg: #2D2D30;
   --titlebar-text: #CECECE;
   --titlebar-text-inactive: #9C9C9C;
@@ -482,6 +484,8 @@
 
   --imgdiff-bg: #111111;
   --findinfiles-bg: #111111;
+
+  --diff-area-bg: var(--main-bg);
 
   --window-bg: #0F0F0F;
   --titlebar-text: #BFBFBF;
@@ -634,6 +638,8 @@
 
   --imgdiff-bg: #000000;
   --findinfiles-bg: #000000;
+
+  --diff-area-bg: var(--main-bg);
 
   --window-bg: #000000;
   --titlebar-text: #FFFFFF;
