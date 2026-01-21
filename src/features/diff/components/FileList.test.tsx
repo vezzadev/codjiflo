@@ -353,7 +353,7 @@ describe('FileList', () => {
       expect(screen.queryByText('README.md')).not.toBeInTheDocument();
     });
 
-    it('hides PR description when filter is active', async () => {
+    it('hides PR description when filter does not match', async () => {
       const user = userEvent.setup();
       setupFilterTest();
       render(<FileList />);
@@ -364,8 +364,20 @@ describe('FileList', () => {
       const filterInput = screen.getByPlaceholderText('Filter by file name');
       await user.type(filterInput, 'auth');
 
-      // PR description hidden when filtering
+      // PR description hidden when filter doesn't match
       expect(screen.queryByText('Pull Request Description')).not.toBeInTheDocument();
+    });
+
+    it('shows PR description when filter matches', async () => {
+      const user = userEvent.setup();
+      setupFilterTest();
+      render(<FileList />);
+
+      const filterInput = screen.getByPlaceholderText('Filter by file name');
+      await user.type(filterInput, 'pull');
+
+      // PR description visible when filter matches
+      expect(screen.getByText('Pull Request Description')).toBeInTheDocument();
     });
 
     it('shows clear button when filter has text', async () => {
