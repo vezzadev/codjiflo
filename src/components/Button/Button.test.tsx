@@ -54,4 +54,28 @@ describe("Button", () => {
     const button = screen.getByRole("button");
     expect(button).toHaveAttribute("type", "reset");
   });
+
+  it("applies icon size class when size='icon'", () => {
+    render(<Button label="Icon" size="icon" />);
+    const button = screen.getByRole("button");
+    expect(button).toHaveClass("btn-icon");
+  });
+
+  it("does not apply icon class with default size", () => {
+    render(<Button label="Default" size="default" />);
+    const button = screen.getByRole("button");
+    expect(button).not.toHaveClass("btn-icon");
+  });
+
+  it("applies custom className when provided", () => {
+    render(<Button label="Custom" className="my-custom-class" />);
+    const button = screen.getByRole("button");
+    expect(button).toHaveClass("my-custom-class");
+  });
+
+  it("sets aria-label when provided", () => {
+    render(<Button label="X" ariaLabel="Close dialog" />);
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("aria-label", "Close dialog");
+  });
 });

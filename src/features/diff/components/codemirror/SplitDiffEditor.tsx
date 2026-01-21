@@ -354,21 +354,36 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
       }
     }, []);
 
-    // Manual scroll sync handler (for cases where extension isn't updated)
+    // Manual scroll sync handler - sets up bidirectional scroll listeners
+    // Re-runs when isRightViewReady changes to ensure both views exist
     useEffect(() => {
+      if (!isRightViewReady) return;
+
       const leftView = leftViewRef.current;
       const rightView = rightViewRef.current;
       if (!leftView || !rightView) return;
 
+      let isSyncing = false;
+
       const syncFromLeft = () => {
+        if (isSyncing) return;
         if (rightView.scrollDOM.scrollTop !== leftView.scrollDOM.scrollTop) {
+          isSyncing = true;
           rightView.scrollDOM.scrollTop = leftView.scrollDOM.scrollTop;
+          requestAnimationFrame(() => {
+            isSyncing = false;
+          });
         }
       };
 
       const syncFromRight = () => {
+        if (isSyncing) return;
         if (leftView.scrollDOM.scrollTop !== rightView.scrollDOM.scrollTop) {
+          isSyncing = true;
           leftView.scrollDOM.scrollTop = rightView.scrollDOM.scrollTop;
+          requestAnimationFrame(() => {
+            isSyncing = false;
+          });
         }
       };
 
@@ -379,7 +394,7 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
         leftView.scrollDOM.removeEventListener('scroll', syncFromLeft);
         rightView.scrollDOM.removeEventListener('scroll', syncFromRight);
       };
-    }, []);
+    }, [isRightViewReady]);
 
     // Add scroll event listener for minimap visible range tracking
     // Uses lineBlockAtHeight instead of view.viewport because viewport is cached
