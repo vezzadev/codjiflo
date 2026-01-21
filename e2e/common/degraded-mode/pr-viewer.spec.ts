@@ -315,8 +315,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // PR Description should be selected by default
     await expect(prDescButton).toHaveAttribute("aria-current", "location");
 
-    // Click on the file list header to ensure keyboard shortcuts work without triggering navigation
-    await page.locator("text=Files").first().click();
+    // Click on the main content area to ensure keyboard shortcuts work without triggering navigation
+    await page.locator(".main-content").click();
 
     // [AC-1.5.1] Press s to go to first file (next file)
     // Note: keyboard navigation follows display order (folder-grouped, "/" first)
