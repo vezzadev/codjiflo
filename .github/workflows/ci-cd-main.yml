@@ -83,7 +83,7 @@ jobs:
   # ============================================================================
   # E2E STRESS TESTS
   # ============================================================================
-  # Runs e2e and e2e:prod 10 times each on a single machine.
+  # Runs e2e and e2e:prod with --repeat-each=10 (each test repeated 10 times).
   # - Parallel: Playwright uses max workers (4-vCPU free OSS runner = 2 workers)
   # - Sequential: Playwright uses 1 worker
   # ============================================================================
@@ -117,42 +117,9 @@ jobs:
         timeout-minutes: 30
         run: |
           echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
-          FAILURES_FILE=$(mktemp)
-          TOTAL_FAILURES=0
-
-          for i in {1..10}; do
-            echo "========================================"
-            echo "=== Parallel Run $i/10 (max workers) ==="
-            echo "========================================"
-
-            if ! npm run test:e2e 2>&1 | tee /tmp/test-output.txt; then
-              grep -E '^\s+\d+\)' /tmp/test-output.txt | sed 's/^\s*//' >> "$FAILURES_FILE" || true
-              TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
-            fi
-
-            if ! npm run test:e2e:prod 2>&1 | tee /tmp/test-output.txt; then
-              grep -E '^\s+\d+\)' /tmp/test-output.txt | sed 's/^\s*//' >> "$FAILURES_FILE" || true
-              TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
-            fi
-          done
-
-          echo ""
-          echo "========================================"
-          echo "=== STRESS TEST SUMMARY ==="
-          echo "========================================"
-
-          if [ -s "$FAILURES_FILE" ]; then
-            echo "❌ FAILING TESTS (sorted by frequency):"
-            echo ""
-            sort "$FAILURES_FILE" | uniq -c | sort -rn
-            echo ""
-            echo "Total failed runs: $TOTAL_FAILURES out of 20"
-            rm "$FAILURES_FILE"
-            exit 1
-          else
-            echo "✅ All 20 test runs passed!"
-            rm "$FAILURES_FILE"
-          fi
+          npm run test:e2e -- --repeat-each=10 || MOCK_FAILED=1
+          npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
+          [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
 
   e2e-stress-sequential:
     runs-on: ubuntu-latest
@@ -182,39 +149,6 @@ jobs:
       - name: Run E2E stress tests (1 worker) - 10x
         timeout-minutes: 30
         run: |
-          FAILURES_FILE=$(mktemp)
-          TOTAL_FAILURES=0
-
-          for i in {1..10}; do
-            echo "========================================"
-            echo "=== Sequential Run $i/10 (1 worker) ==="
-            echo "========================================"
-
-            if ! npm run test:e2e -- --workers=1 2>&1 | tee /tmp/test-output.txt; then
-              grep -E '^\s+\d+\)' /tmp/test-output.txt | sed 's/^\s*//' >> "$FAILURES_FILE" || true
-              TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
-            fi
-
-            if ! npm run test:e2e:prod -- --workers=1 2>&1 | tee /tmp/test-output.txt; then
-              grep -E '^\s+\d+\)' /tmp/test-output.txt | sed 's/^\s*//' >> "$FAILURES_FILE" || true
-              TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
-            fi
-          done
-
-          echo ""
-          echo "========================================"
-          echo "=== STRESS TEST SUMMARY ==="
-          echo "========================================"
-
-          if [ -s "$FAILURES_FILE" ]; then
-            echo "❌ FAILING TESTS (sorted by frequency):"
-            echo ""
-            sort "$FAILURES_FILE" | uniq -c | sort -rn
-            echo ""
-            echo "Total failed runs: $TOTAL_FAILURES out of 20"
-            rm "$FAILURES_FILE"
-            exit 1
-          else
-            echo "✅ All 20 test runs passed!"
-            rm "$FAILURES_FILE"
-          fi
+          npm run test:e2e -- --workers=1 --repeat-each=10 || MOCK_FAILED=1
+          npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
+          [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
