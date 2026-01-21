@@ -124,7 +124,7 @@ test.describe("File Filter in Header", () => {
     await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeVisible();
   });
 
-  test("PR description hidden when filter is active", async ({ page }) => {
+  test("PR description hidden when filter does not match", async ({ page }) => {
     await page.goto(config.pageUrl);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -133,17 +133,35 @@ test.describe("File Filter in Header", () => {
     // PR description visible initially
     await expect(prDescription).toBeVisible();
 
-    // Apply filter
+    // Apply non-matching filter
     const filterInput = page.getByPlaceholder("Filter by file name");
     await filterInput.fill("auth");
 
-    // PR description hidden
+    // PR description hidden when filter doesn't match
     await expect(prDescription).not.toBeVisible();
 
     // Clear filter
     await filterInput.press("Escape");
 
     // PR description visible again
+    await expect(prDescription).toBeVisible();
+  });
+
+  test("PR description shown when filter matches", async ({ page }) => {
+    await page.goto(config.pageUrl);
+
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    const prDescription = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    const filterInput = page.getByPlaceholder("Filter by file name");
+
+    // Apply matching filter
+    await filterInput.fill("pull");
+
+    // PR description visible when filter matches
+    await expect(prDescription).toBeVisible();
+
+    // Also test partial match
+    await filterInput.fill("description");
     await expect(prDescription).toBeVisible();
   });
 });

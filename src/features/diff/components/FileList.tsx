@@ -189,8 +189,8 @@ export function FileList() {
         role="tree"
         onKeyDown={handleTreeKeyDown}
       >
-        {/* PR Description entry - hidden when filtering */}
-        {!filterText && (
+        {/* PR Description entry - shown if filter matches or no filter */}
+        {(!filterText.trim() || 'pull request description'.includes(filterText.toLowerCase())) && (
           <div
             className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
             role="treeitem"
