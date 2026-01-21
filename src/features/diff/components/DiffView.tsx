@@ -14,7 +14,9 @@ import {
   useDraftComment,
   useContainerHeight,
   useIterationDiff,
+  useScrollPreservation,
 } from '../hooks';
+import type { ContentMode } from '../types';
 import { DiffToolbar } from './DiffToolbar';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
@@ -66,6 +68,33 @@ export function DiffView() {
 
   // Track visible row range from react-window for accurate minimap lasso positioning
   const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
+
+  // Scroll preservation across file switches and view mode changes
+  const contentMode: ContentMode = viewConfig.showFullFile ? 'full' : 'changes';
+  const { attachScrollListener, restoreScrollPosition } = useScrollPreservation({
+    filename: pipeline.filename,
+    contentMode,
+    viewMode: viewConfig.mode,
+    isReady: !isLoading && !pipeline._isLoadingFullFile,
+  });
+
+  // Effect to attach scroll listener and restore position when editor mounts
+  useEffect(() => {
+    // Find the CodeMirror scroller element inside the scroll container
+    const container = scrollContainerRef.current;
+    if (!container || !pipeline.filename) return;
+
+    // Small delay to ensure CodeMirror has mounted
+    const timeoutId = window.setTimeout(() => {
+      const scroller = container.querySelector('.cm-scroller') as HTMLElement | null;
+      if (scroller) {
+        attachScrollListener(scroller);
+        restoreScrollPosition(scroller);
+      }
+    }, 50);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pipeline.filename, viewConfig.mode, contentMode, attachScrollListener, restoreScrollPosition]);
 
   // Build threads-by-id map for the portal manager
   const threadsById = useMemo(() => {
