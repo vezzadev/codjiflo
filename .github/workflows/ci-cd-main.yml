@@ -145,6 +145,7 @@ jobs:
       - name: Run E2E stress tests (max workers) - 10x
         timeout-minutes: 30
         run: |
+          echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
           for i in {1..10}; do
             echo "========================================"
             echo "=== Parallel Run $i/10 (max workers) ==="
