@@ -63,18 +63,18 @@ describe('useDiffSource', () => {
       selectedFileIndex: 0,
     } as ReturnType<typeof useDiffStore>);
 
-    const mockIterationDiff = { oldContent: 'old', newContent: 'new', hunks: [] };
+    const mockIterationDiff = { base: null, head: null, diffLines: [], alignedLines: [] };
 
     vi.mocked(useIterationDiff).mockReturnValue({
       isIterationMode: true,
       getFileDiffByPath: vi.fn(() => mockIterationDiff),
       selectedRange: { fromSnapshot: 1, toSnapshot: 2 },
-      changedFiles: ['test.ts'],
+      changedFiles: [{ id: 1, changeTrackingId: 'test.ts', repoPaths: ['test.ts'], firstSnapshotIndex: 0, lastSnapshotIndex: 1 }],
       getArtifactByPath: vi.fn(),
     });
 
     vi.mocked(useIterationAwareFiles).mockReturnValue({
-      files: [{ filename: 'test.ts', originalIndex: 0, status: FileChangeStatus.Modified }],
+      files: [{ filename: 'test.ts', originalIndex: 0, status: FileChangeStatus.Modified, additions: 1, deletions: 0, changes: 1, patch: '' }],
       isIterationMode: true,
       totalFilesInPR: 1,
     });
@@ -151,7 +151,7 @@ describe('useDiffSource', () => {
       isIterationMode: true,
       getFileDiffByPath: vi.fn(() => null),
       selectedRange: { fromSnapshot: 1, toSnapshot: 2 },
-      changedFiles: ['iteration-file.ts'],
+      changedFiles: [{ id: 1, changeTrackingId: 'iteration-file.ts', repoPaths: ['iteration-file.ts'], firstSnapshotIndex: 0, lastSnapshotIndex: 1 }],
       getArtifactByPath: vi.fn(),
     });
 
@@ -162,6 +162,9 @@ describe('useDiffSource', () => {
           originalIndex: 0,
           status: FileChangeStatus.Added,
           patch: 'iteration patch',
+          additions: 1,
+          deletions: 0,
+          changes: 1,
         },
       ],
       isIterationMode: true,

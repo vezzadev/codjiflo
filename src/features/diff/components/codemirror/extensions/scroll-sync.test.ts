@@ -4,6 +4,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { EditorState } from '@codemirror/state';
+import type { EditorView } from '@codemirror/view';
 import {
   createScrollSync,
   scrollSync,
@@ -193,8 +194,7 @@ describe('syncScrollPosition', () => {
 
 describe('ScrollSyncConfig', () => {
   it('accepts all configuration options', () => {
-    type PartnerType = NonNullable<Parameters<typeof createScrollSync>[0]>['partner'];
-    const mockPartner: PartnerType = createMockEditorView() as PartnerType;
+    const mockPartner = createMockEditorView() as unknown as EditorView;
     const onScroll = vi.fn();
 
     const state = EditorState.create({

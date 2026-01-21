@@ -18,17 +18,15 @@ vi.mock('../../utils', () => ({
 
 describe('useDiffShape', () => {
   const mockFilteredInput: DiffFilterOutput = {
-    patch: 'test patch',
     filename: 'test.ts',
-    fileStatus: undefined,
-    iterationDiff: null,
     isIterationMode: false,
     diffLines: [
       { content: 'line1', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 },
-      { content: '+line2', type: 'added' as const, oldLineNumber: null, newLineNumber: 2 },
+      { content: '+line2', type: 'addition' as const, oldLineNumber: null, newLineNumber: 2 },
     ],
+    sourceAlignedLines: null,
     language: 'typescript',
-    hunkIndices: [0],
+    isFullFileChange: false,
   };
 
   beforeEach(() => {
@@ -64,7 +62,7 @@ describe('useDiffShape', () => {
     } as ReturnType<typeof useDiffStore>);
 
     const preComputedAligned = [
-      { left: { content: 'old' }, right: { content: 'new' } },
+      { key: 'line-0', left: { content: 'old', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 }, right: { content: 'new', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 } },
     ];
 
     const inputWithAligned: DiffFilterOutput = {

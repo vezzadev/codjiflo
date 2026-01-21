@@ -36,24 +36,22 @@ vi.mock('../../utils', () => ({
 
 describe('useDiffNavigation', () => {
   const mockDisplayInput: DiffDisplayOutput = {
-    patch: 'test patch',
     filename: 'test.ts',
-    fileStatus: undefined,
-    iterationDiff: null,
     isIterationMode: false,
     diffLines: [
       { content: 'line1', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 },
-      { content: '+line2', type: 'added' as const, oldLineNumber: null, newLineNumber: 2 },
+      { content: '+line2', type: 'addition' as const, oldLineNumber: null, newLineNumber: 2 },
       { content: 'line3', type: 'context' as const, oldLineNumber: 2, newLineNumber: 3 },
     ],
     alignedLines: [],
+    sourceAlignedLines: null,
     language: 'typescript',
     viewMode: 'inline',
-    hunkIndices: [],
+    isFullFileChange: false,
     showWhitespace: false,
     contentFilter: 'both',
     lineNumberMode: 'both',
-    textWrap: 'off',
+    textWrap: 'nowrap',
   };
 
   beforeEach(() => {
@@ -82,8 +80,8 @@ describe('useDiffNavigation', () => {
       ...mockDisplayInput,
       viewMode: 'split',
       alignedLines: [
-        { left: { content: 'old', type: 'deletion' as const }, right: { content: 'new', type: 'addition' as const } },
-        { left: { content: 'ctx', type: 'context' as const }, right: { content: 'ctx', type: 'context' as const } },
+        { key: 'line-0', left: { content: 'old', type: 'deletion' as const, oldLineNumber: 1, newLineNumber: null }, right: { content: 'new', type: 'addition' as const, oldLineNumber: null, newLineNumber: 1 } },
+        { key: 'line-1', left: { content: 'ctx', type: 'context' as const, oldLineNumber: 2, newLineNumber: 2 }, right: { content: 'ctx', type: 'context' as const, oldLineNumber: 2, newLineNumber: 2 } },
       ],
     };
 

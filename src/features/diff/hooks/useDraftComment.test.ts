@@ -32,6 +32,7 @@ describe('useDraftComment', () => {
 
   const mockAlignedLines: AlignedDiffLine[] = [
     {
+      key: 'line-0',
       left: { content: 'old', type: 'deletion', oldLineNumber: 1, newLineNumber: null },
       right: { content: 'new', type: 'addition', oldLineNumber: null, newLineNumber: 1 },
     },

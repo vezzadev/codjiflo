@@ -15,20 +15,18 @@ describe('useDiffSideFilter', () => {
   const headerLine: ParsedDiffLine = { content: '@@', type: 'header', oldLineNumber: null, newLineNumber: null };
 
   const mockDisplayInput: DiffDisplayOutput = {
-    patch: 'test patch',
     filename: 'test.ts',
-    fileStatus: undefined,
-    iterationDiff: null,
     isIterationMode: false,
     diffLines: [contextLine, additionLine, deletionLine, headerLine],
     alignedLines: [],
+    sourceAlignedLines: null,
     language: 'typescript',
     viewMode: 'inline',
-    hunkIndices: [],
+    isFullFileChange: false,
     showWhitespace: false,
     contentFilter: 'both',
     lineNumberMode: 'both',
-    textWrap: 'off',
+    textWrap: 'nowrap',
   };
 
   describe('diffLines filtering', () => {
@@ -61,18 +59,22 @@ describe('useDiffSideFilter', () => {
 
   describe('alignedLines filtering', () => {
     const alignedContext: AlignedDiffLine = {
+      key: 'line-0',
       left: { content: 'ctx', type: 'context', oldLineNumber: 1, newLineNumber: 1 },
       right: { content: 'ctx', type: 'context', oldLineNumber: 1, newLineNumber: 1 },
     };
     const alignedChange: AlignedDiffLine = {
+      key: 'line-1',
       left: { content: 'old', type: 'deletion', oldLineNumber: 2, newLineNumber: null },
       right: { content: 'new', type: 'addition', oldLineNumber: null, newLineNumber: 2 },
     };
     const pureAddition: AlignedDiffLine = {
+      key: 'line-2',
       left: null,
       right: { content: '+added', type: 'addition', oldLineNumber: null, newLineNumber: 3 },
     };
     const pureDeletion: AlignedDiffLine = {
+      key: 'line-3',
       left: { content: '-deleted', type: 'deletion', oldLineNumber: 3, newLineNumber: null },
       right: null,
     };
