@@ -14,16 +14,14 @@ vi.mock('../../stores', () => ({
 
 describe('useDiffDisplay', () => {
   const mockShapedInput: DiffShapeOutput = {
-    patch: 'test patch',
     filename: 'test.ts',
-    fileStatus: undefined,
-    iterationDiff: null,
     isIterationMode: false,
     diffLines: [],
     alignedLines: [],
+    sourceAlignedLines: null,
     language: 'typescript',
     viewMode: 'inline',
-    hunkIndices: [],
+    isFullFileChange: false,
   };
 
   beforeEach(() => {

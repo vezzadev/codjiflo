@@ -313,9 +313,11 @@ describe("DiffView comments integration", () => {
     threadsByLineAndSide.set(`1-RIGHT`, [mockThread]);
 
     vi.mocked(useDiffPipeline).mockReturnValue({
+      filename: 'src/example.ts',
+      isIterationMode: false,
       diffLines: [
-        { content: " const foo = 'bar';", oldLineNumber: 1, newLineNumber: 1, type: 'context' as const, diffLineIndex: 0 },
-        { content: "+const added = true;", oldLineNumber: null, newLineNumber: 2, type: 'added' as const, diffLineIndex: 1 },
+        { content: " const foo = 'bar';", oldLineNumber: 1, newLineNumber: 1, type: 'context' as const },
+        { content: "+const added = true;", oldLineNumber: null, newLineNumber: 2, type: 'addition' as const },
       ],
       alignedLines: [],
       language: 'typescript',
@@ -323,7 +325,12 @@ describe("DiffView comments integration", () => {
       showWhitespace: false,
       threadsByLineAndSide,
       hunkIndices: [0],
-      wrapMode: 'on' as const,
+      textWrap: 'wrap' as const,
+      contentFilter: 'both' as const,
+      lineNumberMode: 'both' as const,
+      scrollToRowIndex: undefined,
+      isFullFileChange: false,
+      sourceAlignedLines: null,
     });
   });
 

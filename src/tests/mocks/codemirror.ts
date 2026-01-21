@@ -27,9 +27,10 @@ export class MockStateEffect<T> {
 
 export class MockStateEffectType<T> {
   static nextId = 0;
-  private id = MockStateEffectType.nextId++;
+  private _id = MockStateEffectType.nextId++;
 
   of(value: T): MockStateEffect<T> {
+    void this._id; // Used for unique instance identification
     return new MockStateEffect(value, this);
   }
 }
@@ -74,10 +75,12 @@ export const StateField = MockStateField;
  */
 export class MockFacet<Input, Output> {
   constructor(
-    private config?: {
+    private _config?: {
       combine?: (values: Input[]) => Output;
     }
-  ) {}
+  ) {
+    void this._config; // Config stored for potential future use
+  }
 
   of(value: Input): MockFacetProvider<Input> {
     return new MockFacetProvider(this, value);
@@ -487,11 +490,14 @@ export type ViewUpdate = MockViewUpdate;
  */
 export class MockViewPlugin<T> {
   constructor(
-    private create: (view: MockEditorView) => T,
-    private spec?: {
+    private _create: (view: MockEditorView) => T,
+    private _spec?: {
       eventHandlers?: Record<string, (event: Event, view: MockEditorView) => boolean>;
     }
-  ) {}
+  ) {
+    void this._create;
+    void this._spec;
+  }
 
   static fromClass<T>(
     cls: new (view: MockEditorView) => T,
@@ -585,7 +591,11 @@ export function createMockEditorView(config?: {
   parent?: HTMLElement;
 }): MockEditorView {
   const state = MockEditorState.create({ doc: config?.doc ?? '' });
-  return new MockEditorView({ state, parent: config?.parent });
+  const viewConfig: { state: MockEditorState; parent?: HTMLElement } = { state };
+  if (config?.parent) {
+    viewConfig.parent = config.parent;
+  }
+  return new MockEditorView(viewConfig);
 }
 
 /**

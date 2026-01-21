@@ -84,6 +84,8 @@ describe('useDiffFilter', () => {
 
   it('uses iteration diff when in iteration mode', () => {
     const iterationDiff = {
+      base: null,
+      head: null,
       diffLines: [
         { content: 'old', type: 'deletion' as const, oldLineNumber: 1, newLineNumber: null },
         { content: 'new', type: 'addition' as const, oldLineNumber: null, newLineNumber: 1 },
@@ -109,6 +111,8 @@ describe('useDiffFilter', () => {
 
   it('filters iteration diff to changes only when showFullFile is false', () => {
     const iterationDiff = {
+      base: null,
+      head: null,
       diffLines: [
         { content: 'context line', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 },
         { content: 'added line', type: 'addition' as const, oldLineNumber: null, newLineNumber: 2 },
@@ -130,7 +134,7 @@ describe('useDiffFilter', () => {
 
     // Should have filtered out context lines (mock implementation filters by type !== 'context')
     expect(result.current.diffLines).toHaveLength(1);
-    expect(result.current.diffLines[0].type).toBe('addition');
+    expect(result.current.diffLines[0]?.type).toBe('addition');
   });
 
   it('detects fully added file', () => {
