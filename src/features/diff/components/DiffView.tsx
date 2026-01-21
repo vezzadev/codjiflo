@@ -43,7 +43,7 @@ const LINE_HEIGHT = 23;
  * Main diff view component with support for inline and side-by-side modes.
  */
 export function DiffView() {
-  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
+  const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig, goToLineState, hideGoToLine } = useDiffStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
@@ -74,9 +74,7 @@ export function DiffView() {
   // Track visible row range from react-window for accurate minimap lasso positioning
   const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
 
-  // Go to Line modal state
-  type GoToLineState = 'hidden' | 'visible';
-  const [goToLineState, setGoToLineState] = useState<GoToLineState>('hidden');
+  // Editor ref for Go to Line scrolling
   const editorRef = useRef<UnifiedDiffEditorHandle | SplitDiffEditorHandle | null>(null);
 
   // Build threads-by-id map for the portal manager
@@ -127,14 +125,8 @@ export function DiffView() {
   }, [draft, pipeline]);
 
   // Handler for keyboard scrolling in diff content area
+  // Note: Ctrl+G is handled globally in useKeyboardShortcuts
   const handleDiffKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    // Handle Ctrl+G for Go to Line
-    if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
-      e.preventDefault();
-      setGoToLineState('visible');
-      return;
-    }
-
     // Find the actual scrollable element (CodeMirror scroller) inside the region
     const scrollable = e.currentTarget.querySelector('.cm-scroller');
     if (!scrollable) return;
@@ -171,12 +163,9 @@ export function DiffView() {
   }, [containerHeight]);
 
   // Handler for Go to Line modal
+  // Note: Modal calls onClose after this callback, no need to call hideGoToLine here
   const handleGoToLine = useCallback((line: number) => {
     editorRef.current?.scrollToLine(line, 'center');
-  }, []);
-
-  const handleCloseGoToLine = useCallback(() => {
-    setGoToLineState('hidden');
   }, []);
 
   // Loading state
@@ -317,7 +306,7 @@ export function DiffView() {
               />
               {goToLineState === 'visible' && (
                 <GoToLineModal
-                  onClose={handleCloseGoToLine}
+                  onClose={hideGoToLine}
                   onGoToLine={handleGoToLine}
                   maxLine={pipeline.diffLines.length}
                 />
@@ -378,7 +367,7 @@ export function DiffView() {
               />
               {goToLineState === 'visible' && (
                 <GoToLineModal
-                  onClose={handleCloseGoToLine}
+                  onClose={hideGoToLine}
                   onGoToLine={handleGoToLine}
                   maxLine={pipeline.alignedLines.length}
                 />

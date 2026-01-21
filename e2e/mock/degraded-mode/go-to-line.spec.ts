@@ -230,4 +230,38 @@ test.describe("Go to Line feature", () => {
     const firstLineContent = diffRegion.getByText("// Line 1: context content here");
     await expect(firstLineContent).toBeInViewport();
   });
+
+  test("Ctrl+G works when clicking inside CodeMirror editor content", async ({
+    page,
+  }) => {
+    // This test verifies that Ctrl+G works as a global shortcut even when
+    // focus is NOT on the wrapper div (simulating clicking inside the diff)
+    await page.goto(config.pageUrl);
+    await page.waitForLoadState("load");
+
+    // Select the file
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("large-file.ts").click();
+
+    // Wait for diff content
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
+    // Click on actual code text inside the CodeMirror content area
+    // This focuses CodeMirror's internal contenteditable, NOT the wrapper div
+    const codeText = diffRegion.getByText("// Line 5: context content here");
+    await codeText.click();
+
+    // Press Ctrl+G - this should open the modal as a global shortcut
+    await page.keyboard.press("Control+g");
+
+    // Verify the modal appears
+    const modal = page.getByRole("dialog", { name: "Go to line" });
+    await expect(modal).toBeVisible();
+
+    // Verify the input is focused
+    const input = page.getByRole("textbox", { name: "Go to line:" });
+    await expect(input).toBeFocused();
+  });
 });

@@ -13,6 +13,7 @@ export function useKeyboardShortcuts() {
   const selectFile = useDiffStore((s) => s.selectFile);
   const scrollToNextChange = useDiffStore((s) => s.scrollToNextChange);
   const scrollToPreviousChange = useDiffStore((s) => s.scrollToPreviousChange);
+  const showGoToLine = useDiffStore((s) => s.showGoToLine);
   // Issue #261: Use display order (grouped by folder) for navigation
   const { files } = useFileDisplayOrder();
 
@@ -61,8 +62,21 @@ export function useKeyboardShortcuts() {
   }, [selectedFileIndex, files, selectFile]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // AC-1.5.3: Don't trigger if user is in an input field
     const target = event.target as HTMLElement;
+
+    // Handle Ctrl+G (Go to Line) BEFORE the input check because it should
+    // work even from CodeMirror's contentEditable area
+    if ((event.ctrlKey || event.metaKey) && event.key === 'g') {
+      // But skip if in an actual input/textarea (not CodeMirror)
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      event.preventDefault();
+      showGoToLine();
+      return;
+    }
+
+    // AC-1.5.3: Don't trigger other shortcuts if user is in an input field
     if (
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
@@ -106,7 +120,7 @@ export function useKeyboardShortcuts() {
         break;
       }
     }
-  }, [selectNextFile, selectPreviousFile, scrollToNextChange, scrollToPreviousChange]);
+  }, [selectNextFile, selectPreviousFile, scrollToNextChange, scrollToPreviousChange, showGoToLine]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

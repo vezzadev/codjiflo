@@ -26,6 +26,7 @@ export const useDiffStore = create<DiffState>()(
       viewConfig: DEFAULT_VIEW_CONFIG,
       currentChangeIndex: -1,
       totalChangeCount: 0,
+      goToLineState: 'hidden' as const,
 
       loadFiles: async (owner, repo, number) => {
         set({ isLoading: true, error: null });
@@ -166,8 +167,13 @@ export const useDiffStore = create<DiffState>()(
         error: null,
         currentChangeIndex: -1,
         totalChangeCount: 0,
+        goToLineState: 'hidden',
         // Keep viewConfig on reset - it's a user preference
       }),
+
+      // Go to Line actions
+      showGoToLine: () => set({ goToLineState: 'visible' }),
+      hideGoToLine: () => set({ goToLineState: 'hidden' }),
     }),
     {
       name: 'diff-store',

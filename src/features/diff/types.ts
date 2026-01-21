@@ -7,6 +7,7 @@ import type { FileChange } from '@/api/types';
 export type DiffViewMode = 'inline' | 'split';
 export type ContentFilter = 'both' | 'left' | 'right';
 export type TextWrap = 'nowrap' | 'wrap';
+export type GoToLineState = 'hidden' | 'visible';
 
 export interface DiffViewConfig {
   mode: DiffViewMode;
@@ -105,6 +106,9 @@ export interface DiffState {
   /** Total number of hunks (change groups) in current file, set by DiffView */
   totalChangeCount: number;
 
+  /** Go to Line modal state - controlled globally for keyboard shortcut access */
+  goToLineState: GoToLineState;
+
   // File actions
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
   selectFile: (index: number) => void;
@@ -125,6 +129,10 @@ export interface DiffState {
   scrollToPreviousChange: () => void;
   resetChangeIndex: () => void;
   setTotalChangeCount: (count: number) => void;
+
+  // Go to Line actions
+  showGoToLine: () => void;
+  hideGoToLine: () => void;
 }
 
 /**
