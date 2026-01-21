@@ -101,6 +101,28 @@ describe('usePRStore', () => {
 
       expect(usePRStore.getState().error).toBe('Access denied. Please check your token permissions.');
     });
+
+    it('handles other GitHubAPIError status codes', async () => {
+      mockGetReview.mockRejectedValue(
+        new api.GitHubAPIError(500, 'Internal Server Error', 'Server error occurred')
+      );
+
+      await usePRStore.getState().loadPR('owner', 'repo', 123);
+
+      expect(usePRStore.getState().error).toBe('Server error occurred');
+      expect(usePRStore.getState().currentPR).toBeNull();
+      expect(usePRStore.getState().isLoading).toBe(false);
+    });
+
+    it('handles regular Error instances', async () => {
+      mockGetReview.mockRejectedValue(new Error('Network failure'));
+
+      await usePRStore.getState().loadPR('owner', 'repo', 123);
+
+      expect(usePRStore.getState().error).toBe('Network failure');
+      expect(usePRStore.getState().currentPR).toBeNull();
+      expect(usePRStore.getState().isLoading).toBe(false);
+    });
   });
 
   describe('reset', () => {
