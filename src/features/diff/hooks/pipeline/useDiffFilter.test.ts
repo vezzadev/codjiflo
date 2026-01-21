@@ -32,8 +32,8 @@ vi.mock('../../utils', () => ({
     if (filename.endsWith('.js')) return 'javascript';
     return 'plaintext';
   }),
-  filterToChangesOnly: vi.fn((lines) => lines.filter((l: { type: string }) => l.type !== 'context')),
-  filterAlignedToChangesOnly: vi.fn((lines) => lines),
+  filterToChangesOnly: vi.fn((lines: { type: string }[]) => lines.filter((l) => l.type !== 'context')),
+  filterAlignedToChangesOnly: vi.fn((lines: unknown[]) => lines),
 }));
 
 describe('useDiffFilter', () => {
@@ -55,7 +55,7 @@ describe('useDiffFilter', () => {
     vi.mocked(useDiffContentStore).mockReturnValue({
       computeFullFileDiff: vi.fn().mockResolvedValue(null),
       isLoadingContent: false,
-    } as unknown as ReturnType<typeof useDiffContentStore>);
+    } as ReturnType<typeof useDiffContentStore>);
 
     vi.mocked(usePRStore).mockReturnValue({
       currentPR: null,
@@ -185,13 +185,13 @@ describe('useDiffFilter', () => {
     vi.mocked(useDiffContentStore).mockReturnValue({
       computeFullFileDiff: mockComputeFullFileDiff,
       isLoadingContent: false,
-    } as unknown as ReturnType<typeof useDiffContentStore>);
+    } as ReturnType<typeof useDiffContentStore>);
 
     vi.mocked(usePRStore).mockReturnValue({
       currentPR: { baseSha: 'base123', headSha: 'head456' },
     } as ReturnType<typeof usePRStore>);
 
-    const { result } = renderHook(() => useDiffFilter(mockSourceInput));
+    renderHook(() => useDiffFilter(mockSourceInput));
 
     await waitFor(() => {
       expect(mockComputeFullFileDiff).toHaveBeenCalledWith(

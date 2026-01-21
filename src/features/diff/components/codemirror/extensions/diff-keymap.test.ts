@@ -127,6 +127,6 @@ describe('key bindings', () => {
       extensions: [createDiffKeymap()],
     });
 
-    expect(state.facet).toBeDefined();
+    expect(typeof state.facet).toBe('function');
   });
 });

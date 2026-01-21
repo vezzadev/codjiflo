@@ -14,18 +14,18 @@ vi.mock('../../stores', () => ({
 }));
 
 vi.mock('../../utils', () => ({
-  calculateHunkIndices: vi.fn((lines) => {
+  calculateHunkIndices: vi.fn((lines: { type: string }[]) => {
     // Return indices of non-context lines
     const indices: number[] = [];
-    lines.forEach((line: { type: string }, idx: number) => {
+    lines.forEach((line, idx) => {
       if (line.type !== 'context') indices.push(idx);
     });
     return indices;
   }),
-  calculateAlignedHunkIndices: vi.fn((lines) => {
+  calculateAlignedHunkIndices: vi.fn((lines: { left?: { type: string }; right?: { type: string } }[]) => {
     // Return indices of aligned lines with changes
     const indices: number[] = [];
-    lines.forEach((line: { left?: { type: string }; right?: { type: string } }, idx: number) => {
+    lines.forEach((line, idx) => {
       if (line.left?.type !== 'context' || line.right?.type !== 'context') {
         indices.push(idx);
       }

@@ -13,7 +13,7 @@ vi.mock('../../stores', () => ({
 }));
 
 vi.mock('../../utils', () => ({
-  alignDiffLines: vi.fn((lines) => lines.map((line: { content: string }) => ({ left: line, right: null }))),
+  alignDiffLines: vi.fn((lines: { content: string }[]) => lines.map((line) => ({ left: line, right: null }))),
 }));
 
 describe('useDiffShape', () => {

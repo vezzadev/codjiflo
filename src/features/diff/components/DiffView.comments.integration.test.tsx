@@ -1,12 +1,12 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act } from "@testing-library/react";
 import { render, screen } from "@/tests/helpers";
 import { DiffView } from "./DiffView";
 import { useDiffStore } from "../stores";
-import { useCommentsStore, CommentThread, CommentEditor } from "@/features/comments";
+import { useCommentsStore } from "@/features/comments";
 import { FileChangeStatus } from "@/api/types";
-import { useIterationDiff, useIterationAwareFiles, useDiffPipeline, useDraftComment, useContainerHeight } from '../hooks';
+import { useDiffPipeline } from '../hooks';
+import type { ReviewThread } from '@/features/comments';
 
 const mockDiffContentStore = {
   computeFullFileDiff: vi.fn().mockResolvedValue(null),
@@ -62,7 +62,7 @@ vi.mock('./codemirror', async () => {
 
   interface MockThread {
     id: string;
-    comments: Array<{ body: string; author: { login: string } }>;
+    comments: { body: string; author: { login: string } }[];
   }
 
   const MockUnifiedDiffEditor = ({
@@ -129,7 +129,7 @@ vi.mock('./codemirror', async () => {
             onReply: addReply ?? (() => Promise.resolve()),
             onEdit: editComment ?? (() => Promise.resolve()),
             onDelete: deleteComment ?? (() => Promise.resolve()),
-            onToggleResolved: toggleResolved ?? (() => {}),
+            onToggleResolved: toggleResolved ?? (() => { /* noop */ }),
           })
         )
       ),
@@ -141,9 +141,9 @@ vi.mock('./codemirror', async () => {
         },
           React.createElement(CommentEditor, {
             value: draftBody ?? '',
-            onChange: onChangeDraftBody ?? (() => {}),
-            onSubmit: onSubmitDraft ?? (() => {}),
-            onCancel: onCancelDraft ?? (() => {}),
+            onChange: onChangeDraftBody ?? (() => { /* noop */ }),
+            onSubmit: onSubmitDraft ?? (() => { /* noop */ }),
+            onCancel: onCancelDraft ?? (() => { /* noop */ }),
             isSubmitting: isSubmittingDraft ?? false,
             submitLabel: 'Comment',
             label: 'New comment',
@@ -158,10 +158,10 @@ vi.mock('./codemirror', async () => {
   const MockCommentPortalManager = ({ children }: { children: (callbacks: Record<string, () => void>) => React.ReactNode }) => {
     return React.createElement(React.Fragment, null,
       children({
-        onMountThread: () => {},
-        onUnmountThread: () => {},
-        onMountDraft: () => {},
-        onUnmountDraft: () => {},
+        onMountThread: () => { /* noop */ },
+        onUnmountThread: () => { /* noop */ },
+        onMountDraft: () => { /* noop */ },
+        onUnmountDraft: () => { /* noop */ },
       })
     );
   };
@@ -309,7 +309,7 @@ describe("DiffView comments integration", () => {
     });
 
     // Create threadsByLineAndSide map for the mock
-    const threadsByLineAndSide = new Map();
+    const threadsByLineAndSide = new Map<string, ReviewThread[]>();
     threadsByLineAndSide.set(`1-RIGHT`, [mockThread]);
 
     vi.mocked(useDiffPipeline).mockReturnValue({
