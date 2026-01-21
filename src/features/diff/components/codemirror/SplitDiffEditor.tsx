@@ -134,9 +134,9 @@ function buildSideContent(
 function buildDecoratedLines(lines: (ParsedDiffLine | null)[]): ParsedDiffLine[] {
   return lines.map((line) => {
     if (line === null) {
-      // Spacer line
+      // Spacer line - uses 'spacer' type for gray background styling
       return {
-        type: 'context' as const,
+        type: 'spacer' as const,
         content: '',
         oldLineNumber: null,
         newLineNumber: null,

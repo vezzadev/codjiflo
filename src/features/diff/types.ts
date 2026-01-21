@@ -33,7 +33,7 @@ export interface VisibleRowRange {
 // Diff Line Types
 // ============================================================================
 
-export type DiffLineType = 'addition' | 'deletion' | 'context' | 'header';
+export type DiffLineType = 'addition' | 'deletion' | 'context' | 'header' | 'spacer';
 
 export interface ParsedDiffLine {
   type: DiffLineType;

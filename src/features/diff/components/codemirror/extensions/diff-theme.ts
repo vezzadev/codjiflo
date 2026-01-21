@@ -235,4 +235,5 @@ export const diffThemeClasses = {
   gutterAddition: 'cm-diff-gutter-addition',
   gutterDeletion: 'cm-diff-gutter-deletion',
   gutterHeader: 'cm-diff-gutter-header',
+  gutterSpacer: 'cm-diff-gutter-spacer',
 } as const;
