@@ -19,6 +19,7 @@ describe('useKeyboardShortcuts', () => {
   const mockSelectFile = vi.fn();
   const mockScrollToNextChange = vi.fn();
   const mockScrollToPreviousChange = vi.fn();
+  const mockShowGoToLine = vi.fn();
 
   // Mock iteration-aware files
   const mockFiles: IterationAwareFile[] = [
@@ -59,6 +60,7 @@ describe('useKeyboardShortcuts', () => {
         selectFile: mockSelectFile,
         scrollToNextChange: mockScrollToNextChange,
         scrollToPreviousChange: mockScrollToPreviousChange,
+        showGoToLine: mockShowGoToLine,
       };
       return selector(state as never);
     });
@@ -110,6 +112,48 @@ describe('useKeyboardShortcuts', () => {
     window.dispatchEvent(event);
 
     expect(mockScrollToPreviousChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls showGoToLine when Ctrl+G is pressed', () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    const event = new KeyboardEvent('keydown', { key: 'g', ctrlKey: true });
+    window.dispatchEvent(event);
+
+    expect(mockShowGoToLine).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls showGoToLine when Ctrl+G is pressed from contentEditable (CodeMirror)', () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    const contentEditable = document.createElement('div');
+    contentEditable.contentEditable = 'true';
+    document.body.appendChild(contentEditable);
+
+    const event = new KeyboardEvent('keydown', { key: 'g', ctrlKey: true });
+    Object.defineProperty(event, 'target', { value: contentEditable });
+    window.dispatchEvent(event);
+
+    // Ctrl+G should still work from contentEditable
+    expect(mockShowGoToLine).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(contentEditable);
+  });
+
+  it('does not call showGoToLine when Ctrl+G is pressed from input', () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+
+    const event = new KeyboardEvent('keydown', { key: 'g', ctrlKey: true });
+    Object.defineProperty(event, 'target', { value: input });
+    window.dispatchEvent(event);
+
+    // Ctrl+G should not work from input elements
+    expect(mockShowGoToLine).not.toHaveBeenCalled();
+
+    document.body.removeChild(input);
   });
 
   describe('iteration-aware file navigation (Issue #189)', () => {
@@ -171,6 +215,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -194,6 +239,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -215,6 +261,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -235,6 +282,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -255,6 +303,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -275,6 +324,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -295,6 +345,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -321,6 +372,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -342,6 +394,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -363,6 +416,7 @@ describe('useKeyboardShortcuts', () => {
           selectFile: mockSelectFile,
           scrollToNextChange: mockScrollToNextChange,
           scrollToPreviousChange: mockScrollToPreviousChange,
+          showGoToLine: mockShowGoToLine,
         };
         return selector(state as never);
       });
@@ -464,6 +518,7 @@ describe('getShortcutsList', () => {
       { key: 'b', description: 'Toggle whitespace visibility' },
       { key: 'd', description: 'Toggle show/hide comments' },
       { key: 'p', description: 'Toggle text wrap' },
+      { key: 'Ctrl+G', description: 'Go to line' },
       { key: '↑/↓ (files)', description: 'Navigate files (file list focused)' },
       { key: 'PgUp/PgDn (files)', description: 'Jump 10 files (file list focused)' },
       { key: 'PgUp/PgDn (diff)', description: 'Page scroll (diff area focused)' },
