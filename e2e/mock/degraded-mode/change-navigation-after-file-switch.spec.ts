@@ -183,10 +183,6 @@ test.describe("Change Navigation After File Switch", () => {
     // 2. CodeMirror keymap - triggered when editor has focus
     await page.locator("body").click();
 
-    // Log focused element for debugging
-    const focusedElementBefore = await page.evaluate(() => document.activeElement?.tagName);
-    console.log("Focused element before j:", focusedElementBefore);
-
     // === Step 4: Press j - THIS IS WHERE THE BUG OCCURS ===
     // The bug: after switching files with S, pressing J doesn't scroll to first change
     await page.keyboard.press("j");
