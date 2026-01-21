@@ -64,6 +64,22 @@ jobs:
       - name: Deploy to Vercel (Production)
         run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }}
 
+      - name: Wait for deployment to serve new commit
+        run: |
+          EXPECTED_COMMIT="${{ github.sha }}"
+          URL="https://codjiflo.vza.net/api/health"
+          for i in {1..30}; do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
+              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
+              exit 0
+            fi
+            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for deployment"
+          exit 1
+
   e2e-tests-production:
     runs-on: ubuntu-latest
     needs: [deploy-main]
@@ -86,22 +102,6 @@ jobs:
       - name: Install Playwright browsers
         timeout-minutes: 1
         run: npx playwright install --with-deps chromium-headless-shell
-
-      - name: Wait for deployment to serve new commit
-        run: |
-          EXPECTED_COMMIT="${{ github.sha }}"
-          URL="https://codjiflo.vza.net/api/health"
-          for i in {1..30}; do
-            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
-            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
-              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
-              exit 0
-            fi
-            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
-            sleep 2
-          done
-          echo "❌ Timeout waiting for deployment"
-          exit 1
 
       - name: Run E2E tests against production
         timeout-minutes: 5
@@ -142,22 +142,6 @@ jobs:
         timeout-minutes: 1
         run: npx playwright install --with-deps chromium-headless-shell
 
-      - name: Wait for deployment to serve new commit
-        run: |
-          EXPECTED_COMMIT="${{ github.sha }}"
-          URL="https://codjiflo.vza.net/api/health"
-          for i in {1..30}; do
-            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
-            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
-              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
-              exit 0
-            fi
-            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
-            sleep 2
-          done
-          echo "❌ Timeout waiting for deployment"
-          exit 1
-
       - name: Run E2E stress tests (max workers) - 10x
         timeout-minutes: 30
         run: |
@@ -193,22 +177,6 @@ jobs:
       - name: Install Playwright browsers
         timeout-minutes: 1
         run: npx playwright install --with-deps chromium-headless-shell
-
-      - name: Wait for deployment to serve new commit
-        run: |
-          EXPECTED_COMMIT="${{ github.sha }}"
-          URL="https://codjiflo.vza.net/api/health"
-          for i in {1..30}; do
-            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
-            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
-              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
-              exit 0
-            fi
-            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
-            sleep 2
-          done
-          echo "❌ Timeout waiting for deployment"
-          exit 1
 
       - name: Run E2E stress tests (1 worker) - 10x
         timeout-minutes: 60
