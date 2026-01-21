@@ -113,9 +113,15 @@ Fetch the list of files from `GET /repos/{owner}/{repo}/pulls/{number}/files`. D
 2.  **Interactivity**:
     - [ ] [AC-1.3.4] Clicking a file navigates to the Diff View for that file (Story 1.4).
     - [ ] [AC-1.3.5] Selected file is visually highlighted.
-3.  **Performance**:
+3.  **Filtering**:
+    - [ ] [AC-1.3.10] Filter input is displayed in the file list header with placeholder "Filter by file name".
+    - [ ] [AC-1.3.11] Typing in the filter input filters files by filename (case-insensitive substring match).
+    - [ ] [AC-1.3.12] PR Description item is shown when filter matches "Pull Request Description" or when no filter is active.
+    - [ ] [AC-1.3.13] Clear button (X) appears when filter has text; clicking it clears the filter.
+    - [ ] [AC-1.3.14] Pressing Escape in the filter input clears the filter and blurs the input.
+4.  **Performance**:
     - [ ] [AC-1.3.6] Handle PRs with 50+ files without UI freezing.
-4.  **Accessibility**:
+5.  **Accessibility**:
     - [ ] [AC-1.3.7] File list is keyboard navigable (Up/Down arrow keys).
     - [ ] [AC-1.3.8] Current selection is indicated via `aria-selected="true"`.
     - [ ] [AC-1.3.9] Screen reader announces filename and change stats (e.g., "utils.ts, modified, 10 additions").
