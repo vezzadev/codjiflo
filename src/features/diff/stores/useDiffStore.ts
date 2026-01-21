@@ -1,14 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { githubBackends, GitHubAPIError } from '@/api';
-import type { DiffState, DiffViewConfig, ContentMode, FileScrollState } from '../types';
-
-/**
- * Generate cache key for scroll state
- */
-function getScrollCacheKey(filename: string, contentMode: ContentMode): string {
-  return `${filename}:${contentMode}`;
-}
+import type { DiffState, DiffViewConfig } from '../types';
 
 /** Index -1 represents the PR description "file" */
 export const PR_DESCRIPTION_INDEX = -1;
@@ -33,7 +26,6 @@ export const useDiffStore = create<DiffState>()(
       viewConfig: DEFAULT_VIEW_CONFIG,
       currentChangeIndex: -1,
       totalChangeCount: 0,
-      scrollStateCache: new Map<string, FileScrollState>(),
 
       loadFiles: async (owner, repo, number) => {
         set({ isLoading: true, error: null });
@@ -167,28 +159,6 @@ export const useDiffStore = create<DiffState>()(
         set({ totalChangeCount: count });
       },
 
-      // Scroll state actions
-      saveScrollState: (filename, contentMode, scrollRatio) => {
-        const { scrollStateCache } = get();
-        const key = getScrollCacheKey(filename, contentMode);
-        const newCache = new Map(scrollStateCache);
-        newCache.set(key, {
-          scrollRatio,
-          lastUpdated: Date.now(),
-        });
-        set({ scrollStateCache: newCache });
-      },
-
-      getScrollState: (filename, contentMode) => {
-        const { scrollStateCache } = get();
-        const key = getScrollCacheKey(filename, contentMode);
-        return scrollStateCache.get(key);
-      },
-
-      clearScrollStateCache: () => {
-        set({ scrollStateCache: new Map() });
-      },
-
       reset: () => set({
         files: [],
         selectedFileIndex: PR_DESCRIPTION_INDEX,
@@ -196,7 +166,6 @@ export const useDiffStore = create<DiffState>()(
         error: null,
         currentChangeIndex: -1,
         totalChangeCount: 0,
-        scrollStateCache: new Map(),
         // Keep viewConfig on reset - it's a user preference
       }),
     }),

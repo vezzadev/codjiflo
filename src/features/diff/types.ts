@@ -29,22 +29,6 @@ export interface VisibleRowRange {
   stopIndex: number;
 }
 
-/**
- * Scroll state for a file, stored as ratio (0-1) to work across view modes
- */
-export interface FileScrollState {
-  /** Scroll ratio (0-1) representing position in document */
-  scrollRatio: number;
-  /** Timestamp of last update for debugging */
-  lastUpdated: number;
-}
-
-/**
- * Content mode for scroll state keying
- * Scroll is preserved within the same content mode but resets when switching
- */
-export type ContentMode = 'full' | 'changes';
-
 // ============================================================================
 // Diff Line Types
 // ============================================================================
@@ -121,13 +105,6 @@ export interface DiffState {
   /** Total number of hunks (change groups) in current file, set by DiffView */
   totalChangeCount: number;
 
-  /**
-   * Scroll state cache keyed by `${filename}:${contentMode}`
-   * Stores scroll ratio (0-1) to work across inline/split view modes
-   * In-memory only, not persisted
-   */
-  scrollStateCache: Map<string, FileScrollState>;
-
   // File actions
   loadFiles: (owner: string, repo: string, number: number) => Promise<void>;
   selectFile: (index: number) => void;
@@ -148,11 +125,6 @@ export interface DiffState {
   scrollToPreviousChange: () => void;
   resetChangeIndex: () => void;
   setTotalChangeCount: (count: number) => void;
-
-  // Scroll state actions
-  saveScrollState: (filename: string, contentMode: ContentMode, scrollRatio: number) => void;
-  getScrollState: (filename: string, contentMode: ContentMode) => FileScrollState | undefined;
-  clearScrollStateCache: () => void;
 }
 
 /**

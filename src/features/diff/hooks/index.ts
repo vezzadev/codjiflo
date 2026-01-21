@@ -4,7 +4,6 @@ export { useFileDisplayOrder } from './useFileDisplayOrder';
 export { useDiffPipeline } from './useDiffPipeline';
 export { useDraftComment } from './useDraftComment';
 export { useContainerHeight } from './useContainerHeight';
-export { useScrollPreservation } from './useScrollPreservation';
 
 export type { IterationAwareFile } from './useIterationAwareFiles';
 export type { UseDraftCommentReturn } from './useDraftComment';
