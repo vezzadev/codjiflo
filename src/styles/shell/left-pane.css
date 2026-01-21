@@ -52,14 +52,6 @@
   font-size: 12px;
 }
 
-.file-explorer-title {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 .file-explorer-filter-inline {
   display: flex;
   align-items: center;
