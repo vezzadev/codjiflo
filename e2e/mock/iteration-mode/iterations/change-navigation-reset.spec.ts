@@ -153,6 +153,8 @@ diff --git a/src/app.ts b/src/app.ts
 
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeVisible();
+    // Wait for iteration tabs to load (not just skeleton)
+    await expect(selector.locator(".iteration-tab")).not.toHaveCount(0);
 
     // Click on the file (second item after PR description)
     // Use .tree-item.file to exclude folder headers from count
