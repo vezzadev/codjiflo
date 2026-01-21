@@ -400,6 +400,8 @@
   margin: 0;
   margin-top: -1px; /* Align with other toolbar buttons */
   min-width: 0;
+  /* Prevent fieldset from showing its own focus ring */
+  outline: none;
 }
 
 .content-filter-track {
@@ -485,9 +487,10 @@
 }
 
 /* Show focus indicator on thumb when radio is focused */
+.content-filter-option input:focus + .content-filter-thumb,
 .content-filter-option input:focus-visible + .content-filter-thumb {
   outline: 2px solid var(--focus-border);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 
 /* Position thumbs relative to track (accounting for label offset) */
