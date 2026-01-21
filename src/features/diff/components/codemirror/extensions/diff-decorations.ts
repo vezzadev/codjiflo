@@ -94,6 +94,9 @@ export function buildDiffDecorations(
       case 'header':
         lineDeco = lineDecorations.header;
         break;
+      case 'spacer':
+        lineDeco = lineDecorations.spacer;
+        break;
       default:
         lineDeco = lineDecorations.context;
     }

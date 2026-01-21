@@ -83,6 +83,19 @@ describe('buildDiffDecorations', () => {
     expect(getDecoClass(iter.value)).toBe(diffThemeClasses.lineContext);
   });
 
+  it('creates line decoration for spacer (side-by-side alignment)', () => {
+    const doc = createMockDoc(''); // Empty spacer line
+    const diffLines: ParsedDiffLine[] = [
+      { type: 'spacer', content: '', oldLineNumber: null, newLineNumber: null },
+    ];
+
+    const decorations = buildDiffDecorations(doc, diffLines);
+    const iter = decorations.iter();
+
+    expect(iter.value).toBeTruthy();
+    expect(getDecoClass(iter.value)).toBe(diffThemeClasses.lineSpacer);
+  });
+
   it('creates word-level decorations for added segments', () => {
     const doc = createMockDoc('hello world');
     const diffLines: ParsedDiffLine[] = [

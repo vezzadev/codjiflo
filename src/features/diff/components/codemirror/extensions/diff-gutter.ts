@@ -65,6 +65,9 @@ class DiffLineMarker extends GutterMarker {
       case 'header':
         bgClass = diffThemeClasses.gutterHeader;
         break;
+      case 'spacer':
+        bgClass = diffThemeClasses.gutterSpacer;
+        break;
     }
 
     if (bgClass) {
@@ -184,6 +187,9 @@ const diffGutterTheme = EditorView.baseTheme({
   },
   [`.${diffThemeClasses.gutterHeader}`]: {
     backgroundColor: 'var(--diff-hunk-gutter)',
+  },
+  [`.${diffThemeClasses.gutterSpacer}`]: {
+    backgroundColor: 'var(--diff-empty-line)',
   },
 });
 
