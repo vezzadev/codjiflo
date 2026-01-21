@@ -41,23 +41,238 @@ vi.mock('next/navigation', () => ({
   useParams: vi.fn(() => ({ owner: 'testowner', repo: 'testrepo' })),
 }));
 
-// Mock ShikiHighlighter to avoid async loading issues and act() warnings
-vi.mock('./ShikiHighlighter', () => ({
-  ShikiHighlighter: ({ code }: { code: string }) => (
-    <span className="diff-code" data-testid="shiki-highlighter">{code}</span>
-  ),
-}));
-
-// Mock ShikiTokensContext to avoid async loading issues and act() warnings
-vi.mock('./ShikiTokensContext', () => ({
-  ShikiTokensProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useShikiTokens: () => null,
-}));
-
 // Mock Minimap to avoid async requestAnimationFrame state updates and act() warnings
 vi.mock('./Minimap', () => ({
   Minimap: () => <div data-testid="minimap-mock" />,
 }));
+
+// Mock CodeMirror components to avoid JSDOM issues with CodeMirror 6
+// These mocks render diff content and comment UI directly without needing real CodeMirror
+vi.mock('./codemirror', async () => {
+  const React = await import('react');
+  const { useEffect } = React;
+  const comments = await import('@/features/comments');
+  const { CommentThread, CommentEditor } = comments;
+
+  interface MockDiffLine {
+    content: string;
+    oldLineNumber?: number | null;
+    newLineNumber?: number | null;
+  }
+
+  interface MockThread {
+    id: string;
+    comments: Array<{ body: string; author: { login: string } }>;
+  }
+
+  interface UnifiedEditorProps {
+    diffLines: MockDiffLine[];
+    threadsByLineAndSide?: Map<string, MockThread[]>;
+    currentUserLogin?: string;
+    addReply?: (threadId: string, body: string) => Promise<void>;
+    editComment?: (commentId: string, body: string) => Promise<void>;
+    deleteComment?: (commentId: string) => Promise<void>;
+    toggleResolved?: (threadId: string) => void;
+    draftLineIndex?: number | null;
+    draftBody?: string;
+    isSubmittingDraft?: boolean;
+    submitError?: string | null;
+    onCancelDraft?: () => void;
+    onChangeDraftBody?: (body: string) => void;
+    onSubmitDraft?: () => void;
+    onVisibleRangeChange?: (range: { startIndex: number; stopIndex: number }) => void;
+    showComments?: boolean;
+  }
+
+  interface SplitEditorProps {
+    alignedLines: Array<{ left: MockDiffLine | null; right: MockDiffLine | null }>;
+    threadsByLineAndSide?: Map<string, MockThread[]>;
+    currentUserLogin?: string;
+    addReply?: (threadId: string, body: string) => Promise<void>;
+    editComment?: (commentId: string, body: string) => Promise<void>;
+    deleteComment?: (commentId: string) => Promise<void>;
+    toggleResolved?: (threadId: string) => void;
+    draftLineIndex?: number | null;
+    draftBody?: string;
+    isSubmittingDraft?: boolean;
+    submitError?: string | null;
+    onCancelDraft?: () => void;
+    onChangeDraftBody?: (body: string) => void;
+    onSubmitDraft?: () => void;
+    onVisibleRangeChange?: (range: { startIndex: number; stopIndex: number }) => void;
+    showComments?: boolean;
+  }
+
+  // Mock UnifiedDiffEditor that renders diff content and comments directly
+  const MockUnifiedDiffEditor = ({
+    diffLines,
+    threadsByLineAndSide,
+    currentUserLogin,
+    addReply,
+    editComment,
+    deleteComment,
+    toggleResolved,
+    draftLineIndex,
+    draftBody,
+    isSubmittingDraft,
+    submitError,
+    onCancelDraft,
+    onChangeDraftBody,
+    onSubmitDraft,
+    onVisibleRangeChange,
+    showComments = true,
+  }: UnifiedEditorProps) => {
+    // Emit initial visible range
+    useEffect(() => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange({ startIndex: 0, stopIndex: Math.min(20, diffLines.length - 1) });
+      }
+    }, [onVisibleRangeChange, diffLines.length]);
+
+    // Collect all threads
+    const allThreads: MockThread[] = [];
+    if (threadsByLineAndSide) {
+      threadsByLineAndSide.forEach((threads) => {
+        allThreads.push(...threads);
+      });
+    }
+
+    return React.createElement('div', { 'data-testid': 'unified-diff-editor', className: 'cm-scroller' },
+      // Diff lines
+      ...diffLines.map((line, i) =>
+        React.createElement('div', { key: i, className: 'diff-line' }, line.content)
+      ),
+      // Render comment threads directly
+      showComments && allThreads.map((thread) =>
+        React.createElement('div', {
+          key: `thread-${thread.id}`,
+          className: 'cm-comment-widget',
+          'data-thread-id': thread.id,
+        },
+          React.createElement(CommentThread, {
+            thread: thread as Parameters<typeof CommentThread>[0]['thread'],
+            currentUserLogin: currentUserLogin ?? '',
+            onReply: addReply ?? (() => Promise.resolve()),
+            onEdit: editComment ?? (() => Promise.resolve()),
+            onDelete: deleteComment ?? (() => Promise.resolve()),
+            onToggleResolved: toggleResolved ?? (() => {}),
+          })
+        )
+      ),
+      // Render draft editor directly
+      draftLineIndex !== null && draftLineIndex !== undefined &&
+        React.createElement('div', {
+          key: 'draft',
+          className: 'cm-comment-widget cm-draft-editor-widget',
+          'data-draft-line': draftLineIndex,
+        },
+          React.createElement(CommentEditor, {
+            value: draftBody ?? '',
+            onChange: onChangeDraftBody ?? (() => {}),
+            onSubmit: onSubmitDraft ?? (() => {}),
+            onCancel: onCancelDraft ?? (() => {}),
+            isSubmitting: isSubmittingDraft ?? false,
+            submitLabel: 'Comment',
+            label: 'New comment',
+          }),
+          submitError && React.createElement('div', { className: 'draft-comment-error' }, submitError)
+        )
+    );
+  };
+
+  // Mock SplitDiffEditor (similar pattern)
+  const MockSplitDiffEditor = ({
+    alignedLines,
+    threadsByLineAndSide,
+    currentUserLogin,
+    addReply,
+    editComment,
+    deleteComment,
+    toggleResolved,
+    draftLineIndex,
+    draftBody,
+    isSubmittingDraft,
+    submitError,
+    onCancelDraft,
+    onChangeDraftBody,
+    onSubmitDraft,
+    onVisibleRangeChange,
+    showComments = true,
+  }: SplitEditorProps) => {
+    useEffect(() => {
+      if (onVisibleRangeChange) {
+        onVisibleRangeChange({ startIndex: 0, stopIndex: Math.min(20, alignedLines.length - 1) });
+      }
+    }, [onVisibleRangeChange, alignedLines.length]);
+
+    const allThreads: MockThread[] = [];
+    if (threadsByLineAndSide) {
+      threadsByLineAndSide.forEach((threads) => {
+        allThreads.push(...threads);
+      });
+    }
+
+    return React.createElement('div', { 'data-testid': 'split-diff-editor', className: 'cm-scroller' },
+      ...alignedLines.map((pair, i) =>
+        React.createElement('div', { key: i, className: 'diff-line-pair' },
+          React.createElement('span', null, pair.left?.content ?? ''),
+          React.createElement('span', null, pair.right?.content ?? '')
+        )
+      ),
+      showComments && allThreads.map((thread) =>
+        React.createElement('div', {
+          key: `thread-${thread.id}`,
+          className: 'cm-comment-widget',
+          'data-thread-id': thread.id,
+        },
+          React.createElement(CommentThread, {
+            thread: thread as Parameters<typeof CommentThread>[0]['thread'],
+            currentUserLogin: currentUserLogin ?? '',
+            onReply: addReply ?? (() => Promise.resolve()),
+            onEdit: editComment ?? (() => Promise.resolve()),
+            onDelete: deleteComment ?? (() => Promise.resolve()),
+            onToggleResolved: toggleResolved ?? (() => {}),
+          })
+        )
+      ),
+      draftLineIndex !== null && draftLineIndex !== undefined &&
+        React.createElement('div', {
+          key: 'draft',
+          className: 'cm-comment-widget cm-draft-editor-widget',
+          'data-draft-line': draftLineIndex,
+        },
+          React.createElement(CommentEditor, {
+            value: draftBody ?? '',
+            onChange: onChangeDraftBody ?? (() => {}),
+            onSubmit: onSubmitDraft ?? (() => {}),
+            onCancel: onCancelDraft ?? (() => {}),
+            isSubmitting: isSubmittingDraft ?? false,
+            submitLabel: 'Comment',
+            label: 'New comment',
+          }),
+          submitError && React.createElement('div', { className: 'draft-comment-error' }, submitError)
+        )
+    );
+  };
+
+  // Mock CommentPortalManager - just render children directly, mocks handle the UI
+  const MockCommentPortalManager = ({ children }: { children: (callbacks: Record<string, () => void>) => React.ReactNode }) => {
+    return React.createElement(React.Fragment, null,
+      children({
+        onMountThread: () => {},
+        onUnmountThread: () => {},
+        onMountDraft: () => {},
+        onUnmountDraft: () => {},
+      })
+    );
+  };
+
+  return {
+    UnifiedDiffEditor: MockUnifiedDiffEditor,
+    SplitDiffEditor: MockSplitDiffEditor,
+    CommentPortalManager: MockCommentPortalManager,
+  };
+});
 
 // Mock useIterationDiff hook for iteration switch tests
 const mockIterationDiff = {
@@ -339,10 +554,7 @@ describe('DiffView', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Comment posted.');
   });
 
-  // Skipped: CodeMirror widget DOM is not created in JSDOM with mocked CodeMirrorBase
-  // React portals are implemented but require real CodeMirror widget containers
-  // This flow is tested in E2E tests instead
-  it.skip('submits a comment successfully', async () => {
+  it('submits a comment successfully', async () => {
     const mockSubmitComment = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
@@ -386,8 +598,7 @@ describe('DiffView', () => {
     });
   });
 
-  // Skipped: CodeMirror widget DOM is not created in JSDOM with mocked CodeMirrorBase
-  it.skip('cancels comment editing', async () => {
+  it('cancels comment editing', async () => {
     const mockCancelDraft = vi.fn();
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
@@ -436,8 +647,7 @@ describe('DiffView', () => {
     });
   });
 
-  // Skipped: CodeMirror widget DOM is not created in JSDOM with mocked CodeMirrorBase
-  it.skip('handles comment submission error', async () => {
+  it('handles comment submission error', async () => {
     vi.mocked(useDiffStore).mockReturnValue({
       ...mockDefaultDiffState,
       files: [
@@ -478,8 +688,7 @@ describe('DiffView', () => {
     });
   });
 
-  // Skipped: CodeMirror widget DOM is not created in JSDOM with mocked CodeMirrorBase
-  it.skip('renders existing comment threads', () => {
+  it('renders existing comment threads', () => {
     const thread = {
       id: 'thread-1',
       path: 'src/index.ts',

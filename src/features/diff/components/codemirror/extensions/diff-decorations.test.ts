@@ -279,12 +279,6 @@ describe('diffDecorations extension', () => {
     // State should update without error
     expect(newState.doc.toString()).toBe('unchanged');
   });
-
-  // Skip tests requiring full DOM/view - these are covered by integration tests
-  it.skip('provides decorations to EditorView', () => {
-    // This would require a full browser environment with DOM
-    // Covered by DiffView integration tests
-  });
 });
 
 describe('setDiffLines effect', () => {
