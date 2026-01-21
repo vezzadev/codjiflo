@@ -75,7 +75,11 @@ class DiffLineMarker extends GutterMarker {
     }
 
     // Show line numbers based on mode
-    if (this.mode === 'left' || this.mode === 'both') {
+    // Per spec (spec/functional/diff-viewing.md):
+    // - 'left' filter: show old (left) line numbers
+    // - 'both' filter: show new (right) line numbers only
+    // - 'right' filter: show new (right) line numbers
+    if (this.mode === 'left') {
       const leftSpan = document.createElement('span');
       leftSpan.className = 'cm-diff-gutter-left';
       leftSpan.textContent = this.oldLineNumber !== null ? String(this.oldLineNumber) : '';
