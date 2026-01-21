@@ -302,6 +302,7 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
               onChange={() => onChange(position)}
               className="sr-only"
               aria-label={FILTER_LABELS[position]}
+              tabIndex={value === position ? 0 : -1}
             />
             <span
               className="content-filter-thumb"

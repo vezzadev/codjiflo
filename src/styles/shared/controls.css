@@ -193,7 +193,8 @@
 }
 
 .toolbar-dropdown-button:focus {
-  border-color: var(--focus-border);
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 .toolbar-dropdown-button[aria-expanded="true"] {

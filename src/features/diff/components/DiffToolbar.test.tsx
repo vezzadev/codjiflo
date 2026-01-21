@@ -389,5 +389,40 @@ describe('DiffToolbar', () => {
       // Dropdown should close
       expect(viewModeButton).toHaveAttribute('aria-expanded', 'false');
     });
+
+    it('content filter radios are focusable via Tab', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <button data-testid="before-button">Before</button>
+          <DiffToolbar />
+        </>
+      );
+
+      // Focus the button before the toolbar
+      const beforeButton = screen.getByTestId('before-button');
+      beforeButton.focus();
+      expect(beforeButton).toHaveFocus();
+
+      // Tab should move focus to the content filter (checked radio)
+      await user.tab();
+      const checkedRadio = screen.getByRole('radio', { name: 'Show Both' });
+      expect(checkedRadio).toHaveFocus();
+    });
+
+    it('content filter focus moves to next element on Tab', async () => {
+      const user = userEvent.setup();
+      render(<DiffToolbar />);
+
+      // Focus the content filter radio
+      const checkedRadio = screen.getByRole('radio', { name: 'Show Both' });
+      checkedRadio.focus();
+      expect(checkedRadio).toHaveFocus();
+
+      // Tab should move focus to the View mode dropdown
+      await user.tab();
+      const viewModeButton = screen.getByRole('button', { name: 'View mode' });
+      expect(viewModeButton).toHaveFocus();
+    });
   });
 });
