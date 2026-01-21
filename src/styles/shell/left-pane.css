@@ -52,18 +52,61 @@
   font-size: 12px;
 }
 
-.file-explorer-filter {
-  padding: 4px 8px;
+.file-explorer-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.file-explorer-filter .textbox {
+.file-explorer-filter-inline {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.file-explorer-filter-inline .filter-icon {
+  position: absolute;
+  left: 6px;
+  color: var(--control-disabled-fg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.file-explorer-filter-inline .file-filter-input {
+  flex: 1;
   width: 100%;
+  padding-left: 24px;
+  padding-right: 24px;
+  height: 24px;
   background-color: var(--file-explorer-filter-bg);
   color: var(--file-explorer-filter-fg);
 }
 
-.file-explorer-filter .textbox::placeholder {
+.file-explorer-filter-inline .file-filter-input::placeholder {
   color: var(--file-explorer-filter-placeholder);
+}
+
+.file-explorer-filter-inline .filter-clear {
+  position: absolute;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.file-explorer-filter-inline .filter-clear:hover {
+  opacity: 1;
+  color: var(--main-fg);
 }
 
 /* File Tree Navigation Container */
