@@ -20,9 +20,9 @@ npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e
 **Troubleshooting:** If any `npm run` command fails, the very first thing to try is `npm install`.
 
 ## Testing Exit Criteria
-
-**All changes:** `npm run test:all` must pass
-**New features:** 1-2 E2E tests + integration tests + unit tests
+This is a **requirement**:
+* **Any changes:** `npm run test:all` must pass
+* **New features:** Several unit tests + some integration tests + 1-2 new E2E tests + manual testing sanity check with Playwright
 
 | Type | Pattern | Notes |
 |------|---------|-------|
@@ -100,8 +100,17 @@ When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. Y
  * waitForEvent: Useful for downloads, dialogs, and other events.
  * waitForTimeout: Banned.
 
-## Prefer locators to selectors
+#### Prefer locators to selectors
 Unlike traditional selectors that perform a one-time query, locators are lazy and resilient references to elements that automatically retry until elements become available, wait implicitly for elements to be actionable, and adapt to DOM changes between queries.
+
+#### E2E tests in this project are rock solid
+All E2E tests go through a stress test where they run 10x in parallel and 10x in sequence every new push to main in search of race conditions and flakiness. You may check the stress test health looking at the workflow history of the ci-cd-main workflow on GitHub.
+
+## Manual testing
+You have access to Playwright via MCP. Use it sparingly in the following situations:
+ * You are stuck trying to reproduce a bug through code analysis or test cases. `browser_evaluate` is invaluable to capture runtime information such as computed styles or library side effects.
+ * Sanity check your work as you reach a milestone in the implementation of a feature. Once you reach ~200 lines of code changes, the risk that you are compounding errors and don't have working code becomes high. A quick inspection in Playwright gives extra assurance that you are on the right track.
+ * Final quality assurance. Don't ask the user to test a feature manually before you did it yourself!
 
 ## Shared environment
 There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3000 for A, 3010 for B, ..., 3040 for C. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
