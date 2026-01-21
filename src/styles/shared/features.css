@@ -871,7 +871,7 @@
   cursor: pointer;
   user-select: none;
   background-color: var(--control-bg);
-  z-index: 10;
+  z-index: 1; /* Below diff-header (z-index: 10) so toolbar dropdowns appear above */
 }
 
 /* Inline mode: minimap on left */
