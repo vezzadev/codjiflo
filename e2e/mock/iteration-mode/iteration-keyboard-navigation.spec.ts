@@ -231,13 +231,14 @@ index 3334567..cbcdefg 100644
 
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
+    // Wait for iteration tabs to load (not just skeleton)
+    await expect(selector.locator('.iteration-tab')).not.toHaveCount(0);
 
     // Default view shows iteration 2 (latest), which has file-b.txt and file-c.txt
     // Use .tree-item.file to exclude folder headers from count
     const fileItems = fileList.locator('.tree-item.file');
     // Should have 3 items: PR description + file-b.txt + file-c.txt
-    const visibleFileCount = await fileItems.count();
-    expect(visibleFileCount).toBe(3);
+    await expect(fileItems).toHaveCount(3);
 
     // Navigate through visible files with 's'
     await fileItems.first().click(); // Start at PR description
