@@ -179,7 +179,7 @@ jobs:
         run: npx playwright install --with-deps chromium-headless-shell
 
       - name: Run E2E stress tests (1 worker) - 10x
-        timeout-minutes: 60
+        timeout-minutes: 30
         run: |
           for i in {1..10}; do
             echo "========================================"
