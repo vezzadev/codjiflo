@@ -115,7 +115,7 @@ test.describe("Token Refresh Flow", () => {
 
     // Should successfully load after token refresh
     // The PR page should show file content (indicates API calls succeeded)
-    await expect(page.getByText("Files")).toBeVisible();
+    await expect(page.getByPlaceholder("Filter by file name")).toBeVisible();
     await expect(page.getByText("test.ts")).toBeVisible();
 
     // Verify the refresh endpoint was called and PR API was retried
