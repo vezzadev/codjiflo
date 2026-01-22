@@ -33,7 +33,7 @@
       "count": 16
     },
     "playwright/no-raw-locators": {
-      "count": 12
+      "count": 10
     }
   },
   "e2e/common/degraded-mode/pr-viewer.spec.ts": {
@@ -49,12 +49,7 @@
   },
   "e2e/mock/degraded-mode/change-navigation-after-file-switch.spec.ts": {
     "playwright/no-raw-locators": {
-      "count": 4
-    }
-  },
-  "e2e/mock/degraded-mode/diff-theme-background.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 3
+      "count": 2
     }
   },
   "e2e/mock/degraded-mode/diff-view-full-file-added-files.spec.ts": {
@@ -65,11 +60,6 @@
   "e2e/mock/degraded-mode/diff-view-mock-only.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 5
-    }
-  },
-  "e2e/mock/degraded-mode/file-filter.spec.ts": {
-    "playwright/no-useless-not": {
-      "count": 6
     }
   },
   "e2e/mock/degraded-mode/inline-gutter-line-numbers.spec.ts": {
@@ -91,9 +81,6 @@
     },
     "playwright/no-raw-locators": {
       "count": 5
-    },
-    "playwright/no-useless-not": {
-      "count": 1
     }
   },
   "e2e/mock/degraded-mode/side-filter.spec.ts": {
@@ -103,7 +90,7 @@
   },
   "e2e/mock/degraded-mode/sxs-scroll-sync.spec.ts": {
     "playwright/no-raw-locators": {
-      "count": 6
+      "count": 2
     }
   },
   "e2e/mock/degraded-mode/sxs-spacer-styling.spec.ts": {
@@ -120,9 +107,6 @@
   "e2e/mock/iteration-mode/comment-toggle.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 4
-    },
-    "playwright/no-useless-not": {
-      "count": 4
     }
   },
   "e2e/mock/iteration-mode/diff-horizontal-scroll.spec.ts": {
@@ -131,9 +115,6 @@
     },
     "playwright/no-conditional-in-test": {
       "count": 5
-    },
-    "playwright/no-raw-locators": {
-      "count": 3
     }
   },
   "e2e/mock/iteration-mode/iteration-keyboard-navigation.spec.ts": {
@@ -181,22 +162,11 @@
     },
     "playwright/no-raw-locators": {
       "count": 4
-    },
-    "playwright/no-useless-not": {
-      "count": 1
     }
   },
   "e2e/mock/iteration-mode/minimap-with-comments.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 1
-    },
-    "playwright/no-useless-not": {
-      "count": 1
-    }
-  },
-  "e2e/mock/iteration-mode/text-wrap-toggle.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 2
     }
   },
   "e2e/prod/iteration-mode/iteration-file-status.spec.ts": {
