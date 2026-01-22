@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupAuthMock,
@@ -6,6 +6,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Side-by-Side Scroll Sync", () => {
   // Generate a file with many lines to ensure scrolling is needed
@@ -108,44 +109,22 @@ test.describe("Side-by-Side Scroll Sync", () => {
     await expect(leftPane).toBeVisible();
     await expect(rightPane).toBeVisible();
 
-    // Get the scroll containers (.cm-scroller elements)
-    const leftScroller = leftPane.locator(".cm-scroller");
-    const rightScroller = rightPane.locator(".cm-scroller");
+    // Get CodeMirror editors from each pane
+    const leftEditor = CMEditor.from(leftPane);
+    const rightEditor = CMEditor.from(rightPane);
 
-    await expect(leftScroller).toBeVisible();
-    await expect(rightScroller).toBeVisible();
-
-    // Get initial scroll positions
-    const initialLeftScroll = await leftScroller.evaluate((el) => el.scrollTop);
-    const initialRightScroll = await rightScroller.evaluate((el) => el.scrollTop);
+    await expect(leftEditor.scroller).toBeVisible();
+    await expect(rightEditor.scroller).toBeVisible();
 
     // Both should start at 0
-    expect(initialLeftScroll).toBe(0);
-    expect(initialRightScroll).toBe(0);
+    await expect(leftEditor).toHaveScrollPosition({ scrollTop: 0 });
+    await expect(rightEditor).toHaveScrollPosition({ scrollTop: 0 });
 
     // Scroll the left pane down by 200 pixels
-    await leftScroller.evaluate((el) => {
-      el.scrollTop = 200;
-    });
+    await leftEditor.scrollTo({ scrollTop: 200 });
 
-    // Give scroll sync a moment to fire
-    await page.waitForFunction(
-      (scrollTop) => {
-        const rightScroller = document.querySelector('[aria-label="Modified version"] .cm-scroller');
-        return rightScroller && rightScroller.scrollTop >= scrollTop - 10;
-      },
-      190
-    ).catch(() => {
-      // Expected to fail when bug is present - scroll sync not working
-    });
-
-    // Check that the right pane also scrolled
-    const newRightScroll = await rightScroller.evaluate((el) => el.scrollTop);
-
-    // The right pane should have synced to the same scroll position
-    // Allow small tolerance for rounding
-    expect(newRightScroll).toBeGreaterThan(150);
-    expect(Math.abs(newRightScroll - 200)).toBeLessThan(10);
+    // Wait for scroll sync to propagate to the right pane
+    await expect(rightEditor).toHaveScrollPosition({ scrollTop: 200 }, { tolerance: 10 });
   });
 
   test("scrolling right pane synchronizes left pane scroll position", async ({ page }) => {
@@ -184,35 +163,17 @@ test.describe("Side-by-Side Scroll Sync", () => {
     await expect(leftPane).toBeVisible();
     await expect(rightPane).toBeVisible();
 
-    // Get the scroll containers (.cm-scroller elements)
-    const leftScroller = leftPane.locator(".cm-scroller");
-    const rightScroller = rightPane.locator(".cm-scroller");
+    // Get CodeMirror editors from each pane
+    const leftEditor = CMEditor.from(leftPane);
+    const rightEditor = CMEditor.from(rightPane);
 
-    await expect(leftScroller).toBeVisible();
-    await expect(rightScroller).toBeVisible();
+    await expect(leftEditor.scroller).toBeVisible();
+    await expect(rightEditor.scroller).toBeVisible();
 
     // Scroll the RIGHT pane down by 200 pixels
-    await rightScroller.evaluate((el) => {
-      el.scrollTop = 200;
-    });
+    await rightEditor.scrollTo({ scrollTop: 200 });
 
-    // Give scroll sync a moment to fire
-    await page.waitForFunction(
-      (scrollTop) => {
-        const leftScroller = document.querySelector('[aria-label="Original version"] .cm-scroller');
-        return leftScroller && leftScroller.scrollTop >= scrollTop - 10;
-      },
-      190
-    ).catch(() => {
-      // Expected to fail when bug is present - scroll sync not working
-    });
-
-    // Check that the left pane also scrolled
-    const newLeftScroll = await leftScroller.evaluate((el) => el.scrollTop);
-
-    // The left pane should have synced to the same scroll position
-    // Allow small tolerance for rounding
-    expect(newLeftScroll).toBeGreaterThan(150);
-    expect(Math.abs(newLeftScroll - 200)).toBeLessThan(10);
+    // Wait for scroll sync to propagate to the left pane
+    await expect(leftEditor).toHaveScrollPosition({ scrollTop: 200 }, { tolerance: 10 });
   });
 });

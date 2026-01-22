@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
@@ -7,6 +7,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
   // Create a file with very long lines to trigger horizontal scrolling
@@ -233,12 +234,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Get the CodeMirror scroller (the scrollable container)
-    const cmScroller = page.locator(".cm-scroller");
-    await expect(cmScroller).toBeVisible();
+    // Get the CodeMirror editor
+    const editor = CMEditor.from(page);
+    await expect(editor.scroller).toBeVisible();
 
     // ASSERTION: CodeMirror scroller should allow horizontal scrolling
-    const canScroll = await cmScroller.evaluate((el) => {
+    const canScroll = await editor.scroller.evaluate((el) => {
       // Check if element can scroll (has overflow: auto/scroll and content wider than container)
       const style = window.getComputedStyle(el);
       const overflowX = style.overflowX;
@@ -250,24 +251,15 @@ Iterations: 2`,
     expect(canScroll).toBe(true);
 
     // ASSERTION: Can scroll to reveal hidden content
-    const initialScrollLeft = await cmScroller.evaluate((el) => el.scrollLeft);
-    expect(initialScrollLeft).toBe(0);
+    await expect(editor).toHaveScrollPosition({ scrollLeft: 0 });
 
     // Scroll right
-    await cmScroller.evaluate((el) => {
-      el.scrollLeft = 100;
-    });
-
-    const newScrollLeft = await cmScroller.evaluate((el) => el.scrollLeft);
-    expect(newScrollLeft).toBe(100);
+    await editor.scrollTo({ scrollLeft: 100 });
+    await expect(editor).toHaveScrollPosition({ scrollLeft: 100 });
 
     // Scroll back
-    await cmScroller.evaluate((el) => {
-      el.scrollLeft = 0;
-    });
-
-    const resetScrollLeft = await cmScroller.evaluate((el) => el.scrollLeft);
-    expect(resetScrollLeft).toBe(0);
+    await editor.scrollTo({ scrollLeft: 0 });
+    await expect(editor).toHaveScrollPosition({ scrollLeft: 0 });
   });
 
   test("CodeMirror lines expand to fit wide content (CSS fix validation)", async ({
@@ -291,8 +283,8 @@ Iterations: 2`,
     ).toBeVisible();
 
     // Verify we're in inline view (CodeMirror editor present)
-    const cmEditor = page.locator(".cm-editor");
-    await expect(cmEditor).toBeVisible();
+    const editor = CMEditor.from(page);
+    await expect(editor.view).toBeVisible();
 
     // CRITICAL ASSERTION: At least one CodeMirror line should have width > viewport
     // This validates that lines expand for long content.
@@ -359,8 +351,8 @@ Iterations: 2`,
     await fileNav.getByText("long-lines.ts").click();
 
     // Wait for diff to render - wait for the CodeMirror editor to appear
-    const cmEditor = page.locator(".cm-editor");
-    await expect(cmEditor).toBeVisible();
+    const editor = CMEditor.from(page);
+    await expect(editor.view).toBeVisible();
 
     // Wait for toolbar to render
     const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });

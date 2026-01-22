@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
@@ -7,6 +7,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Text Wrap Toggle", () => {
   // Create a file with very long lines to test word wrap behavior
@@ -205,10 +206,11 @@ Iterations: 2`,
     ).toBeVisible();
 
     // Wait for CodeMirror lines containing our test content to be present
-    const longLineLocator = page.locator(".cm-line", { hasText: "veryLongVariableName" });
-    const shortLineLocator = page.locator(".cm-line", { hasText: "short = 'value'" });
-    await expect(longLineLocator.first()).toBeVisible();
-    await expect(shortLineLocator.first()).toBeVisible();
+    const editor = CMEditor.from(page);
+    const longLineLocator = editor.lineContaining("veryLongVariableName");
+    const shortLineLocator = editor.lineContaining("short = 'value'");
+    await expect(longLineLocator).toBeVisible();
+    await expect(shortLineLocator).toBeVisible();
 
     // Helper to get heights of specific rows (CodeMirror uses .cm-line for each line)
     const getRowHeights = async () => {
