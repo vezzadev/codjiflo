@@ -31,7 +31,7 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/dot-notation": ["error", { allowIndexSignaturePropertyAccess: false }],
       "@typescript-eslint/restrict-template-expressions": [
@@ -45,6 +45,11 @@ export default tseslint.config(
           allowRegExp: true,
         },
       ],
+      // Upgraded from warn to error for baseline suppression
+      "import/no-anonymous-default-export": "error",
+      "jsx-a11y/role-supports-aria-props": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "react-hooks/exhaustive-deps": "error",
     },
   },
   {
@@ -58,6 +63,13 @@ export default tseslint.config(
     // Disable type-aware linting for config files
     files: ["*.config.ts", "*.config.js", "*.config.mjs", "playwright.config.ts"],
     extends: [tseslint.configs.disableTypeChecked],
+  },
+  {
+    // JavaScript files - upgrade warnings to errors for baseline suppression
+    files: ["**/*.js"],
+    rules: {
+      "import/no-anonymous-default-export": "error",
+    },
   },
   {
     // E2E tests: Playwright recommended rules + prevent custom timeouts + ban test.skip() + enforce single describe
@@ -79,6 +91,16 @@ export default tseslint.config(
         },
       ],
       "playwright/no-skipped-test": "error",
+      "playwright/no-conditional-in-test": "error",
+      "playwright/no-conditional-expect": "error",
+      "playwright/no-useless-not": "error",
+      "playwright/no-raw-locators": "error",
+      "playwright/no-restricted-locators": "error",
+      "playwright/prefer-native-locators": "error",
+      "playwright/prefer-locator": "error",
+      "playwright/require-top-level-describe": "error",
+      "playwright/prefer-equality-matcher": "error",
+      "playwright/prefer-comparison-matcher": "error",
       "custom-rules/one-top-level-test-describe": ["error", { filePattern: "\\.spec\\.ts$" }],
     },
   },
