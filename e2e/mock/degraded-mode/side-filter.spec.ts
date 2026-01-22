@@ -127,12 +127,11 @@ test.describe("Side filter with view modes", () => {
     return diffRegion;
   }
 
-  // Helper to count visible addition and deletion lines
-  async function countLineTypes(diffRegion: import("@playwright/test").Locator) {
-    const additions = await diffRegion.locator('[data-line-type="addition"]').count();
-    const deletions = await diffRegion.locator('[data-line-type="deletion"]').count();
-    return { additions, deletions };
-  }
+  // Locator helpers for line types
+  const additions = (region: import("@playwright/test").Locator) =>
+    region.locator('[data-line-type="addition"]');
+  const deletions = (region: import("@playwright/test").Locator) =>
+    region.locator('[data-line-type="deletion"]');
 
   // Helper to set content filter via keyboard shortcut
   async function setFilter(page: import("@playwright/test").Page, filter: "left" | "both" | "right") {
@@ -157,10 +156,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to left (deletions only)
     await setFilter(page, "left");
 
-    // Verify filter is applied
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBe(0);
+    // Verify filter is applied (auto-retries until DOM matches)
+    await expect(deletions(diffRegion)).not.toHaveCount(0);
+    await expect(additions(diffRegion)).toHaveCount(0);
   });
 
   test("both filter shows additions and deletions in changes view", async ({ page }) => {
@@ -169,10 +167,9 @@ test.describe("Side filter with view modes", () => {
     // Default is 'both', but set it explicitly
     await setFilter(page, "both");
 
-    // Verify both types are visible
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBeGreaterThan(0);
+    // Verify both types are visible (auto-retries until DOM matches)
+    await expect(deletions(diffRegion)).not.toHaveCount(0);
+    await expect(additions(diffRegion)).not.toHaveCount(0);
   });
 
   test("right filter shows only additions in changes view", async ({ page }) => {
@@ -181,10 +178,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to right (additions only)
     await setFilter(page, "right");
 
-    // Verify filter is applied
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.additions).toBeGreaterThan(0);
-    expect(counts.deletions).toBe(0);
+    // Verify filter is applied (auto-retries until DOM matches)
+    await expect(additions(diffRegion)).not.toHaveCount(0);
+    await expect(deletions(diffRegion)).toHaveCount(0);
   });
 
   // ============================================================================
@@ -207,10 +203,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to left (deletions only)
     await setFilter(page, "left");
 
-    // Verify filter is applied in virtualized full file view
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBe(0);
+    // Verify filter is applied in virtualized full file view (auto-retries)
+    await expect(deletions(diffRegion)).not.toHaveCount(0);
+    await expect(additions(diffRegion)).toHaveCount(0);
   });
 
   test("both filter shows additions and deletions in full file view", async ({ page }) => {
@@ -227,10 +222,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to both
     await setFilter(page, "both");
 
-    // Verify both types are visible
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBeGreaterThan(0);
+    // Verify both types are visible (auto-retries)
+    await expect(deletions(diffRegion)).not.toHaveCount(0);
+    await expect(additions(diffRegion)).not.toHaveCount(0);
   });
 
   test("right filter shows only additions in full file view", async ({ page }) => {
@@ -247,10 +241,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to right (additions only)
     await setFilter(page, "right");
 
-    // Verify filter is applied in virtualized full file view
-    const counts = await countLineTypes(diffRegion);
-    expect(counts.additions).toBeGreaterThan(0);
-    expect(counts.deletions).toBe(0);
+    // Verify filter is applied in virtualized full file view (auto-retries)
+    await expect(additions(diffRegion)).not.toHaveCount(0);
+    await expect(deletions(diffRegion)).toHaveCount(0);
   });
 
   // ============================================================================
@@ -277,10 +270,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to left (deletions only)
     await setFilter(page, "left");
 
-    // Verify filter is applied
-    const counts = await countLineTypes(sideBySideRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBe(0);
+    // Verify filter is applied (auto-retries)
+    await expect(deletions(sideBySideRegion)).not.toHaveCount(0);
+    await expect(additions(sideBySideRegion)).toHaveCount(0);
   });
 
   test("left filter shows only deletions in side-by-side full file view", async ({ page }) => {
@@ -300,10 +292,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to left (deletions only)
     await setFilter(page, "left");
 
-    // Verify filter is applied in virtualized side-by-side full file view
-    const counts = await countLineTypes(sideBySideRegion);
-    expect(counts.deletions).toBeGreaterThan(0);
-    expect(counts.additions).toBe(0);
+    // Verify filter is applied in virtualized side-by-side full file view (auto-retries)
+    await expect(deletions(sideBySideRegion)).not.toHaveCount(0);
+    await expect(additions(sideBySideRegion)).toHaveCount(0);
   });
 
   test("right filter shows only additions in side-by-side changes view", async ({ page }) => {
@@ -315,10 +306,9 @@ test.describe("Side filter with view modes", () => {
     // Set filter to right (additions only)
     await setFilter(page, "right");
 
-    // Verify filter is applied
-    const counts = await countLineTypes(sideBySideRegion);
-    expect(counts.additions).toBeGreaterThan(0);
-    expect(counts.deletions).toBe(0);
+    // Verify filter is applied (auto-retries)
+    await expect(additions(sideBySideRegion)).not.toHaveCount(0);
+    await expect(deletions(sideBySideRegion)).toHaveCount(0);
   });
 
   test("right filter shows only additions in side-by-side full file view", async ({ page }) => {
@@ -338,9 +328,8 @@ test.describe("Side filter with view modes", () => {
     // Set filter to right (additions only)
     await setFilter(page, "right");
 
-    // Verify filter is applied in virtualized side-by-side full file view
-    const counts = await countLineTypes(sideBySideRegion);
-    expect(counts.additions).toBeGreaterThan(0);
-    expect(counts.deletions).toBe(0);
+    // Verify filter is applied in virtualized side-by-side full file view (auto-retries)
+    await expect(additions(sideBySideRegion)).not.toHaveCount(0);
+    await expect(deletions(sideBySideRegion)).toHaveCount(0);
   });
 });

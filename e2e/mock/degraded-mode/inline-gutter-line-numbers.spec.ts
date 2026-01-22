@@ -82,28 +82,12 @@ test.describe("Inline mode gutter line numbers", () => {
     return diffRegion;
   }
 
-  // Helper to count gutter columns in a regular (non-spacer, non-header) line
-  async function getGutterColumnCounts(page: import("@playwright/test").Page) {
-    return page.evaluate(() => {
-      const wrappers = document.querySelectorAll(".cm-diff-gutter-wrapper");
-      if (wrappers.length === 0) return { total: 0, leftCount: 0, rightCount: 0 };
-
-      // Find a regular line wrapper (skip spacers with "9999" and headers)
-      for (const wrapper of wrappers) {
-        // Skip headers (have cm-diff-gutter-header class)
-        if (wrapper.classList.contains("cm-diff-gutter-header")) continue;
-
-        // Skip spacers (contain "9999" text)
-        if ((wrapper.textContent || "").includes("9999")) continue;
-
-        const leftCols = wrapper.querySelectorAll(".cm-diff-gutter-left").length;
-        const rightCols = wrapper.querySelectorAll(".cm-diff-gutter-right").length;
-        if (leftCols > 0 || rightCols > 0) {
-          return { total: wrappers.length, leftCount: leftCols, rightCount: rightCols };
-        }
-      }
-      return { total: wrappers.length, leftCount: 0, rightCount: 0 };
-    });
+  // Helper to get a locator for a regular gutter wrapper (excludes headers and spacers)
+  function getRegularGutterWrapper(page: import("@playwright/test").Page) {
+    return page
+      .locator(".cm-diff-gutter-wrapper:not(.cm-diff-gutter-header)")
+      .filter({ hasNotText: "9999" })
+      .first();
   }
 
   test("gutter shows only right line numbers in inline mode with 'both' filter", async ({
@@ -111,13 +95,13 @@ test.describe("Inline mode gutter line numbers", () => {
   }) => {
     await navigateToFile(page);
 
-    const gutterStats = await getGutterColumnCounts(page);
-    expect(gutterStats.total).toBeGreaterThan(0);
+    const wrapper = getRegularGutterWrapper(page);
+    await expect(wrapper).toBeVisible();
 
     // According to spec: 'both' filter should show only right (new) line numbers
     // So we expect 0 left columns and 1 right column
-    expect(gutterStats.leftCount).toBe(0);
-    expect(gutterStats.rightCount).toBe(1);
+    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(0);
+    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(1);
   });
 
   test("gutter shows only left line numbers when filter is 'left'", async ({
@@ -132,12 +116,12 @@ test.describe("Inline mode gutter line numbers", () => {
     // Wait for filter to be applied (check the radio button is selected)
     await expect(page.getByRole("radio", { name: "Left Only" })).toBeChecked();
 
-    const gutterStats = await getGutterColumnCounts(page);
-    expect(gutterStats.total).toBeGreaterThan(0);
+    const wrapper = getRegularGutterWrapper(page);
+    await expect(wrapper).toBeVisible();
 
     // When filter is 'left', should show only left (old) line numbers
-    expect(gutterStats.leftCount).toBe(1);
-    expect(gutterStats.rightCount).toBe(0);
+    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(1);
+    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(0);
   });
 
   test("gutter shows only right line numbers when filter is 'right'", async ({
@@ -152,11 +136,11 @@ test.describe("Inline mode gutter line numbers", () => {
     // Wait for filter to be applied
     await expect(page.getByRole("radio", { name: "Right Only" })).toBeChecked();
 
-    const gutterStats = await getGutterColumnCounts(page);
-    expect(gutterStats.total).toBeGreaterThan(0);
+    const wrapper = getRegularGutterWrapper(page);
+    await expect(wrapper).toBeVisible();
 
     // When filter is 'right', should show only right (new) line numbers
-    expect(gutterStats.leftCount).toBe(0);
-    expect(gutterStats.rightCount).toBe(1);
+    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(0);
+    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(1);
   });
 });
