@@ -125,7 +125,9 @@ jobs:
     permissions:
       issues: write
     steps:
-      - run: npm install yaml
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm install yaml && break || sleep 15; done
 
       - name: Calculate and create task
         uses: actions/github-script@v8

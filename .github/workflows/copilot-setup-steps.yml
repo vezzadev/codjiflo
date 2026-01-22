@@ -27,7 +27,8 @@ jobs:
           cache: "npm"
 
       - name: Install JavaScript dependencies
-        run: npm ci
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
 
       - name: Install Playwright browsers
         timeout-minutes: 1
