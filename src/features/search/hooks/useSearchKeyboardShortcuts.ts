@@ -25,7 +25,7 @@ export function useSearchKeyboardShortcuts() {
     (e: KeyboardEvent) => {
       // Don't trigger if user is in an input field (except our search input)
       const target = e.target as HTMLElement | null;
-      const isInSearchInput = target?.hasAttribute?.('data-search-input') ?? false;
+      const isInSearchInput = target?.hasAttribute('data-search-input') ?? false;
 
       const isInInput =
         target !== null &&
