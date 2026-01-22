@@ -381,7 +381,6 @@ export function Minimap({
 
       // Clamp to valid scroll range
       const maxScroll = scrollHeight - clientHeight;
-      // eslint-disable-next-line react-hooks/immutability -- We're modifying the DOM element's scroll position, not the ref
       scrollEl.scrollTop = Math.max(0, Math.min(maxScroll, targetScrollTop));
     },
     [findScrollElement]
