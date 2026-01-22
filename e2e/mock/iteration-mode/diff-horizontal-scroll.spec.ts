@@ -144,7 +144,13 @@ Iterations: 2`,
       throw new Error("Failed to get toolbar bounding box");
     }
 
-    // Find which element allows horizontal scrolling and scroll it
+    // Wait for CodeMirror to render content wide enough to require horizontal scroll
+    await page.waitForFunction(() => {
+      const cmScroller = document.querySelector(".cm-scroller");
+      return cmScroller && cmScroller.scrollWidth > cmScroller.clientWidth;
+    });
+
+    // Now scroll horizontally
     // This tests the BUG: with wrong implementation, .diff-viewer scrolls
     // horizontally and takes the toolbar with it
     const scrollResult = await page.evaluate(() => {

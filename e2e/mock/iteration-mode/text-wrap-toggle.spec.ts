@@ -204,38 +204,34 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Helper to get row heights and identify which has the long line
+    // Wait for CodeMirror lines containing our test content to be present
+    const longLineLocator = page.locator(".cm-line", { hasText: "veryLongVariableName" });
+    const shortLineLocator = page.locator(".cm-line", { hasText: "short = 'value'" });
+    await expect(longLineLocator.first()).toBeVisible();
+    await expect(shortLineLocator.first()).toBeVisible();
+
+    // Helper to get heights of specific rows (CodeMirror uses .cm-line for each line)
     const getRowHeights = async () => {
       return page.evaluate(() => {
-        // CodeMirror uses .cm-line for each line
         const rows = document.querySelectorAll(".cm-line");
-        const heights: { content: string; height: number }[] = [];
+        let longLineHeight = 0;
+        let shortLineHeight = 0;
         rows.forEach((row) => {
-          const rect = row.getBoundingClientRect();
-          const content = (row.textContent || "").substring(0, 50);
-          heights.push({ content, height: rect.height });
+          const content = row.textContent || "";
+          const height = row.getBoundingClientRect().height;
+          if (content.includes("veryLongVariableName")) longLineHeight = height;
+          if (content.includes("short = 'value'")) shortLineHeight = height;
         });
-        return heights;
+        return { longLineHeight, shortLineHeight };
       });
     };
 
     // With wrap disabled (default), measure row heights
     const heightsNoWrap = await getRowHeights();
-    const longLineRowNoWrap = heightsNoWrap.find((r) =>
-      r.content.includes("veryLongVariableName")
-    );
-    const shortLineRowNoWrap = heightsNoWrap.find((r) =>
-      r.content.includes("short = 'value'")
-    );
-
-    // Both rows should exist
-    if (!longLineRowNoWrap || !shortLineRowNoWrap) {
-      throw new Error("Expected rows not found in diff");
-    }
 
     // Without wrap, rows should be similar height (within 5px tolerance)
     expect(
-      Math.abs(longLineRowNoWrap.height - shortLineRowNoWrap.height)
+      Math.abs(heightsNoWrap.longLineHeight - heightsNoWrap.shortLineHeight)
     ).toBeLessThan(5);
 
     // Enable wrap with keyboard shortcut
@@ -246,24 +242,14 @@ Iterations: 2`,
       page.getByRole("button", { name: /Text wrap/i }).getByText(/^Wrap$/i)
     ).toBeVisible();
 
-    // Re-measure row heights with wrap enabled
-    const heightsWithWrap = await getRowHeights();
-    const longLineRowWithWrap = heightsWithWrap.find((r) =>
-      r.content.includes("veryLongVariableName")
-    );
-    const shortLineRowWithWrap = heightsWithWrap.find((r) =>
-      r.content.includes("short = 'value'")
-    );
-
-    if (!longLineRowWithWrap || !shortLineRowWithWrap) {
-      throw new Error("Expected rows not found in diff after enabling wrap");
-    }
-
-    // With wrap enabled, the long line row should be significantly taller
-    // (at least 1.5x taller, indicating multiple wrapped lines)
-    expect(longLineRowWithWrap.height).toBeGreaterThan(
-      shortLineRowWithWrap.height * 1.5
-    );
+    // Re-measure row heights with wrap enabled (expect.poll auto-retries until CSS applies)
+    // Long line should be significantly taller (at least 1.5x, indicating wrapped lines)
+    await expect
+      .poll(async () => {
+        const heights = await getRowHeights();
+        return heights.longLineHeight / heights.shortLineHeight;
+      })
+      .toBeGreaterThan(1.5);
 
     // Disable wrap again
     await page.keyboard.press("p");
@@ -274,21 +260,12 @@ Iterations: 2`,
     ).toBeVisible();
 
     // Re-measure - heights should be back to similar
-    const heightsAfterDisable = await getRowHeights();
-    const longLineRowAfter = heightsAfterDisable.find((r) =>
-      r.content.includes("veryLongVariableName")
-    );
-    const shortLineRowAfter = heightsAfterDisable.find((r) =>
-      r.content.includes("short = 'value'")
-    );
-
-    if (!longLineRowAfter || !shortLineRowAfter) {
-      throw new Error("Expected rows not found in diff after disabling wrap");
-    }
-
-    // After disabling, rows should be similar height again
-    expect(
-      Math.abs(longLineRowAfter.height - shortLineRowAfter.height)
-    ).toBeLessThan(5);
+    // Use expect.poll() to auto-retry until CSS is applied
+    await expect
+      .poll(async () => {
+        const heights = await getRowHeights();
+        return Math.abs(heights.longLineHeight - heights.shortLineHeight);
+      })
+      .toBeLessThan(5);
   });
 });
