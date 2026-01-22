@@ -27,12 +27,12 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        timeout-minutes: 1
-        run: npm ci
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
 
       - name: Install action dependencies
-        timeout-minutes: 3
-        run: cd action && npm ci
+        timeout-minutes: 4
+        run: for i in 1 2 3; do (cd action && npm ci) && break || sleep 15; done
 
       - name: Run unit tests with coverage
         timeout-minutes: 2
@@ -59,7 +59,9 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
 
       - name: Deploy to Vercel (Production)
         run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }}
@@ -106,8 +108,8 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        timeout-minutes: 1
-        run: npm ci
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
 
       - name: Install Playwright browsers
         timeout-minutes: 1
@@ -139,8 +141,8 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        timeout-minutes: 1
-        run: npm ci
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
 
       - name: Install Playwright browsers
         timeout-minutes: 1

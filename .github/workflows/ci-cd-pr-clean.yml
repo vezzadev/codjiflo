@@ -19,7 +19,8 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - name: Install Vercel CLI
-        run: npm install -g vercel
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm install -g vercel && break || sleep 15; done
 
       - name: Remove Vercel alias
         run: |
