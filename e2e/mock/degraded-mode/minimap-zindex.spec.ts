@@ -142,7 +142,7 @@ test.describe("Minimap Z-Index Bug", () => {
         await inlineOption.click();
 
         // Verify the view mode changed to inline
-        await expect(splitView).not.toBeVisible();
+        await expect(splitView).toBeHidden();
       }
     }
 

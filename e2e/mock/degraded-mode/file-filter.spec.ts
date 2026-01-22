@@ -75,8 +75,8 @@ test.describe("File Filter in Header", () => {
     await expect(fileNav.getByRole("treeitem", { name: /logout\.ts/ })).toBeVisible();
 
     // Non-matching files hidden
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).not.toBeVisible();
-    await expect(fileNav.getByRole("treeitem", { name: /README\.md/ })).not.toBeVisible();
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
+    await expect(fileNav.getByRole("treeitem", { name: /README\.md/ })).toBeHidden();
   });
 
   test("clear button appears and clears filter", async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe("File Filter in Header", () => {
     const clearButton = page.getByLabel("Clear filter");
 
     // Clear button not visible initially
-    await expect(clearButton).not.toBeVisible();
+    await expect(clearButton).toBeHidden();
 
     // Type in filter
     await filterInput.fill("auth");
@@ -96,7 +96,7 @@ test.describe("File Filter in Header", () => {
     await expect(clearButton).toBeVisible();
 
     // Verify filter is active
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).not.toBeVisible();
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
 
     // Click clear
     await clearButton.click();
@@ -114,7 +114,7 @@ test.describe("File Filter in Header", () => {
     await filterInput.fill("auth");
 
     // Verify filter is active
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).not.toBeVisible();
+    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
 
     // Press Escape
     await filterInput.press("Escape");
@@ -138,7 +138,7 @@ test.describe("File Filter in Header", () => {
     await filterInput.fill("auth");
 
     // PR description hidden when filter doesn't match
-    await expect(prDescription).not.toBeVisible();
+    await expect(prDescription).toBeHidden();
 
     // Clear filter
     await filterInput.press("Escape");
