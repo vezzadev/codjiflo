@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
@@ -7,6 +7,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
   const mockPR: MockPR = {
@@ -470,8 +471,10 @@ const baz = 'qux';
 
       // [AC-3.2.2-3] Left shows base, right shows head content
       // Verify the panes contain content (CodeMirror editors)
-      await expect(leftPane.locator(".cm-content")).toBeVisible();
-      await expect(rightPane.locator(".cm-content")).toBeVisible();
+      const leftEditor = CMEditor.from(leftPane);
+      const rightEditor = CMEditor.from(rightPane);
+      await expect(leftEditor.content).toBeVisible();
+      await expect(rightEditor.content).toBeVisible();
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");

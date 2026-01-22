@@ -1,10 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Change Navigation After File Switch", () => {
   // Create a PR with two files, each having multiple hunks
@@ -195,17 +196,18 @@ test.describe("Change Navigation After File Switch", () => {
     // The first hunk in types.ts is at line 3 (oldField -> newField)
     // After pressing J, scrollTop should have changed if the first hunk isn't at the very top
     // Actually, let's press J again to go to the second hunk and verify scroll changes
-    const scrollerAfterFirstJ = await diffRegion.locator(".cm-scroller").evaluate((el) => el.scrollTop);
+    const editor = CMEditor.from(diffRegion);
+    const scrollAfterFirstJ = await editor.scrollPosition();
 
     // Press j again to go to second change
     await page.keyboard.press("j");
     await expect(prevChangeBtn).toBeEnabled();
 
     // Verify scroll position changed after second j press
-    const scrollerAfterSecondJ = await diffRegion.locator(".cm-scroller").evaluate((el) => el.scrollTop);
+    const scrollAfterSecondJ = await editor.scrollPosition();
 
     // The scroll position should change when navigating to a different hunk
     // (Unless the second hunk is already visible, but our test file has hunks spread out)
-    expect(scrollerAfterSecondJ).not.toBe(scrollerAfterFirstJ);
+    expect(scrollAfterSecondJ.scrollTop).not.toBe(scrollAfterFirstJ.scrollTop);
   });
 });

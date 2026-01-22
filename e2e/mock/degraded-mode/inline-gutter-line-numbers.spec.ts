@@ -1,10 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 /**
  * Reproduction test for gutter line number bug.
@@ -83,8 +84,10 @@ test.describe("Inline mode gutter line numbers", () => {
   }
 
   // Helper to get a locator for a regular gutter wrapper (excludes headers and spacers)
-  function getRegularGutterWrapper(page: import("@playwright/test").Page) {
-    return page
+  function getRegularGutterWrapper(editor: CMEditor) {
+    // Get gutter wrappers that aren't headers (spacers use line number 9999)
+    // We use a CSS selector here because we need :not() to exclude header wrappers
+    return editor.view
       .locator(".cm-diff-gutter-wrapper:not(.cm-diff-gutter-header)")
       .filter({ hasNotText: "9999" })
       .first();
@@ -95,7 +98,8 @@ test.describe("Inline mode gutter line numbers", () => {
   }) => {
     await navigateToFile(page);
 
-    const wrapper = getRegularGutterWrapper(page);
+    const editor = CMEditor.from(page);
+    const wrapper = getRegularGutterWrapper(editor);
     await expect(wrapper).toBeVisible();
 
     // According to spec: 'both' filter should show only right (new) line numbers
@@ -116,7 +120,8 @@ test.describe("Inline mode gutter line numbers", () => {
     // Wait for filter to be applied (check the radio button is selected)
     await expect(page.getByRole("radio", { name: "Left Only" })).toBeChecked();
 
-    const wrapper = getRegularGutterWrapper(page);
+    const editor = CMEditor.from(page);
+    const wrapper = getRegularGutterWrapper(editor);
     await expect(wrapper).toBeVisible();
 
     // When filter is 'left', should show only left (old) line numbers
@@ -136,7 +141,8 @@ test.describe("Inline mode gutter line numbers", () => {
     // Wait for filter to be applied
     await expect(page.getByRole("radio", { name: "Right Only" })).toBeChecked();
 
-    const wrapper = getRegularGutterWrapper(page);
+    const editor = CMEditor.from(page);
+    const wrapper = getRegularGutterWrapper(editor);
     await expect(wrapper).toBeVisible();
 
     // When filter is 'right', should show only right (new) line numbers

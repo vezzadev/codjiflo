@@ -1,10 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Diff View - Mock Only Tests", () => {
   const mockPR: MockPR = {
@@ -75,7 +76,8 @@ test.describe("Diff View - Mock Only Tests", () => {
     // CodeMirror uses classes for syntax highlighting. Wait for syntax tokens to appear
     // by checking for .ͼ (CodeMirror highlight class prefix) or .tok- classes.
     // Language loading is async so we need to wait.
-    const syntaxSpanLocator = diffRegion.locator('.cm-line span[class]');
+    const editor = CMEditor.from(diffRegion);
+    const syntaxSpanLocator = editor.lines.locator('span[class]');
     await expect(syntaxSpanLocator.first()).toBeVisible();
 
     // Count spans with any class (syntax highlighting adds classes to spans)
@@ -87,10 +89,10 @@ test.describe("Diff View - Mock Only Tests", () => {
     await page.keyboard.press("b");
 
     // Verify whitespace indicators are visible (CodeMirror uses .cm-highlightSpace)
-    await expect(diffRegion.locator('.cm-highlightSpace').first()).toBeVisible();
+    await expect(editor.view.locator('.cm-highlightSpace').first()).toBeVisible();
 
     // After enabling whitespace visibility, syntax highlighting spans should still be present
-    const syntaxSpansAfter = await diffRegion.locator('.cm-line span[class]').count();
+    const syntaxSpansAfter = await editor.lines.locator('span[class]').count();
     expect(syntaxSpansAfter).toBeGreaterThan(0);
 
     // The count should be similar (whitespace toggle shouldn't remove syntax spans)

@@ -1,10 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 
 test.describe("Diff Area Theme Background", () => {
   const mockPR: MockPR = {
@@ -66,11 +67,11 @@ test.describe("Diff Area Theme Background", () => {
     await expect(diffRegion).toBeVisible();
 
     // Wait for CodeMirror editor to be present
-    const cmEditor = diffRegion.locator(".cm-editor");
-    await expect(cmEditor).toBeVisible();
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.view).toBeVisible();
 
     // Get initial background (light theme uses --main-bg = #f0f0f0)
-    const initialBg = await cmEditor.evaluate(
+    const initialBg = await editor.view.evaluate(
       (el) => getComputedStyle(el).backgroundColor
     );
     // Light theme default should be #f0f0f0 = rgb(240, 240, 240)
@@ -86,7 +87,7 @@ test.describe("Diff Area Theme Background", () => {
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to dark theme color
-    const darkBg = await cmEditor.evaluate(
+    const darkBg = await editor.view.evaluate(
       (el) => getComputedStyle(el).backgroundColor
     );
     // Dark theme should be #313131 = rgb(49, 49, 49)
@@ -105,8 +106,8 @@ test.describe("Diff Area Theme Background", () => {
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
 
-    const cmEditor = diffRegion.locator(".cm-editor");
-    await expect(cmEditor).toBeVisible();
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.view).toBeVisible();
 
     // Open appearance settings and switch to black theme
     await page.getByRole("button", { name: "Appearance Settings" }).click();
@@ -117,7 +118,7 @@ test.describe("Diff Area Theme Background", () => {
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to black theme color
-    const blackBg = await cmEditor.evaluate(
+    const blackBg = await editor.view.evaluate(
       (el) => getComputedStyle(el).backgroundColor
     );
     // Black theme should be #0f0f0f = rgb(15, 15, 15)
@@ -138,8 +139,8 @@ test.describe("Diff Area Theme Background", () => {
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
 
-    const cmEditor = diffRegion.locator(".cm-editor");
-    await expect(cmEditor).toBeVisible();
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.view).toBeVisible();
 
     // Open appearance settings and switch to high contrast theme
     await page.getByRole("button", { name: "Appearance Settings" }).click();
@@ -150,7 +151,7 @@ test.describe("Diff Area Theme Background", () => {
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to high contrast theme color
-    const hcBg = await cmEditor.evaluate(
+    const hcBg = await editor.view.evaluate(
       (el) => getComputedStyle(el).backgroundColor
     );
     // High contrast theme should be #000000 = rgb(0, 0, 0)
