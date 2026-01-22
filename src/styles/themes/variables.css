@@ -176,6 +176,12 @@
   --imgdiff-bg: Beige;
   --findinfiles-bg: #E9E9E9;
 
+  /* Search highlights */
+  --search-match-bg: rgba(255, 213, 0, 0.4);
+  --search-match-fg: inherit;
+  --search-match-current-bg: rgba(255, 165, 0, 0.6);
+  --search-match-current-border: #FF8C00;
+
   /* Diff layout constants (not theme-dependent) */
   --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
   --diff-scroll-context-lines: 3; /* Context lines shown above change when navigating with J/K */
@@ -332,6 +338,12 @@
   --imgdiff-bg: #313131;
   --findinfiles-bg: #313131;
 
+  /* Search highlights */
+  --search-match-bg: rgba(255, 213, 0, 0.35);
+  --search-match-fg: inherit;
+  --search-match-current-bg: rgba(255, 165, 0, 0.55);
+  --search-match-current-border: #FF8C00;
+
   --diff-area-bg: var(--main-bg);
 
   --window-bg: #2D2D30;
@@ -484,6 +496,12 @@
 
   --imgdiff-bg: #111111;
   --findinfiles-bg: #111111;
+
+  /* Search highlights */
+  --search-match-bg: rgba(255, 213, 0, 0.4);
+  --search-match-fg: inherit;
+  --search-match-current-bg: rgba(255, 165, 0, 0.6);
+  --search-match-current-border: #FF8C00;
 
   --diff-area-bg: var(--main-bg);
 
@@ -638,6 +656,12 @@
 
   --imgdiff-bg: #000000;
   --findinfiles-bg: #000000;
+
+  /* Search highlights */
+  --search-match-bg: rgba(255, 255, 0, 0.5);
+  --search-match-fg: #000000;
+  --search-match-current-bg: #FFFF00;
+  --search-match-current-border: #FFFFFF;
 
   --diff-area-bg: var(--main-bg);
 

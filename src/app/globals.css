@@ -8,6 +8,7 @@
 @import '../styles/shared/controls.css';
 @import '../styles/shared/features.css';
 @import '../styles/shared/utilities.css';
+@import '../styles/shared/search.css';
 
 /* Layout Shell Styles */
 @import '../styles/shell/layout.css';

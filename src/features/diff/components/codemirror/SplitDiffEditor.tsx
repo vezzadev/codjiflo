@@ -30,6 +30,7 @@ import {
   setDraftLineIndex,
   setShowComments,
 } from './extensions';
+import { searchHighlights } from '@/features/search';
 import type { AlignedDiffLine, ParsedDiffLine, ContentFilter, TextWrap, VisibleRowRange } from '../../types';
 import type { ReviewThread, CommentSide } from '@/features/comments';
 
@@ -300,6 +301,9 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
         exts.push(highlightWhitespace());
       }
 
+      // Search highlights
+      exts.push(searchHighlights());
+
       // Scroll sync is handled via useEffect, not in extensions
       // to avoid accessing refs during render
 
@@ -326,6 +330,9 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
       if (showWhitespace) {
         exts.push(highlightWhitespace());
       }
+
+      // Search highlights
+      exts.push(searchHighlights());
 
       // Note: onVisibleRangeChange is handled via scroll listener in useEffect
       // instead of EditorView.updateListener, because view.viewport is cached

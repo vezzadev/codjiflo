@@ -791,10 +791,138 @@ interface SelectionBehavior {
 #### Other Shortcuts
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+F` | Find in file |
 | `Ctrl+G` | Go to line |
 | `Ctrl+Mouse Wheel` | Zoom |
 | `?` | Show keyboard shortcuts modal |
+
+#### Find/Search Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+F` | Find in current file |
+| `Ctrl+Shift+F` | Find in all files |
+| `F3` | Next match |
+| `Shift+F3` | Previous match |
+
+---
+
+## Find/Search
+
+### Find in Current File (Ctrl+F)
+
+Compact search bar positioned at top-right corner of the diff area (not a centered modal).
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│ [Search input...] [Aa][Ab][.*][Hi] │ 3 / 15 │ [↑][↓][×] │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Features:**
+- Search query input with auto-focus on open
+- Searches **entire file content** (not just visible viewport)
+- Match count display: "current / total" (e.g., "3 / 15")
+- Navigation with F3 (next) and Shift+F3 (previous)
+- **Scroll behavior**: Navigating to a match scrolls diff to center the hit line in viewport
+- Close with Escape key or close button only
+
+**Search Options (toggles):**
+
+| Option | Label | Description |
+|--------|-------|-------------|
+| Match Case | Aa | Case-sensitive matching |
+| Whole Word | Ab | Match complete words only (word boundary) |
+| Regex | .* | Interpret query as regular expression |
+| Highlight All | Hi | Highlight all matches (vs current only) |
+
+### Find in All Files (Ctrl+Shift+F)
+
+Centered modal for configuring search parameters. Results are displayed in a **new tab in the bottom panel** (not in the modal itself).
+
+**Modal Layout:**
+```
+┌────────────────────────────────────────────────┐
+│ Find in All Files                          [×] │
+├────────────────────────────────────────────────┤
+│ Search: [________________________] [Aa][Ab][.*]│
+│                                                │
+│ File filter: [________________] [.*]           │
+├────────────────────────────────────────────────┤
+│ Iteration Range:                               │
+│ ○ Current iteration only                       │
+│ ○ Current and previous                         │
+│ ○ Current and later                            │
+│ ○ Entire review                                │
+├────────────────────────────────────────────────┤
+│ Side: [Both ▾]                                 │
+├────────────────────────────────────────────────┤
+│              [Cancel]  [Search]                │
+└────────────────────────────────────────────────┘
+```
+
+**File Filter:**
+- Filter files by name pattern
+- Toggle for regex mode (literal substring vs regex pattern)
+
+**Iteration Range Selector:**
+
+| Option | Scope |
+|--------|-------|
+| Current iteration only | Search only the currently selected iteration's file content |
+| Current and previous | Search current iteration + all earlier iterations |
+| Current and later | Search current iteration + all later iterations |
+| Entire review | Search all iterations in the review |
+
+**Side Filter:**
+
+| Filter | Searches |
+|--------|----------|
+| Both | All diff content (additions, deletions, unchanged) |
+| Right only | Additions and unchanged lines (new file content) |
+| Left only | Deletions and unchanged lines (old file content) |
+
+### Search Results Panel (Bottom Pane Tab)
+
+When "Search" is clicked, results appear in a new **"Search Results"** tab in the bottom panel.
+
+**Results Layout:**
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Comments (5) │ Search Results (23 in 4 files)                      │
+├────────────────────────────────────────────────────────────────────┤
+│ Query: "formatDate" [Clear Results]                                │
+├────────────────────────────────────────────────────────────────────┤
+│ ▾ src/utils/format.ts (5 matches)                                  │
+│     12: const formatDate = (date: Date) => {                       │
+│     34: export function formatDateRange(start, end) {              │
+│     56: // Helper for formatDate                                   │
+│ ▸ src/components/Card.tsx (2 matches)                              │
+│ ▸ src/hooks/useDate.ts (16 matches)                                │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**Features:**
+- Results grouped by file with match count badge
+- Collapsible file groups (▾ expanded, ▸ collapsed)
+- Line preview with search term highlighted
+- Clicking a result row:
+  1. Navigates to that file in the file list
+  2. Scrolls diff to center the match line in viewport
+  3. Highlights the match in the editor
+- "Clear Results" button hides the Search Results tab
+
+### Match Highlighting
+
+Matches are highlighted in CodeMirror with:
+
+| Class | Purpose | Default Style |
+|-------|---------|---------------|
+| `.cm-searchMatch` | All matches when Highlight All is on | Yellow background |
+| `.cm-searchMatch-current` | Current active match | Orange background with border |
+
+Colors defined in CSS variables:
+- `--search-match-bg`: Background for all matches
+- `--search-match-current-bg`: Background for current match
 
 ---
 

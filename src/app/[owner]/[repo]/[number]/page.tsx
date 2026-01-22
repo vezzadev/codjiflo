@@ -4,8 +4,17 @@ import { useEffect, useState, useCallback, use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Keyboard } from 'lucide-react';
 import { usePRStore, useDocumentTitle } from '@/features/pr';
-import { useDiffStore, FileList, DiffView } from '@/features/diff';
+import { useDiffStore, FileList, DiffView, parsePatch } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
+import {
+  useSearchKeyboardShortcuts,
+  useSearchStore,
+  FindInAllFilesModal,
+  SearchResultsPanel,
+  searchInDiffLines,
+  matchesFileFilter,
+} from '@/features/search';
+import type { FileSearchResult, SearchMatch } from '@/features/search';
 import { useCommentsStore } from '@/features/comments';
 import { useRequireAuth } from '@/features/auth/hooks';
 import {
@@ -42,7 +51,72 @@ function PullRequestContent({ params }: PRPageProps) {
   const { leftPaneWidth, resizeLeftPane, bottomPaneHeight, resizeBottomPane } = useLayoutStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Search state
+  const searchMode = useSearchStore((s) => s.mode);
+  const showResultsPanel = useSearchStore((s) => s.showResultsPanel);
+  const allFilesResults = useSearchStore((s) => s.allFilesResults);
+  const closeSearch = useSearchStore((s) => s.close);
+  const searchQuery = useSearchStore((s) => s.query);
+  const searchOptions = useSearchStore((s) => s.options);
+  const fileFilter = useSearchStore((s) => s.fileFilter);
+  const fileFilterUseRegex = useSearchStore((s) => s.fileFilterUseRegex);
+  const sideFilter = useSearchStore((s) => s.sideFilter);
+  const setAllFilesResults = useSearchStore((s) => s.setAllFilesResults);
+  const setIsSearching = useSearchStore((s) => s.setIsSearching);
+
+  // Files for search
+  const files = useDiffStore((s) => s.files);
+
   useKeyboardShortcuts();
+  useSearchKeyboardShortcuts();
+
+  // Handle search execution across all files
+  const handleExecuteSearch = useCallback(() => {
+    if (!searchQuery.trim()) {
+      closeSearch();
+      return;
+    }
+
+    setIsSearching(true);
+
+    // Search across all files
+    const results: FileSearchResult[] = [];
+
+    for (const file of files) {
+      // Apply file filter
+      if (!matchesFileFilter(file.filename, fileFilter, fileFilterUseRegex)) {
+        continue;
+      }
+
+      // Parse the patch to get diff lines
+      const diffLines = parsePatch(file.patch);
+
+      // Convert ParsedDiffLine to format expected by searchInDiffLines
+      const searchableDiffLines = diffLines.map((line) => ({
+        content: line.content,
+        type: line.type === 'addition' ? 'add' : line.type === 'deletion' ? 'delete' : line.type,
+      }));
+
+      // Search in diff lines
+      const matches: SearchMatch[] = searchInDiffLines(
+        searchQuery,
+        searchableDiffLines,
+        searchOptions,
+        sideFilter
+      );
+
+      if (matches.length > 0) {
+        results.push({
+          path: file.filename,
+          matches,
+        });
+      }
+    }
+
+    setAllFilesResults(results);
+    setIsSearching(false);
+    closeSearch();
+  }, [searchQuery, files, fileFilter, fileFilterUseRegex, searchOptions, sideFilter, closeSearch, setAllFilesResults, setIsSearching]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -154,6 +228,12 @@ function PullRequestContent({ params }: PRPageProps) {
         </div>
       ),
     },
+    // Search results tab - only shown when there are search results
+    ...(showResultsPanel ? [{
+      id: 'search-results',
+      label: `Search Results (${allFilesResults.reduce((sum, r) => sum + r.matches.length, 0)} in ${allFilesResults.length} files)`,
+      content: <SearchResultsPanel />,
+    }] : []),
   ];
 
   return (
@@ -204,6 +284,12 @@ function PullRequestContent({ params }: PRPageProps) {
       <ShortcutsModal
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
+      />
+
+      <FindInAllFilesModal
+        isOpen={searchMode === 'all-files'}
+        onClose={closeSearch}
+        onSearch={handleExecuteSearch}
       />
     </AppShell>
   );

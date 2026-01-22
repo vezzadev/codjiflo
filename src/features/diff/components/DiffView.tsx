@@ -8,7 +8,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import type { EditorView } from '@codemirror/view';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
+import type { UnifiedDiffEditorHandle, SplitDiffEditorHandle } from './codemirror';
 import {
   useDiffPipeline,
   useDraftComment,
@@ -25,6 +27,7 @@ import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
+import { FindInFileBar, useSearchStore, useSearchInCurrentFile, clearSearchHighlights } from '@/features/search';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -38,6 +41,9 @@ const LINE_HEIGHT = 23;
 export function DiffView() {
   const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const unifiedEditorRef = useRef<UnifiedDiffEditorHandle>(null);
+  const splitEditorRef = useRef<SplitDiffEditorHandle>(null);
+  const [editorView, setEditorView] = useState<EditorView | null>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     isLoading: isLoadingComments,
@@ -66,6 +72,22 @@ export function DiffView() {
 
   // Track visible row range from react-window for accurate minimap lasso positioning
   const [visibleRowRange, setVisibleRowRange] = useState<VisibleRowRange | null>(null);
+
+  // Scroll to search match callback
+  const scrollToSearchMatch = useCallback((lineNumber: number) => {
+    if (pipeline.viewMode === 'inline' && unifiedEditorRef.current) {
+      unifiedEditorRef.current.scrollToLine(lineNumber);
+    } else if (pipeline.viewMode === 'split' && splitEditorRef.current) {
+      splitEditorRef.current.scrollToLine(lineNumber);
+    }
+  }, [pipeline.viewMode]);
+
+  // Search in current file
+  useSearchInCurrentFile({
+    diffLines: pipeline.diffLines,
+    scrollToLine: scrollToSearchMatch,
+    editorView,
+  });
 
   // Build threads-by-id map for the portal manager
   const threadsById = useMemo(() => {
@@ -101,6 +123,29 @@ export function DiffView() {
   useEffect(() => {
     setTotalChangeCount(pipeline.hunkIndices.length);
   }, [pipeline.hunkIndices.length, setTotalChangeCount, selectedFileIndex]);
+
+  // Update editor view reference when view mode or editor changes
+  useEffect(() => {
+    // Small delay to allow editor to mount
+    const timeoutId = window.setTimeout(() => {
+      if (pipeline.viewMode === 'inline' && unifiedEditorRef.current) {
+        setEditorView(unifiedEditorRef.current.getView());
+      } else if (pipeline.viewMode === 'split' && splitEditorRef.current) {
+        // For split view, use the right editor for search highlighting
+        setEditorView(splitEditorRef.current.getRightView());
+      }
+    }, 50);
+    return () => window.clearTimeout(timeoutId);
+  }, [pipeline.viewMode, selectedFileIndex]);
+
+  // Clear search highlights when file changes
+  const closeSearch = useSearchStore((s) => s.close);
+  useEffect(() => {
+    // Clear search state when switching files
+    if (editorView) {
+      clearSearchHighlights(editorView);
+    }
+  }, [selectedFileIndex, editorView, closeSearch]);
 
   // Handler for submitting draft
   const handleSubmitDraft = useCallback(() => {
@@ -248,7 +293,10 @@ export function DiffView() {
               tabIndex={0}
               onKeyDown={handleDiffKeyDown}
             >
+              {/* Find in file search bar - floats on top of diff content */}
+              <FindInFileBar />
               <UnifiedDiffEditor
+                ref={unifiedEditorRef}
                 key={pipeline.filename ?? 'diff-editor'}
                 diffLines={pipeline.diffLines}
                 language={pipeline.language}
@@ -301,7 +349,10 @@ export function DiffView() {
               tabIndex={0}
               onKeyDown={handleDiffKeyDown}
             >
+              {/* Find in file search bar - floats on top of diff content */}
+              <FindInFileBar />
               <SplitDiffEditor
+                ref={splitEditorRef}
                 alignedLines={pipeline.alignedLines}
                 language={pipeline.language}
                 containerHeight={containerHeight}

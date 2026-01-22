@@ -30,6 +30,7 @@ import {
   setDraftLineIndex,
   setShowComments,
 } from './extensions';
+import { searchHighlights } from '@/features/search';
 import type { ParsedDiffLine, TextWrap, VisibleRowRange } from '../../types';
 import type { ReviewThread } from '@/features/comments';
 
@@ -236,6 +237,9 @@ export const UnifiedDiffEditor = forwardRef<UnifiedDiffEditorHandle, UnifiedDiff
       if (showWhitespace) {
         exts.push(highlightWhitespace());
       }
+
+      // Search highlights
+      exts.push(searchHighlights());
 
       // Track scroll position for minimap
       if (onVisibleRangeChange) {
