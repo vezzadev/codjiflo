@@ -5,7 +5,35 @@
 
 version: 2
 updates:
-  - package-ecosystem:  "npm"
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      # Group packages that must stay in sync to avoid version mismatches
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "eslint-plugin-storybook"
+      codemirror:
+        patterns:
+          - "codemirror"
+          - "@codemirror/*"
+          - "@uiw/react-codemirror"
+      playwright:
+        patterns:
+          - "playwright"
+          - "@playwright/test"
+          - "eslint-plugin-playwright"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      testing-library:
+        patterns:
+          - "@testing-library/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
