@@ -166,7 +166,7 @@ export function SearchResultsPanel() {
         ))}
       </div>
 
-      <div className="search-results-footer">
+      <div className="search-results-footer" aria-live="polite">
         {totalMatches} matches in {allFilesResults.length} files
       </div>
     </div>

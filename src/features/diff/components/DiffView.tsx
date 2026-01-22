@@ -139,13 +139,12 @@ export function DiffView() {
   }, [pipeline.viewMode, selectedFileIndex]);
 
   // Clear search highlights when file changes
-  const closeSearch = useSearchStore((s) => s.close);
   useEffect(() => {
     // Clear search state when switching files
     if (editorView) {
       clearSearchHighlights(editorView);
     }
-  }, [selectedFileIndex, editorView, closeSearch]);
+  }, [selectedFileIndex, editorView]);
 
   // Handler for submitting draft
   const handleSubmitDraft = useCallback(() => {

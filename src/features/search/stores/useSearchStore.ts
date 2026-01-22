@@ -82,12 +82,18 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
 
   // Current file match actions
   setCurrentFileMatches: (matches: SearchMatch[]) => {
+    // Handle empty matches case explicitly
+    if (matches.length === 0) {
+      set({ currentFileMatches: [], currentMatchIndex: -1 });
+      return;
+    }
+
     const { currentMatchIndex } = get();
-    // Reset to first match if there are matches and no current match
-    const newIndex = matches.length > 0 && currentMatchIndex === -1 ? 0 : currentMatchIndex;
+    // Reset to first match if no current match, otherwise clamp to valid range
+    const newIndex = currentMatchIndex === -1 ? 0 : Math.min(currentMatchIndex, matches.length - 1);
     set({
       currentFileMatches: matches,
-      currentMatchIndex: Math.min(newIndex, matches.length - 1),
+      currentMatchIndex: newIndex,
     });
   },
 
