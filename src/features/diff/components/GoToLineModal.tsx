@@ -5,7 +5,7 @@
  * Positioned at top-right of diff area, not centered.
  */
 
-import { useRef, useEffect, useCallback, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useRef, useEffect, useCallback, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from 'react';
 
 export interface GoToLineModalProps {
   /** Callback when modal should close */
@@ -78,7 +78,7 @@ export function GoToLineModal({ onClose, onGoToLine, maxLine }: GoToLineModalPro
     [onClose]
   );
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
     setValidation('idle');
   }, []);
