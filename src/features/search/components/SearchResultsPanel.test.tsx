@@ -6,7 +6,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@/tests/helpers/render';
 import { SearchResultsPanel } from './SearchResultsPanel';
 import { useSearchStore } from '../stores';
-import { useDiffStore } from '@/features/diff';
 import { DEFAULT_SEARCH_OPTIONS } from '../types';
 import type { FileSearchResult } from '../types';
 

@@ -8,7 +8,7 @@ import { IterationRangeSelect } from './IterationRangeSelect';
 import type { IterationSearchScope } from '../types';
 
 describe('IterationRangeSelect', () => {
-  let onChange: ReturnType<typeof vi.fn>;
+  let onChange: (scope: IterationSearchScope) => void;
 
   beforeEach(() => {
     onChange = vi.fn();

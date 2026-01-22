@@ -28,6 +28,7 @@ export function useSearchKeyboardShortcuts() {
       const isInSearchInput = target?.hasAttribute?.('data-search-input') ?? false;
 
       const isInInput =
+        target !== null &&
         (target instanceof HTMLInputElement ||
           target instanceof HTMLTextAreaElement ||
           target.isContentEditable) &&

@@ -9,8 +9,8 @@ import { useSearchStore } from '../stores';
 import { DEFAULT_SEARCH_OPTIONS } from '../types';
 
 describe('FindInAllFilesModal', () => {
-  let onClose: ReturnType<typeof vi.fn>;
-  let onSearch: ReturnType<typeof vi.fn>;
+  let onClose: () => void;
+  let onSearch: () => void;
 
   beforeEach(() => {
     onClose = vi.fn();

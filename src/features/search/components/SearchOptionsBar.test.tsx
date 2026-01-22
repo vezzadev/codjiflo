@@ -15,7 +15,7 @@ describe('SearchOptionsBar', () => {
     highlightAll: false,
   };
 
-  let onToggleOption: ReturnType<typeof vi.fn>;
+  let onToggleOption: (option: keyof SearchOptions) => void;
 
   beforeEach(() => {
     onToggleOption = vi.fn();

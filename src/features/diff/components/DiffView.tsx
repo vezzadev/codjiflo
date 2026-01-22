@@ -27,7 +27,7 @@ import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
 import { IterationSelector } from '@/features/iterations';
-import { FindInFileBar, useSearchStore, useSearchInCurrentFile, clearSearchHighlights } from '@/features/search';
+import { FindInFileBar, useSearchInCurrentFile, clearSearchHighlights } from '@/features/search';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
