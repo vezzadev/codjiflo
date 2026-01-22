@@ -139,6 +139,6 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     // But lasso should be hidden because comments are present
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).not.toBeVisible();
+    await expect(lasso).toBeHidden();
   });
 });

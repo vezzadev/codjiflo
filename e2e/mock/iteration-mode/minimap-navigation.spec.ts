@@ -206,7 +206,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await expect(minimap).toBeVisible();
 
     const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).not.toBeVisible();
+    await expect(lasso).toBeHidden();
   });
 
   test("clicking minimap scrolls to position", async ({ page }) => {
