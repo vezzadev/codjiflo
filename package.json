@@ -86,7 +86,7 @@
     "@storybook/react": "^10.2.0",
     "@storybook/react-vite": "^10.2.0",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/diff-match-patch": "^1.0.36",
