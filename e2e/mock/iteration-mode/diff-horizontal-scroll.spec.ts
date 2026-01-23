@@ -234,8 +234,9 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Get the CodeMirror editor
+    // Get the CodeMirror editor and wait for it to be fully rendered
     const editor = CMEditor.from(page);
+    await expect(editor.view).toBeVisible();
     await expect(editor.scroller).toBeVisible();
 
     // ASSERTION: CodeMirror scroller should allow horizontal scrolling

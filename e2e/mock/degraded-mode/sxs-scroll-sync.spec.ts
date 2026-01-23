@@ -75,7 +75,7 @@ test.describe("Side-by-Side Scroll Sync", () => {
 
   test("scrolling left pane synchronizes right pane scroll position", async ({ page }) => {
     await page.goto("/test/repo/999");
-    await page.waitForLoadState("load");
+    await page.waitForLoadState("domcontentloaded");
 
     // Click on the file to view its diff
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -85,8 +85,11 @@ test.describe("Side-by-Side Scroll Sync", () => {
     // Wait for diff to load
     await expect(page.getByRole("heading", { name: "src/large-file.ts" })).toBeVisible();
 
+    // Wait for diff content to be interactive before keyboard shortcut
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
     // Switch to Side-by-Side view
-    await page.locator("body").click();
     await page.keyboard.press("x");
 
     // Wait for split view to render
@@ -129,7 +132,7 @@ test.describe("Side-by-Side Scroll Sync", () => {
 
   test("scrolling right pane synchronizes left pane scroll position", async ({ page }) => {
     await page.goto("/test/repo/999");
-    await page.waitForLoadState("load");
+    await page.waitForLoadState("domcontentloaded");
 
     // Click on the file to view its diff
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -139,8 +142,11 @@ test.describe("Side-by-Side Scroll Sync", () => {
     // Wait for diff to load
     await expect(page.getByRole("heading", { name: "src/large-file.ts" })).toBeVisible();
 
+    // Wait for diff content to be interactive before keyboard shortcut
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
     // Switch to Side-by-Side view
-    await page.locator("body").click();
     await page.keyboard.press("x");
 
     // Wait for split view to render

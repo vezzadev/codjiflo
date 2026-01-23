@@ -175,12 +175,12 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
       page.getByRole("heading", { name: "src/commented-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode
-    await page.keyboard.press("f");
-
-    // Get the diff content region (where inline comments appear)
+    // Wait for diff content to fully load before keyboard interactions
     const diffRegion = page.getByRole("region", { name: /Diff content for/i });
     await expect(diffRegion).toBeVisible();
+
+    // Enable full file mode
+    await page.keyboard.press("f");
 
     // Navigate to the change (where the comment is) using 'J' shortcut
     await page.keyboard.press("j");
