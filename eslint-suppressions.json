@@ -88,11 +88,6 @@
       "count": 5
     }
   },
-  "e2e/mock/degraded-mode/sxs-scroll-sync.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 2
-    }
-  },
   "e2e/mock/degraded-mode/sxs-spacer-styling.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 1
