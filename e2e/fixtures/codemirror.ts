@@ -6,8 +6,7 @@
  *
  * @example
  * ```typescript
- * import { CMEditor, expect } from 'playwright-codemirror';
- * import './codemirror'; // Registers extensions
+ * import { CMEditor, expect } from '../../fixtures/codemirror';
  *
  * const editor = CMEditor.from(page);
  * await expect(editor.ext('diff', 'lineAddition')).toHaveCount(5);
