@@ -5,6 +5,7 @@
  */
 
 import { expect, type Page } from "@playwright/test";
+import { CMEditor } from "./codemirror";
 
 /**
  * Wait for the minimap lasso to become visible
@@ -67,24 +68,11 @@ export async function waitForLassoStable(
 }
 
 /**
- * Scroll the diff viewer by a specific number of pixels
+ * Scroll the diff viewer by a specific number of pixels using CMEditor
  */
 export async function scrollDiffBy(page: Page, pixels: number): Promise<void> {
-  await page.evaluate((px) => {
-    // CodeMirror uses .cm-scroller for scrolling
-    const cmScroller = document.querySelector('.cm-scroller');
-    if (cmScroller) {
-      cmScroller.scrollTop += px;
-      return;
-    }
-    // Fallback for diff region
-    const diffRegion = document.querySelector('[aria-label^="Diff content"]');
-    if (!diffRegion) return;
-    const listContainer = diffRegion.querySelector('[style*="overflow"]');
-    if (listContainer) {
-      listContainer.scrollTop += px;
-    }
-  }, pixels);
+  const editor = CMEditor.from(page);
+  await editor.scrollBy({ scrollTop: pixels });
 }
 
 /**

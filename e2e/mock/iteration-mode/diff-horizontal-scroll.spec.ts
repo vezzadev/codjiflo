@@ -146,10 +146,8 @@ Iterations: 2`,
     }
 
     // Wait for CodeMirror to render content wide enough to require horizontal scroll
-    await page.waitForFunction(() => {
-      const cmScroller = document.querySelector(".cm-scroller");
-      return cmScroller && cmScroller.scrollWidth > cmScroller.clientWidth;
-    });
+    const editor = CMEditor.from(page);
+    await expect(editor).toBeScrollableHorizontally();
 
     // Now scroll horizontally
     // This tests the BUG: with wrong implementation, .diff-viewer scrolls
@@ -189,21 +187,8 @@ Iterations: 2`,
     // ASSERTION: Some element must be horizontally scrollable (content is wider than viewport)
     expect(scrollResult.scrolled).toBe(true);
 
-    // Wait for scroll to settle by checking that scrollLeft has reached the expected value
-    await page.waitForFunction(() => {
-      // Check CodeMirror scroller (primary scroll container)
-      const cmScroller = document.querySelector(".cm-scroller");
-      if (cmScroller && cmScroller.scrollLeft > 0) {
-        return true;
-      }
-      // Also check diff-content-area as fallback
-      const contentArea = document.querySelector(".diff-content-area");
-      if (contentArea && contentArea.scrollLeft > 0) {
-        return true;
-      }
-      const viewer = document.querySelector(".diff-viewer");
-      return viewer && viewer.scrollLeft > 0;
-    });
+    // Wait for scroll to settle - CMEditor waits for scroll idle automatically
+    await editor.waitForScrollIdle();
 
     // Get toolbar position after scroll
     const toolbarBoxAfter = await diffToolbar.boundingBox();
