@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -127,17 +128,22 @@ test.describe("Go to Line feature", () => {
     await expect(fileNav).toBeVisible();
     await fileNav.getByText("large-file.ts").click();
 
-    // Wait for diff content
+    // Wait for diff content and CodeMirror editor to fully load
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
+
+    // Wait for CodeMirror editor to be ready before keyboard interactions
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.view).toBeVisible();
 
     // Enable full file view to see all lines (changes view only shows context around changes)
     await diffRegion.focus();
     await page.keyboard.press("f"); // Toggle to full file view
 
-    // Wait for full file to load
+    // Wait for full file to load and editor content to be ready
     const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(toolbar.getByText("Full File")).toBeVisible();
+    await expect(diffRegion.getByText("// Line 1: context content here")).toBeVisible();
 
     // Re-focus the diff region after the keyboard shortcut
     await diffRegion.focus();
@@ -155,7 +161,10 @@ test.describe("Go to Line feature", () => {
     await input.press("Enter");
 
     // Modal should close
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
+
+    // Wait for scroll to complete (CodeMirror virtual rendering needs this)
+    await editor.waitForScrollIdle();
 
     // The line should now be visible in the viewport
     // Check the text content that would be on line 150
@@ -188,14 +197,12 @@ test.describe("Go to Line feature", () => {
     await page.keyboard.press("Escape");
 
     // Modal should close
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
 
     // Line 150 should NOT be in viewport (we didn't navigate)
     // Line 1 area should still be visible (top of file)
-    const firstLineGutter = diffRegion
-      .locator(".cm-gutterElement")
-      .filter({ hasText: /^1$/ });
-    await expect(firstLineGutter.first()).toBeInViewport();
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.materializedLine(1)).toBeInViewport();
   });
 
   test("empty input does not navigate and keeps modal open", async ({ page }) => {
