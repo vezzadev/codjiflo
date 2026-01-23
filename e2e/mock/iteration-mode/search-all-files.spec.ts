@@ -256,8 +256,8 @@ index 0000000..1234567
     // Verify results panel shows the query
     await expect(page.getByText(/Query:.*"hello"/i)).toBeVisible();
 
-    // Verify the file appears in results with matches
-    await expect(page.locator(".search-results-file-path")).toContainText("src/file1.ts");
+    // Verify the file appears in results with matches (button shows file path and match count)
+    await expect(page.getByRole("button", { name: /src\/file1\.ts.*matches/i })).toBeVisible();
   });
 
   test("search with no matches shows empty results", async ({ page }) => {
@@ -317,7 +317,7 @@ index 0000000..1234567
 
     // Click on a match result row (the line with "hello")
     // The result shows line number and content
-    const matchRow = page.locator(".search-results-match").first();
+    const matchRow = page.getByRole("button", { name: /hello/i }).first();
     await expect(matchRow).toBeVisible();
     await matchRow.click();
 
