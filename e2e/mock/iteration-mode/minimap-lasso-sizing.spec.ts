@@ -119,6 +119,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
+    // Wait for iteration artifact to finish loading before measuring lasso positions
+    // Without this, the diff data can change mid-test causing lasso positions to shift
+    await expect(
+      page.getByRole("button", { name: /Iteration \d+/ })
+    ).toBeVisible();
+
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
     await expect(page.getByText("Full File")).toBeVisible();
@@ -217,6 +223,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
+    // Wait for iteration artifact to finish loading
+    await expect(
+      page.getByRole("button", { name: /Iteration \d+/ })
+    ).toBeVisible();
+
     // Enable full file mode and wait for it to take effect
     await page.keyboard.press("f");
     // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
@@ -258,6 +269,11 @@ diff --git a/src/large-file.ts b/src/large-file.ts
 
     await expect(
       page.getByRole("heading", { name: "src/large-file.ts" })
+    ).toBeVisible();
+
+    // Wait for iteration artifact to finish loading
+    await expect(
+      page.getByRole("button", { name: /Iteration \d+/ })
     ).toBeVisible();
 
     // Enable full file mode and wait for it to take effect
