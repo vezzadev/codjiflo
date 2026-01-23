@@ -20,6 +20,34 @@
   max-width: 90vw;
   max-height: 90vh;
   overflow: auto;
+  padding: 20px 24px;
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header .modal-title {
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--combobox-border);
 }
 
 .modal-backdrop {
@@ -32,9 +60,9 @@
 }
 
 .modal-title {
-  margin: 0 0 16px 0;
-  padding: 16px 16px 0 16px;
-  font-size: 18px;
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
   font-weight: 600;
   color: var(--main-fg);
 }
