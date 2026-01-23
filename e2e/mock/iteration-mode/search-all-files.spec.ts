@@ -104,7 +104,7 @@ index 0000000..1234567
     await expect(fileNav).toBeVisible();
 
     // Modal should not be visible initially
-    await expect(page.getByRole("dialog", { name: /Find in All Files/i })).not.toBeVisible();
+    await expect(page.getByRole("dialog", { name: /Find in All Files/i })).toBeHidden();
 
     // Press Ctrl+Shift+F (Playwright sends lowercase 'f' even with shift)
     await page.keyboard.press("Control+Shift+f");
@@ -179,7 +179,7 @@ index 0000000..1234567
     await page.keyboard.press("Escape");
 
     // Modal should be hidden
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
   });
 
   test("Cancel button closes the modal", async ({ page }) => {
@@ -197,7 +197,7 @@ index 0000000..1234567
     await modal.getByRole("button", { name: /Cancel/i }).click();
 
     // Modal should be hidden
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
   });
 
   test("Search button is disabled when query is empty", async ({ page }) => {
@@ -244,7 +244,7 @@ index 0000000..1234567
     await modal.getByRole("button", { name: /Search/i }).click();
 
     // Modal should close
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
 
     // Search Results tab should appear in bottom panel with matches
     const searchResultsTab = page.getByRole("tab", { name: /Search Results/i });
@@ -282,10 +282,10 @@ index 0000000..1234567
     await modal.getByRole("button", { name: /Search/i }).click();
 
     // Modal should close
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
 
     // No Search Results tab should appear (empty results don't show panel)
-    await expect(page.getByRole("tab", { name: /Search Results/i })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: /Search Results/i })).toBeHidden();
   });
 
   test("clicking search result navigates to file", async ({ page }) => {
@@ -308,7 +308,7 @@ index 0000000..1234567
     await modal.getByRole("button", { name: /Search/i }).click();
 
     // Modal should close
-    await expect(modal).not.toBeVisible();
+    await expect(modal).toBeHidden();
 
     // Click on Search Results tab
     const searchResultsTab = page.getByRole("tab", { name: /Search Results/i });

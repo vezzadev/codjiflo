@@ -117,7 +117,7 @@ index 0000000..abcdefg
     // Use keyboard shortcut Ctrl+F
     await page.keyboard.press("Control+f");
     // Wait for search bar to appear
-    await expect(page.locator('[data-testid="find-in-file-bar"]')).toBeVisible();
+    await expect(page.getByTestId("find-in-file-bar")).toBeVisible();
   }
 
   test("Ctrl+F opens find bar", async ({ page }) => {
@@ -129,7 +129,7 @@ index 0000000..abcdefg
     await fileNav.getByRole("treeitem", { name: /search-test\.ts/ }).click();
 
     // Find bar should not be visible initially
-    await expect(page.locator('[data-testid="find-in-file-bar"]')).not.toBeVisible();
+    await expect(page.getByTestId("find-in-file-bar")).toBeHidden();
 
     // Open find bar with Ctrl+F
     await openFindBar(page);
@@ -149,7 +149,7 @@ index 0000000..abcdefg
     await page.keyboard.press("Escape");
 
     // Find bar should be hidden
-    await expect(page.locator('[data-testid="find-in-file-bar"]')).not.toBeVisible();
+    await expect(page.getByTestId("find-in-file-bar")).toBeHidden();
   });
 
   test("close button closes find bar", async ({ page }) => {
@@ -163,10 +163,10 @@ index 0000000..abcdefg
     await openFindBar(page);
 
     // Click close button
-    await page.locator('[data-testid="find-in-file-close"]').click();
+    await page.getByTestId("find-in-file-close").click();
 
     // Find bar should be hidden
-    await expect(page.locator('[data-testid="find-in-file-bar"]')).not.toBeVisible();
+    await expect(page.getByTestId("find-in-file-bar")).toBeHidden();
   });
 
   test("typing query shows match count", async ({ page }) => {
@@ -180,11 +180,11 @@ index 0000000..abcdefg
     await openFindBar(page);
 
     // Type search query
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("hello");
 
     // Should show match count (case-insensitive, expect multiple matches)
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toBeVisible();
     await expect(matchCounter).toContainText(/\d+\s*\/\s*\d+/);
   });
@@ -198,11 +198,11 @@ index 0000000..abcdefg
 
     // Open find bar and search
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("hello");
 
     // Get initial match counter
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toContainText(/1\s*\/\s*\d+/);
 
     // Press F3 to go to next
@@ -221,11 +221,11 @@ index 0000000..abcdefg
 
     // Open find bar and search
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("hello");
 
     // Navigate forward first
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toContainText(/1\s*\/\s*\d+/);
     await page.keyboard.press("F3");
     await expect(matchCounter).toContainText(/2\s*\/\s*\d+/);
@@ -244,15 +244,15 @@ index 0000000..abcdefg
 
     // Open find bar and search for "hello" (lowercase)
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("hello");
 
     // Get match count (case-insensitive by default - includes "Hello" and "HELLO")
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toBeVisible();
 
     // Enable Match Case
-    const matchCaseBtn = page.locator('[data-testid="search-option-matchCase"]');
+    const matchCaseBtn = page.getByTestId("search-option-matchCase");
     await matchCaseBtn.click();
 
     // Should now only match lowercase "hello" occurrences
@@ -269,15 +269,15 @@ index 0000000..abcdefg
 
     // Open find bar and search for "log"
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("log");
 
     // Get match count (partial matches included)
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toBeVisible();
 
     // Enable Whole Word
-    const wholeWordBtn = page.locator('[data-testid="search-option-matchWholeWord"]');
+    const wholeWordBtn = page.getByTestId("search-option-matchWholeWord");
     await wholeWordBtn.click();
 
     // Results should exist and toggle should work
@@ -293,17 +293,17 @@ index 0000000..abcdefg
 
     // Open find bar
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
 
     // Enable Regex first
-    const regexBtn = page.locator('[data-testid="search-option-useRegex"]');
+    const regexBtn = page.getByTestId("search-option-useRegex");
     await regexBtn.click();
 
     // Search with regex pattern
     await searchInput.fill("console\\.log");
 
     // Should find matches
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toContainText(/\d+\s*\/\s*\d+/);
   });
 
@@ -318,7 +318,7 @@ index 0000000..abcdefg
     await openFindBar(page);
 
     // Search input should be focused
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await expect(searchInput).toBeFocused();
   });
 
@@ -331,11 +331,11 @@ index 0000000..abcdefg
 
     // Open find bar and search for non-existent text
     await openFindBar(page);
-    const searchInput = page.locator('[data-testid="find-in-file-input"]');
+    const searchInput = page.getByTestId("find-in-file-input");
     await searchInput.fill("xyznonexistent123");
 
     // Should show 0 / 0
-    const matchCounter = page.locator('[data-testid="find-in-file-counter"]');
+    const matchCounter = page.getByTestId("find-in-file-counter");
     await expect(matchCounter).toContainText("0 / 0");
   });
 });
