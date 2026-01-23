@@ -16,7 +16,7 @@
 import { CMEditor } from 'playwright-codemirror';
 
 // Re-export for convenience
-export { CMEditor, expect } from 'playwright-codemirror';
+export { CMEditor, expect, ExtensionRegistryManager } from 'playwright-codemirror';
 
 /**
  * Register CodjiFlo's diff extension classes.
