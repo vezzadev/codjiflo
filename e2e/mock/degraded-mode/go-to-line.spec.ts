@@ -202,7 +202,7 @@ test.describe("Go to Line feature", () => {
     // Line 150 should NOT be in viewport (we didn't navigate)
     // Line 1 area should still be visible (top of file)
     const editor = CMEditor.from(diffRegion);
-    await expect(editor.materializedLine(1)).toBeInViewport();
+    await expect(editor.lineInDOMAt(0)).toBeInViewport();
   });
 
   test("empty input does not navigate and keeps modal open", async ({ page }) => {
