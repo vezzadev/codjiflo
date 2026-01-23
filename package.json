@@ -11,7 +11,7 @@
     "dev": "node scripts/dev.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --fix --quiet --max-warnings 0",
+    "lint": "eslint . --fix --quiet --max-warnings 0 --prune-suppressions",
     "lint:check": "eslint . --quiet --max-warnings 0",
     "storybook": "storybook dev -p 6006 --quiet",
     "build-storybook": "storybook build --quiet",
