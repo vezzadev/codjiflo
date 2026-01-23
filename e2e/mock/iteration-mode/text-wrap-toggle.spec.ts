@@ -207,8 +207,8 @@ Iterations: 2`,
 
     // Wait for CodeMirror lines containing our test content to be present
     const editor = CMEditor.from(page);
-    const longLineLocator = editor.lineContaining("veryLongVariableName");
-    const shortLineLocator = editor.lineContaining("short = 'value'");
+    const longLineLocator = editor.materializedLineContaining("veryLongVariableName");
+    const shortLineLocator = editor.materializedLineContaining("short = 'value'");
     await expect(longLineLocator).toBeVisible();
     await expect(shortLineLocator).toBeVisible();
 
