@@ -14,6 +14,8 @@
     "start": "next start",
     "lint": "eslint . --fix --quiet --max-warnings 0 --prune-suppressions",
     "lint:check": "eslint . --quiet --max-warnings 0",
+    "knip": "knip",
+    "knip:check": "knip --no-exit-code",
     "storybook": "storybook dev -p 6006 --quiet",
     "build-storybook": "storybook build --quiet",
     "typecheck": "tsc --noEmit",

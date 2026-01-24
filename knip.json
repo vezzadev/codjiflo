@@ -31,7 +31,11 @@
       ],
       "ignoreDependencies": [
         "node-gyp",
-        "tsx"
+        "tsx",
+        "@vercel/ncc"
+      ],
+      "ignoreBinaries": [
+        "ncc"
       ]
     },
     "packages/diff-engine": {
