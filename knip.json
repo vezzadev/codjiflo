@@ -1,0 +1,44 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        ".storybook/**/*.{ts,tsx,js}",
+        "scripts/**/*.{js,cjs,ts}"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "e2e/**/*.{ts,tsx}",
+        "eslint-rules/**/*.js",
+        "scripts/**/*.{js,cjs,ts}",
+        ".storybook/**/*.{ts,tsx,js}"
+      ],
+      "ignore": [
+        "src/lib/empty-module.js",
+        "src/tests/mocks/**"
+      ],
+      "ignoreDependencies": [
+        "@codemirror/commands",
+        "@codjiflo/diff-engine",
+        "playwright-core",
+        "pino"
+      ]
+    },
+    "action": {
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "node-gyp",
+        "tsx"
+      ]
+    },
+    "packages/diff-engine": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    }
+  },
+  "ignoreExportsUsedInFile": true
+}
