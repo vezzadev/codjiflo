@@ -9,6 +9,8 @@ npm run dev              # Development server
 npm run build            # Production build
 npm run lint             # ESLint
 npm run typecheck        # TypeScript type checking (tsc)
+npm run knip             # Find unused files, dependencies, and exports (fails on issues)
+npm run knip:check       # Same as knip but doesn't fail (for local development)
 npm run test             # Unit and integration tests (Vitest)
 npm run test:coverage    # Unit and integration tests with coverage, min 70% enforced
 npm run test:storybook   # Storybook interaction tests
