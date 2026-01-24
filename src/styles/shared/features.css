@@ -916,3 +916,304 @@
   stroke: #505050;
   stroke-width: 2;
 }
+
+/* ============================================
+   REGION SELECTION & FLOATING COMMENTS (S-5.1, S-5.2)
+   ============================================ */
+
+/* Floating add comment button */
+.region-comment-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--focus-border);
+  border-radius: 50%;
+  background-color: var(--badge-merged);
+  color: var(--main-fg);
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.region-comment-button:hover {
+  transform: translate(8px, -50%) scale(1.1);
+  background-color: var(--menu-hover);
+}
+
+.region-comment-button:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+/* Selected region highlighting */
+.diff-region-highlight {
+  background-color: var(--diff-selection-bg, rgba(88, 166, 255, 0.2));
+  position: relative;
+}
+
+.diff-region-highlight::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--focus-border);
+}
+
+/* ============================================
+   FLOATING COMMENT BUBBLES (S-5.2)
+   ============================================ */
+
+/* Bubble canvas container */
+.comment-bubble-canvas {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--bubble-canvas-width, 340px);
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Individual comment bubble */
+.comment-bubble {
+  position: absolute;
+  width: var(--bubble-width, 320px);
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  transition: box-shadow 0.2s ease;
+}
+
+.comment-bubble:hover,
+.comment-bubble:focus-within {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.comment-bubble--displaced {
+  border-left: 3px solid var(--focus-border);
+}
+
+.comment-bubble--focused {
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Bubble header with close button */
+.comment-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--combobox-border);
+  background-color: var(--main-bg);
+  border-radius: 8px 8px 0 0;
+}
+
+.comment-bubble-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--main-fg);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comment-bubble-line-info {
+  font-size: 11px;
+  color: var(--control-disabled-fg);
+  font-weight: 400;
+}
+
+.comment-bubble-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.comment-bubble-close:hover {
+  background-color: var(--close-btn-hover);
+  color: var(--main-fg);
+}
+
+/* Bubble content */
+.comment-bubble-content {
+  padding: 8px 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ============================================
+   LASSO CONNECTORS (S-5.3)
+   ============================================ */
+
+/* SVG connector overlay */
+.lasso-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Connector path styles */
+.lasso-connector {
+  fill: none;
+  stroke: var(--combobox-border);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, stroke 0.2s ease;
+}
+
+.lasso-connector--highlighted {
+  stroke: var(--focus-border);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.lasso-connector--displaced {
+  stroke-dasharray: 4, 4;
+}
+
+/* Hover area for connectors (invisible but captures events) */
+.lasso-connector-hover {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* Anchor dot on code side */
+.lasso-anchor {
+  fill: var(--focus-border);
+  r: 4;
+}
+
+.lasso-anchor--highlighted {
+  r: 6;
+}
+
+/* ============================================
+   MARKDOWN TOOLBAR (S-5.5)
+   ============================================ */
+
+.markdown-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background-color: var(--main-bg);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.markdown-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.markdown-toolbar-btn:hover:not(:disabled) {
+  background-color: var(--menu-hover);
+  color: var(--main-fg);
+}
+
+.markdown-toolbar-btn:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.markdown-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Adjust comment editor when toolbar is present */
+.comment-editor .markdown-toolbar + .textbox.textarea {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: -1px;
+}
+
+/* Emoji picker (S-5.5.3) */
+.emoji-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.emoji-picker-trigger:hover {
+  background-color: var(--menu-hover);
+  border-color: var(--focus-border);
+}
+
+.reaction-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.reaction-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.reaction-badge:hover {
+  background-color: var(--menu-hover);
+}
+
+.reaction-badge--active {
+  background-color: var(--badge-merged);
+  border-color: var(--focus-border);
+}
+
+.reaction-count {
+  color: var(--main-fg);
+  font-weight: 500;
+}

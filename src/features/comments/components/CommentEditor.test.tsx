@@ -18,7 +18,7 @@ describe("CommentEditor", () => {
 
   it("renders with placeholder text", () => {
     render(<CommentEditor {...defaultProps} />);
-    expect(screen.getByPlaceholderText("Leave a comment")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Leave a comment (Markdown supported)")).toBeInTheDocument();
   });
 
   it("calls onChange when typing", async () => {
@@ -109,10 +109,40 @@ describe("CommentEditor", () => {
   it("does not submit on Ctrl+Enter when value is empty", async () => {
     const onSubmit = vi.fn();
     render(<CommentEditor {...defaultProps} value="   " onSubmit={onSubmit} />);
-    
+
     const textarea = screen.getByLabelText("Add comment");
     await userEvent.type(textarea, "{Control>}{Enter}{/Control}");
-    
+
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("applies bold formatting on Ctrl+B", async () => {
+    const onChange = vi.fn();
+    render(<CommentEditor {...defaultProps} value="test" onChange={onChange} />);
+
+    const textarea = screen.getByLabelText("Add comment");
+    await userEvent.type(textarea, "{Control>}b{/Control}");
+
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it("applies italic formatting on Ctrl+I", async () => {
+    const onChange = vi.fn();
+    render(<CommentEditor {...defaultProps} value="test" onChange={onChange} />);
+
+    const textarea = screen.getByLabelText("Add comment");
+    await userEvent.type(textarea, "{Control>}i{/Control}");
+
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it("renders markdown toolbar by default", () => {
+    render(<CommentEditor {...defaultProps} />);
+    expect(screen.getByRole("toolbar", { name: "Text formatting" })).toBeInTheDocument();
+  });
+
+  it("hides markdown toolbar when showToolbar is false", () => {
+    render(<CommentEditor {...defaultProps} showToolbar={false} />);
+    expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
   });
 });
