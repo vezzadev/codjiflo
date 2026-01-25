@@ -119,7 +119,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  test("hides lasso when inline comments are present", async ({ page }) => {
+  test("hides lasso when inline comments are shown", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -130,15 +130,15 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode
-    await page.keyboard.press("f");
-
-    // Minimap should be visible
+    // Default is full file mode, comments hidden - lasso should be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-
-    // But lasso should be hidden because comments are present
+    
     const lasso = minimap.locator(".minimap-lasso");
+    await expect(lasso).toBeVisible();
+
+    // Show comments - lasso should now be hidden
+    await page.keyboard.press("d");
     await expect(lasso).toBeHidden();
   });
 });

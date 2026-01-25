@@ -127,16 +127,7 @@ Iterations: 2`,
     const textWrapButton = diffToolbar.getByRole("button", { name: /Text wrap/i });
     await expect(textWrapButton).toBeVisible();
 
-    // Initial state should be "No Wrap" (default)
-    await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
-
-    // Click to open dropdown and select "Wrap"
-    await textWrapButton.click();
-    const wrapOption = page.getByRole("option", { name: /^Wrap$/i });
-    await expect(wrapOption).toBeVisible();
-    await wrapOption.click();
-
-    // Button should now show "Wrap"
+    // Initial state should be "Wrap" (new default)
     await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
 
     // Click to open dropdown and select "No Wrap"
@@ -147,6 +138,15 @@ Iterations: 2`,
 
     // Button should now show "No Wrap"
     await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
+
+    // Click to open dropdown and select "Wrap"
+    await textWrapButton.click();
+    const wrapOption = page.getByRole("option", { name: /^Wrap$/i });
+    await expect(wrapOption).toBeVisible();
+    await wrapOption.click();
+
+    // Button should now show "Wrap"
+    await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
   });
 
   test("Keyboard shortcut P toggles text wrap", async ({ page }) => {
@@ -172,20 +172,20 @@ Iterations: 2`,
     const textWrapButton = diffToolbar.getByRole("button", { name: /Text wrap/i });
     await expect(textWrapButton).toBeVisible();
 
-    // Initial state should be "No Wrap"
-    await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
-
-    // Press P to toggle to wrap
-    await page.keyboard.press("p");
-
-    // Button should now show "Wrap"
+    // Initial state should be "Wrap" (new default)
     await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
 
-    // Press P again to toggle back to nowrap
+    // Press P to toggle to nowrap
     await page.keyboard.press("p");
 
     // Button should now show "No Wrap"
     await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
+
+    // Press P again to toggle back to wrap
+    await page.keyboard.press("p");
+
+    // Button should now show "Wrap"
+    await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
   });
 
   test("Long lines actually wrap to multiple lines when wrap is enabled", async ({
@@ -228,32 +228,13 @@ Iterations: 2`,
       });
     };
 
-    // With wrap disabled (default), measure row heights
-    const heightsNoWrap = await getRowHeights();
+    // With wrap enabled (new default), measure row heights
+    const heightsWrap = await getRowHeights();
 
-    // Without wrap, rows should be similar height (within 5px tolerance)
-    expect(
-      Math.abs(heightsNoWrap.longLineHeight - heightsNoWrap.shortLineHeight)
-    ).toBeLessThan(5);
+    // With wrap enabled, long line should be taller (it wraps to multiple lines)
+    expect(heightsWrap.longLineHeight).toBeGreaterThan(heightsWrap.shortLineHeight);
 
-    // Enable wrap with keyboard shortcut
-    await page.keyboard.press("p");
-
-    // Wait for CSS to apply
-    await expect(
-      page.getByRole("button", { name: /Text wrap/i }).getByText(/^Wrap$/i)
-    ).toBeVisible();
-
-    // Re-measure row heights with wrap enabled (expect.poll auto-retries until CSS applies)
-    // Long line should be significantly taller (at least 1.5x, indicating wrapped lines)
-    await expect
-      .poll(async () => {
-        const heights = await getRowHeights();
-        return heights.longLineHeight / heights.shortLineHeight;
-      })
-      .toBeGreaterThan(1.5);
-
-    // Disable wrap again
+    // Disable wrap with keyboard shortcut
     await page.keyboard.press("p");
 
     // Wait for CSS to apply
@@ -261,13 +242,29 @@ Iterations: 2`,
       page.getByRole("button", { name: /Text wrap/i }).getByText(/No Wrap/i)
     ).toBeVisible();
 
-    // Re-measure - heights should be back to similar
-    // Use expect.poll() to auto-retry until CSS is applied
+    // Re-measure row heights with wrap disabled
+    // Heights should be similar (within 5px tolerance)
     await expect
       .poll(async () => {
         const heights = await getRowHeights();
         return Math.abs(heights.longLineHeight - heights.shortLineHeight);
       })
       .toBeLessThan(5);
+
+    // Enable wrap again
+    await page.keyboard.press("p");
+
+    // Wait for CSS to apply
+    await expect(
+      page.getByRole("button", { name: /Text wrap/i }).getByText(/^Wrap$/i)
+    ).toBeVisible();
+
+    // Re-measure - long line should be taller again
+    await expect
+      .poll(async () => {
+        const heights = await getRowHeights();
+        return heights.longLineHeight / heights.shortLineHeight;
+      })
+      .toBeGreaterThan(1.5);
   });
 });
