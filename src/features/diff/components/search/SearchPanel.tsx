@@ -139,6 +139,9 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
   useEffect(() => {
     // Only clear when transitioning from open to closed
     if (prevIsOpen.current && !isOpen) {
+      // Clear the search input
+      setSearchTerm('');
+
       const view = getActiveEditor();
       if (view) {
         // Clear the search query
