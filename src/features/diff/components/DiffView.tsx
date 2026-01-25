@@ -47,7 +47,6 @@ export function DiffView() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const unifiedEditorRef = useRef<UnifiedDiffEditorHandle>(null);
   const splitEditorRef = useRef<SplitDiffEditorHandle>(null);
-  const focusedSide: FocusedSide = null;
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     isLoading: isLoadingComments,
@@ -68,18 +67,36 @@ export function DiffView() {
   // Draft comment management
   const draft = useDraftComment();
 
+  // Detect which editor has focus in split mode
+  const getFocusedSide = useCallback((): FocusedSide => {
+    if (pipeline.viewMode !== 'split') return null;
+
+    const activeElement = document.activeElement;
+    if (!activeElement) return null;
+
+    const leftView = splitEditorRef.current?.getLeftView();
+    const rightView = splitEditorRef.current?.getRightView();
+
+    if (leftView?.dom.contains(activeElement)) return 'left';
+    if (rightView?.dom.contains(activeElement)) return 'right';
+
+    return null;
+  }, [pipeline.viewMode]);
+
   // Search and go to line panels
   const {
     searchPanelOpen,
     goToLinePanelOpen,
     closeAllPanels,
     getActiveEditor,
+    viewMode: searchViewMode,
+    focusedSide: searchFocusedSide,
   } = useSearchPanel({
     viewMode: pipeline.viewMode,
     getUnifiedView: () => unifiedEditorRef.current?.getView() ?? null,
     getLeftView: () => splitEditorRef.current?.getLeftView() ?? null,
     getRightView: () => splitEditorRef.current?.getRightView() ?? null,
-    getFocusedSide: () => focusedSide,
+    getFocusedSide,
   });
 
   // Track comment positions through iterations (side-effect only)
@@ -315,6 +332,8 @@ export function DiffView() {
                 isOpen={searchPanelOpen}
                 onClose={closeAllPanels}
                 getActiveEditor={getActiveEditor}
+                viewMode={searchViewMode}
+                focusedSide={searchFocusedSide}
               />
               <GoToLinePanel
                 isOpen={goToLinePanelOpen}
@@ -379,6 +398,8 @@ export function DiffView() {
                 isOpen={searchPanelOpen}
                 onClose={closeAllPanels}
                 getActiveEditor={getActiveEditor}
+                viewMode={searchViewMode}
+                focusedSide={searchFocusedSide}
               />
               <GoToLinePanel
                 isOpen={goToLinePanelOpen}

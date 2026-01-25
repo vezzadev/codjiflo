@@ -65,30 +65,72 @@ describe('useSearchPanel', () => {
       expect(result.current.getActiveEditor()).toBe(mockRightView);
     });
 
-    it('returns left view when left is focused in split mode', () => {
+    it('returns left view when left editor is clicked in split mode', () => {
+      // Create mock DOM elements
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const mockLeftWithDom = { focus: vi.fn(), dom: leftDom } as unknown as EditorView;
+      const mockRightWithDom = { focus: vi.fn(), dom: rightDom } as unknown as EditorView;
+
       const { result } = renderHook(() =>
         useSearchPanel(
           createOptions({
             viewMode: 'split',
-            getFocusedSide: () => 'left',
+            getLeftView: () => mockLeftWithDom,
+            getRightView: () => mockRightWithDom,
+            getFocusedSide: () => null,
           })
         )
       );
 
-      expect(result.current.getActiveEditor()).toBe(mockLeftView);
+      // Simulate click on left editor
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        leftDom.dispatchEvent(event);
+      });
+
+      expect(result.current.getActiveEditor()).toBe(mockLeftWithDom);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
     });
 
-    it('returns right view when right is focused in split mode', () => {
+    it('returns right view when right editor is clicked in split mode', () => {
+      // Create mock DOM elements
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const mockLeftWithDom = { focus: vi.fn(), dom: leftDom } as unknown as EditorView;
+      const mockRightWithDom = { focus: vi.fn(), dom: rightDom } as unknown as EditorView;
+
       const { result } = renderHook(() =>
         useSearchPanel(
           createOptions({
             viewMode: 'split',
-            getFocusedSide: () => 'right',
+            getLeftView: () => mockLeftWithDom,
+            getRightView: () => mockRightWithDom,
+            getFocusedSide: () => null,
           })
         )
       );
 
-      expect(result.current.getActiveEditor()).toBe(mockRightView);
+      // Simulate click on right editor
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        rightDom.dispatchEvent(event);
+      });
+
+      expect(result.current.getActiveEditor()).toBe(mockRightWithDom);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
     });
 
     it('falls back to left view if right is null in split mode', () => {

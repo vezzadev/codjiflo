@@ -21,7 +21,7 @@ export interface UseSearchPanelOptions {
   getLeftView: () => EditorView | null;
   /** Get the right editor view (split mode) */
   getRightView: () => EditorView | null;
-  /** Get the currently focused side in split mode */
+  /** Get the currently focused side in split mode (checks document.activeElement) */
   getFocusedSide: () => FocusedSide;
 }
 
@@ -38,6 +38,10 @@ export interface UseSearchPanelReturn {
   closeAllPanels: () => void;
   /** Get the currently active editor view */
   getActiveEditor: () => EditorView | null;
+  /** Current view mode */
+  viewMode: ViewMode;
+  /** Currently focused side in split mode (null in inline mode) */
+  focusedSide: FocusedSide;
 }
 
 /**
@@ -51,22 +55,67 @@ export function useSearchPanel(options: UseSearchPanelOptions): UseSearchPanelRe
 
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [goToLinePanelOpen, setGoToLinePanelOpen] = useState(false);
+  // Track which side was last clicked/focused in split mode
+  const [clickedSide, setClickedSide] = useState<FocusedSide>(null);
 
   // Track last active editor for restoring focus
   const lastActiveEditorRef = useRef<EditorView | null>(null);
+
+  // Effective focused side: only relevant in split mode
+  const focusedSide = viewMode === 'split' ? clickedSide : null;
+
+  // Track which editor was clicked in split mode
+  // Uses mousedown instead of focus because readonly CodeMirror editors
+  // don't receive DOM focus when clicked (tabindex=-1 on cm-scroller)
+  useEffect(() => {
+    if (viewMode !== 'split') {
+      return;
+    }
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Check if click is inside left or right editor
+      const leftView = getLeftView();
+      const rightView = getRightView();
+
+      if (leftView?.dom.contains(target)) {
+        setClickedSide('left');
+      } else if (rightView?.dom.contains(target)) {
+        setClickedSide('right');
+      }
+      // If click is elsewhere (search panel, toolbar, etc.), preserve current clicked side
+    };
+
+    // Also check focus events for cases where focus does move (e.g., tab navigation)
+    const handleFocus = () => {
+      const newFocusedSide = getFocusedSide();
+      if (newFocusedSide !== null) {
+        setClickedSide(newFocusedSide);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('focusin', handleFocus);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('focusin', handleFocus);
+    };
+  }, [viewMode, getFocusedSide, getLeftView, getRightView]);
 
   const getActiveEditor = useCallback((): EditorView | null => {
     if (viewMode === 'inline') {
       return getUnifiedView();
     }
 
-    // Split mode: use focused side, default to right
-    const focusedSide = getFocusedSide();
-    if (focusedSide === 'left') {
+    // Split mode: use tracked clicked side state, default to right
+    // We use the state variable instead of getFocusedSide() because
+    // when the search panel is open, document.activeElement is the search input
+    if (clickedSide === 'left') {
       return getLeftView();
     }
     return getRightView() ?? getLeftView();
-  }, [viewMode, getUnifiedView, getLeftView, getRightView, getFocusedSide]);
+  }, [viewMode, getUnifiedView, getLeftView, getRightView, clickedSide]);
 
   const openSearchPanel = useCallback(() => {
     // Store the current active editor before opening panel
@@ -135,5 +184,7 @@ export function useSearchPanel(options: UseSearchPanelOptions): UseSearchPanelRe
     openGoToLinePanel,
     closeAllPanels,
     getActiveEditor,
+    viewMode,
+    focusedSide,
   };
 }
