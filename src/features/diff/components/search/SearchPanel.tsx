@@ -148,6 +148,29 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
     queueMicrotask(() => setMatchCount(null));
   }
 
+  // Re-apply search when editor changes (e.g., view mode switch)
+  const prevEditorRef = useRef<EditorView | null>(null);
+  useEffect(() => {
+    if (!isOpen || !searchTerm) return;
+
+    const currentEditor = getActiveEditor();
+    if (currentEditor && currentEditor !== prevEditorRef.current) {
+      // Editor changed, re-apply search query
+      const query = new SearchQuery({
+        search: searchTerm,
+        caseSensitive: options.caseSensitive,
+        wholeWord: options.wholeWord,
+        regexp: options.regexp,
+      });
+      currentEditor.dispatch({
+        effects: setSearchQuery.of(query),
+      });
+      // Update match count for new editor
+      debouncedCountRef.current(query, currentEditor);
+    }
+    prevEditorRef.current = currentEditor;
+  }, [isOpen, searchTerm, options, getActiveEditor]);
+
   const updateSearch = useCallback((term: string, opts: SearchOptions) => {
     const view = getActiveEditor();
     if (!view) return;

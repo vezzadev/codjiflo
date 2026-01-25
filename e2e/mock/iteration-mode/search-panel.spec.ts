@@ -204,4 +204,62 @@ index 1234567..abcdefg 100644
     // Panel should close after navigation
     await expect(gotoPanel).toBeHidden();
   });
+
+  test('search persists when switching between inline and side-by-side view', async ({ page }) => {
+    await page.goto('/test/repo/400');
+    await page.waitForLoadState('load');
+
+    // Wait for file list and iterations to load
+    const fileList = page.getByRole('navigation', { name: /Changed files/i });
+    await expect(fileList).toBeVisible();
+    await expect(fileList.getByRole('status', { name: 'Loading files' })).toHaveCount(0);
+    const selector = page.getByTestId('iteration-selector');
+    await expect(selector).toBeVisible();
+    await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
+
+    // Click on file to open diff
+    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    await fileItem.click();
+
+    // Wait for diff content
+    const diffArea = page.getByRole('region', { name: /Diff content/i });
+    await expect(diffArea).toBeVisible();
+    const editor = CMEditor.from(diffArea);
+    await expect(editor.content).toBeVisible();
+
+    // Open search and type a term
+    await page.keyboard.press('Control+f');
+    const searchPanel = page.getByRole('dialog', { name: 'Find in diff' });
+    await expect(searchPanel).toBeVisible();
+    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    await searchInput.fill('function');
+
+    // Verify initial match count
+    const matchCount = searchPanel.getByRole('status');
+    await expect(matchCount).toBeVisible();
+    await expect(matchCount).not.toHaveText('No results');
+
+    // Switch view mode (click View mode button to open dropdown)
+    const viewModeButton = page.getByRole('button', { name: 'View mode' });
+    await viewModeButton.click();
+
+    // Select "Side-by-Side" from dropdown (it's a listbox with options)
+    const sideBySideOption = page.getByRole('option', { name: /Side-by-Side/i });
+    await sideBySideOption.click();
+
+    // Wait for new editor to render (side-by-side has different structure)
+    const sideBySideView = page.getByRole('region', { name: /Side-by-side diff view/i });
+    await expect(sideBySideView).toBeVisible();
+
+    // Verify search still works by pressing F3 and checking match count updates
+    // If search wasn't re-applied, F3 would do nothing and count would stay at "1 of X"
+    const initialCount = await matchCount.textContent();
+
+    // Press F3 to navigate to next match
+    await page.keyboard.press('F3');
+
+    // Match count should change (e.g., from "1 of 5" to "2 of 5")
+    // This proves the search is active on the new editor
+    await expect(matchCount).not.toHaveText(initialCount ?? '');
+  });
 });
