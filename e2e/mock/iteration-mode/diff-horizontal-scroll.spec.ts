@@ -135,6 +135,9 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // Disable text wrap (now default is wrap) to enable horizontal scrolling
+    await page.keyboard.press("w");
+
     // Get the diff toolbar (with view controls)
     const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(diffToolbar).toBeVisible();
@@ -234,6 +237,9 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // Disable text wrap (now default is wrap) to enable horizontal scrolling
+    await page.keyboard.press("w");
+
     // Get the CodeMirror editor and wait for it to be fully rendered
     const editor = CMEditor.from(page);
     await expect(editor.view).toBeVisible();
@@ -282,6 +288,9 @@ Iterations: 2`,
     await expect(
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
+
+    // Disable text wrap (now default is wrap) to enable horizontal scrolling
+    await page.keyboard.press("w");
 
     // Verify we're in inline view (CodeMirror editor present)
     const editor = CMEditor.from(page);

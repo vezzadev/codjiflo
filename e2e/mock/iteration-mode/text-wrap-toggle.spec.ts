@@ -205,12 +205,16 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // In full file mode (default), use change navigation to jump to the long line
+    // This ensures it's scrolled into view and rendered
+    await page.keyboard.press("j"); // Navigate to first change
+
     // Wait for CodeMirror lines containing our test content to be present
     const editor = CMEditor.from(page);
     const longLineLocator = editor.materializedLineContaining("veryLongVariableName");
     const shortLineLocator = editor.materializedLineContaining("short = 'value'");
-    await expect(longLineLocator).toBeVisible();
-    await expect(shortLineLocator).toBeVisible();
+    await expect(longLineLocator).toBeVisible({ timeout: 5000 });
+    await expect(shortLineLocator).toBeVisible({ timeout: 5000 });
 
     // Helper to get heights of specific rows (CodeMirror uses .cm-line for each line)
     const getRowHeights = async () => {
