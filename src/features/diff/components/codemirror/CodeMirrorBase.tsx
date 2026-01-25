@@ -10,8 +10,17 @@ import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import { type Extension } from '@codemirror/state';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { search } from '@codemirror/search';
 import { getLanguageSupport } from './utils/language-registry';
 import { diffTheme } from './extensions/diff-theme';
+
+/**
+ * Search extension configured to suppress the default panel.
+ * We use our own custom SearchPanel component instead.
+ */
+const searchExtension = search({
+  createPanel: () => ({ dom: document.createElement('span'), top: true }),
+});
 
 export interface CodeMirrorBaseProps {
   /** Document content */
@@ -121,6 +130,8 @@ export const CodeMirrorBase = forwardRef<CodeMirrorBaseHandle, CodeMirrorBasePro
         EditorView.editable.of(!readOnly),
         // Add syntax highlighting with default styles
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        // Search extension with suppressed default panel (we use custom SearchPanel)
+        searchExtension,
       ];
 
       if (lineWrapping) {
