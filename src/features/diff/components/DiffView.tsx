@@ -47,7 +47,7 @@ export function DiffView() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const unifiedEditorRef = useRef<UnifiedDiffEditorHandle>(null);
   const splitEditorRef = useRef<SplitDiffEditorHandle>(null);
-  const [focusedSide] = useState<FocusedSide>(null);
+  const focusedSide: FocusedSide = null;
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     isLoading: isLoadingComments,
