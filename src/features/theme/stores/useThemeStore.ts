@@ -17,7 +17,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       theme: 'light',
-      diffColorScheme: 'github',
+      diffColorScheme: 'codeflow-classic',
       useHighContrastDiff: false,
       setTheme: (theme: Theme) => {
         set({ theme });
