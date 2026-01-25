@@ -5,7 +5,7 @@
  * F3 navigates through matches, and Ctrl+G opens go-to-line panel.
  */
 
-import { test, expect } from '../../fixtures/console-warnings';
+import { test } from '../../fixtures/console-warnings';
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -14,6 +14,7 @@ import {
   type MockFile,
 } from '../../fixtures/github-mocks';
 import { buildIterationDb } from '../../fixtures/iteration-db-builder';
+import { CMEditor, expect } from '../../fixtures/codemirror';
 
 test.describe('Search and Go to Line panels', () => {
   // Mock PR data with file content that has searchable text
@@ -119,40 +120,40 @@ index 1234567..abcdefg 100644
     await page.goto('/test/repo/400');
     await page.waitForLoadState('load');
 
-    // Wait for file list to load
+    // Wait for file list to load (skeleton has role="status" with aria-label "Loading files")
     const fileList = page.getByRole('navigation', { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(fileList.getByRole('status', { name: 'Loading files' })).toHaveCount(0);
 
     // Wait for iterations to load
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
-    await expect(selector.locator('.iteration-tab')).not.toHaveCount(0);
+    await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItems = fileList.locator('.tree-item.file');
-    await expect(fileItems).toHaveCount(2); // PR description + example.ts
-    await fileItems.nth(1).click();
+    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    await fileItem.click();
 
-    // Wait for diff content to load
-    const diffArea = page.locator('.diff-content-area');
+    // Wait for diff content to load using playwright-codemirror
+    const diffArea = page.getByRole('region', { name: /Diff content/i });
     await expect(diffArea).toBeVisible();
-    await expect(page.locator('.cm-content')).toBeVisible();
+    const editor = CMEditor.from(diffArea);
+    await expect(editor.content).toBeVisible();
 
     // Open search panel with Ctrl+F
     await page.keyboard.press('Control+f');
 
     // Verify search panel is visible
-    const searchPanel = page.locator('.diff-search-panel');
+    const searchPanel = page.getByRole('dialog', { name: 'Find in diff' });
     await expect(searchPanel).toBeVisible();
 
     // Type search term
-    const searchInput = searchPanel.locator('input[type="text"]');
+    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
     await expect(searchInput).toBeFocused();
     await searchInput.fill('function');
 
     // Verify match count is displayed (the word 'function' appears multiple times)
-    const matchCount = searchPanel.locator('.diff-search-match-count');
+    const matchCount = searchPanel.getByRole('status');
     await expect(matchCount).toBeVisible();
     await expect(matchCount).not.toHaveText('No results');
 
@@ -165,35 +166,35 @@ index 1234567..abcdefg 100644
     await page.goto('/test/repo/400');
     await page.waitForLoadState('load');
 
-    // Wait for file list to load
+    // Wait for file list to load (skeleton has role="status" with aria-label "Loading files")
     const fileList = page.getByRole('navigation', { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(fileList.getByRole('status', { name: 'Loading files' })).toHaveCount(0);
 
     // Wait for iterations to load
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
-    await expect(selector.locator('.iteration-tab')).not.toHaveCount(0);
+    await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItems = fileList.locator('.tree-item.file');
-    await expect(fileItems).toHaveCount(2);
-    await fileItems.nth(1).click();
+    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    await fileItem.click();
 
-    // Wait for diff content to load
-    const diffArea = page.locator('.diff-content-area');
+    // Wait for diff content to load using playwright-codemirror
+    const diffArea = page.getByRole('region', { name: /Diff content/i });
     await expect(diffArea).toBeVisible();
-    await expect(page.locator('.cm-content')).toBeVisible();
+    const editor = CMEditor.from(diffArea);
+    await expect(editor.content).toBeVisible();
 
     // Open go-to-line panel with Ctrl+G
     await page.keyboard.press('Control+g');
 
     // Verify go-to-line panel is visible
-    const gotoPanel = page.locator('.diff-goto-panel');
+    const gotoPanel = page.getByRole('dialog', { name: 'Go to line' });
     await expect(gotoPanel).toBeVisible();
 
-    // Type line number
-    const lineInput = gotoPanel.locator('input[type="text"]');
+    // Type line number - input has id="goto-line-input" and label "Go to Line:"
+    const lineInput = gotoPanel.getByRole('textbox', { name: /Go to Line/i });
     await expect(lineInput).toBeFocused();
     await lineInput.fill('10');
 

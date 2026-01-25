@@ -336,7 +336,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       </div>
 
       {matchCount !== null && (
-        <span className="diff-search-match-count" aria-live="polite" aria-atomic="true">
+        <span className="diff-search-match-count" role="status" aria-live="polite" aria-atomic="true">
           {matchCount.total > 0
             ? `${matchCount.current} of ${matchCount.total}`
             : 'No results'}
