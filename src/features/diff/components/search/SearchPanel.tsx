@@ -33,6 +33,25 @@ export interface SearchOptions {
   regexp: boolean;
 }
 
+/** Simple debounce implementation */
+function debounce<T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  delay: number
+): { (...args: Parameters<T>): void; cancel: () => void } {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const debounced = (...args: Parameters<T>) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+
+  debounced.cancel = () => {
+    if (timeoutId) clearTimeout(timeoutId);
+  };
+
+  return debounced;
+}
+
 interface MatchPosition {
   /** 1-based index of the match at or before cursor position */
   currentIndex: number;
@@ -80,6 +99,25 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
   });
   const [matchCount, setMatchCount] = useState<{ current: number; total: number } | null>(null);
 
+  // Debounced match count update (150ms) to avoid excessive counting on rapid typing
+  const debouncedCountRef = useRef(
+    debounce((query: SearchQuery, view: EditorView) => {
+      const matches = countMatches(query, view);
+      if (matches) {
+        const { currentIndex, total } = matches;
+        setMatchCount(total > 0 ? { current: Math.max(1, currentIndex), total } : { current: 0, total: 0 });
+      } else {
+        setMatchCount({ current: 0, total: 0 });
+      }
+    }, 150)
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    const debouncedFn = debouncedCountRef.current;
+    return () => debouncedFn.cancel();
+  }, []);
+
   // Focus input when panel opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -125,16 +163,11 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       effects: setSearchQuery.of(query),
     });
 
-    // Count matches
+    // Count matches (debounced to avoid excessive counting on rapid typing)
     if (term) {
-      const matches = countMatches(query, view);
-      if (matches) {
-        const { currentIndex, total } = matches;
-        setMatchCount(total > 0 ? { current: Math.max(1, currentIndex), total } : { current: 0, total: 0 });
-      } else {
-        setMatchCount({ current: 0, total: 0 });
-      }
+      debouncedCountRef.current(query, view);
     } else {
+      debouncedCountRef.current.cancel();
       setMatchCount(null);
     }
   }, [getActiveEditor]);

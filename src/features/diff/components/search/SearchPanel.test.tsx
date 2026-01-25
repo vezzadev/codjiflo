@@ -2,8 +2,8 @@
  * SearchPanel Component Tests
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SearchPanel } from './SearchPanel';
 import type { EditorView } from '@codemirror/view';
 
@@ -304,6 +304,61 @@ describe('SearchPanel', () => {
 
       // Should not crash and should not call findNext
       expect(findNext).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('debounce behavior', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('debounces match count updates during rapid typing', () => {
+      render(<SearchPanel {...defaultProps} />);
+
+      const input = screen.getByPlaceholderText('Find...');
+
+      // Type rapidly
+      fireEvent.change(input, { target: { value: 't' } });
+      fireEvent.change(input, { target: { value: 'te' } });
+      fireEvent.change(input, { target: { value: 'tes' } });
+      fireEvent.change(input, { target: { value: 'test' } });
+
+      // Match count should not appear immediately (debounce in progress)
+      // The mock cursor returns done:true immediately, so we'd get "No results"
+      expect(screen.queryByText('No results')).not.toBeInTheDocument();
+
+      // Advance past debounce delay (150ms) and flush React updates
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+
+      // After debounce, match count updates (mock returns "No results" since cursor is empty)
+      expect(screen.getByText('No results')).toBeInTheDocument();
+    });
+
+    it('cancels pending debounce when input is cleared', () => {
+      render(<SearchPanel {...defaultProps} />);
+
+      const input = screen.getByPlaceholderText('Find...');
+
+      // Type something
+      fireEvent.change(input, { target: { value: 'test' } });
+
+      // Clear before debounce fires
+      fireEvent.change(input, { target: { value: '' } });
+
+      // Advance past debounce delay
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+
+      // No match count should appear (debounce was cancelled)
+      expect(screen.queryByText('No results')).not.toBeInTheDocument();
+      expect(screen.queryByText(/of/)).not.toBeInTheDocument();
     });
   });
 });
