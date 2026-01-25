@@ -137,9 +137,9 @@ src/
 ├── api/                # Core API Clients (generic, not feature-specific)
 ├── components/         # SHARED, Dumb UI Components
 │   ├── Button/         # Form controls live at root level
-│   ├── Input/          # Each component in its own folder
-│   ├── Textarea/       # with Component.tsx, index.ts, tests
-│   ├── FormField/      # and stories
+│   ├── Input/          # Each component in its own folder with
+│   ├── Textarea/       # <ComponentName>.tsx, index.ts, and tests
+│   ├── FormField/      # Stories added where applicable (not required)
 │   ├── ui/             # Atomic design elements (Badge, Skeleton)
 │   └── layout/         # App shells, Sidebars
 ├── features/           # FUNCTIONAL DOMAINS
@@ -288,7 +288,7 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
   - **Content Script**: Independent entry point `src/extension/content.tsx`.
   - **Shadow DOM**: The React App must be capable of mounting inside a `shadowRoot` to avoid style bleeding.
   - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M7 uses direct API calls).
-- **Refactor Alert**: `App.tsx` might need to support a "Widget Mode" vs "Full Page Mode".
+- **Refactor Alert**: The main layout component might need to support a "Widget Mode" vs "Full Page Mode".
 
 ## 3. General Agent Rules
 1.  **Do Not Delete Logic**: When refactoring, verify usage. Use "Find Usages".
@@ -313,7 +313,7 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
 - **Update Artifacts**: Keep `task.md` updated in real-time. If you finish a sub-task, mark it checked immediately.
 
 ### 4.4 Context Optimization
-- **Path Aliases**: Use `@/` for imports (e.g., `import { Button } from '@/components/ui/button'`) instead of `../../../../`. This reduces cognitive load when moving files.
+- **Path Aliases**: Use `@/` for imports (e.g., `import { Button } from '@/components'`) instead of `../../../../`. This reduces cognitive load when moving files.
 - **Type Definitions**: Look in `src/features/{feature}/types.ts` first. Only verify `src/types` if generic.
 
 ### 4.5 Self-Verification
@@ -325,5 +325,5 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
 - **Example**: `const pr = createMockPullRequest({ state: 'open' });`
 
 ### 4.7 Visual Component Usage
-- **No Native Elements**: Avoid using raw `<button>`, `<input>`, or `<select>` tags. Use the standardized components in `src/components/ui/` (e.g., `<Button>`, `<Input>`) to maintain design consistency.
+- **No Native Elements**: Avoid using raw `<button>`, `<input>`, or `<select>` tags. Use the standardized components in `src/components/` (e.g., `<Button>`, `<Input>`) to maintain design consistency.
 - **Icons**: Use `lucide-react` for icons. Do not import other icon libraries.
