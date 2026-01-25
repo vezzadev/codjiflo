@@ -135,8 +135,12 @@ We use a **Feature-based** folder structure. Do not group by file type (e.g., do
 ```text
 src/
 ├── api/                # Core API Clients (generic, not feature-specific)
-├── components/         # SHARED, Dumb UI Components (Buttons, Inputs, Layouts)
-│   ├── ui/             # Atomic design elements (Typography, Colors)
+├── components/         # SHARED, Dumb UI Components
+│   ├── Button/         # Form controls live at root level
+│   ├── Input/          # Each component in its own folder
+│   ├── Textarea/       # with Component.tsx, index.ts, tests
+│   ├── FormField/      # and stories
+│   ├── ui/             # Atomic design elements (Badge, Skeleton)
 │   └── layout/         # App shells, Sidebars
 ├── features/           # FUNCTIONAL DOMAINS
 │   ├── auth/           # Authentication Feature
@@ -150,10 +154,9 @@ src/
 │   └── extension/      # Browser Extension Specifics (Bridge, Messaging)
 ├── lib/                # Third-party library wrappers (e.g., Octokit configuration)
 ├── utils/              # Pure utility functions (Date formatting, string manipulation)
-├── hooks/              # Global shared hooks (useTheme, useDebounce)
 ├── types/              # Global shared types (Avoid overusing this, prefer feature types)
 ├── stores/             # GLOBAL CROSS-FEATURE STORES (Only if absolutely necessary, prefer feature stores)
-└── App.tsx             # Root Orchestrator
+└── tests/              # Test infrastructure (factories, helpers, mocks)
 ```
 
 ### 1.2 State Management Rules (Zustand)
