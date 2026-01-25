@@ -16,6 +16,7 @@ import {
 import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery } from '@codemirror/search';
+import type { ViewMode, FocusedSide } from './useSearchPanel';
 import './search-go-to-panel.css';
 
 export interface SearchPanelProps {
@@ -25,6 +26,10 @@ export interface SearchPanelProps {
   onClose: () => void;
   /** Get the active editor view */
   getActiveEditor: () => EditorView | null;
+  /** Current view mode */
+  viewMode?: ViewMode;
+  /** Currently focused side in split mode */
+  focusedSide?: FocusedSide;
 }
 
 export interface SearchOptions {
@@ -89,7 +94,7 @@ function countMatches(query: SearchQuery, view: EditorView): MatchPosition | nul
 /**
  * Floating panel for find functionality.
  */
-export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelProps) {
+export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focusedSide }: SearchPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [options, setOptions] = useState<SearchOptions>({
@@ -148,7 +153,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
     queueMicrotask(() => setMatchCount(null));
   }
 
-  // Re-apply search when editor changes (e.g., view mode switch)
+  // Re-apply search when editor changes (e.g., view mode switch or focus change in split mode)
   const prevEditorRef = useRef<EditorView | null>(null);
   useEffect(() => {
     if (!isOpen || !searchTerm) return;
@@ -167,7 +172,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       debouncedCountRef.current(query, currentEditor);
     }
     prevEditorRef.current = currentEditor;
-  }, [isOpen, searchTerm, options, getActiveEditor]);
+  }, [isOpen, searchTerm, options, getActiveEditor, focusedSide]);
 
   const updateSearch = useCallback((term: string, opts: SearchOptions) => {
     const view = getActiveEditor();
@@ -364,8 +369,8 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       {matchCount !== null && (
         <span className="diff-search-match-count" role="status" aria-live="polite" aria-atomic="true">
           {matchCount.total > 0
-            ? `${matchCount.current} of ${matchCount.total}`
-            : 'No results'}
+            ? `${matchCount.current} of ${matchCount.total}${viewMode === 'split' && focusedSide ? ` (${focusedSide === 'left' ? 'Left' : 'Right'})` : ''}`
+            : `No results${viewMode === 'split' && focusedSide ? ` (${focusedSide === 'left' ? 'Left' : 'Right'})` : ''}`}
         </span>
       )}
 

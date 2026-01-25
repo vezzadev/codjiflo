@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@/tests/helpers';
+import { render, screen, fireEvent, act } from '@/tests/helpers';
 import { SearchPanel } from './SearchPanel';
 import { GoToLinePanel } from './GoToLinePanel';
 import { useSearchPanel, type UseSearchPanelOptions } from './useSearchPanel';
@@ -251,12 +251,133 @@ describe('SearchPanel Integration', () => {
     });
   });
 
+  describe('side label in split mode', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('displays "(Left)" when focused on left side in split mode', async () => {
+      render(
+        <SearchPanel
+          isOpen={true}
+          onClose={vi.fn()}
+          getActiveEditor={() =>
+            ({
+              state: {
+                doc: {
+                  length: 1000,
+                },
+                selection: { main: { from: 0 } },
+              },
+              dispatch: vi.fn(),
+              focus: vi.fn(),
+            } as unknown as EditorView)
+          }
+          viewMode="split"
+          focusedSide="left"
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Find...');
+      fireEvent.change(input, { target: { value: 'test' } });
+
+      // Flush debounce timer (150ms) and React updates
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent('(Left)');
+    });
+
+    it('displays "(Right)" when focused on right side in split mode', async () => {
+      render(
+        <SearchPanel
+          isOpen={true}
+          onClose={vi.fn()}
+          getActiveEditor={() =>
+            ({
+              state: {
+                doc: {
+                  length: 1000,
+                },
+                selection: { main: { from: 0 } },
+              },
+              dispatch: vi.fn(),
+              focus: vi.fn(),
+            } as unknown as EditorView)
+          }
+          viewMode="split"
+          focusedSide="right"
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Find...');
+      fireEvent.change(input, { target: { value: 'test' } });
+
+      // Flush debounce timer and React updates
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent('(Right)');
+    });
+
+    it('does not display side label in inline mode', async () => {
+      render(
+        <SearchPanel
+          isOpen={true}
+          onClose={vi.fn()}
+          getActiveEditor={() =>
+            ({
+              state: {
+                doc: {
+                  length: 1000,
+                },
+                selection: { main: { from: 0 } },
+              },
+              dispatch: vi.fn(),
+              focus: vi.fn(),
+            } as unknown as EditorView)
+          }
+          viewMode="inline"
+          focusedSide={null}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Find...');
+      fireEvent.change(input, { target: { value: 'test' } });
+
+      // Flush debounce timer and React updates
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+
+      const status = screen.getByRole('status');
+      expect(status).not.toHaveTextContent('(Left)');
+      expect(status).not.toHaveTextContent('(Right)');
+    });
+  });
+
   describe('split mode view selection', () => {
-    it('uses focused side editor in split mode', () => {
-      const leftView = { id: 'left' } as unknown as EditorView;
-      const rightView = { id: 'right' } as unknown as EditorView;
+    it('uses clicked side editor in split mode', () => {
+      // Create mock DOM elements for click detection
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const leftView = { id: 'left', dom: leftDom } as unknown as EditorView;
+      const rightView = { id: 'right', dom: rightDom } as unknown as EditorView;
 
       let activeEditor: EditorView | null = null;
+      // Use object wrapper to avoid TypeScript narrowing issues with closure assignment
+      const hookRef: { getActiveEditor: (() => EditorView | null) | null } = { getActiveEditor: null };
 
       render(
         <TestWrapper
@@ -265,20 +386,36 @@ describe('SearchPanel Integration', () => {
             getUnifiedView: () => null,
             getLeftView: () => leftView,
             getRightView: () => rightView,
-            getFocusedSide: () => 'left',
+            getFocusedSide: () => null,
           }}
         >
           {(hookResult) => {
+            hookRef.getActiveEditor = hookResult.getActiveEditor;
             activeEditor = hookResult.getActiveEditor();
             return null;
           }}
         </TestWrapper>
       );
 
-      expect(activeEditor).toBe(leftView);
+      // Default should be right
+      expect(activeEditor).toBe(rightView);
+
+      // Simulate click on left editor
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        leftDom.dispatchEvent(event);
+      });
+
+      // Now getActiveEditor should return left
+      expect(hookRef.getActiveEditor).not.toBeNull();
+      expect(hookRef.getActiveEditor?.()).toBe(leftView);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
     });
 
-    it('defaults to right editor when no side is focused in split mode', () => {
+    it('defaults to right editor when no side is clicked in split mode', () => {
       const leftView = { id: 'left' } as unknown as EditorView;
       const rightView = { id: 'right' } as unknown as EditorView;
 
