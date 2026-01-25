@@ -164,6 +164,11 @@
       "count": 1
     }
   },
+  "e2e/mock/iteration-mode/search-panel.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 15
+    }
+  },
   "e2e/prod/iteration-mode/iteration-file-status.spec.ts": {
     "playwright/no-conditional-in-test": {
       "count": 2
