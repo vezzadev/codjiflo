@@ -12,7 +12,7 @@ describe('useThemeStore', () => {
     act(() => {
       useThemeStore.setState({
         theme: 'light',
-        diffColorScheme: 'github',
+        diffColorScheme: 'codeflow-classic',
         useHighContrastDiff: false,
       });
     });
@@ -23,8 +23,8 @@ describe('useThemeStore', () => {
       expect(useThemeStore.getState().theme).toBe('light');
     });
 
-    it('has github diff color scheme by default', () => {
-      expect(useThemeStore.getState().diffColorScheme).toBe('github');
+    it('has codeflow-classic diff color scheme by default', () => {
+      expect(useThemeStore.getState().diffColorScheme).toBe('codeflow-classic');
     });
 
     it('has high contrast diff disabled by default', () => {

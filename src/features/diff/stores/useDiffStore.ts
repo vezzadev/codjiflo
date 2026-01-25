@@ -10,10 +10,10 @@ export const PR_DESCRIPTION_INDEX = -1;
 const DEFAULT_VIEW_CONFIG: DiffViewConfig = {
   mode: 'inline',
   filter: 'both',
-  showFullFile: false,
+  showFullFile: true,
   showWhitespace: false,
-  showComments: true,
-  textWrap: 'nowrap',
+  showComments: false,
+  textWrap: 'wrap',
 };
 
 export const useDiffStore = create<DiffState>()(

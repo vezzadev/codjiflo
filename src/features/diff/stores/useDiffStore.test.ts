@@ -370,10 +370,10 @@ describe('useDiffStore', () => {
         viewConfig: {
           mode: 'inline',
           filter: 'both',
-          showFullFile: false,
+          showFullFile: true,
           showWhitespace: false,
-          showComments: true,
-          textWrap: 'nowrap',
+          showComments: false,
+          textWrap: 'wrap',
         },
       });
     });
@@ -436,17 +436,17 @@ describe('useDiffStore', () => {
     });
 
     describe('toggleFullFile', () => {
-      it('toggles showFullFile from false to true', () => {
-        useDiffStore.getState().toggleFullFile();
-        expect(useDiffStore.getState().viewConfig.showFullFile).toBe(true);
-      });
-
       it('toggles showFullFile from true to false', () => {
-        useDiffStore.setState({
-          viewConfig: { ...useDiffStore.getState().viewConfig, showFullFile: true },
-        });
         useDiffStore.getState().toggleFullFile();
         expect(useDiffStore.getState().viewConfig.showFullFile).toBe(false);
+      });
+
+      it('toggles showFullFile from false to true', () => {
+        useDiffStore.setState({
+          viewConfig: { ...useDiffStore.getState().viewConfig, showFullFile: false },
+        });
+        useDiffStore.getState().toggleFullFile();
+        expect(useDiffStore.getState().viewConfig.showFullFile).toBe(true);
       });
     });
 
@@ -466,17 +466,17 @@ describe('useDiffStore', () => {
     });
 
     describe('setTextWrap', () => {
-      it('sets textWrap to wrap', () => {
-        useDiffStore.getState().setTextWrap('wrap');
-        expect(useDiffStore.getState().viewConfig.textWrap).toBe('wrap');
-      });
-
       it('sets textWrap to nowrap', () => {
-        useDiffStore.setState({
-          viewConfig: { ...useDiffStore.getState().viewConfig, textWrap: 'wrap' },
-        });
         useDiffStore.getState().setTextWrap('nowrap');
         expect(useDiffStore.getState().viewConfig.textWrap).toBe('nowrap');
+      });
+
+      it('sets textWrap to wrap', () => {
+        useDiffStore.setState({
+          viewConfig: { ...useDiffStore.getState().viewConfig, textWrap: 'nowrap' },
+        });
+        useDiffStore.getState().setTextWrap('wrap');
+        expect(useDiffStore.getState().viewConfig.textWrap).toBe('wrap');
       });
 
       it('preserves other viewConfig properties', () => {
