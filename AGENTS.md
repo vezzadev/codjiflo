@@ -125,7 +125,7 @@ You have access to Playwright via MCP. Use it sparingly in the following situati
  * Final quality assurance. Don't ask the user to test a feature manually before you did it yourself!
 
 ## Shared environment
-There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3000 for A, 3010 for B, ..., 3040 for C. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
+There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3000 for A, 3010 for B, 3020 for C. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
 
 ## Tech Stack
 

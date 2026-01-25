@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px 32px 8px 12px; /* Extra right padding for close button */
   background-color: var(--window-bg);
   border: 1px solid var(--combobox-border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -34,6 +34,12 @@
 .diff-search-input {
   flex: 1 1 180px;
   min-width: 150px;
+  background-color: var(--file-explorer-filter-bg);
+  color: var(--file-explorer-filter-fg);
+}
+
+.diff-search-input::placeholder {
+  color: var(--file-explorer-filter-placeholder);
 }
 
 .diff-search-options {
@@ -147,6 +153,12 @@
 .diff-goto-input {
   width: 80px;
   text-align: center;
+  background-color: var(--file-explorer-filter-bg);
+  color: var(--file-explorer-filter-fg);
+}
+
+.diff-goto-input::placeholder {
+  color: var(--file-explorer-filter-placeholder);
 }
 
 .diff-goto-go-btn {
@@ -171,13 +183,15 @@
    CLOSE BUTTON (shared)
    ============================================ */
 .diff-panel-close-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
-  margin-left: 4px;
   background: transparent;
   border: 1px solid transparent;
   color: var(--main-fg);
