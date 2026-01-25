@@ -34,12 +34,12 @@
 .diff-search-input {
   flex: 1 1 180px;
   min-width: 150px;
-  background-color: var(--file-explorer-filter-bg);
-  color: var(--file-explorer-filter-fg);
+  background-color: var(--textbox-bg);
+  color: var(--textbox-fg);
 }
 
 .diff-search-input::placeholder {
-  color: var(--file-explorer-filter-placeholder);
+  color: var(--textbox-placeholder);
 }
 
 .diff-search-options {
@@ -153,12 +153,12 @@
 .diff-goto-input {
   width: 80px;
   text-align: center;
-  background-color: var(--file-explorer-filter-bg);
-  color: var(--file-explorer-filter-fg);
+  background-color: var(--textbox-bg);
+  color: var(--textbox-fg);
 }
 
 .diff-goto-input::placeholder {
-  color: var(--file-explorer-filter-placeholder);
+  color: var(--textbox-placeholder);
 }
 
 .diff-goto-go-btn {
