@@ -158,9 +158,9 @@
   --file-explorer-change-underlay: rgba(0, 0, 0, 0.05);
   --file-explorer-file-fg: #1E1E1E;
   --file-explorer-folder-fg: #1E1E1E;
-  --file-explorer-filter-bg: #FFFFFF;
-  --file-explorer-filter-fg: #1E1E1E;
-  --file-explorer-filter-placeholder: #808080;
+  --textbox-bg: #FFFFFF;
+  --textbox-fg: #1E1E1E;
+  --textbox-placeholder: #808080;
 
   /* Colorful (accent) */
   --accent: #59822D;
@@ -316,9 +316,9 @@
   --file-explorer-change-underlay: rgba(102, 102, 102, 0.13);
   --file-explorer-file-fg: #DDDDDD;
   --file-explorer-folder-fg: #DDDDDD;
-  --file-explorer-filter-bg: #2F2F33;
-  --file-explorer-filter-fg: #AAAAAA;
-  --file-explorer-filter-placeholder: #969696;
+  --textbox-bg: #2F2F33;
+  --textbox-fg: #AAAAAA;
+  --textbox-placeholder: #969696;
 
   --accent: #59822D;
   --accent-control: #59822D;
@@ -469,9 +469,9 @@
   --file-explorer-change-underlay: rgba(85, 85, 85, 0.13);
   --file-explorer-file-fg: #DDDDDD;
   --file-explorer-folder-fg: #DDDDDD;
-  --file-explorer-filter-bg: #BFBFBF;
-  --file-explorer-filter-fg: #BFBFBF;
-  --file-explorer-filter-placeholder: #969696;
+  --textbox-bg: #BFBFBF;
+  --textbox-fg: #BFBFBF;
+  --textbox-placeholder: #969696;
 
   --accent: #59822D;
   --accent-control: #59822D;
@@ -623,9 +623,9 @@
   --file-explorer-change-underlay: #1AEBFF;
   --file-explorer-file-fg: #FFFFFF;
   --file-explorer-folder-fg: #000000;
-  --file-explorer-filter-bg: #000000;
-  --file-explorer-filter-fg: #FFFFFF;
-  --file-explorer-filter-placeholder: #FFFFFF;
+  --textbox-bg: #000000;
+  --textbox-fg: #FFFFFF;
+  --textbox-placeholder: #FFFFFF;
 
   --accent: #FFFFFF;
   --accent-control: #000000;

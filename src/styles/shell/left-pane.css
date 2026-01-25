@@ -74,12 +74,12 @@
   padding-left: 24px;
   padding-right: 24px;
   height: 24px;
-  background-color: var(--file-explorer-filter-bg);
-  color: var(--file-explorer-filter-fg);
+  background-color: var(--textbox-bg);
+  color: var(--textbox-fg);
 }
 
 .file-explorer-filter-inline .file-filter-input::placeholder {
-  color: var(--file-explorer-filter-placeholder);
+  color: var(--textbox-placeholder);
 }
 
 .file-explorer-filter-inline .filter-clear {
