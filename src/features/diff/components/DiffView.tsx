@@ -97,6 +97,7 @@ export function DiffView() {
     getLeftView: () => splitEditorRef.current?.getLeftView() ?? null,
     getRightView: () => splitEditorRef.current?.getRightView() ?? null,
     getFocusedSide,
+    contentFilter: pipeline.contentFilter,
   });
 
   // Track comment positions through iterations (side-effect only)
@@ -334,6 +335,7 @@ export function DiffView() {
                 getActiveEditor={getActiveEditor}
                 viewMode={searchViewMode}
                 focusedSide={searchFocusedSide}
+                contentFilter={pipeline.contentFilter}
               />
               <GoToLinePanel
                 isOpen={goToLinePanelOpen}
@@ -400,6 +402,7 @@ export function DiffView() {
                 getActiveEditor={getActiveEditor}
                 viewMode={searchViewMode}
                 focusedSide={searchFocusedSide}
+                contentFilter={pipeline.contentFilter}
               />
               <GoToLinePanel
                 isOpen={goToLinePanelOpen}

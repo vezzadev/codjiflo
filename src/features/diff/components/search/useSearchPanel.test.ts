@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSearchPanel, type UseSearchPanelOptions } from './useSearchPanel';
 import type { EditorView } from '@codemirror/view';
+import type { ContentFilter } from '../../types';
 
 describe('useSearchPanel', () => {
   // Mock EditorView instances
@@ -236,6 +237,199 @@ describe('useSearchPanel', () => {
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockUnifiedView.focus).toHaveBeenCalled();
+    });
+  });
+
+  describe('auto-switch on content filter change', () => {
+    it('switches from left to right when left pane becomes hidden', async () => {
+      // Create mock DOM elements
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const mockLeftWithDom = { focus: vi.fn(), dom: leftDom } as unknown as EditorView;
+      const mockRightWithDom = { focus: vi.fn(), dom: rightDom } as unknown as EditorView;
+
+      // Start with both views available
+      let getLeftView = () => mockLeftWithDom as EditorView | null;
+      const getRightView = () => mockRightWithDom;
+
+      const { result, rerender } = renderHook(
+        (props: { contentFilter: ContentFilter }) =>
+          useSearchPanel({
+            viewMode: 'split',
+            getUnifiedView: () => null,
+            getLeftView,
+            getRightView,
+            getFocusedSide: () => null,
+            contentFilter: props.contentFilter,
+          }),
+        { initialProps: { contentFilter: 'both' as ContentFilter } }
+      );
+
+      // Click on left editor to set it as focused
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        leftDom.dispatchEvent(event);
+      });
+
+      expect(result.current.focusedSide).toBe('left');
+      expect(result.current.getActiveEditor()).toBe(mockLeftWithDom);
+
+      // Simulate content filter change that hides left pane
+      getLeftView = () => null;
+      rerender({ contentFilter: 'right' });
+
+      // Wait for microtask to complete
+      await vi.waitFor(() => {
+        expect(result.current.focusedSide).toBe('right');
+      });
+
+      expect(result.current.getActiveEditor()).toBe(mockRightWithDom);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
+    });
+
+    it('switches from right to left when right pane becomes hidden', async () => {
+      // Create mock DOM elements
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const mockLeftWithDom = { focus: vi.fn(), dom: leftDom } as unknown as EditorView;
+      const mockRightWithDom = { focus: vi.fn(), dom: rightDom } as unknown as EditorView;
+
+      // Start with both views available
+      const getLeftView = () => mockLeftWithDom;
+      let getRightView = () => mockRightWithDom as EditorView | null;
+
+      const { result, rerender } = renderHook(
+        (props: { contentFilter: ContentFilter }) =>
+          useSearchPanel({
+            viewMode: 'split',
+            getUnifiedView: () => null,
+            getLeftView,
+            getRightView,
+            getFocusedSide: () => null,
+            contentFilter: props.contentFilter,
+          }),
+        { initialProps: { contentFilter: 'both' as ContentFilter } }
+      );
+
+      // Click on right editor to set it as focused
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        rightDom.dispatchEvent(event);
+      });
+
+      expect(result.current.focusedSide).toBe('right');
+      expect(result.current.getActiveEditor()).toBe(mockRightWithDom);
+
+      // Simulate content filter change that hides right pane
+      getRightView = () => null;
+      rerender({ contentFilter: 'left' });
+
+      // Wait for microtask to complete
+      await vi.waitFor(() => {
+        expect(result.current.focusedSide).toBe('left');
+      });
+
+      expect(result.current.getActiveEditor()).toBe(mockLeftWithDom);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
+    });
+
+    it('auto-sets to right when no side focused and only right is available', async () => {
+      const mockRightWithDom = { focus: vi.fn() } as unknown as EditorView;
+
+      const { result } = renderHook(() =>
+        useSearchPanel({
+          viewMode: 'split',
+          getUnifiedView: () => null,
+          getLeftView: () => null,
+          getRightView: () => mockRightWithDom,
+          getFocusedSide: () => null,
+          contentFilter: 'right',
+        })
+      );
+
+      // Wait for microtask to complete
+      await vi.waitFor(() => {
+        expect(result.current.focusedSide).toBe('right');
+      });
+    });
+
+    it('auto-sets to left when no side focused and only left is available', async () => {
+      const mockLeftWithDom = { focus: vi.fn() } as unknown as EditorView;
+
+      const { result } = renderHook(() =>
+        useSearchPanel({
+          viewMode: 'split',
+          getUnifiedView: () => null,
+          getLeftView: () => mockLeftWithDom,
+          getRightView: () => null,
+          getFocusedSide: () => null,
+          contentFilter: 'left',
+        })
+      );
+
+      // Wait for microtask to complete
+      await vi.waitFor(() => {
+        expect(result.current.focusedSide).toBe('left');
+      });
+    });
+
+    it('getActiveEditor falls back to right when focused left is hidden', () => {
+      // Create mock DOM elements
+      const leftDom = document.createElement('div');
+      const rightDom = document.createElement('div');
+      document.body.appendChild(leftDom);
+      document.body.appendChild(rightDom);
+
+      const mockLeftWithDom = { focus: vi.fn(), dom: leftDom } as unknown as EditorView;
+      const mockRightWithDom = { focus: vi.fn(), dom: rightDom } as unknown as EditorView;
+
+      // Start with both views available
+      let getLeftView = () => mockLeftWithDom as EditorView | null;
+      const getRightView = () => mockRightWithDom;
+
+      const { result, rerender } = renderHook(
+        (props: { contentFilter: ContentFilter }) =>
+          useSearchPanel({
+            viewMode: 'split',
+            getUnifiedView: () => null,
+            getLeftView,
+            getRightView,
+            getFocusedSide: () => null,
+            contentFilter: props.contentFilter,
+          }),
+        { initialProps: { contentFilter: 'both' as ContentFilter } }
+      );
+
+      // Click on left editor to set it as focused
+      act(() => {
+        const event = new MouseEvent('mousedown', { bubbles: true });
+        leftDom.dispatchEvent(event);
+      });
+
+      expect(result.current.focusedSide).toBe('left');
+
+      // Hide left view but don't wait for auto-switch
+      getLeftView = () => null;
+      rerender({ contentFilter: 'right' });
+
+      // getActiveEditor should immediately fallback to right even before auto-switch completes
+      expect(result.current.getActiveEditor()).toBe(mockRightWithDom);
+
+      // Cleanup
+      document.body.removeChild(leftDom);
+      document.body.removeChild(rightDom);
     });
   });
 

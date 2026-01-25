@@ -479,23 +479,35 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
       rightEditorRef.current?.scrollToLine(targetLine, 'start');
     }, [scrollToRowIndex]);
 
+    const showLeft = contentFilter !== 'right';
+    const showRight = contentFilter !== 'left';
+
+    // Clear refs when panes become hidden (important for search panel to detect visibility changes)
+    useEffect(() => {
+      if (!showLeft) {
+        leftViewRef.current = null;
+      }
+      if (!showRight) {
+        rightViewRef.current = null;
+        // Use microtask to avoid lint error about setState in effect
+        queueMicrotask(() => setIsRightViewReady(false));
+      }
+    }, [showLeft, showRight]);
+
     // Expose imperative handle
     useImperativeHandle(
       ref,
       () => ({
-        getLeftView: () => leftViewRef.current,
-        getRightView: () => rightViewRef.current,
+        getLeftView: () => showLeft ? leftViewRef.current : null,
+        getRightView: () => showRight ? rightViewRef.current : null,
         scrollToLine: (line: number) => {
           leftEditorRef.current?.scrollToLine(line, 'start');
           rightEditorRef.current?.scrollToLine(line, 'start');
         },
         getScrollElement: () => leftViewRef.current?.scrollDOM ?? null,
       }),
-      []
+      [showLeft, showRight]
     );
-
-    const showLeft = contentFilter !== 'right';
-    const showRight = contentFilter !== 'left';
 
     return (
       <div
