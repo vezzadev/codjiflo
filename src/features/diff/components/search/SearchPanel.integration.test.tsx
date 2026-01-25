@@ -134,7 +134,7 @@ describe('SearchPanel Integration', () => {
   });
 
   describe('Escape key behavior', () => {
-    it('Escape closes search panel', () => {
+    it('Escape closes search panel when input is focused', () => {
       const onClose = vi.fn();
 
       render(
@@ -156,6 +156,36 @@ describe('SearchPanel Integration', () => {
 
       const input = screen.getByPlaceholderText('Find...');
       fireEvent.keyDown(input, { key: 'Escape' });
+
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('Escape closes search panel even when input is not focused (global handler)', () => {
+      const onClose = vi.fn();
+
+      render(
+        <SearchPanel
+          isOpen={true}
+          onClose={onClose}
+          getActiveEditor={() =>
+            ({
+              state: {
+                doc: { length: 1000 },
+                selection: { main: { from: 0 } },
+              },
+              dispatch: vi.fn(),
+              focus: vi.fn(),
+            } as unknown as EditorView)
+          }
+        />
+      );
+
+      // Blur the input so it's not focused
+      const input = screen.getByPlaceholderText('Find...');
+      input.blur();
+
+      // Fire Escape on the window (global handler)
+      fireEvent.keyDown(window, { key: 'Escape' });
 
       expect(onClose).toHaveBeenCalled();
     });

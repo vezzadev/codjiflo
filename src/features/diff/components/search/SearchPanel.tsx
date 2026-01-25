@@ -155,7 +155,6 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
 
     const currentEditor = getActiveEditor();
     if (currentEditor && currentEditor !== prevEditorRef.current) {
-      // Editor changed, re-apply search query
       const query = new SearchQuery({
         search: searchTerm,
         caseSensitive: options.caseSensitive,
@@ -165,7 +164,6 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       currentEditor.dispatch({
         effects: setSearchQuery.of(query),
       });
-      // Update match count for new editor
       debouncedCountRef.current(query, currentEditor);
     }
     prevEditorRef.current = currentEditor;
@@ -272,12 +270,15 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
     [handleFindNext, handleFindPrevious, onClose]
   );
 
-  // Global F3 handler
+  // Global keyboard handler for F3 and Escape
   useEffect(() => {
     if (!isOpen) return;
 
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'F3') {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      } else if (event.key === 'F3') {
         event.preventDefault();
         if (event.shiftKey) {
           handleFindPrevious();
@@ -289,7 +290,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
 
     window.addEventListener('keydown', handleGlobalKeyDown as unknown as EventListener);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown as unknown as EventListener);
-  }, [isOpen, handleFindNext, handleFindPrevious]);
+  }, [isOpen, handleFindNext, handleFindPrevious, onClose]);
 
   if (!isOpen) return null;
 
