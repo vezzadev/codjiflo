@@ -98,6 +98,7 @@ export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePane
         className="btn diff-goto-go-btn"
         onClick={goToLine}
         aria-label="Go to line"
+        title="Go to line (Enter)"
       >
         Go
       </button>
@@ -106,6 +107,7 @@ export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePane
         className="btn diff-panel-close-btn"
         onClick={onClose}
         aria-label="Close"
+        title="Close (Escape)"
       >
         <X size={14} />
       </button>

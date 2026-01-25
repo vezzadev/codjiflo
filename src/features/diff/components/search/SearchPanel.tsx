@@ -321,6 +321,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
           onClick={handleFindPrevious}
           disabled={!searchTerm}
           aria-label="Previous match"
+          title="Previous match (Shift+F3)"
         >
           <ChevronUp size={14} />
         </button>
@@ -330,6 +331,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
           onClick={handleFindNext}
           disabled={!searchTerm}
           aria-label="Next match"
+          title="Next match (F3)"
         >
           <ChevronDown size={14} />
         </button>
@@ -348,6 +350,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
         className="btn diff-panel-close-btn"
         onClick={onClose}
         aria-label="Close"
+        title="Close (Escape)"
       >
         <X size={14} />
       </button>
