@@ -19,7 +19,14 @@ import { DiffToolbar } from './DiffToolbar';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
 import { Minimap } from './Minimap';
-import { UnifiedDiffEditor, SplitDiffEditor, CommentPortalManager } from './codemirror';
+import {
+  UnifiedDiffEditor,
+  SplitDiffEditor,
+  CommentPortalManager,
+  type UnifiedDiffEditorHandle,
+  type SplitDiffEditorHandle,
+} from './codemirror';
+import { SearchPanel, GoToLinePanel, useSearchPanel, type FocusedSide } from './search';
 import { useCommentsStore, useCommentTracking, type ReviewThread } from '@/features/comments';
 import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
@@ -38,6 +45,9 @@ const LINE_HEIGHT = 23;
 export function DiffView() {
   const { files, selectedFileIndex, isLoading, resetChangeIndex, setTotalChangeCount, viewConfig } = useDiffStore();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const unifiedEditorRef = useRef<UnifiedDiffEditorHandle>(null);
+  const splitEditorRef = useRef<SplitDiffEditorHandle>(null);
+  const [focusedSide] = useState<FocusedSide>(null);
   const { currentPR, isLoading: isPRLoading } = usePRStore();
   const {
     isLoading: isLoadingComments,
@@ -57,6 +67,20 @@ export function DiffView() {
 
   // Draft comment management
   const draft = useDraftComment();
+
+  // Search and go to line panels
+  const {
+    searchPanelOpen,
+    goToLinePanelOpen,
+    closeAllPanels,
+    getActiveEditor,
+  } = useSearchPanel({
+    viewMode: pipeline.viewMode,
+    getUnifiedView: () => unifiedEditorRef.current?.getView() ?? null,
+    getLeftView: () => splitEditorRef.current?.getLeftView() ?? null,
+    getRightView: () => splitEditorRef.current?.getRightView() ?? null,
+    getFocusedSide: () => focusedSide,
+  });
 
   // Track comment positions through iterations (side-effect only)
   useCommentTracking();
@@ -249,6 +273,7 @@ export function DiffView() {
               onKeyDown={handleDiffKeyDown}
             >
               <UnifiedDiffEditor
+                ref={unifiedEditorRef}
                 key={pipeline.filename ?? 'diff-editor'}
                 diffLines={pipeline.diffLines}
                 language={pipeline.language}
@@ -286,6 +311,16 @@ export function DiffView() {
                 showComments={viewConfig.showComments}
                 visibleRowRange={visibleRowRange}
               />
+              <SearchPanel
+                isOpen={searchPanelOpen}
+                onClose={closeAllPanels}
+                getActiveEditor={getActiveEditor}
+              />
+              <GoToLinePanel
+                isOpen={goToLinePanelOpen}
+                onClose={closeAllPanels}
+                getActiveEditor={getActiveEditor}
+              />
             </div>
           ) : (
             <div
@@ -302,6 +337,7 @@ export function DiffView() {
               onKeyDown={handleDiffKeyDown}
             >
               <SplitDiffEditor
+                ref={splitEditorRef}
                 alignedLines={pipeline.alignedLines}
                 language={pipeline.language}
                 containerHeight={containerHeight}
@@ -338,6 +374,16 @@ export function DiffView() {
                 showFullFile={viewConfig.showFullFile}
                 showComments={viewConfig.showComments}
                 visibleRowRange={visibleRowRange}
+              />
+              <SearchPanel
+                isOpen={searchPanelOpen}
+                onClose={closeAllPanels}
+                getActiveEditor={getActiveEditor}
+              />
+              <GoToLinePanel
+                isOpen={goToLinePanelOpen}
+                onClose={closeAllPanels}
+                getActiveEditor={getActiveEditor}
               />
             </div>
           )

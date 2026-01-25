@@ -1,0 +1,198 @@
+/**
+ * Search and Go to Line Panel Styles
+ *
+ * Floating panels for Find and Go to Line functionality.
+ * Positioned at top-right of diff content area.
+ */
+
+/* ============================================
+   BASE PANEL STYLES
+   ============================================ */
+.diff-search-panel,
+.diff-goto-panel {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--window-bg);
+  border: 1px solid var(--combobox-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   SEARCH PANEL
+   ============================================ */
+.diff-search-panel {
+  flex-wrap: wrap;
+  max-width: 420px;
+}
+
+.diff-search-input {
+  flex: 1 1 180px;
+  min-width: 150px;
+}
+
+.diff-search-options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diff-search-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--main-fg);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.diff-search-option input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  background-color: var(--control-bg);
+  border: 1px solid var(--checkbox-border);
+  cursor: pointer;
+  position: relative;
+}
+
+.diff-search-option input[type="checkbox"]:hover {
+  background-color: var(--checkbox-hover);
+}
+
+.diff-search-option input[type="checkbox"]:focus {
+  outline: none;
+  border-color: var(--focus-border);
+}
+
+.diff-search-option input[type="checkbox"]:checked {
+  background-color: var(--toggle-btn-toggled);
+}
+
+.diff-search-option input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--main-fg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.diff-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.diff-search-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  color: var(--main-fg);
+  cursor: pointer;
+}
+
+.diff-search-nav-btn:hover {
+  background-color: var(--btn-hover);
+}
+
+.diff-search-nav-btn:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.diff-search-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.diff-search-match-count {
+  font-size: 12px;
+  color: var(--watermark-text);
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ============================================
+   GO TO LINE PANEL
+   ============================================ */
+.diff-goto-panel {
+  gap: 8px;
+}
+
+.diff-goto-label {
+  font-size: 13px;
+  color: var(--main-fg);
+  white-space: nowrap;
+}
+
+.diff-goto-input {
+  width: 80px;
+  text-align: center;
+}
+
+.diff-goto-go-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  color: var(--main-fg);
+  cursor: pointer;
+}
+
+.diff-goto-go-btn:hover {
+  background-color: var(--btn-hover);
+}
+
+.diff-goto-go-btn:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+/* ============================================
+   CLOSE BUTTON (shared)
+   ============================================ */
+.diff-panel-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--main-fg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.diff-panel-close-btn:hover {
+  opacity: 1;
+  background-color: var(--close-btn-hover);
+  border-color: var(--close-btn-border);
+}
+
+.diff-panel-close-btn:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+  opacity: 1;
+}
