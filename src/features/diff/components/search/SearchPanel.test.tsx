@@ -307,6 +307,45 @@ describe('SearchPanel', () => {
     });
   });
 
+  describe('panel close behavior', () => {
+    it('clears search term when panel is closed and reopened', () => {
+      const { rerender } = render(<SearchPanel {...defaultProps} isOpen={true} />);
+
+      // Type a search term
+      const input = screen.getByPlaceholderText('Find...');
+      fireEvent.change(input, { target: { value: 'test search' } });
+      expect(input).toHaveValue('test search');
+
+      // Close the panel
+      rerender(<SearchPanel {...defaultProps} isOpen={false} />);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Reopen the panel
+      rerender(<SearchPanel {...defaultProps} isOpen={true} />);
+
+      // Search input should be empty
+      const reopenedInput = screen.getByPlaceholderText('Find...');
+      expect(reopenedInput).toHaveValue('');
+    });
+
+    it('clears CodeMirror search query when panel closes', async () => {
+      const { setSearchQuery } = await import('@codemirror/search');
+      const { rerender } = render(<SearchPanel {...defaultProps} isOpen={true} />);
+
+      // Type a search term
+      const input = screen.getByPlaceholderText('Find...');
+      fireEvent.change(input, { target: { value: 'test' } });
+      mockDispatch.mockClear();
+
+      // Close the panel
+      rerender(<SearchPanel {...defaultProps} isOpen={false} />);
+
+      // Should have dispatched a clear search query
+      expect(mockDispatch).toHaveBeenCalled();
+      expect(setSearchQuery.of).toHaveBeenCalled();
+    });
+  });
+
   describe('debounce behavior', () => {
     beforeEach(() => {
       vi.useFakeTimers();
