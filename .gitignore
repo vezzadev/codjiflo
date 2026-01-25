@@ -157,3 +157,5 @@ public/sql-wasm/
 
 # Claude Code temporary files
 tmpclaude-*
+trace-export/
+demos/
