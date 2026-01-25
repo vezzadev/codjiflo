@@ -86,9 +86,9 @@ Tests in this project are finely tuned to run very fast. Each E2E test case MUST
 Leave the tests better than how you found them. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
 
 #### Don't guess - Use the Playwright test trace to understand what is happening
-When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code.
+When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code. The codebase uses an unreleased version of Playwright with a **new feature called export-trace that helps with investigations**.
 
-1. Run `npx playwright export-trace <trace.zip>` - it converts the trace to markdown and contains everything you might need to troubleshoot: Step-by-step action timeline with links to exact DOM state before and after of each action, full error details with stack traces, browser console output, HTTP request log
+1. Run `npx playwright export-trace <trace.zip>` - it converts the trace to markdown and contains everything you might need to troubleshoot: Step-by-step action timeline with links to exact DOM state before and after of each action, full error details with stack traces, browser console output, HTTP request log, etc.
 2. Follow the instructions in the README inside the trace output folder to start an HTTP server
 3. Use Playwright MCP to open the desired snapshot HTML and have full debugging capabilities
 4. Look for actual failures: missing elements, wrong content, API errors, auth issues
