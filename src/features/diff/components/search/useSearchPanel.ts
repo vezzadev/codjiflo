@@ -8,6 +8,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { EditorView } from '@codemirror/view';
+import type { ContentFilter } from '../../types';
 
 export type ViewMode = 'inline' | 'split';
 export type FocusedSide = 'left' | 'right' | null;
@@ -23,6 +24,8 @@ export interface UseSearchPanelOptions {
   getRightView: () => EditorView | null;
   /** Get the currently focused side in split mode (checks document.activeElement) */
   getFocusedSide: () => FocusedSide;
+  /** Content filter - used to detect when pane visibility changes */
+  contentFilter?: ContentFilter;
 }
 
 export interface UseSearchPanelReturn {
@@ -51,7 +54,7 @@ export interface UseSearchPanelReturn {
  * In split mode, returns the focused side's editor (defaults to right).
  */
 export function useSearchPanel(options: UseSearchPanelOptions): UseSearchPanelReturn {
-  const { viewMode, getUnifiedView, getLeftView, getRightView, getFocusedSide } = options;
+  const { viewMode, getUnifiedView, getLeftView, getRightView, getFocusedSide, contentFilter } = options;
 
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [goToLinePanelOpen, setGoToLinePanelOpen] = useState(false);
@@ -63,6 +66,32 @@ export function useSearchPanel(options: UseSearchPanelOptions): UseSearchPanelRe
 
   // Effective focused side: only relevant in split mode
   const focusedSide = viewMode === 'split' ? clickedSide : null;
+
+  // Auto-switch clickedSide when current side becomes hidden (e.g., content filter changes)
+  useEffect(() => {
+    if (viewMode !== 'split') return;
+
+    const leftView = getLeftView();
+    const rightView = getRightView();
+
+    // Use microtask to defer setState and avoid lint error about setState in effect
+    // If focused on left but left is hidden, switch to right
+    if (clickedSide === 'left' && !leftView && rightView) {
+      queueMicrotask(() => setClickedSide('right'));
+    }
+    // If focused on right but right is hidden, switch to left
+    else if (clickedSide === 'right' && !rightView && leftView) {
+      queueMicrotask(() => setClickedSide('left'));
+    }
+    // If no side is focused yet but only one side is available, set it
+    else if (clickedSide === null) {
+      if (rightView && !leftView) {
+        queueMicrotask(() => setClickedSide('right'));
+      } else if (leftView && !rightView) {
+        queueMicrotask(() => setClickedSide('left'));
+      }
+    }
+  }, [viewMode, clickedSide, getLeftView, getRightView, contentFilter]);
 
   // Track which editor was clicked in split mode
   // Uses mousedown instead of focus because readonly CodeMirror editors
@@ -112,8 +141,12 @@ export function useSearchPanel(options: UseSearchPanelOptions): UseSearchPanelRe
     // We use the state variable instead of getFocusedSide() because
     // when the search panel is open, document.activeElement is the search input
     if (clickedSide === 'left') {
-      return getLeftView();
+      const leftView = getLeftView();
+      // If left is focused but not available (hidden by content filter), fallback to right
+      if (leftView) return leftView;
+      return getRightView();
     }
+    // If right is default/focused but not available (hidden by content filter), fallback to left
     return getRightView() ?? getLeftView();
   }, [viewMode, getUnifiedView, getLeftView, getRightView, clickedSide]);
 

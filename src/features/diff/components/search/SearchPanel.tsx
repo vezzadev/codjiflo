@@ -17,6 +17,7 @@ import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery } from '@codemirror/search';
 import type { ViewMode, FocusedSide } from './useSearchPanel';
+import type { ContentFilter } from '../../types';
 import './search-go-to-panel.css';
 
 export interface SearchPanelProps {
@@ -30,6 +31,8 @@ export interface SearchPanelProps {
   viewMode?: ViewMode;
   /** Currently focused side in split mode */
   focusedSide?: FocusedSide;
+  /** Content filter (left/both/right) - triggers search recalculation when changed */
+  contentFilter?: ContentFilter;
 }
 
 export interface SearchOptions {
@@ -94,7 +97,7 @@ function countMatches(query: SearchQuery, view: EditorView): MatchPosition | nul
 /**
  * Floating panel for find functionality.
  */
-export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focusedSide }: SearchPanelProps) {
+export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focusedSide, contentFilter }: SearchPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [options, setOptions] = useState<SearchOptions>({
@@ -172,7 +175,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
       debouncedCountRef.current(query, currentEditor);
     }
     prevEditorRef.current = currentEditor;
-  }, [isOpen, searchTerm, options, getActiveEditor, focusedSide]);
+  }, [isOpen, searchTerm, options, getActiveEditor, focusedSide, contentFilter]);
 
   const updateSearch = useCallback((term: string, opts: SearchOptions) => {
     const view = getActiveEditor();
