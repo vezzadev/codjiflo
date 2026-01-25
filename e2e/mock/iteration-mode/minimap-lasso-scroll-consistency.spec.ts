@@ -132,13 +132,10 @@ ${patchAddedLines}
       page.getByRole("heading", { name: "src/large-additions.ts" })
     ).toBeVisible();
 
-    // Enable full file mode to see all content
-    await page.keyboard.press("f");
+    // Full file mode is now default - ensure we're in it
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Hide comments to show lasso
-    await page.keyboard.press("d");
-
+    // Comments are hidden by default - lasso should already be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
     await waitForLasso(page);
