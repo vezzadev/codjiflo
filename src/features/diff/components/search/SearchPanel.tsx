@@ -33,6 +33,40 @@ export interface SearchOptions {
   regexp: boolean;
 }
 
+interface MatchPosition {
+  /** 1-based index of the match at or before cursor position */
+  currentIndex: number;
+  /** Total number of matches */
+  total: number;
+}
+
+/**
+ * Count matches and find the current match position relative to cursor.
+ * Returns the index of the last match at or before the cursor position.
+ */
+function countMatches(query: SearchQuery, view: EditorView): MatchPosition | null {
+  try {
+    const cursor = query.getCursor(view.state.doc);
+    let total = 0;
+    let currentIndex = 0;
+    const selection = view.state.selection.main.from;
+    let result = cursor.next();
+
+    while (!result.done) {
+      total++;
+      if (result.value.from <= selection) {
+        currentIndex = total;
+      }
+      result = cursor.next();
+    }
+
+    return { currentIndex, total };
+  } catch {
+    // Invalid regex
+    return null;
+  }
+}
+
 /**
  * Floating panel for find functionality.
  */
@@ -93,24 +127,11 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
 
     // Count matches
     if (term) {
-      try {
-        const cursor = query.getCursor(view.state.doc);
-        let total = 0;
-        let current = 0;
-        const selection = view.state.selection.main.from;
-        let result = cursor.next();
-
-        while (!result.done) {
-          total++;
-          if (result.value.from <= selection) {
-            current = total;
-          }
-          result = cursor.next();
-        }
-
-        setMatchCount(total > 0 ? { current: Math.max(1, current), total } : { current: 0, total: 0 });
-      } catch {
-        // Invalid regex
+      const matches = countMatches(query, view);
+      if (matches) {
+        const { currentIndex, total } = matches;
+        setMatchCount(total > 0 ? { current: Math.max(1, currentIndex), total } : { current: 0, total: 0 });
+      } else {
         setMatchCount({ current: 0, total: 0 });
       }
     } else {
@@ -146,24 +167,10 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
     // Update current match position
     const query = getSearchQuery(view.state);
     if (query.search) {
-      try {
-        const cursor = query.getCursor(view.state.doc);
-        let total = 0;
-        let current = 0;
-        const selection = view.state.selection.main.from;
-        let result = cursor.next();
-
-        while (!result.done) {
-          total++;
-          if (result.value.from <= selection) {
-            current = total;
-          }
-          result = cursor.next();
-        }
-
-        setMatchCount(total > 0 ? { current: Math.min(current + 1, total), total } : null);
-      } catch {
-        // Invalid regex
+      const matches = countMatches(query, view);
+      if (matches && matches.total > 0) {
+        // After findNext, cursor moved forward so add 1 to get correct position
+        setMatchCount({ current: Math.min(matches.currentIndex + 1, matches.total), total: matches.total });
       }
     }
   }, [getActiveEditor, searchTerm]);
@@ -178,24 +185,9 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
     // Update current match position
     const query = getSearchQuery(view.state);
     if (query.search) {
-      try {
-        const cursor = query.getCursor(view.state.doc);
-        let total = 0;
-        let current = 0;
-        const selection = view.state.selection.main.from;
-        let result = cursor.next();
-
-        while (!result.done) {
-          total++;
-          if (result.value.from <= selection) {
-            current = total;
-          }
-          result = cursor.next();
-        }
-
-        setMatchCount(total > 0 ? { current: Math.max(current, 1), total } : null);
-      } catch {
-        // Invalid regex
+      const matches = countMatches(query, view);
+      if (matches && matches.total > 0) {
+        setMatchCount({ current: Math.max(matches.currentIndex, 1), total: matches.total });
       }
     }
   }, [getActiveEditor, searchTerm]);
@@ -265,6 +257,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
             type="checkbox"
             checked={options.caseSensitive}
             onChange={() => handleOptionChange('caseSensitive')}
+            aria-label="Match case"
           />
           <span>Match Case</span>
         </label>
@@ -273,6 +266,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
             type="checkbox"
             checked={options.wholeWord}
             onChange={() => handleOptionChange('wholeWord')}
+            aria-label="Whole word"
           />
           <span>Whole Word</span>
         </label>
@@ -281,6 +275,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
             type="checkbox"
             checked={options.regexp}
             onChange={() => handleOptionChange('regexp')}
+            aria-label="Regular expression"
           />
           <span>Regex</span>
         </label>
@@ -308,7 +303,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor }: SearchPanelPro
       </div>
 
       {matchCount !== null && (
-        <span className="diff-search-match-count">
+        <span className="diff-search-match-count" aria-live="polite" aria-atomic="true">
           {matchCount.total > 0
             ? `${matchCount.current} of ${matchCount.total}`
             : 'No results'}
