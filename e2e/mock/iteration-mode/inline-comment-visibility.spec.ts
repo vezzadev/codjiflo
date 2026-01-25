@@ -156,6 +156,9 @@ diff --git a/src/example.ts b/src/example.ts
       page.getByRole("heading", { name: "src/example.ts" })
     ).toBeVisible();
 
+    // Comments are hidden by default, so show them first
+    await page.keyboard.press("d");
+
     // Find the comment thread region
     const threadRegion = page.getByRole("region", {
       name: /Thread on line 3/i,

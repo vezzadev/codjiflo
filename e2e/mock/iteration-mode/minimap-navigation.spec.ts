@@ -141,7 +141,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  test("shows minimap when viewing a file", async ({ page }) => {
+  test("shows minimap when viewing a file in full-file mode (default)", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     // Wait for file navigation and click file
@@ -154,15 +154,12 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode first (F key)
-    await page.keyboard.press("f");
-
-    // Minimap should be visible
+    // Minimap should be visible in full file mode (default)
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
   });
 
-  test("shows lasso when comments hidden in full-file mode", async ({ page }) => {
+  test("shows lasso when comments hidden (default) in full-file mode (default)", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -173,15 +170,10 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode and wait for it to take effect
-    await page.keyboard.press("f");
-    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
+    // Wait for toolbar to show "Full File" label (indicating full-file mode is active - default)
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Hide comments to show lasso (D key)
-    await page.keyboard.press("d");
-
-    // Minimap should show lasso when comments are hidden
+    // Minimap should show lasso when comments are hidden (default)
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
@@ -200,7 +192,14 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Ensure we're in changes-only mode (default)
+    // Toggle to changes-only mode (default is full-file now)
+    await page.keyboard.press("f");
+    
+    // Wait for file content dropdown to show "Changes" (not just any "Changes" text)
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    const fileContentDropdown = toolbar.getByRole("button", { name: "File content" });
+    await expect(fileContentDropdown).toContainText("Changes");
+
     // Minimap should be visible but lasso hidden
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
@@ -209,7 +208,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await expect(lasso).toBeHidden();
   });
 
-  test("clicking minimap scrolls to position", async ({ page }) => {
+  test("clicking minimap scrolls to position in full-file mode", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -220,8 +219,8 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode to see full file content
-    await page.keyboard.press("f");
+    // Full file mode is default - verify it's active
+    await expect(page.getByText("Full File")).toBeVisible();
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
@@ -258,18 +257,13 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Enable full file mode and wait for it to take effect
-    await page.keyboard.press("f");
-    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
+    // Full file mode is default - verify it's active
     await expect(page.getByText("Full File")).toBeVisible();
-
-    // Hide comments to show lasso (D key)
-    await page.keyboard.press("d");
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
-    // Wait for lasso to appear (depends on scroll container being found and viewportRatio calculated)
+    // Wait for lasso to appear (comments hidden by default)
     await waitForLasso(page);
 
     // Get initial lasso state

@@ -47,7 +47,7 @@ export function suppressWarnings() {
     },
   ];
 
-  test("displays newly added file content without error when full file is enabled (Issue #195)", async ({
+  test("displays newly added file content without error in full file mode (default, Issue #195)", async ({
     page,
   }) => {
     // Mock mode only test
@@ -76,10 +76,10 @@ export function suppressWarnings() {
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
 
-    // Verify the file content is shown (from patch)
+    // Verify the file content is shown
     await expect(diffRegion.getByText("suppressWarnings")).toBeVisible();
 
-    // Get the toolbar and enable full file view
+    // Get the toolbar and verify full file mode is active (default)
     const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(toolbar).toBeVisible();
 
@@ -88,9 +88,7 @@ export function suppressWarnings() {
     });
     await expect(fileContentDropdown).toBeVisible();
 
-    // Select full file mode from dropdown
-    await fileContentDropdown.click();
-    await page.getByRole("option", { name: /Full File/i }).click();
+    // Verify default is Full File
     await expect(fileContentDropdown).toContainText("Full File");
 
     // KEY ASSERTION: No error banner should be displayed

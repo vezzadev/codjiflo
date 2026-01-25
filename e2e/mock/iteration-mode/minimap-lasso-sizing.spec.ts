@@ -125,13 +125,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("button", { name: /Iteration \d+/ })
     ).toBeVisible();
 
-    // Enable full file mode and wait for it to take effect
-    await page.keyboard.press("f");
+    // Full file is default, ensure we stay in full file mode
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Hide comments to show lasso
-    await page.keyboard.press("d");
-
+    // Comments are hidden by default, so lasso should be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
     await waitForLasso(page);
@@ -228,25 +225,21 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("button", { name: /Iteration \d+/ })
     ).toBeVisible();
 
-    // Enable full file mode and wait for it to take effect
-    await page.keyboard.press("f");
-    // Wait for toolbar to show "Full File" label (indicating full-file mode is active)
+    // Full file is now default - toggle twice to ensure we're in full file mode
+    await page.keyboard.press("f"); // Toggle to changes-only
+    await page.keyboard.press("f"); // Toggle back to full-file
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Hide comments to show lasso
-    await page.keyboard.press("d");
-
+    // Full file is default, comments hidden by default - lasso should be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-
-    // Wait for lasso to appear
     await waitForLasso(page);
 
+    const lassoResult = await getLassoHeight(page);
     // Get minimap bar height (approximately containerHeight - 2*PADDING_VERTICAL)
     const minimapBox = await minimap.boundingBox();
     if (!minimapBox) throw new Error("Minimap bounding box not found");
 
-    const lassoResult = await getLassoHeight(page);
     const barHeight = minimapBox.height - 20; // Approximate: height - 2*PADDING_VERTICAL(10)
 
     // For a 500-line file with ~30-50 visible lines, viewportRatio should be ~0.06-0.10
@@ -276,13 +269,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("button", { name: /Iteration \d+/ })
     ).toBeVisible();
 
-    // Enable full file mode and wait for it to take effect
-    await page.keyboard.press("f");
+    // Full file is now default - ensure we stay in full file mode
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Hide comments to show lasso
-    await page.keyboard.press("d");
-
+    // Full file is default, comments hidden by default - lasso should be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
     await waitForLasso(page);

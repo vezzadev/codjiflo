@@ -70,12 +70,13 @@ test.describe("Diff Area Theme Background", () => {
     const editor = CMEditor.from(diffRegion);
     await expect(editor.view).toBeVisible();
 
-    // Get initial background (light theme uses --main-bg = #f0f0f0)
+    // Get initial background color
+    // Color depends on the default diffColorScheme (now 'codeflow-classic')
+    // CodeFlow Classic uses white background: #ffffff = rgb(255, 255, 255)
     const initialBg = await editor.view.evaluate(
       (el) => getComputedStyle(el).backgroundColor
     );
-    // Light theme default should be #f0f0f0 = rgb(240, 240, 240)
-    expect(initialBg).toBe("rgb(240, 240, 240)");
+    expect(initialBg).toBe("rgb(255, 255, 255)");
 
     // Open appearance settings
     await page.getByRole("button", { name: "Appearance Settings" }).click();
