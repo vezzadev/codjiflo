@@ -187,6 +187,22 @@ export const diffTheme = EditorView.theme({
   },
 
   // ============================================
+  // Search match highlighting
+  // Uses purple to be distinct from diff colors (red/green/blue/yellow)
+  // ============================================
+
+  '.cm-searchMatch': {
+    backgroundColor: 'var(--search-match-bg)',
+    borderRadius: '2px',
+  },
+
+  '.cm-searchMatch-selected': {
+    backgroundColor: 'var(--search-match-selected-bg)',
+    outline: 'var(--search-match-selected-outline)',
+    borderRadius: '2px',
+  },
+
+  // ============================================
   // Comment widget styles
   // ============================================
 

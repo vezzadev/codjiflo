@@ -15,7 +15,7 @@ import {
 } from 'react';
 import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
-import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery } from '@codemirror/search';
+import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery, openSearchPanel, closeSearchPanel } from '@codemirror/search';
 import type { ViewMode, FocusedSide } from './useSearchPanel';
 import type { ContentFilter } from '../../types';
 import './search-go-to-panel.css';
@@ -126,13 +126,22 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
     return () => debouncedFn.cancel();
   }, []);
 
-  // Focus input when panel opens
+  // Focus input and open CodeMirror search panel state when panel opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (isOpen) {
+      // Open CodeMirror's internal search panel state to enable search highlighting
+      // Our createPanel config returns a dummy element, so this is just for state
+      const view = getActiveEditor();
+      if (view) {
+        openSearchPanel(view);
+      }
+
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, getActiveEditor]);
 
   // Clear search state and CodeMirror query when panel closes
   const prevIsOpen = useRef(isOpen);
@@ -147,9 +156,8 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
 
       const view = getActiveEditor();
       if (view) {
-        view.dispatch({
-          effects: setSearchQuery.of(new SearchQuery({ search: '' })),
-        });
+        // Close CodeMirror's internal search panel state (clears highlights)
+        closeSearchPanel(view);
       }
     }
     prevIsOpen.current = isOpen;
@@ -230,8 +238,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
     if (query.search) {
       const matches = countMatches(query, view);
       if (matches && matches.total > 0) {
-        // After findNext, cursor moved forward so add 1 to get correct position
-        setMatchCount({ current: Math.min(matches.currentIndex + 1, matches.total), total: matches.total });
+        setMatchCount({ current: Math.max(matches.currentIndex, 1), total: matches.total });
       }
     }
   }, [getActiveEditor, searchTerm]);

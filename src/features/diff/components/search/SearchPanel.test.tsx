@@ -42,6 +42,8 @@ vi.mock('@codemirror/search', () => {
       search: '',
       getCursor: createMockCursor,
     }),
+    openSearchPanel: vi.fn(),
+    closeSearchPanel: vi.fn(),
   };
 });
 
@@ -331,23 +333,19 @@ describe('SearchPanel', () => {
       expect(reopenedInput).toHaveValue('');
     });
 
-    it('clears CodeMirror search query when panel closes', () => {
+    it('closes CodeMirror search panel when panel closes', async () => {
+      const { closeSearchPanel } = await import('@codemirror/search');
       const { rerender } = render(<SearchPanel {...defaultProps} isOpen={true} />);
 
       // Type a search term
       const input = screen.getByPlaceholderText('Find...');
       fireEvent.change(input, { target: { value: 'test' } });
-      mockDispatch.mockClear();
 
       // Close the panel
       rerender(<SearchPanel {...defaultProps} isOpen={false} />);
 
-      // Should have dispatched a clear search query with an effect
-      expect(mockDispatch).toHaveBeenCalledWith(
-        expect.objectContaining<{ effects: unknown }>({
-          effects: expect.objectContaining({ type: 'search-query' }) as unknown,
-        })
-      );
+      // Should have called closeSearchPanel to clear the search state
+      expect(closeSearchPanel).toHaveBeenCalled();
     });
   });
 

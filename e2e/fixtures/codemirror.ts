@@ -45,3 +45,12 @@ CMEditor.registerExtension('diff', {
   gutterLeft: 'cm-diff-gutter-left',
   gutterRight: 'cm-diff-gutter-right',
 });
+
+/**
+ * Register CodeMirror search extension classes.
+ * These are from @codemirror/search.
+ */
+CMEditor.registerExtension('search', {
+  match: 'cm-searchMatch',
+  matchSelected: 'cm-searchMatch-selected',
+});
