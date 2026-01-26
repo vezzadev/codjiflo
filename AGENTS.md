@@ -24,6 +24,23 @@ This is a **requirement**:
 * **Any changes:** `npm run test:all` must pass
 * **New features:** Several unit tests + some integration tests + 1-2 new E2E tests + manual testing sanity check with Playwright
 
+### Running Specific Tests (Vitest)
+**Important:** This project uses **Vitest** (not Jest), so Jest-specific flags like `--testPathPattern` will **not work**.
+
+To run tests matching a specific file or pattern, use Vitest's filter argument:
+```bash
+# Run tests in files matching "DiffToolbar"
+npm run test -- DiffToolbar
+
+# Equivalent to Jest's: npm run test -- --testPathPattern="DiffToolbar"
+```
+
+For filtering by test name (within files), use `--testNamePattern` or `-t`:
+```bash
+# Run specific test cases by name
+npm run test -- -t "should render toolbar"
+```
+
 | Type | Pattern | Notes |
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
