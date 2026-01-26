@@ -42,6 +42,8 @@ vi.mock('@codemirror/search', () => {
       search: '',
       getCursor: () => ({ next: () => ({ done: true }) }),
     }),
+    openSearchPanel: vi.fn(),
+    closeSearchPanel: vi.fn(),
   };
 });
 

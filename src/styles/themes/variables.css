@@ -197,6 +197,11 @@
   --collapse-hover: #000000;
   --watermark-text: #A0A0A0;
   --badge-merged: #6f42c1;
+
+  /* Search match highlighting (purple - distinct from diff red/green/blue/yellow) */
+  --search-match-bg: rgba(147, 51, 234, 0.3);
+  --search-match-selected-bg: rgba(147, 51, 234, 0.7);
+  --search-match-selected-outline: 2px solid rgba(147, 51, 234, 0.9);
 }
 
 /* ============================================
@@ -350,6 +355,11 @@
   --collapse-hover: #AAAAAA;
   --watermark-text: #BBB;
   --badge-merged: #6f42c1;
+
+  /* Search match highlighting (purple - visible on dark backgrounds) */
+  --search-match-bg: rgba(168, 85, 247, 0.35);
+  --search-match-selected-bg: rgba(168, 85, 247, 0.75);
+  --search-match-selected-outline: 2px solid rgba(192, 132, 252, 1);
 }
 
 /* ============================================
@@ -503,6 +513,11 @@
   --collapse-hover: #FFFFFF;
   --watermark-text: #CCCCCC;
   --badge-merged: #B18AE6;
+
+  /* Search match highlighting (purple - visible on black backgrounds) */
+  --search-match-bg: rgba(192, 132, 252, 0.4);
+  --search-match-selected-bg: rgba(192, 132, 252, 0.8);
+  --search-match-selected-outline: 2px solid rgba(216, 180, 254, 1);
 }
 
 /* ============================================
@@ -657,6 +672,11 @@
   --collapse-hover: #FFFFFF;
   --watermark-text: #FFFFFF;
   --badge-merged: #00FFFF;
+
+  /* Search match highlighting (magenta - high visibility for accessibility) */
+  --search-match-bg: rgba(255, 0, 255, 0.4);
+  --search-match-selected-bg: rgba(255, 0, 255, 0.85);
+  --search-match-selected-outline: 3px solid #FF00FF;
 }
 
 /* ============================================
