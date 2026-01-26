@@ -72,6 +72,11 @@ test.describe("Diff View - Mock Only Tests", () => {
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
 
+    // Switch to changes-only mode (test was written for this mode)
+    await page.keyboard.press("c");
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Changes")).toBeVisible();
+
     // Before enabling whitespace visibility, verify syntax highlighting is present.
     // CodeMirror uses classes for syntax highlighting. Wait for syntax tokens to appear
     // by checking for .ͼ (CodeMirror highlight class prefix) or .tok- classes.
@@ -157,6 +162,11 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
+
+    // Switch to changes-only mode (test was written for this mode)
+    await page.keyboard.press("c");
+    const toolbar2 = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar2.getByText("Changes")).toBeVisible();
 
     // Get the toolbar
     const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });

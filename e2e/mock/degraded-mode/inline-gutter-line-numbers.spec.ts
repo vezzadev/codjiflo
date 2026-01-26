@@ -78,6 +78,14 @@ test.describe("Inline mode gutter line numbers", () => {
     await fileNav.getByText("example.ts").click();
 
     // Wait for diff to render
+    await expect(
+      page.getByRole("heading", { name: "src/example.ts" })
+    ).toBeVisible();
+
+    // Switch to changes-only mode (tests were written for this mode)
+    await page.keyboard.press("c");
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Changes")).toBeVisible();
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
     return diffRegion;
