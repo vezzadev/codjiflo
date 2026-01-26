@@ -308,7 +308,7 @@ describe('SearchPanel', () => {
   });
 
   describe('panel close behavior', () => {
-    it('clears search term when panel is closed and reopened', () => {
+    it('clears search term when panel is closed and reopened', async () => {
       const { rerender } = render(<SearchPanel {...defaultProps} isOpen={true} />);
 
       // Type a search term
@@ -316,9 +316,12 @@ describe('SearchPanel', () => {
       fireEvent.change(input, { target: { value: 'test search' } });
       expect(input).toHaveValue('test search');
 
-      // Close the panel
+      // Close the panel - the clear happens via queueMicrotask
       rerender(<SearchPanel {...defaultProps} isOpen={false} />);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Wait for microtask to complete (setSearchTerm is deferred)
+      await Promise.resolve();
 
       // Reopen the panel
       rerender(<SearchPanel {...defaultProps} isOpen={true} />);
@@ -328,8 +331,7 @@ describe('SearchPanel', () => {
       expect(reopenedInput).toHaveValue('');
     });
 
-    it('clears CodeMirror search query when panel closes', async () => {
-      const { setSearchQuery } = await import('@codemirror/search');
+    it('clears CodeMirror search query when panel closes', () => {
       const { rerender } = render(<SearchPanel {...defaultProps} isOpen={true} />);
 
       // Type a search term
@@ -340,9 +342,12 @@ describe('SearchPanel', () => {
       // Close the panel
       rerender(<SearchPanel {...defaultProps} isOpen={false} />);
 
-      // Should have dispatched a clear search query
-      expect(mockDispatch).toHaveBeenCalled();
-      expect(setSearchQuery.of).toHaveBeenCalled();
+      // Should have dispatched a clear search query with an effect
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining<{ effects: unknown }>({
+          effects: expect.objectContaining({ type: 'search-query' }) as unknown,
+        })
+      );
     });
   });
 
