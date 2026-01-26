@@ -8,6 +8,7 @@ import {
   type MockComment,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Comment toggle with 'd' shortcut", () => {
   const owner = "test";
@@ -106,6 +107,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({
@@ -121,7 +123,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  test("shows lasso in full-file mode when comments are hidden (default)", async ({ page }) => {
+  test("pressing 'd' hides comments and shows lasso in full-file mode", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     // Navigate to the file with comments
@@ -133,6 +135,9 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
       page.getByRole("heading", { name: "src/commented-file.ts" })
     ).toBeVisible();
 
+    // Enable full file mode first
+    await page.keyboard.press("f");
+
     // Get the diff content region (where inline comments appear)
     const diffRegion = page.getByRole("region", { name: /Diff content for/i });
     await expect(diffRegion).toBeVisible();
@@ -141,25 +146,26 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     // This ensures the comment row is scrolled into view
     await page.keyboard.press("j");
 
-    // Verify inline comment thread is hidden by default (showComments=false)
-    await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
-
-    // Minimap lasso should be visible (comments are hidden by default, full-file mode on by default)
-    const minimap = page.getByRole("img", { name: /minimap/i });
-    await expect(minimap).toBeVisible();
-    await expect(minimap.locator(".minimap-lasso")).toBeVisible();
-
-    // Press 'd' to show comments
-    await page.keyboard.press("d");
-
-    // Inline comment thread should now be visible in diff
+    // Verify inline comment thread is visible in diff (comment is on the changed line)
     await expect(diffRegion.getByText("This is a test comment")).toBeVisible();
 
-    // Lasso should now be hidden (comments visible, full-file mode on)
+    // Minimap lasso should be hidden (comments are shown by default)
+    const minimap = page.getByRole("img", { name: /minimap/i });
+    await expect(minimap).toBeVisible();
     await expect(minimap.locator(".minimap-lasso")).toBeHidden();
+
+    // Press 'd' to hide comments
+    await page.keyboard.press("d");
+
+    // Inline comment thread should now be hidden in diff
+    // Note: Comment may still be visible in bottom comments panel, but not inline
+    await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
+
+    // Lasso should now be visible (comments hidden, full-file mode on)
+    await expect(minimap.locator(".minimap-lasso")).toBeVisible();
   });
 
-  test("pressing 'd' twice toggles comments visibility and lasso", async ({ page }) => {
+  test("pressing 'd' again shows comments and hides lasso", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     // Navigate to the file with comments
@@ -175,30 +181,27 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     const diffRegion = page.getByRole("region", { name: /Diff content for/i });
     await expect(diffRegion).toBeVisible();
 
+    // Enable full file mode
+    await page.keyboard.press("f");
+
     // Navigate to the change (where the comment is) using 'J' shortcut
     await page.keyboard.press("j");
 
-    // Default: comments hidden, lasso visible
+    // Press 'd' to hide comments
+    await page.keyboard.press("d");
     await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
 
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap.locator(".minimap-lasso")).toBeVisible();
 
-    // Press 'd' to show comments
+    // Press 'd' again to show comments
     await page.keyboard.press("d");
+
+    // Inline comment thread should be visible again in diff
     await expect(diffRegion.getByText("This is a test comment")).toBeVisible();
 
-    // Lasso should be hidden when comments are visible
+    // Lasso should be hidden again
     await expect(minimap.locator(".minimap-lasso")).toBeHidden();
-
-    // Press 'd' again to hide comments
-    await page.keyboard.press("d");
-
-    // Inline comment thread should be hidden again
-    await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
-
-    // Lasso should be visible again
-    await expect(minimap.locator(".minimap-lasso")).toBeVisible();
   });
 
   test("toolbar shows comment toggle button with correct state", async ({ page }) => {
@@ -213,23 +216,23 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
       page.getByRole("heading", { name: "src/commented-file.ts" })
     ).toBeVisible();
 
-    // Find the comments toggle dropdown (initially showing "Comments: Hidden" because showComments=false)
+    // Find the comments toggle dropdown (initially showing "Comments: Visible" because showComments=true)
     const toggleButton = page.getByRole("button", { name: /comments visibility/i });
     await expect(toggleButton).toBeVisible();
 
-    // Button should show "Comments: Hidden" label initially (default)
-    await expect(toggleButton).toContainText("Comments: Hidden");
-
-    // Click the button to open dropdown and select visible option
-    await toggleButton.click();
-    await page.getByText("Comments: Visible").click();
-
-    // Button should now show "Comments: Visible"
+    // Button should show "Comments: Visible" label initially
     await expect(toggleButton).toContainText("Comments: Visible");
 
-    // Click again and select hidden
+    // Click the button to open dropdown and select hidden option
     await toggleButton.click();
     await page.getByText("Comments: Hidden").click();
+
+    // Button should now show "Comments: Hidden"
     await expect(toggleButton).toContainText("Comments: Hidden");
+
+    // Click again and select visible
+    await toggleButton.click();
+    await page.getByText("Comments: Visible").click();
+    await expect(toggleButton).toContainText("Comments: Visible");
   });
 });

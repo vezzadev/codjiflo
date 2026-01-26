@@ -8,6 +8,7 @@ import {
   type MockComment,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap lasso visibility with inline comments", () => {
   const owner = "test";
@@ -104,6 +105,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({
@@ -119,7 +121,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await setupIterationArtifactMock(page, owner, repo, prNumber, mockDb);
   });
 
-  test("hides lasso when inline comments are shown", async ({ page }) => {
+  test("hides lasso when inline comments are present", async ({ page }) => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
@@ -130,15 +132,15 @@ diff --git a/src/large-file.ts b/src/large-file.ts
       page.getByRole("heading", { name: "src/large-file.ts" })
     ).toBeVisible();
 
-    // Default is full file mode, comments hidden - lasso should be visible
+    // Enable full file mode
+    await page.keyboard.press("f");
+
+    // Minimap should be visible
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-    
-    const lasso = minimap.locator(".minimap-lasso");
-    await expect(lasso).toBeVisible();
 
-    // Show comments - lasso should now be hidden
-    await page.keyboard.press("d");
+    // But lasso should be hidden because comments are present
+    const lasso = minimap.locator(".minimap-lasso");
     await expect(lasso).toBeHidden();
   });
 });

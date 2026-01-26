@@ -123,11 +123,9 @@ test.describe("Inline comments flow (S-2.x)", () => {
       const diffRegion = page.getByRole('region', { name: /Diff content/i });
       await expect(diffRegion).toBeVisible();
 
-      // Comments are hidden by default (showComments=false)
-      // In degraded mode (no iteration artifacts), comment threads may not render inline
-      // Just verify the basic structure is present - skip comment visibility check
-      // This test is more about verifying inline comment structure exists
-      // Full comment visibility testing is covered in iteration mode tests
+      // Verify the existing comment is displayed (comments load async)
+      const threadRegion = page.getByRole('region', { name: 'Thread on line 2 (added line)' });
+      await expect(threadRegion.getByText('Please add a quick note about this flag.', { exact: true })).toBeVisible();
     } else {
       // Real mode: just verify structure loads
       const fileNav = page.getByRole("navigation", { name: /Changed files/i });

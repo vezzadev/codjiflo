@@ -8,6 +8,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
   const mockPR: MockPR = {
@@ -77,6 +78,7 @@ const baz = 'qux';
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     const config = getTestConfig();
@@ -341,31 +343,31 @@ const baz = 'qux';
       });
       await expect(fileContentDropdown).toBeVisible();
 
-      // [AC-3.1.1] Default should be "Full File" (showing full file)
-      await expect(fileContentDropdown).toContainText("Full File");
-
-      // Verify we see the full file content (no hunk header in full file mode)
-      const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible();
-      // Should see content from the full file
-      await expect(diffRegion.getByText("End of file")).toBeVisible();
-
-      // [AC-3.1.2] Select changes only mode from dropdown
-      await fileContentDropdown.click();
-      await page.getByRole("option", { name: /Changes/i }).click();
+      // [AC-3.1.1] Default should be "Changes" (showing changes only)
       await expect(fileContentDropdown).toContainText("Changes");
 
-      // [AC-3.1.3-6] Changes only mode should show only hunks
-      // Should now see the hunk header (changes only mode)
+      // Verify we see the hunk header (changes only mode)
+      const diffRegion = page.getByRole("region", { name: /Diff content/i });
+      await expect(diffRegion).toBeVisible();
       await expect(diffRegion.getByText("@@")).toBeVisible();
 
-      // [AC-3.1.7] Select full file mode again
+      // [AC-3.1.2] Select full file mode from dropdown
       await fileContentDropdown.click();
       await page.getByRole("option", { name: /Full File/i }).click();
       await expect(fileContentDropdown).toContainText("Full File");
 
-      // Should be back to showing full file
+      // [AC-3.1.3-6] Full file mode should show more lines
+      // Should now see content from the full file (line numbers starting from 1)
+      // In full file mode, we should see lines that weren't in the patch
       await expect(diffRegion.getByText("End of file")).toBeVisible();
+
+      // [AC-3.1.7] Select changes only mode
+      await fileContentDropdown.click();
+      await page.getByRole("option", { name: /Changes/i }).click();
+      await expect(fileContentDropdown).toContainText("Changes");
+
+      // Should be back to showing only the hunk
+      await expect(diffRegion.getByText("@@")).toBeVisible();
     } else {
       // Prod mode: verify structure
       const fileItems = fileNav.locator(".tree-item.file.indent-1");
@@ -534,18 +536,14 @@ const baz = 'qux';
       await diffRegion.click();
 
       // Press J to navigate to first change
-      // In full file mode (default), change navigation works differently
-      // The mock diff has 1 hunk with deletion + additions
+      // Note: Our mock diff has only 1 hunk, so after pressing J we're at the only change
       await page.keyboard.press("j");
 
-      // After pressing J, we're at a change
-      // In full file mode, there may be multiple navigable changes
-      // Just verify navigation is working (buttons should have appropriate states)
-      // At minimum, Previous should be disabled when at the first change
+      // After pressing J, we're at index 0 (the first and only hunk)
+      // Both buttons should be disabled since we're at both the start and end
+      // (there's only 1 hunk group: deletion + additions are consecutive)
       await expect(prevChangeButton).toBeDisabled();
-      
-      // Next button state depends on whether there are more changes
-      // Don't assert a specific state here - just verify no crash
+      await expect(nextChangeButton).toBeDisabled();
 
       // Verify the diff content is still visible (no crashes)
       await expect(diffRegion).toBeVisible();

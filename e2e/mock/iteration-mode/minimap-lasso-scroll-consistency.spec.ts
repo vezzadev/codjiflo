@@ -13,6 +13,7 @@ import {
   scrollDiffBy,
   getLassoLeftTopY,
 } from "../../fixtures/minimap-helpers";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap lasso scroll consistency", () => {
   const owner = "test";
@@ -99,6 +100,7 @@ ${patchAddedLines}
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({
@@ -132,10 +134,13 @@ ${patchAddedLines}
       page.getByRole("heading", { name: "src/large-additions.ts" })
     ).toBeVisible();
 
-    // Full file mode is now default - ensure we're in it
+    // Enable full file mode to see all content
+    await page.keyboard.press("f");
     await expect(page.getByText("Full File")).toBeVisible();
 
-    // Comments are hidden by default - lasso should already be visible
+    // Hide comments to show lasso
+    await page.keyboard.press("d");
+
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
     await waitForLasso(page);
