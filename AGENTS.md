@@ -27,16 +27,10 @@ This is a **requirement**:
 ### Running Specific Tests (Vitest)
 **Important:** This project uses **Vitest** (not Jest), so Jest-specific flags like `--testPathPattern` will **not work**.
 
-To run tests matching a specific file or pattern, use Vitest's filter argument:
 ```bash
 # Run tests in files matching "DiffToolbar"
 npm run test -- DiffToolbar
 
-# Equivalent to Jest's: npm run test -- --testPathPattern="DiffToolbar"
-```
-
-For filtering by test name (within files), use `--testNamePattern` or `-t`:
-```bash
 # Run specific test cases by name
 npm run test -- -t "should render toolbar"
 ```
