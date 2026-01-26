@@ -126,12 +126,6 @@ test.describe("Side filter with view modes", () => {
 
     const diffRegion = page.getByRole("region", { name: /Diff content/i });
     await expect(diffRegion).toBeVisible();
-
-    // Switch to changes-only mode for these tests
-    await page.keyboard.press("c");
-    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-    await expect(toolbar.getByText("Changes")).toBeVisible();
-
     return diffRegion;
   }
 

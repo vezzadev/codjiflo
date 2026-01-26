@@ -275,10 +275,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       // Wait for content to load - check the diff view heading
       await expect(page.getByRole("heading", { name: "e2e/app.spec.ts" })).toBeVisible();
 
-      // [AC-1.4.1] Code is displayed (wait for CodeMirror to render)
-      // In full file mode (default), verify content is rendered
-      // Look for any visible text content in the diff region as a proxy
-      await expect(diffRegion.locator('.cm-content').first()).toBeVisible({ timeout: 5000 });
+      // [AC-1.4.1] Code is displayed
+      await expect(page.getByText(/import { test, expect }/)).toBeVisible();
     } else {
       // Real mode: click first actual file (using CSS selector to exclude folder headers)
       const fileItems = fileNav.locator(".tree-item.file.indent-1");

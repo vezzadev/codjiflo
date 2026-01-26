@@ -146,6 +146,12 @@ test.describe("Change Navigation After File Switch", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    const nextChangeBtn = toolbar.getByRole("button", { name: /Next change/i });
+    const prevChangeBtn = toolbar.getByRole("button", {
+      name: /Previous change/i,
+    });
+
     // === Step 1: CLICK on first file (example.ts) ===
     const exampleFile = fileNav.getByRole("treeitem", { name: /example\.ts/ });
     await exampleFile.click();
@@ -153,30 +159,13 @@ test.describe("Change Navigation After File Switch", () => {
     await expect(
       page.getByRole("heading", { name: "src/example.ts" })
     ).toBeVisible();
-
-    // Switch to changes-only mode (test was written for this mode)
-    await page.keyboard.press("c");
-    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-    await expect(toolbar.getByText("Changes")).toBeVisible();
-
-    const nextChangeBtn = toolbar.getByRole("button", { name: /Next change/i });
-    const prevChangeBtn = toolbar.getByRole("button", {
-      name: /Previous change/i,
-    });
-    
-    // In full file mode (default), wait for diff content to load
-    await expect(page.getByRole("region", { name: /Diff content/i })).toBeVisible();
-    
-    // Note: In full file mode, change navigation may work differently
-    // Just verify the buttons exist, don't assert specific enabled/disabled states here
+    await expect(nextChangeBtn).toBeEnabled();
 
     // === Step 2: Press j - scrolls to first change ===
     await page.locator("body").click();
     await page.keyboard.press("j");
-    
-    // After pressing J, we should be at a change
-    // Button states depend on change count in current mode
-    // Just verify no crash occurred
+    await expect(prevChangeBtn).toBeDisabled();
+    await expect(nextChangeBtn).toBeEnabled();
 
     // === Step 3: Press s - moves to types.ts ===
     await page.keyboard.press("s");

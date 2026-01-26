@@ -8,6 +8,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Text Wrap Toggle", () => {
   // Create a file with very long lines to test word wrap behavior
@@ -69,6 +70,7 @@ test.describe("Text Wrap Toggle", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     const config = getTestConfig();
@@ -127,16 +129,7 @@ Iterations: 2`,
     const textWrapButton = diffToolbar.getByRole("button", { name: /Text wrap/i });
     await expect(textWrapButton).toBeVisible();
 
-    // Initial state should be "Wrap" (new default)
-    await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
-
-    // Click to open dropdown and select "No Wrap"
-    await textWrapButton.click();
-    const noWrapOption = page.getByRole("option", { name: /No Wrap/i });
-    await expect(noWrapOption).toBeVisible();
-    await noWrapOption.click();
-
-    // Button should now show "No Wrap"
+    // Initial state should be "No Wrap" (default)
     await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
 
     // Click to open dropdown and select "Wrap"
@@ -147,6 +140,15 @@ Iterations: 2`,
 
     // Button should now show "Wrap"
     await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
+
+    // Click to open dropdown and select "No Wrap"
+    await textWrapButton.click();
+    const noWrapOption = page.getByRole("option", { name: /No Wrap/i });
+    await expect(noWrapOption).toBeVisible();
+    await noWrapOption.click();
+
+    // Button should now show "No Wrap"
+    await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
   });
 
   test("Keyboard shortcut P toggles text wrap", async ({ page }) => {
@@ -172,20 +174,20 @@ Iterations: 2`,
     const textWrapButton = diffToolbar.getByRole("button", { name: /Text wrap/i });
     await expect(textWrapButton).toBeVisible();
 
-    // Initial state should be "Wrap" (new default)
-    await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
-
-    // Press P to toggle to nowrap
-    await page.keyboard.press("p");
-
-    // Button should now show "No Wrap"
+    // Initial state should be "No Wrap"
     await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
 
-    // Press P again to toggle back to wrap
+    // Press P to toggle to wrap
     await page.keyboard.press("p");
 
     // Button should now show "Wrap"
     await expect(textWrapButton.getByText(/^Wrap$/i)).toBeVisible();
+
+    // Press P again to toggle back to nowrap
+    await page.keyboard.press("p");
+
+    // Button should now show "No Wrap"
+    await expect(textWrapButton.getByText(/No Wrap/i)).toBeVisible();
   });
 
   test("Long lines actually wrap to multiple lines when wrap is enabled", async ({
@@ -205,17 +207,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // Switch to changes-only mode (test was written for this mode)
-    await page.keyboard.press("c");
-    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-    await expect(toolbar.getByText("Changes")).toBeVisible();
-
     // Wait for CodeMirror lines containing our test content to be present
     const editor = CMEditor.from(page);
     const longLineLocator = editor.materializedLineContaining("veryLongVariableName");
     const shortLineLocator = editor.materializedLineContaining("short = 'value'");
-    await expect(longLineLocator).toBeVisible({ timeout: 5000 });
-    await expect(shortLineLocator).toBeVisible({ timeout: 5000 });
+    await expect(longLineLocator).toBeVisible();
+    await expect(shortLineLocator).toBeVisible();
 
     // Helper to get heights of specific rows (CodeMirror uses .cm-line for each line)
     const getRowHeights = async () => {
@@ -233,30 +230,15 @@ Iterations: 2`,
       });
     };
 
-    // With wrap enabled (new default), measure row heights
-    const heightsWrap = await getRowHeights();
+    // With wrap disabled (default), measure row heights
+    const heightsNoWrap = await getRowHeights();
 
-    // With wrap enabled, long line should be taller (it wraps to multiple lines)
-    expect(heightsWrap.longLineHeight).toBeGreaterThan(heightsWrap.shortLineHeight);
+    // Without wrap, rows should be similar height (within 5px tolerance)
+    expect(
+      Math.abs(heightsNoWrap.longLineHeight - heightsNoWrap.shortLineHeight)
+    ).toBeLessThan(5);
 
-    // Disable wrap with keyboard shortcut
-    await page.keyboard.press("p");
-
-    // Wait for CSS to apply
-    await expect(
-      page.getByRole("button", { name: /Text wrap/i }).getByText(/No Wrap/i)
-    ).toBeVisible();
-
-    // Re-measure row heights with wrap disabled
-    // Heights should be similar (within 5px tolerance)
-    await expect
-      .poll(async () => {
-        const heights = await getRowHeights();
-        return Math.abs(heights.longLineHeight - heights.shortLineHeight);
-      })
-      .toBeLessThan(5);
-
-    // Enable wrap again
+    // Enable wrap with keyboard shortcut
     await page.keyboard.press("p");
 
     // Wait for CSS to apply
@@ -264,12 +246,30 @@ Iterations: 2`,
       page.getByRole("button", { name: /Text wrap/i }).getByText(/^Wrap$/i)
     ).toBeVisible();
 
-    // Re-measure - long line should be taller again
+    // Re-measure row heights with wrap enabled (expect.poll auto-retries until CSS applies)
+    // Long line should be significantly taller (at least 1.5x, indicating wrapped lines)
     await expect
       .poll(async () => {
         const heights = await getRowHeights();
         return heights.longLineHeight / heights.shortLineHeight;
       })
       .toBeGreaterThan(1.5);
+
+    // Disable wrap again
+    await page.keyboard.press("p");
+
+    // Wait for CSS to apply
+    await expect(
+      page.getByRole("button", { name: /Text wrap/i }).getByText(/No Wrap/i)
+    ).toBeVisible();
+
+    // Re-measure - heights should be back to similar
+    // Use expect.poll() to auto-retry until CSS is applied
+    await expect
+      .poll(async () => {
+        const heights = await getRowHeights();
+        return Math.abs(heights.longLineHeight - heights.shortLineHeight);
+      })
+      .toBeLessThan(5);
   });
 });

@@ -74,11 +74,6 @@ test.describe("Side-by-Side Spacer Line Styling", () => {
       page.getByRole("heading", { name: "src/spacer-test.ts" })
     ).toBeVisible();
 
-    // Switch to changes-only mode (test was written for this mode)
-    await page.keyboard.press("c");
-    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-    await expect(toolbar.getByText("Changes")).toBeVisible();
-
     // Switch to Side-by-Side view using 'X' keyboard shortcut
     await page.locator("body").click();
     await page.keyboard.press("x");
