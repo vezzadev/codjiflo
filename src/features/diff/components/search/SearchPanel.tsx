@@ -134,17 +134,19 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
     }
   }, [isOpen]);
 
-  // Clear search when panel closes
+  // Clear search state and CodeMirror query when panel closes
   const prevIsOpen = useRef(isOpen);
   useEffect(() => {
     // Only clear when transitioning from open to closed
     if (prevIsOpen.current && !isOpen) {
-      // Clear the search input
-      setSearchTerm('');
+      // Defer state clearing to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        setSearchTerm('');
+        setMatchCount(null);
+      });
 
       const view = getActiveEditor();
       if (view) {
-        // Clear the search query
         view.dispatch({
           effects: setSearchQuery.of(new SearchQuery({ search: '' })),
         });
@@ -152,12 +154,6 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
     }
     prevIsOpen.current = isOpen;
   }, [isOpen, getActiveEditor]);
-
-  // Reset match count when panel closes (outside effect to avoid cascading renders)
-  if (!isOpen && matchCount !== null) {
-    // Use a microtask to defer state update
-    queueMicrotask(() => setMatchCount(null));
-  }
 
   // Re-apply search when editor changes (e.g., view mode switch or focus change in split mode)
   const prevEditorRef = useRef<EditorView | null>(null);
