@@ -8,7 +8,6 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Diff View Modes (S-3.2, S-3.3, S-3.5)", () => {
   const mockPR: MockPR = {
@@ -78,7 +77,6 @@ const baz = 'qux';
   };
 
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     const config = getTestConfig();

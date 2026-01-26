@@ -8,7 +8,6 @@ import {
   type MockComment,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap lasso visibility with inline comments", () => {
   const owner = "test";
@@ -105,7 +104,6 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({

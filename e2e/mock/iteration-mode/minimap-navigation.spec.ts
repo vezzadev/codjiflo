@@ -7,7 +7,6 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap navigation with comments hidden", () => {
   const owner = "test";
@@ -127,7 +126,6 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
   }
 
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({

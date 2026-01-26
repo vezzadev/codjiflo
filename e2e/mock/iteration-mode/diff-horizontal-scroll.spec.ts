@@ -8,7 +8,6 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
   // Create a file with very long lines to trigger horizontal scrolling
@@ -98,7 +97,6 @@ const unchanged = 'value';`,
   };
 
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     const config = getTestConfig();

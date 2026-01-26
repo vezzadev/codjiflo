@@ -13,7 +13,6 @@ import {
   scrollDiffBy,
   getLassoLeftTopY,
 } from "../../fixtures/minimap-helpers";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap lasso scroll consistency", () => {
   const owner = "test";
@@ -100,7 +99,6 @@ ${patchAddedLines}
   ];
 
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({
