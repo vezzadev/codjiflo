@@ -79,7 +79,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     // by checking for .ͼ (CodeMirror highlight class prefix) or .tok- classes.
     // Language loading is async so we need to wait.
     const editor = CMEditor.from(diffRegion);
-    const syntaxSpanLocator = editor.lines.locator('span[class]');
+    const syntaxSpanLocator = editor.linesInDOM.locator('span[class]');
     await expect(syntaxSpanLocator.first()).toBeVisible();
 
     // Count spans with any class (syntax highlighting adds classes to spans)
@@ -94,7 +94,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(editor.view.locator('.cm-highlightSpace').first()).toBeVisible();
 
     // After enabling whitespace visibility, syntax highlighting spans should still be present
-    const syntaxSpansAfter = await editor.lines.locator('span[class]').count();
+    const syntaxSpansAfter = await editor.linesInDOM.locator('span[class]').count();
     expect(syntaxSpansAfter).toBeGreaterThan(0);
 
     // The count should be similar (whitespace toggle shouldn't remove syntax spans)

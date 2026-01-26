@@ -36,6 +36,8 @@ test.describe("Diff Area Theme Background", () => {
       deletions: 1,
       changes: 3,
       patch: "@@ -1,3 +1,4 @@\n const x = 1;\n-const y = 2;\n+const y = 3;\n+const z = 4;",
+      baseContent: "const x = 1;\nconst y = 2;",
+      headContent: "const x = 1;\nconst y = 3;\nconst z = 4;",
     },
   ];
 
