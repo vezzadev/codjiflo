@@ -187,6 +187,9 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     // Navigate to the change (where the comment is) using 'J' shortcut
     await page.keyboard.press("j");
 
+    // Wait for inline comment to be visible before testing toggle
+    await expect(diffRegion.getByText("This is a test comment")).toBeVisible();
+
     // Press 'd' to hide comments
     await page.keyboard.press("d");
     await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
