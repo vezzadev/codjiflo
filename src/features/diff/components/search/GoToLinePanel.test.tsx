@@ -74,6 +74,23 @@ describe('GoToLinePanel', () => {
       const input = screen.getByPlaceholderText('Line number');
       expect(document.activeElement).toBe(input);
     });
+
+    it('clears input value when panel reopens', () => {
+      const { rerender } = render(<GoToLinePanel {...defaultProps} isOpen={true} />);
+
+      const input = screen.getByPlaceholderText('Line number') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '42' } });
+      expect(input.value).toBe('42');
+
+      // Close panel
+      rerender(<GoToLinePanel {...defaultProps} isOpen={false} />);
+
+      // Reopen panel
+      rerender(<GoToLinePanel {...defaultProps} isOpen={true} />);
+
+      const inputAfterReopen = screen.getByPlaceholderText('Line number') as HTMLInputElement;
+      expect(inputAfterReopen.value).toBe('');
+    });
   });
 
   describe('keyboard handling', () => {

@@ -25,11 +25,12 @@ export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePane
   const inputRef = useRef<HTMLInputElement>(null);
   const lineInputRef = useRef<string>('');
 
-  // Focus input when panel opens
+  // Clear and focus input when panel opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
+      inputRef.current.value = '';
+      lineInputRef.current = '';
       inputRef.current.focus();
-      inputRef.current.select();
     }
   }, [isOpen]);
 
