@@ -112,8 +112,21 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
     debounce((query: SearchQuery, view: EditorView) => {
       const matches = countMatches(query, view);
       if (matches) {
-        const { currentIndex, total } = matches;
-        setMatchCount(total > 0 ? { current: Math.max(1, currentIndex), total } : { current: 0, total: 0 });
+        const { total } = matches;
+        if (total > 0) {
+          // Automatically select the first match when typing (without moving focus)
+          // This applies cm-searchMatch-selected to show the "current" position
+          findNext(view);
+          // Re-count to get accurate position after findNext moves selection
+          const updatedMatches = countMatches(query, view);
+          if (updatedMatches) {
+            setMatchCount({ current: Math.max(1, updatedMatches.currentIndex), total: updatedMatches.total });
+          } else {
+            setMatchCount({ current: 1, total });
+          }
+        } else {
+          setMatchCount({ current: 0, total: 0 });
+        }
       } else {
         setMatchCount({ current: 0, total: 0 });
       }

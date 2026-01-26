@@ -78,7 +78,7 @@ describe('GoToLinePanel', () => {
     it('clears input value when panel reopens', () => {
       const { rerender } = render(<GoToLinePanel {...defaultProps} isOpen={true} />);
 
-      const input = screen.getByPlaceholderText('Line number') as HTMLInputElement;
+      const input = screen.getByPlaceholderText<HTMLInputElement>('Line number');
       fireEvent.change(input, { target: { value: '42' } });
       expect(input.value).toBe('42');
 
@@ -88,7 +88,7 @@ describe('GoToLinePanel', () => {
       // Reopen panel
       rerender(<GoToLinePanel {...defaultProps} isOpen={true} />);
 
-      const inputAfterReopen = screen.getByPlaceholderText('Line number') as HTMLInputElement;
+      const inputAfterReopen = screen.getByPlaceholderText<HTMLInputElement>('Line number');
       expect(inputAfterReopen.value).toBe('');
     });
   });

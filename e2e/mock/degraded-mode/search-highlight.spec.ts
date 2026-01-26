@@ -58,6 +58,50 @@ test.describe("Search Match Highlighting", () => {
     });
   });
 
+  test("first match is automatically selected when typing search term", async ({
+    page,
+  }) => {
+    await page.goto(config.pageUrl);
+
+    // Click on the file to show diff
+    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
+    await expect(fileNav).toBeVisible();
+    await fileNav.getByText("example.ts").click();
+
+    // Wait for diff to render
+    const diffRegion = page.getByRole("region", { name: /Diff content/i });
+    await expect(diffRegion).toBeVisible();
+
+    const editor = CMEditor.from(diffRegion);
+    await expect(editor.view).toBeVisible();
+
+    // Open search panel with Ctrl+F
+    await page.keyboard.press("Control+f");
+
+    // Wait for search panel to appear (using role=dialog)
+    const searchPanel = page.getByRole("dialog", { name: /Find in diff/i });
+    await expect(searchPanel).toBeVisible();
+
+    // Search for "hello" which appears multiple times
+    const searchInput = searchPanel.getByRole("textbox", {
+      name: /Search term/i,
+    });
+    await searchInput.fill("hello");
+
+    // Wait for match count to update (debounced at 150ms)
+    const matchCount = searchPanel.getByRole("status");
+    await expect(matchCount).toContainText("of 3");
+
+    // BUG: After typing a search term, the first match should be automatically
+    // selected (showing cm-searchMatch-selected) WITHOUT needing to press Enter.
+    // This provides immediate visual feedback of the "current" position.
+    const selectedMatch = editor.ext("search", "matchSelected");
+    await expect(selectedMatch).toHaveCount(1);
+
+    // The counter should show "1 of 3" immediately after typing
+    await expect(matchCount).toHaveText("1 of 3");
+  });
+
   test("search matches are highlighted with visible background color", async ({
     page,
   }) => {
@@ -222,8 +266,7 @@ test.describe("Search Match Highlighting", () => {
       return matchPositions.findIndex((pos) => pos === selectedTop);
     };
 
-    // Navigate to first match (Enter)
-    await searchInput.press("Enter");
+    // First match is automatically selected after typing (no Enter needed)
     await expect(matchCount).toHaveText("1 of 3");
     expect(await getSelectedMatchIndex()).toBe(0);
 
