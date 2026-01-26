@@ -144,12 +144,6 @@ test.describe("Change Navigation After File Switch", () => {
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
 
-    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
-    const nextChangeBtn = toolbar.getByRole("button", { name: /Next change/i });
-    const prevChangeBtn = toolbar.getByRole("button", {
-      name: /Previous change/i,
-    });
-
     // === Step 1: CLICK on first file (example.ts) ===
     const exampleFile = fileNav.getByRole("treeitem", { name: /example\.ts/ });
     await exampleFile.click();
@@ -157,6 +151,16 @@ test.describe("Change Navigation After File Switch", () => {
     await expect(
       page.getByRole("heading", { name: "src/example.ts" })
     ).toBeVisible();
+
+    // Switch to changes-only mode (test was written for this mode)
+    await page.keyboard.press("c");
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Changes")).toBeVisible();
+
+    const nextChangeBtn = toolbar.getByRole("button", { name: /Next change/i });
+    const prevChangeBtn = toolbar.getByRole("button", {
+      name: /Previous change/i,
+    });
     
     // In full file mode (default), wait for diff content to load
     await expect(page.getByRole("region", { name: /Diff content/i })).toBeVisible();

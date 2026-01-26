@@ -193,7 +193,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     ).toBeVisible();
 
     // Toggle to changes-only mode (default is full-file now)
-    await page.keyboard.press("f");
+    await page.keyboard.press("c");
     
     // Wait for file content dropdown to show "Changes" (not just any "Changes" text)
     const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });

@@ -205,9 +205,10 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
-    // In full file mode (default), use change navigation to jump to the long line
-    // This ensures it's scrolled into view and rendered
-    await page.keyboard.press("j"); // Navigate to first change
+    // Switch to changes-only mode (test was written for this mode)
+    await page.keyboard.press("c");
+    const toolbar = page.getByRole("toolbar", { name: "Diff view controls" });
+    await expect(toolbar.getByText("Changes")).toBeVisible();
 
     // Wait for CodeMirror lines containing our test content to be present
     const editor = CMEditor.from(page);

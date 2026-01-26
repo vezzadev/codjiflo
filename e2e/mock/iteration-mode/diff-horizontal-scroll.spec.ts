@@ -61,6 +61,20 @@ test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
 +const anotherLine = 'test';
 +${manyLines}
  const unchanged = 'value';`,
+      // Full file content for iteration mode
+      baseContent: `${contextLine1}
+${contextLine2}
+${contextLine3}
+const old = 'short';
+${manyLines}
+const unchanged = 'value';`,
+      headContent: `${contextLine1}
+${contextLine2}
+${contextLine3}
+${longLine}
+const anotherLine = 'test';
+${manyLines}
+const unchanged = 'value';`,
     },
   ];
 
@@ -135,8 +149,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // Wait for diff content to be visible (works in full file mode)
+    await expect(page.getByRole("region", { name: /Diff content/i })).toBeVisible();
+
     // Disable text wrap (now default is wrap) to enable horizontal scrolling
-    await page.keyboard.press("w");
+    // P is the keyboard shortcut for text wrap toggle
+    await page.keyboard.press("p");
 
     // Get the diff toolbar (with view controls)
     const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });
@@ -237,8 +255,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // Wait for diff content to be visible (works in full file mode)
+    await expect(page.getByRole("region", { name: /Diff content/i })).toBeVisible();
+
     // Disable text wrap (now default is wrap) to enable horizontal scrolling
-    await page.keyboard.press("w");
+    // P is the keyboard shortcut for text wrap toggle
+    await page.keyboard.press("p");
 
     // Get the CodeMirror editor and wait for it to be fully rendered
     const editor = CMEditor.from(page);
@@ -289,8 +311,12 @@ Iterations: 2`,
       page.getByRole("heading", { name: "src/long-lines.ts" })
     ).toBeVisible();
 
+    // Wait for diff content to be visible (works in full file mode)
+    await expect(page.getByRole("region", { name: /Diff content/i })).toBeVisible();
+
     // Disable text wrap (now default is wrap) to enable horizontal scrolling
-    await page.keyboard.press("w");
+    // P is the keyboard shortcut for text wrap toggle
+    await page.keyboard.press("p");
 
     // Verify we're in inline view (CodeMirror editor present)
     const editor = CMEditor.from(page);
