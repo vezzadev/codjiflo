@@ -12,6 +12,7 @@ import {
   waitForLassoStable,
   getLassoHeight,
 } from "../../fixtures/minimap-helpers";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap lasso sizing during scroll", () => {
   const owner = "test";
@@ -89,6 +90,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({

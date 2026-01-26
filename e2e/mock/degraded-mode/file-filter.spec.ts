@@ -5,6 +5,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("File Filter in Header", () => {
   const mockPR: MockPR = {
@@ -42,6 +43,7 @@ test.describe("File Filter in Header", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,

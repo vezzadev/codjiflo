@@ -4,10 +4,12 @@ import {
   setupTokenRefreshMock,
   defaultMockPR,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Token Refresh Flow", () => {
   // Token refresh tests are mock-only since they require precise control over API responses
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
   });

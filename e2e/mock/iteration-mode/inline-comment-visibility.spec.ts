@@ -8,6 +8,7 @@ import {
   type MockComment,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Inline comment visibility in virtualized diff", () => {
   const owner = "test";
@@ -122,6 +123,7 @@ diff --git a/src/example.ts b/src/example.ts
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build mock iteration database

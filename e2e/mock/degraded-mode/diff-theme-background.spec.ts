@@ -6,6 +6,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Diff Area Theme Background", () => {
   const mockPR: MockPR = {
@@ -47,6 +48,7 @@ test.describe("Diff Area Theme Background", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,

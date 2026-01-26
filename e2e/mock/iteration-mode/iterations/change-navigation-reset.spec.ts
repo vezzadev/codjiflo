@@ -7,6 +7,7 @@ import {
   type MockFile,
 } from "../../../fixtures/github-mocks";
 import { buildIterationDb } from "../../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../../fixtures/legacy-defaults";
 
 test.describe("Change Navigation Reset (Mock Mode)", () => {
   // Test validates that currentChangeIndex resets when iteration changes.
@@ -115,7 +116,7 @@ diff --git a/src/app.ts b/src/app.ts
   ];
 
   test.beforeEach(async ({ page }) => {
-
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build mock iteration database with 2 iterations

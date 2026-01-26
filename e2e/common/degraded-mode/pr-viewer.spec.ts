@@ -8,6 +8,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -96,6 +97,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     // Set up authentication state (uses real token in real mode)
     await setupAuthState(page);
 

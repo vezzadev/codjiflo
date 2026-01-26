@@ -7,6 +7,7 @@ import {
   type MockFile,
 } from "../../../fixtures/github-mocks";
 import { buildRebaseIterationDb } from "../../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../../fixtures/legacy-defaults";
 
 test.describe("Rebase Base Commit Handling (Issue #151)", () => {
   // Tests: AC-4.7.5, AC-4.7.7.1 (Rebase-aware default range and "Full diff" preset)
@@ -94,7 +95,7 @@ line5
   ];
 
   test.beforeEach(async ({ page }) => {
-
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build rebase scenario database

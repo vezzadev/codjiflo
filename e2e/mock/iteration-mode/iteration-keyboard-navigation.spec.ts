@@ -14,6 +14,7 @@ import {
   type MockFile,
 } from '../../fixtures/github-mocks';
 import { buildIterationDb } from '../../fixtures/iteration-db-builder';
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe('Iteration Keyboard Navigation (#189)', () => {
   // Mock PR data
@@ -108,6 +109,7 @@ index 3334567..cbcdefg 100644
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build mock iteration database with 2 iterations

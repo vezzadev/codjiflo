@@ -6,6 +6,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Minimap Z-Index Bug", () => {
   // Generate a file with many lines to ensure minimap is visible
@@ -64,6 +65,7 @@ test.describe("Minimap Z-Index Bug", () => {
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     await setupFullPRMocks(page, "test", "repo", 777, {

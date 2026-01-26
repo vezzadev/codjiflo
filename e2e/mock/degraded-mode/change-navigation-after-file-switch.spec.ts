@@ -6,6 +6,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Change Navigation After File Switch", () => {
   // Create a PR with two files, each having multiple hunks
@@ -122,6 +123,7 @@ test.describe("Change Navigation After File Switch", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,

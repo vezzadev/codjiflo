@@ -5,6 +5,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Iteration Management - Degraded Mode", () => {
   // Mock PR data for iteration tests
@@ -47,6 +48,7 @@ test.describe("Iteration Management - Degraded Mode", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,

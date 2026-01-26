@@ -6,6 +6,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 /**
  * Reproduction test for gutter line number bug.
@@ -60,6 +61,7 @@ test.describe("Inline mode gutter line numbers", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,

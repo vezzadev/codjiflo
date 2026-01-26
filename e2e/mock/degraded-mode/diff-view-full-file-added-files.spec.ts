@@ -6,6 +6,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Full file view for newly added files (Issue #195)", () => {
   const mockPR: MockPR = {
@@ -52,6 +53,7 @@ export function suppressWarnings() {
   }) => {
     // Mock mode only test
 
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     await setupFullPRMocks(page, "test", "repo", 195, {

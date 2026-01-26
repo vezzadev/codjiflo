@@ -7,6 +7,7 @@ import {
   type MockFile,
 } from "../../../fixtures/github-mocks";
 import { buildIterationDb } from "../../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../../fixtures/legacy-defaults";
 
 test.describe("J/K Navigation in Full File Mode (Issue #140)", () => {
   // Tests for bug #140: J/K shortcuts don't work when reviewing diff between
@@ -125,7 +126,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
-
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build mock iteration database

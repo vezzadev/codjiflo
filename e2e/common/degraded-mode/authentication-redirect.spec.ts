@@ -5,9 +5,11 @@ import {
   setupFullPRMocks,
   defaultMockPR,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Redirect After Login", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     // Clear storage before each test
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
