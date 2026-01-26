@@ -8,6 +8,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Text Wrap Toggle", () => {
   // Create a file with very long lines to test word wrap behavior
@@ -69,6 +70,7 @@ test.describe("Text Wrap Toggle", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     const config = getTestConfig();

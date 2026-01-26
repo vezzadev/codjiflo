@@ -7,6 +7,7 @@ import {
   type MockFile,
 } from "../../fixtures/github-mocks";
 import { CMEditor, expect } from "../../fixtures/codemirror";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Side-by-Side Scroll Sync", () => {
   // Generate a file with many lines to ensure scrolling is needed
@@ -65,6 +66,7 @@ test.describe("Side-by-Side Scroll Sync", () => {
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
     await setupAuthMock(page);
     await setupFullPRMocks(page, "test", "repo", 999, {

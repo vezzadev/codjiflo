@@ -7,6 +7,7 @@ import {
   type MockFile,
 } from "../../../fixtures/github-mocks";
 import { buildIterationDb } from "../../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../../fixtures/legacy-defaults";
 
 test.describe("Iteration File Status", () => {
   // Test for bug fix: files first modified in later iterations should show as "modified" not "added"
@@ -110,6 +111,7 @@ on: [pull_request, workflow_dispatch]
   const config = { owner: "test", repo: "repo", prNumber: 97 };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     // Build mock iteration database from patches

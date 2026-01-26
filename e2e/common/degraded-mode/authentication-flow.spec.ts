@@ -3,9 +3,11 @@ import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthMock,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Authentication Flow (S-1.1)", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     // Clear storage before each test
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());

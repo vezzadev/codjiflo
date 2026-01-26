@@ -8,6 +8,7 @@ import {
   type MockComment,
 } from "../../fixtures/github-mocks";
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Comment toggle with 'd' shortcut", () => {
   const owner = "test";
@@ -106,6 +107,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
   ];
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     await setupAuthState(page);
 
     const mockDb = buildIterationDb({

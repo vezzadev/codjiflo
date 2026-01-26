@@ -7,6 +7,7 @@ import {
   type MockFile,
   type MockComment,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Inline comments flow (S-2.x)", () => {
   const mockPR: MockPR = {
@@ -81,6 +82,7 @@ test.describe("Inline comments flow (S-2.x)", () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
     // Set up authentication state (uses real token in real mode)
     await setupAuthState(page);
 

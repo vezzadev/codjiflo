@@ -1,8 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { isMockMode } from "../../fixtures/mode";
 import { setupAuthMock } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("CodjiFlo App", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupLegacyDefaults(page);
+  });
+
   test("should redirect unauthenticated users to login", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/.*\/login/);

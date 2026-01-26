@@ -4,6 +4,7 @@ import {
   setupFullPRMocks,
   defaultMockPR,
 } from "../../fixtures/github-mocks";
+import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Authentication Query Params (Mock Only)", () => {
   test("should preserve query params in redirect after login", async ({
@@ -15,6 +16,7 @@ test.describe("Authentication Query Params (Mock Only)", () => {
     const prNumber = 123;
 
     // Set up mocks
+    await setupLegacyDefaults(page);
     await setupAuthMock(page);
     await setupFullPRMocks(page, owner, repo, prNumber, {
       pr: { ...defaultMockPR, number: prNumber },
