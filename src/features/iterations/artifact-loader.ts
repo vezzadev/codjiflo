@@ -152,8 +152,16 @@ export class ArtifactLoader {
 
   /**
    * Download artifact from GitHub Actions using artifact ID directly.
+   * Returns null if not authenticated (artifact download requires auth even for public repos).
    */
   private async downloadArtifact(reference: ArtifactReference): Promise<ArrayBuffer | null> {
+    // Check authentication first - artifact download requires auth even for public repos
+    // (GitHub Actions API limitation per S-4.1.5)
+    const token = this.getToken();
+    if (!token) {
+      return null;
+    }
+
     // Download the artifact ZIP directly using artifact ID (no metadata fetch needed)
     const downloadUrl = `/repos/${this.owner}/${this.repo}/actions/artifacts/${reference.artifactId}/zip`;
 
@@ -161,7 +169,7 @@ export class ArtifactLoader {
     // We need to use fetch directly with the token because it returns binary data
     const response = await fetch(`https://api.github.com${downloadUrl}`, {
       headers: {
-        Authorization: `Bearer ${this.getToken()}`,
+        Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
     });
@@ -202,13 +210,10 @@ export class ArtifactLoader {
 
   /**
    * Get auth token from store.
+   * Returns null if not authenticated (allows graceful degradation per S-4.1.5).
    */
-  private getToken(): string {
-    const token = useAuthStore.getState().token;
-    if (!token) {
-      throw new GitHubAPIError(401, 'Unauthorized', 'Not authenticated');
-    }
-    return token;
+  private getToken(): string | null {
+    return useAuthStore.getState().token;
   }
 
   // ============================================================================
