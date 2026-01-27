@@ -125,12 +125,13 @@ test.describe("Token Refresh Flow", () => {
     expect(prApiCallCount).toBeGreaterThanOrEqual(2);
   });
 
-  test("should redirect to login when token refresh fails", async ({
+  test("should clear auth and show login button when token refresh fails", async ({
     page,
   }) => {
     const owner = "test";
     const repo = "repo";
     const prNumber = 123;
+    let firstRequest = true;
 
     // Set up OAuth auth state
     await setupOAuthAuthState(page, {
@@ -141,58 +142,91 @@ test.describe("Token Refresh Flow", () => {
     // Set up token refresh mock to fail
     await setupTokenRefreshMock(page, { success: false });
 
-    // Set up GitHub API to always return 401
-    await page.route("https://api.github.com/**", async (route) => {
-      await route.fulfill({
-        status: 401,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "Bad credentials" }),
-      });
-    });
+    // Set up GitHub API to return 401 for authenticated requests, 200 for unauthenticated
+    await page.route(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}`,
+      async (route) => {
+        const auth = route.request().headers().authorization;
+        if (auth && firstRequest) {
+          // First authenticated request fails with 401
+          firstRequest = false;
+          await route.fulfill({
+            status: 401,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "Bad credentials" }),
+          });
+        } else {
+          // Unauthenticated request succeeds (public repo)
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              number: prNumber,
+              title: "Test PR",
+              state: "open",
+              html_url: `https://github.com/${owner}/${repo}/pull/${String(prNumber)}`,
+              user: { login: "testuser", avatar_url: "https://example.com/avatar.png" },
+              base: { ref: "main", sha: "abc123" },
+              head: { ref: "feature", sha: "def456" },
+            }),
+          });
+        }
+      }
+    );
+
+    // Set up other mocks
+    await page.route(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              filename: "test.ts",
+              status: "modified",
+              additions: 1,
+              deletions: 1,
+              changes: 2,
+              patch: "@@ -1 +1 @@\n-old\n+new",
+            },
+          ]),
+        });
+      }
+    );
+
+    await page.route(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/comments`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      }
+    );
+
+    await page.route(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/comments`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      }
+    );
 
     // Navigate to PR page
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
-    // Should be redirected to login after refresh fails
-    await expect(page).toHaveURL(/\/login/);
+    // PR page should still load (S-4.1.2: unauthenticated access to public repos)
+    await expect(page).toHaveURL(new RegExp(`/${owner}/${repo}/${String(prNumber)}`));
 
-    // Login page should be visible
-    await expect(
-      page.getByRole("heading", { name: /Connect to GitHub/i })
-    ).toBeVisible();
-  });
+    // PR content should be visible after retry as unauthenticated
+    await expect(page.getByPlaceholder("Filter by file name")).toBeVisible();
 
-  test("should preserve return path when redirecting to login after refresh failure", async ({
-    page,
-  }) => {
-    const owner = "test";
-    const repo = "repo";
-    const prNumber = 456;
-
-    // Set up OAuth auth state
-    await setupOAuthAuthState(page, {
-      token: "gho_expiredtoken",
-      refreshToken: "ghr_invalidrefresh",
-    });
-
-    // Set up token refresh mock to fail
-    await setupTokenRefreshMock(page, { success: false });
-
-    // Set up GitHub API to always return 401
-    await page.route("https://api.github.com/**", async (route) => {
-      await route.fulfill({
-        status: 401,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "Bad credentials" }),
-      });
-    });
-
-    // Navigate to specific PR page
-    await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
-
-    // Should be redirected to login with returnPath
-    await expect(page).toHaveURL(
-      new RegExp(`/login\\?returnPath=.*${owner}.*${repo}.*${String(prNumber)}`)
-    );
+    // Login button should be visible (user is now unauthenticated)
+    await expect(page.getByRole("link", { name: /Log in/i })).toBeVisible();
   });
 });

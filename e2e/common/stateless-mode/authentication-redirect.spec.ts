@@ -15,7 +15,7 @@ test.describe("Redirect After Login", () => {
     await page.evaluate(() => localStorage.clear());
   });
 
-  test("should redirect to original PR page after PAT login", async ({
+  test("should load PR page without authentication and redirect to PR after login", async ({
     page,
   }) => {
     // Mock data for the test
@@ -40,19 +40,26 @@ test.describe("Redirect After Login", () => {
     });
 
     // Navigate directly to a PR page without being authenticated
+    // PR pages now load without requiring authentication (S-4.1.2)
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
-    // Should be redirected to login with returnPath
+    // PR page should load without redirect
+    await expect(page).toHaveURL(
+      new RegExp(`/${owner}/${repo}/${String(prNumber)}`)
+    );
+
+    // PR content should be visible (indicates successful load)
+    await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
+
+    // Click login button to authenticate (should preserve returnPath)
+    await page.getByRole("link", { name: /Log in/i }).click();
+
+    // Should be on login page with returnPath
     await expect(page).toHaveURL(
       new RegExp(`/login\\?returnPath=.*${owner}.*${repo}.*${String(prNumber)}`)
     );
 
-    // Login page should be visible
-    await expect(
-      page.getByRole("heading", { name: /Connect to GitHub/i })
-    ).toBeVisible();
-
-    // Expand PAT section and login
+    // Login with PAT
     await page.getByText(/Use Personal Access Token/i).click();
     const input = page.getByLabel(/Personal Access Token/i);
 
@@ -68,8 +75,7 @@ test.describe("Redirect After Login", () => {
       new RegExp(`/${owner}/${repo}/${String(prNumber)}`)
     );
 
-    // PR content should be visible (indicates successful load)
-    // Check for the file explorer header which is always present on the PR page
+    // PR content should still be visible
     await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
   });
 
