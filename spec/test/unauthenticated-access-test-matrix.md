@@ -109,7 +109,7 @@ This document defines comprehensive test scenarios for validating CodjiFlo's una
 
 | ID | Test Case | Steps | Expected Behavior | Story |
 |----|-----------|-------|-------------------|-------|
-| RW-01 | Warning appears at threshold | Mock remaining=10 | Banner with "{remaining} requests" | S-4.1.3 |
+| RW-01 | Warning appears at threshold | Mock remaining=12 | Banner with "{remaining} requests" | S-4.1.3 |
 | RW-02 | No warning above threshold | Mock remaining=50 | No banner | S-4.1.3 |
 | RW-03 | Exhausted state non-dismissible | Mock remaining=0 | Banner without dismiss button | S-4.1.3 |
 | RW-04 | Sign in button navigates to login | Click sign in on banner | Navigates to /login | S-4.1.3 |

@@ -160,11 +160,11 @@ After auth, return to same comment context
 
 ### Private Repository Detection
 
-When an unauthenticated user attempts to access a private repository, GitHub returns a 404 (not 403) to avoid confirming the repository's existence. The client must assume 404 errors for unauthenticated requests may indicate private repositories.
+When an unauthenticated user attempts to access a private repository, GitHub typically returns a 404 (not 403) to avoid confirming the repository's existence. However, 403 responses can also occur for permission-related access denials. The client should treat both as potential private repository indicators for unauthenticated requests.
 
 **Detection logic**:
 ```typescript
-if (response.status === 404 && !token) {
+if ((response.status === 404 || response.status === 403) && !token) {
   error.isPrivateRepo = true;
 }
 ```
