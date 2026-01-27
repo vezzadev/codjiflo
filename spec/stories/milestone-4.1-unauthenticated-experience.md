@@ -49,6 +49,7 @@ Modify the application entry flow to be unauthenticated-first. Users land direct
 1. **Landing Experience**:
    - [ ] [AC-4.1.1.1] Root path (`/`) redirects to `/dashboard` regardless of authentication status.
    - [ ] [AC-4.1.1.2] Dashboard page loads without authentication guard; `useRequireAuth()` is replaced with `useOptionalAuth()`.
+   - [ ] [AC-4.1.1.2a] PR page (`/:owner/:repo/:number`) loads without authentication guard; uses `useOptionalAuth()` to allow public PR viewing.
    - [ ] [AC-4.1.1.3] Dashboard displays PR URL input form for both authenticated and unauthenticated users.
    - [ ] [AC-4.1.1.4] Login button displayed in dashboard header for unauthenticated users (position: top-right area).
 

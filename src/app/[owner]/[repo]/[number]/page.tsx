@@ -7,8 +7,11 @@ import { usePRStore, useDocumentTitle } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
-import { useRequireAuth } from '@/features/auth/hooks';
-import { useIterationStore } from '@/features/iterations';
+import { useOptionalAuth } from '@/features/auth/hooks';
+import {
+  useIterationStore,
+  DegradedModeBanner,
+} from '@/features/iterations';
 import {
   AppShell,
   Titlebar,
@@ -30,7 +33,7 @@ interface PRPageProps {
 function PullRequestContent({ params }: PRPageProps) {
   const { owner, repo, number } = use(params);
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useRequireAuth();
+  const { isLoading } = useOptionalAuth();
 
   const { currentPR, loadPR, reset: resetPR } = usePRStore();
   const { loadFiles, reset: resetDiff } = useDiffStore();
@@ -93,10 +96,6 @@ function PullRequestContent({ params }: PRPageProps) {
         </div>
       </AppShell>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   if (!owner || !repo || !number) {
