@@ -13,7 +13,7 @@ import { computeLineDiff, enhanceWithWordDiffs, computeAlignment } from '../work
 import { detectLanguage } from '../utils';
 
 interface IterationDiffResult {
-  /** Whether iteration mode is active (non-degraded with valid range) */
+  /** Whether stateful mode is active (artifact available with valid range) */
   isIterationMode: boolean;
   /** Files changed in the selected range */
   changedFiles: ReviewFileArtifact[];
@@ -30,12 +30,12 @@ interface IterationDiffResult {
  * Returns iteration-based diff data when available, otherwise returns empty results.
  */
 export function useIterationDiff(): IterationDiffResult {
-  const { client, isDegraded, artifacts } = useIterationStore();
+  const { client, mode, artifacts } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const isIterationMode = useMemo(() => {
-    return !isDegraded && client !== null && selectedRange !== null;
-  }, [isDegraded, client, selectedRange]);
+    return mode === 'stateful' && client !== null && selectedRange !== null;
+  }, [mode, client, selectedRange]);
 
   // Get files changed in the selected range
   const changedFiles = useMemo((): ReviewFileArtifact[] => {

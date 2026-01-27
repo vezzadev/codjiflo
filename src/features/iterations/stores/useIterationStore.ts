@@ -55,6 +55,9 @@ function updateLRUCache(
   return Object.fromEntries(trimmedEntries);
 }
 
+/** Iteration storage mode: stateful (artifact available) or stateless (GitHub API only) */
+export type IterationMode = 'stateful' | 'stateless';
+
 interface IterationState {
   // Data
   iterations: Iteration[];
@@ -73,9 +76,10 @@ interface IterationState {
   // Loading state
   isLoading: boolean;
   error: string | null;
-  isDegraded: boolean;
-  /** Reason for degraded mode (when isDegraded is true) */
-  degradedReason: string | null;
+  /** Iteration storage mode: 'stateful' when artifact is available, 'stateless' for GitHub API only */
+  mode: IterationMode;
+  /** Reason for stateless mode (for debugging, null when stateful) */
+  statelessReason: string | null;
 
   // Actions
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
@@ -107,8 +111,8 @@ const initialState = {
   spanTrackerService: null,
   isLoading: false,
   error: null,
-  isDegraded: false,
-  degradedReason: null,
+  mode: 'stateful' as IterationMode,
+  statelessReason: null,
 };
 
 // ============================================================================
@@ -137,12 +141,12 @@ export const useIterationStore = create<IterationState>()(
           const result = await loader.load(earlyReference ?? undefined);
 
           if (!result) {
-            // No artifact found - trigger graceful degradation
-            console.info(`[CodjiFlo] Entering degraded mode: no artifact found for ${prKey}`);
+            // No artifact found - enter stateless mode
+            console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
             set({
               isLoading: false,
-              isDegraded: true,
-              degradedReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
+              mode: 'stateless',
+              statelessReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
               iterations: [],
               artifacts: [],
             });
@@ -216,8 +220,8 @@ export const useIterationStore = create<IterationState>()(
             client,
             spanTrackerService,
             isLoading: false,
-            isDegraded: false,
-            degradedReason: null,
+            mode: 'stateful',
+            statelessReason: null,
             error: null,
           });
         } catch (err) {

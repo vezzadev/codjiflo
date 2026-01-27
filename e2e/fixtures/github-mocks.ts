@@ -313,7 +313,7 @@ export async function setupFileContentsMock(
 
 /**
  * Set up mocks for iteration-related endpoints (artifact discovery).
- * Returns empty data to trigger degraded mode.
+ * Returns empty data to trigger stateless mode.
  */
 export async function setupIterationMocks(
   page: Page,
@@ -388,7 +388,7 @@ export async function setupFullPRMocks(
     await setupFileContentsMock(page, owner, repo, options.files, options.pr);
   }
 
-  // Set up iteration-related mocks (returns empty to trigger degraded mode)
+  // Set up iteration-related mocks (returns empty to trigger stateless mode)
   await setupIterationMocks(page, owner, repo, prNumber);
 }
 

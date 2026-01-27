@@ -25,7 +25,7 @@ describe('FileList filter integration', () => {
         iterations: [],
         isLoading: false,
         error: null,
-        isDegraded: false,
+        mode: 'stateful',
       });
     });
   });

@@ -127,6 +127,9 @@ export interface ArtifactReference {
 // Store State Types
 // ============================================================================
 
+/** Iteration storage mode: stateful (artifact available) or stateless (GitHub API only) */
+export type IterationMode = 'stateful' | 'stateless';
+
 export interface IterationState {
   /** All iterations loaded from artifact */
   iterations: Iteration[];
@@ -149,8 +152,11 @@ export interface IterationState {
   /** Error message if load failed */
   error: string | null;
 
-  /** True if using GitHub commits fallback (no artifact) */
-  isDegraded: boolean;
+  /** Iteration storage mode: 'stateful' when artifact is available, 'stateless' for GitHub API only */
+  mode: IterationMode;
+
+  /** Reason for stateless mode (for debugging, null when stateful) */
+  statelessReason: string | null;
 
   // Actions
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;

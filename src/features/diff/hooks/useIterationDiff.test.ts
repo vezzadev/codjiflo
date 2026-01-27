@@ -11,7 +11,7 @@ import type { IterationRange, ReviewFileArtifact } from '@/features/iterations/t
 interface MockStoreState {
   client: unknown;
   selectedRange: IterationRange | null;
-  isDegraded: boolean;
+  mode: 'stateful' | 'stateless';
   artifacts: ReviewFileArtifact[];
 }
 
@@ -41,7 +41,7 @@ function setupMockState(state: Partial<MockStoreState>) {
   currentMockState = {
     client: null,
     selectedRange: null,
-    isDegraded: false,
+    mode: 'stateful',
     artifacts: [],
     ...state,
   };
@@ -52,12 +52,12 @@ describe('useIterationDiff', () => {
     vi.clearAllMocks();
   });
 
-  describe('when degraded mode', () => {
-    it('should return empty results when isDegraded is true', () => {
+  describe('when stateless mode', () => {
+    it('should return empty results when mode is stateless', () => {
       setupMockState({
         client: mockClient,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: true,
+        mode: 'stateless',
         artifacts: [],
       });
 
@@ -74,7 +74,7 @@ describe('useIterationDiff', () => {
       setupMockState({
         client: null,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
         artifacts: [],
       });
 
@@ -90,7 +90,7 @@ describe('useIterationDiff', () => {
       setupMockState({
         client: mockClient,
         selectedRange: null,
-        isDegraded: false,
+        mode: 'stateful',
         artifacts: [],
       });
 
@@ -124,7 +124,7 @@ describe('useIterationDiff', () => {
       setupMockState({
         client: mockClient,
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
         artifacts: mockArtifacts,
       });
 
@@ -171,7 +171,7 @@ describe('useIterationDiff', () => {
         setupMockState({
           client: null,
           selectedRange: null,
-          isDegraded: true,
+          mode: 'stateless',
           artifacts: [],
         });
 
@@ -218,7 +218,7 @@ describe('useIterationDiff', () => {
         setupMockState({
           client: mockClient,
           selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-          isDegraded: false,
+          mode: 'stateful',
           artifacts: deletedFileArtifacts,
         });
 
@@ -293,7 +293,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [sparseArtifact],
           });
 
@@ -331,7 +331,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [deletedArtifact],
           });
 
@@ -371,7 +371,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [addedLateArtifact],
           });
 
@@ -411,7 +411,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [renamedArtifact],
           });
 
@@ -452,7 +452,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 3 }, // Base to iteration 2
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [lateModifiedArtifact],
           });
 
@@ -509,7 +509,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 1, toSnapshot: 3 }, // Iteration 1 to iteration 2
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [lateModifiedArtifact],
           });
 
@@ -562,7 +562,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [addedInIteration2],
           });
 
@@ -605,7 +605,7 @@ describe('useIterationDiff', () => {
           setupMockState({
             client: mockClient,
             selectedRange: { fromSnapshot: 0, toSnapshot: 1 }, // Viewing iteration 1
-            isDegraded: false,
+            mode: 'stateful',
             artifacts: [lateModifiedArtifact],
           });
 

@@ -62,7 +62,7 @@ describe('useDiffFilter', () => {
     } as ReturnType<typeof usePRStore>);
   });
 
-  it('parses patch and returns diffLines in degraded mode', () => {
+  it('parses patch and returns diffLines in stateless mode', () => {
     const { result } = renderHook(() => useDiffFilter(mockSourceInput));
 
     expect(result.current.diffLines).toHaveLength(1);

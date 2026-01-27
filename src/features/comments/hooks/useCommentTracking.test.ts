@@ -15,7 +15,7 @@ let mockUpdateTrackedPositions: ReturnType<typeof vi.fn>;
 
 // Mock iteration store state
 let mockIterations: { revision: number; headSha: string }[] = [];
-let mockIsDegraded = false;
+let mockMode: 'stateful' | 'stateless' = 'stateful';
 let mockArtifacts: { id: number; repoPaths: (string | null)[] }[] = [];
 let mockSelectedRange: { fromSnapshot: number; toSnapshot: number } | null = null;
 let mockSpanTrackerService: {
@@ -33,7 +33,7 @@ vi.mock('@/features/iterations/stores', () => ({
   useIterationStore: vi.fn((selector?: (state: unknown) => unknown) => {
     const state = {
       iterations: mockIterations,
-      isDegraded: mockIsDegraded,
+      mode: mockMode,
       artifacts: mockArtifacts,
       getSpanTrackerService: () => mockSpanTrackerService,
     };
@@ -85,7 +85,7 @@ describe('useCommentTracking', () => {
     vi.clearAllMocks();
     mockThreads = [];
     mockIterations = [];
-    mockIsDegraded = false;
+    mockMode = 'stateful';
     mockArtifacts = [];
     mockSelectedRange = null;
     mockSpanTrackerService = null;
@@ -96,9 +96,9 @@ describe('useCommentTracking', () => {
     vi.clearAllMocks();
   });
 
-  describe('degraded mode', () => {
-    it('does nothing in degraded mode', () => {
-      mockIsDegraded = true;
+  describe('stateless mode', () => {
+    it('does nothing in stateless mode', () => {
+      mockMode = 'stateless';
       mockThreads = [
         createThread({
           id: 'thread-1',
@@ -117,7 +117,7 @@ describe('useCommentTracking', () => {
 
   describe('early exit conditions', () => {
     it('does nothing when no selected range', () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = null;
       mockThreads = [
         createThread({
@@ -135,7 +135,7 @@ describe('useCommentTracking', () => {
     });
 
     it('does nothing when no iterations loaded', () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [];
       mockThreads = [
@@ -154,7 +154,7 @@ describe('useCommentTracking', () => {
     });
 
     it('does nothing when no SpanTracker service', () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockSpanTrackerService = null;
@@ -174,7 +174,7 @@ describe('useCommentTracking', () => {
     });
 
     it('does nothing when no threads need tracking', () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockSpanTrackerService = {
@@ -200,7 +200,7 @@ describe('useCommentTracking', () => {
 
   describe('position tracking', () => {
     it('tracks outdated comments and updates store', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -233,7 +233,7 @@ describe('useCommentTracking', () => {
     });
 
     it('sets trackedLine to null when line was deleted', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -260,7 +260,7 @@ describe('useCommentTracking', () => {
     });
 
     it('sets trackedLine to null when artifact not found', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockArtifacts = []; // No artifacts
@@ -288,7 +288,7 @@ describe('useCommentTracking', () => {
     });
 
     it('sets trackedLine to null when commit not found in iterations', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'different-sha' }]; // Different SHA
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -316,7 +316,7 @@ describe('useCommentTracking', () => {
     });
 
     it('handles SpanTracker errors gracefully', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -345,7 +345,7 @@ describe('useCommentTracking', () => {
 
   describe('caching', () => {
     it('does not recompute when cache key is unchanged', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'abc123' }];
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -378,7 +378,7 @@ describe('useCommentTracking', () => {
     });
 
     it('recomputes when selectedRange changes', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [
         { revision: 1, headSha: 'abc123' },
@@ -419,7 +419,7 @@ describe('useCommentTracking', () => {
 
   describe('findSnapshotForCommit logic', () => {
     it('correctly computes snapshot index for revision 1', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 0, toSnapshot: 1 };
       mockIterations = [{ revision: 1, headSha: 'rev1-sha' }];
       mockArtifacts = [{ id: 1, repoPaths: ['src/file.ts'] }];
@@ -447,7 +447,7 @@ describe('useCommentTracking', () => {
     });
 
     it('correctly computes snapshot index for revision 3', async () => {
-      mockIsDegraded = false;
+      mockMode = 'stateful';
       mockSelectedRange = { fromSnapshot: 4, toSnapshot: 5 };
       mockIterations = [
         { revision: 1, headSha: 'rev1-sha' },

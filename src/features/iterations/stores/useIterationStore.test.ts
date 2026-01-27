@@ -95,8 +95,8 @@ describe('useIterationStore', () => {
       spanTrackerService: null,
       isLoading: false,
       error: null,
-      isDegraded: false,
-      degradedReason: null,
+      mode: 'stateful',
+      statelessReason: null,
     });
 
     // Reset all mocks
@@ -109,7 +109,7 @@ describe('useIterationStore', () => {
     mockClearCache.mockReset();
 
     // Default: findArtifactReference returns the mock reference
-    // Tests can override this when needed (e.g., for degraded mode)
+    // Tests can override this when needed (e.g., for stateless mode)
     mockFindArtifactReference.mockResolvedValue(createMockReference());
   });
 
@@ -130,7 +130,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       expect(state.isLoading).toBe(false);
-      expect(state.isDegraded).toBe(false);
+      expect(state.mode).toBe('stateful');
       expect(state.iterations).toHaveLength(3);
       expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
       // Default range uses the latest iteration's base to handle rebases correctly (issue #151)
@@ -297,13 +297,13 @@ describe('useIterationStore', () => {
       });
     });
 
-    it('should handle degraded mode when no artifact found', async () => {
+    it('should handle stateless mode when no artifact found', async () => {
       mockLoad.mockResolvedValue(null);
 
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
-      expect(state.isDegraded).toBe(true);
+      expect(state.mode).toBe('stateless');
       expect(state.iterations).toHaveLength(0);
       expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
       expect(selectSelectedRange(state)).toBeNull();
@@ -542,7 +542,7 @@ describe('useIterationStore', () => {
       expect(selectSelectedRange(state)).toBeNull();
       expect(state.client).toBeNull();
       expect(state.isLoading).toBe(false);
-      expect(state.isDegraded).toBe(false);
+      expect(state.mode).toBe('stateful');
       expect(mockClose).toHaveBeenCalled();
       expect(mockClearCache).toHaveBeenCalled();
     });

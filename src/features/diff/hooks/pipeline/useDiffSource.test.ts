@@ -24,7 +24,7 @@ describe('useDiffSource', () => {
     vi.clearAllMocks();
   });
 
-  it('returns patch and filename from degraded mode', () => {
+  it('returns patch and filename from stateless mode', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       files: [
         { filename: 'test.ts', patch: 'patch content', status: FileChangeStatus.Modified },
@@ -113,7 +113,7 @@ describe('useDiffSource', () => {
     expect(result.current.iterationDiff).toBeNull();
   });
 
-  it('handles no selected file in degraded mode', () => {
+  it('handles no selected file in stateless mode', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       files: [],
       selectedFileIndex: 0,

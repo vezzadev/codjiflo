@@ -21,8 +21,8 @@ vi.mock('../stores', () => ({
 // Store state that tests can configure
 interface MockIterationStoreState {
   client: MockIterationClient | null;
-  isDegraded: boolean;
-  degradedReason?: string | null;
+  mode: 'stateful' | 'stateless';
+  statelessReason?: string | null;
   artifacts: ReviewFileArtifact[];
   selectedRange: { fromSnapshot: number; toSnapshot: number } | null;
   currentPrKey?: string | null;
@@ -175,12 +175,12 @@ describe('useIterationAwareFiles - Integration Tests', () => {
     currentIterationStoreState = {
       client: selectedRange ? mockClient : null,
       selectedRange,
-      isDegraded: !selectedRange,
+      mode: selectedRange ? 'stateful' : 'stateless',
       artifacts,
     };
   }
 
-  describe('Non-iteration mode (degraded)', () => {
+  describe('Non-iteration mode (stateless)', () => {
     it('should return all files unchanged when not in iteration mode', () => {
       const files = [
         createMockFile('src/file1.ts'),
@@ -220,17 +220,17 @@ describe('useIterationAwareFiles - Integration Tests', () => {
     });
   });
 
-  describe('Console warning for degraded mode (Issue #186)', () => {
-    it('should emit console warning once when entering degraded mode', () => {
+  describe('Console warning for stateless mode (Issue #186)', () => {
+    it('should emit console warning once when entering stateless mode', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
       const files = [createMockFile('src/file1.ts')];
 
-      // Setup degraded mode with reason
+      // Setup stateless mode with reason
       currentIterationStoreState = {
         client: null,
         selectedRange: null,
-        isDegraded: true,
-        degradedReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
+        mode: 'stateless',
+        statelessReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };
@@ -252,7 +252,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       // Verify warning was called once
       expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        '[CodjiFlo] Using GitHub API as fallback (degraded mode). ' +
+        '[CodjiFlo] Using GitHub API as fallback (stateless mode). ' +
         'Reason: No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.. ' +
         'Iteration tracking features are unavailable.'
       );
@@ -267,8 +267,8 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       currentIterationStoreState = {
         client: null,
         selectedRange: null,
-        isDegraded: true,
-        degradedReason: 'Test reason',
+        mode: 'stateless',
+        statelessReason: 'Test reason',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };
@@ -304,8 +304,8 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       currentIterationStoreState = {
         client: null,
         selectedRange: null,
-        isDegraded: true,
-        degradedReason: 'Test reason',
+        mode: 'stateless',
+        statelessReason: 'Test reason',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };
@@ -336,13 +336,13 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it('should not emit warning when not in degraded mode', () => {
+    it('should not emit warning when not in stateless mode', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
       const files = [createMockFile('src/file1.ts')];
 
-      // Setup iteration mode (not degraded)
+      // Setup stateful mode
       setupMocks(files, [], { fromSnapshot: 0, toSnapshot: 1 });
-      currentIterationStoreState.isDegraded = false;
+      currentIterationStoreState.mode = 'stateful';
       currentIterationStoreState.currentPrKey = 'https://github.com/test/repo/pull/123';
 
       renderHook(() => useIterationAwareFiles());

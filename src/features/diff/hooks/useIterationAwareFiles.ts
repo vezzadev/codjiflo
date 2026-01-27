@@ -1,13 +1,13 @@
 /**
  * Hook for computing iteration-aware file list with filtering and stats
  *
- * When iteration mode is active, this hook:
+ * When stateful mode is active (artifact available), this hook:
  * - Uses artifact as source of truth (not GitHub API)
  * - Filters out files with no changes in the selected range
  * - Computes additions/deletions from the iteration diff
  * - Derives file status from the iteration range
  *
- * GitHub API is only used as fallback when degraded (no artifact available).
+ * GitHub API is only used as fallback in stateless mode (no artifact available).
  */
 
 import { useMemo, useEffect, useRef } from 'react';
@@ -38,35 +38,35 @@ interface IterationAwareFilesResult {
 /**
  * Compute iteration-aware file list with filtering and updated stats.
  *
- * In iteration mode:
+ * In stateful mode (artifact available):
  * - Artifact is source of truth (changedFiles from artifact database)
  * - Files with no changes in the selected range are hidden
  * - Lines added/removed reflect the iteration diff
  * - File status (Added, Modified, Deleted) is derived from iteration range
  *
- * In non-iteration mode (degraded, no artifact):
+ * In stateless mode (no artifact):
  * - Returns original files from GitHub API unchanged
  */
 export function useIterationAwareFiles(): IterationAwareFilesResult {
   const { files: githubFiles } = useDiffStore();
   const { isIterationMode, changedFiles, getFileDiffByPath, selectedRange } = useIterationDiff();
-  const { isDegraded, degradedReason, currentPrKey } = useIterationStore();
+  const { mode, statelessReason, currentPrKey } = useIterationStore();
 
   // Track if we've already warned for this PR to avoid duplicate warnings
   const warnedForPrRef = useRef<string | null>(null);
 
-  // Emit warning when GitHub API is used as fallback in degraded mode
+  // Emit warning when GitHub API is used as fallback in stateless mode
   useEffect(() => {
-    // Only warn if we're in degraded mode and haven't warned for this PR yet
-    if (isDegraded && currentPrKey && warnedForPrRef.current !== currentPrKey) {
+    // Only warn if we're in stateless mode and haven't warned for this PR yet
+    if (mode === 'stateless' && currentPrKey && warnedForPrRef.current !== currentPrKey) {
       warnedForPrRef.current = currentPrKey;
       console.warn(
-        `[CodjiFlo] Using GitHub API as fallback (degraded mode). ` +
-        `Reason: ${degradedReason ?? 'Unknown'}. ` +
+        `[CodjiFlo] Using GitHub API as fallback (stateless mode). ` +
+        `Reason: ${statelessReason ?? 'Unknown'}. ` +
         `Iteration tracking features are unavailable.`
       );
     }
-  }, [isDegraded, degradedReason, currentPrKey]);
+  }, [mode, statelessReason, currentPrKey]);
 
   // Build lookup from GitHub files for originalIndex and previousFilename
   const githubFileMap = useMemo(() => {
@@ -81,7 +81,7 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
   }, [githubFiles]);
 
   const result = useMemo((): IterationAwareFilesResult => {
-    // Non-iteration mode (degraded): return original files from GitHub API
+    // Stateless mode: return original files from GitHub API
     if (!isIterationMode || !selectedRange) {
       const files = githubFiles.map((file, index): IterationAwareFile => {
         const result: IterationAwareFile = {

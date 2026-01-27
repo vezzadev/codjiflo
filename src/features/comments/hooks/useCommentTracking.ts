@@ -40,19 +40,19 @@ function findSnapshotForCommit(
  * It computes the current position using SpanTracker and updates
  * the `trackedLine` field in the comments store.
  *
- * In degraded mode (no artifact), this hook does nothing.
+ * In stateless mode (no artifact), this hook does nothing.
  */
 export function useCommentTracking(): void {
   const { threads, updateTrackedPositions } = useCommentsStore();
-  const { iterations, isDegraded, artifacts, getSpanTrackerService } = useIterationStore();
+  const { iterations, mode, artifacts, getSpanTrackerService } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   // Cache key to prevent redundant computation
   const lastCacheKeyRef = useRef<string>('');
 
   useEffect(() => {
-    // Skip in degraded mode - no SpanTracker data available
-    if (isDegraded) return;
+    // Skip in stateless mode - no SpanTracker data available
+    if (mode === 'stateless') return;
 
     // Skip if no selected range
     if (!selectedRange) return;
@@ -89,7 +89,7 @@ export function useCommentTracking(): void {
       spanTrackerService,
       updateTrackedPositions
     );
-  }, [threads, iterations, isDegraded, artifacts, selectedRange, getSpanTrackerService, updateTrackedPositions]);
+  }, [threads, iterations, mode, artifacts, selectedRange, getSpanTrackerService, updateTrackedPositions]);
 }
 
 /**
