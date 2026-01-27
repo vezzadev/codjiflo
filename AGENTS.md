@@ -39,7 +39,7 @@ npm run test -- -t "should render toolbar"
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
 | Integration | `*.integration.test.tsx` | Use `data-testid`, helpers in `src/tests/helpers/`. Test happy AND unhappy paths |
-| E2E | `e2e/{mock\|prod}/{degraded\|iteration}-mode/**/*.spec.ts` | Playwright. Critical flows only. Organized by mode and artifact availability |
+| E2E | `e2e/{mock\|prod}/{stateless\|stateful}-mode/**/*.spec.ts` | Playwright. Critical flows only. Organized by mode and artifact availability |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
@@ -60,16 +60,16 @@ Both E2E test modes start a test server automatically. It is NOT necessary to st
 ```
 e2e/
 ├── mock/
-│   ├── degraded-mode/     # Tests without iteration artifacts
-│   └── iteration-mode/    # Tests with iteration artifacts (mocked)
+│   ├── stateless-mode/    # Tests without iteration artifacts (Timeline API)
+│   └── stateful-mode/     # Tests with iteration artifacts (mocked)
 ├── prod/
-│   ├── degraded-mode/     # Prod tests without iteration artifacts
-│   └── iteration-mode/    # Prod tests with real iteration artifacts
+│   ├── stateless-mode/    # Prod tests without iteration artifacts
+│   └── stateful-mode/     # Prod tests with real iteration artifacts
 └── fixtures/              # Shared test fixtures
 ```
 
 **Organizational Principles:**
-- Tests are organized by **mode** (mock/prod) and **artifact availability** (degraded/iteration)
+- Tests are organized by **mode** (mock/prod) and **artifact availability** (stateless/stateful)
 - Mode is determined by `E2E_DEPENDENCIES_MODE` environment variable
 - Playwright config automatically selects the appropriate directory based on mode
 - **One describe() per file** - each `.spec.ts` file contains exactly one `test.describe()` block at the top level
@@ -293,7 +293,20 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
   - Public PR access without authentication (60 req/hr rate limit).
   - Private PR detection with login redirect.
   - Read-only comments with "Log in to reply" prompts.
-  - Degraded iteration mode (artifacts require auth).
+  - Stateless iteration mode (artifacts require auth).
+
+### [Milestone 4.2: Stateless Iteration Management](spec/stories/milestone-4.2-stateless-iteration-management.md)
+**Goal**: Near-parity iteration support without GitHub Action (stateless mode).
+- **Scaffolding Needs**:
+  - `src/features/iterations/loaders/timeline-loader.ts`: Load iterations from GitHub Timeline API.
+  - `src/features/diff/workers/diff-compute.worker.ts`: Web Worker for async diff computation.
+  - `src/features/diff/scheduler/diff-scheduler.ts`: Priority queue for diff tasks.
+  - `src/features/iterations/storage/stateless-storage.ts`: IndexedDB persistence for last seen iteration.
+- **Key Changes**:
+  - Rename "degraded mode" → "stateless mode", "iteration mode" → "stateful mode".
+  - Remove degraded mode banner.
+  - Timeline-based force-push detection via `force_pushed` events.
+  - Background SpanTracker precomputation for comment-containing files.
 
 ### [Milestone 5: Full Comments & Canvas Layouts](spec/stories/milestone-5-full-comments.md)
 **Goal**: Floating Bubbles (The "CodeFlow" feel).
