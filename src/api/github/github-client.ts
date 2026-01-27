@@ -54,10 +54,18 @@ function parseRateLimitHeaders(response: Response): RateLimitInfo | undefined {
     return undefined;
   }
 
+  const remainingInt = parseInt(remaining, 10);
+  const resetInt = parseInt(reset, 10);
+  const limitInt = parseInt(limit, 10);
+
+  if (Number.isNaN(remainingInt) || Number.isNaN(resetInt) || Number.isNaN(limitInt)) {
+    return undefined;
+  }
+
   return {
-    remaining: parseInt(remaining, 10),
-    reset: new Date(parseInt(reset, 10) * 1000),
-    limit: parseInt(limit, 10),
+    remaining: remainingInt,
+    reset: new Date(resetInt * 1000),
+    limit: limitInt,
   };
 }
 
