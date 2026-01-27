@@ -282,6 +282,19 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
   - `src/lib/sqlite-wasm.ts`: SQL.js wrapper for browser SQLite reading.
   - Iteration selector UI and cross-iteration diff computation.
 
+### [Milestone 4.1: Unauthenticated Experience](spec/stories/milestone-4.1-unauthenticated-experience.md)
+**Goal**: Enable unauthenticated users to review public PRs without mandatory login.
+- **Scaffolding Needs**:
+  - `src/api/github/github-client.ts`: Support optional token for public repos.
+  - `src/features/auth/hooks/useOptionalAuth.ts`: Non-redirecting auth hook.
+  - Rate limit tracking in auth store.
+  - Contextual login prompts for auth-required features.
+- **Key Features**:
+  - Public PR access without authentication (60 req/hr rate limit).
+  - Private PR detection with login redirect.
+  - Read-only comments with "Log in to reply" prompts.
+  - Degraded iteration mode (artifacts require auth).
+
 ### [Milestone 5: Full Comments & Canvas Layouts](spec/stories/milestone-5-full-comments.md)
 **Goal**: Floating Bubbles (The "CodeFlow" feel).
 - **Architecture**:
