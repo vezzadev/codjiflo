@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { ArtifactLoader } from '../artifact-loader';
 import { IterationClient } from '../iteration-client';
 import { SpanTrackerService } from '../application';
@@ -141,12 +142,25 @@ export const useIterationStore = create<IterationState>()(
           const result = await loader.load(earlyReference ?? undefined);
 
           if (!result) {
-            // No artifact found - enter stateless mode
-            console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
+            // Determine reason for stateless mode
+            const hasArtifactReference = earlyReference !== null;
+            const isAuthenticated = useAuthStore.getState().token !== null;
+
+            let reason: string;
+            if (hasArtifactReference && !isAuthenticated) {
+              // Artifact exists but can't download without auth (S-4.1.5)
+              reason = 'Sign in to enable iteration tracking. CodjiFlo data is available for this PR.';
+              console.info(`[CodjiFlo] Entering stateless mode: not authenticated for ${prKey}`);
+            } else {
+              // No artifact found - workflow not installed
+              reason = 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.';
+              console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
+            }
+
             set({
               isLoading: false,
               mode: 'stateless',
-              statelessReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
+              statelessReason: reason,
               iterations: [],
               artifacts: [],
             });
