@@ -8,10 +8,12 @@ test.describe("CodjiFlo App", () => {
     await setupLegacyDefaults(page);
   });
 
-  test("should redirect unauthenticated users to login", async ({ page }) => {
+  test("should show dashboard for unauthenticated users", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/.*\/login/);
-    await expect(page.getByRole("heading", { name: /Connect to GitHub/i })).toBeVisible();
+    await expect(page).toHaveURL(/.*\/dashboard/);
+    await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
+    // Login button should be visible for unauthenticated users
+    await expect(page.getByRole("button", { name: /Log in with GitHub/i })).toBeVisible();
   });
 
   test("should show dashboard when authenticated", async ({ page }) => {

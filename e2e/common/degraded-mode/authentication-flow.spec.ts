@@ -16,8 +16,8 @@ test.describe("Authentication Flow (S-1.1)", () => {
   test("Complete authentication journey - successful login and session persistence", async ({
     page,
   }) => {
-    // [AC-1.1.1] User sees "Connect to GitHub" screen when not authenticated
-    await page.goto("/");
+    // [AC-1.1.1] User sees "Connect to GitHub" screen when navigating to login
+    await page.goto("/login");
     await expect(
       page.getByRole("heading", { name: /Connect to GitHub/i })
     ).toBeVisible();
