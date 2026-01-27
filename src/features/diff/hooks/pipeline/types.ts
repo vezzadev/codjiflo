@@ -25,7 +25,7 @@ import type {
 
 /**
  * Output of useDiffSource hook
- * Branches: degraded (GitHub API only) vs iteration (artifact available)
+ * Branches: stateless (GitHub API only) vs stateful (artifact available)
  */
 export interface DiffSourceOutput {
   /** Raw patch from GitHub API */
@@ -34,9 +34,9 @@ export interface DiffSourceOutput {
   filename: string | undefined;
   /** File change status (added, modified, deleted, renamed) */
   fileStatus: FileChangeStatus | undefined;
-  /** Pre-computed diff from iteration artifact (null in degraded mode) */
+  /** Pre-computed diff from iteration artifact (null in stateless mode) */
   iterationDiff: FullFileDiff | null;
-  /** Whether iteration mode is active */
+  /** Whether stateful mode is active (artifact available) */
   isIterationMode: boolean;
 }
 

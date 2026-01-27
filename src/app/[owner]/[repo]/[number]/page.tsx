@@ -8,10 +8,7 @@ import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
 import { useRequireAuth } from '@/features/auth/hooks';
-import {
-  useIterationStore,
-  DegradedModeBanner,
-} from '@/features/iterations';
+import { useIterationStore } from '@/features/iterations';
 import {
   AppShell,
   Titlebar,
@@ -182,8 +179,6 @@ function PullRequestContent({ params }: PRPageProps) {
           </button>
         }
       />
-
-      <DegradedModeBanner />
 
       <div className="main-layout" style={{ gridTemplateColumns: `${String(leftPaneWidth)}px 1fr` }}>
         <LeftPane>

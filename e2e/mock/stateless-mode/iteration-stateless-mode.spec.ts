@@ -7,7 +7,7 @@ import {
 } from "../../fixtures/github-mocks";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
-test.describe("Iteration Management - Degraded Mode", () => {
+test.describe("Iteration Management - Stateless Mode", () => {
   // Mock PR data for iteration tests
   const mockPR: MockPR = {
     id: 1,
@@ -69,16 +69,6 @@ test.describe("Iteration Management - Degraded Mode", () => {
     await expect(nav).toBeVisible();
   });
 
-  test("Degraded mode banner shows when no artifact is available", async ({ page }) => {
-    await page.goto(config.pageUrl);
-    await page.waitForLoadState("load");
-
-    // Wait for the page to stabilize by waiting for the specific degraded mode banner
-    // Look for the degraded mode banner (rendered as a status element with iteration tracking text)
-    const banner = page.getByRole("status").filter({ hasText: /iteration tracking/i });
-    await expect(banner).toBeVisible();
-  });
-
   test("Iteration selector is hidden when no artifact is available", async ({ page }) => {
     await page.goto(config.pageUrl);
     await page.waitForLoadState("load");
@@ -88,7 +78,7 @@ test.describe("Iteration Management - Degraded Mode", () => {
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    // Iteration selector should NOT be visible when in degraded mode
+    // Iteration selector should NOT be visible when in stateless mode
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeHidden();
   });
@@ -109,10 +99,10 @@ test.describe("Iteration Management - Degraded Mode", () => {
 
     // Wait for the specific warning to be emitted
     const warningMsg = await warningPromise;
-    const degradedWarning = warningMsg.text();
+    const statelessWarning = warningMsg.text();
 
     // Verify the warning includes the reason
-    expect(degradedWarning).toContain("Reason:");
-    expect(degradedWarning).toContain("CodjiFlo artifact");
+    expect(statelessWarning).toContain("Reason:");
+    expect(statelessWarning).toContain("CodjiFlo artifact");
   });
 });

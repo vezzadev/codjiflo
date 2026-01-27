@@ -1,20 +1,20 @@
 {
-  "e2e/common/degraded-mode/app.spec.ts": {
+  "e2e/common/stateless-mode/app.spec.ts": {
     "playwright/no-conditional-in-test": {
       "count": 1
     }
   },
-  "e2e/common/degraded-mode/authentication-flow.spec.ts": {
+  "e2e/common/stateless-mode/authentication-flow.spec.ts": {
     "playwright/no-conditional-in-test": {
       "count": 3
     }
   },
-  "e2e/common/degraded-mode/authentication-redirect.spec.ts": {
+  "e2e/common/stateless-mode/authentication-redirect.spec.ts": {
     "playwright/no-conditional-in-test": {
       "count": 5
     }
   },
-  "e2e/common/degraded-mode/comments.spec.ts": {
+  "e2e/common/stateless-mode/comments.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 9
     },
@@ -25,7 +25,7 @@
       "count": 1
     }
   },
-  "e2e/common/degraded-mode/diff-view-modes.spec.ts": {
+  "e2e/common/stateless-mode/diff-view-modes.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 83
     },
@@ -36,7 +36,7 @@
       "count": 10
     }
   },
-  "e2e/common/degraded-mode/pr-viewer.spec.ts": {
+  "e2e/common/stateless-mode/pr-viewer.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 27
     },
@@ -47,32 +47,97 @@
       "count": 4
     }
   },
-  "e2e/mock/degraded-mode/change-navigation-after-file-switch.spec.ts": {
+  "e2e/mock/stateful-mode/comment-toggle.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 4
+    }
+  },
+  "e2e/mock/stateful-mode/diff-horizontal-scroll.spec.ts": {
+    "playwright/no-conditional-expect": {
+      "count": 1
+    },
+    "playwright/no-conditional-in-test": {
+      "count": 5
+    }
+  },
+  "e2e/mock/stateful-mode/iteration-keyboard-navigation.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 11
+    }
+  },
+  "e2e/mock/stateful-mode/iterations/change-navigation-reset.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 4
+    }
+  },
+  "e2e/mock/stateful-mode/iterations/full-file-jk-navigation.spec.ts": {
+    "playwright/no-conditional-in-test": {
+      "count": 1
+    },
+    "playwright/no-raw-locators": {
+      "count": 1
+    }
+  },
+  "e2e/mock/stateful-mode/iterations/iteration-file-status.spec.ts": {
+    "playwright/no-conditional-in-test": {
+      "count": 2
+    },
+    "playwright/no-raw-locators": {
+      "count": 4
+    }
+  },
+  "e2e/mock/stateful-mode/iterations/rebase-base-commit.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 8
+    }
+  },
+  "e2e/mock/stateful-mode/minimap-lasso-sizing.spec.ts": {
+    "playwright/no-conditional-in-test": {
+      "count": 8
+    },
+    "playwright/no-raw-locators": {
+      "count": 1
+    }
+  },
+  "e2e/mock/stateful-mode/minimap-navigation.spec.ts": {
+    "playwright/no-conditional-in-test": {
+      "count": 3
+    },
+    "playwright/no-raw-locators": {
+      "count": 4
+    }
+  },
+  "e2e/mock/stateful-mode/minimap-with-comments.spec.ts": {
+    "playwright/no-raw-locators": {
+      "count": 1
+    }
+  },
+  "e2e/mock/stateless-mode/change-navigation-after-file-switch.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 2
     }
   },
-  "e2e/mock/degraded-mode/diff-view-full-file-added-files.spec.ts": {
+  "e2e/mock/stateless-mode/diff-view-full-file-added-files.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 1
     }
   },
-  "e2e/mock/degraded-mode/diff-view-mock-only.spec.ts": {
+  "e2e/mock/stateless-mode/diff-view-mock-only.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 5
     }
   },
-  "e2e/mock/degraded-mode/inline-gutter-line-numbers.spec.ts": {
+  "e2e/mock/stateless-mode/inline-gutter-line-numbers.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 9
     }
   },
-  "e2e/mock/degraded-mode/iteration-degraded-mode.spec.ts": {
+  "e2e/mock/stateless-mode/iteration-stateless-mode.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 1
     }
   },
-  "e2e/mock/degraded-mode/minimap-zindex.spec.ts": {
+  "e2e/mock/stateless-mode/minimap-zindex.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 2
     },
@@ -83,12 +148,12 @@
       "count": 5
     }
   },
-  "e2e/mock/degraded-mode/side-filter.spec.ts": {
+  "e2e/mock/stateless-mode/side-filter.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 5
     }
   },
-  "e2e/mock/degraded-mode/sxs-spacer-styling.spec.ts": {
+  "e2e/mock/stateless-mode/sxs-spacer-styling.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 1
     },
@@ -99,38 +164,7 @@
       "count": 2
     }
   },
-  "e2e/mock/iteration-mode/comment-toggle.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 4
-    }
-  },
-  "e2e/mock/iteration-mode/diff-horizontal-scroll.spec.ts": {
-    "playwright/no-conditional-expect": {
-      "count": 1
-    },
-    "playwright/no-conditional-in-test": {
-      "count": 5
-    }
-  },
-  "e2e/mock/iteration-mode/iteration-keyboard-navigation.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 11
-    }
-  },
-  "e2e/mock/iteration-mode/iterations/change-navigation-reset.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 4
-    }
-  },
-  "e2e/mock/iteration-mode/iterations/full-file-jk-navigation.spec.ts": {
-    "playwright/no-conditional-in-test": {
-      "count": 1
-    },
-    "playwright/no-raw-locators": {
-      "count": 1
-    }
-  },
-  "e2e/mock/iteration-mode/iterations/iteration-file-status.spec.ts": {
+  "e2e/prod/stateful-mode/iteration-file-status.spec.ts": {
     "playwright/no-conditional-in-test": {
       "count": 2
     },
@@ -138,41 +172,7 @@
       "count": 4
     }
   },
-  "e2e/mock/iteration-mode/iterations/rebase-base-commit.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 8
-    }
-  },
-  "e2e/mock/iteration-mode/minimap-lasso-sizing.spec.ts": {
-    "playwright/no-conditional-in-test": {
-      "count": 8
-    },
-    "playwright/no-raw-locators": {
-      "count": 1
-    }
-  },
-  "e2e/mock/iteration-mode/minimap-navigation.spec.ts": {
-    "playwright/no-conditional-in-test": {
-      "count": 3
-    },
-    "playwright/no-raw-locators": {
-      "count": 4
-    }
-  },
-  "e2e/mock/iteration-mode/minimap-with-comments.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 1
-    }
-  },
-  "e2e/prod/iteration-mode/iteration-file-status.spec.ts": {
-    "playwright/no-conditional-in-test": {
-      "count": 2
-    },
-    "playwright/no-raw-locators": {
-      "count": 4
-    }
-  },
-  "e2e/prod/iteration-mode/iteration-tabs-ui.spec.ts": {
+  "e2e/prod/stateful-mode/iteration-tabs-ui.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 5
     },

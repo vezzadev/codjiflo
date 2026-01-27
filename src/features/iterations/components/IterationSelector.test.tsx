@@ -9,7 +9,7 @@ interface MockStoreState {
   selectedRange: IterationRange | null;
   selectRange: ReturnType<typeof vi.fn>;
   isLoading: boolean;
-  isDegraded: boolean;
+  mode: 'stateful' | 'stateless';
   artifactReference: ArtifactReference | null;
 }
 
@@ -49,7 +49,7 @@ function setupMockState(state: Partial<MockStoreState>) {
     selectedRange: null,
     selectRange: mockSelectRange,
     isLoading: false,
-    isDegraded: false,
+    mode: 'stateful',
     artifactReference: null,
     ...state,
   };
@@ -62,11 +62,11 @@ describe('IterationSelector', () => {
   });
 
   describe('rendering conditions', () => {
-    it('returns null when isDegraded is true', () => {
+    it('returns null when mode is stateless', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: true,
+        mode: 'stateless',
       });
 
       const { container } = render(<IterationSelector />);
@@ -77,7 +77,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [],
         selectedRange: null,
-        isDegraded: false,
+        mode: 'stateful',
         isLoading: false,
       });
 
@@ -89,7 +89,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [],
         selectedRange: null,
-        isDegraded: false,
+        mode: 'stateful',
         isLoading: true,
         artifactReference: null,
       });
@@ -119,7 +119,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [],
         selectedRange: null,
-        isDegraded: false,
+        mode: 'stateful',
         isLoading: true,
         artifactReference: {
           iterationCount: 5,
@@ -146,7 +146,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -162,7 +162,7 @@ describe('IterationSelector', () => {
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
         isLoading: true,
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -180,7 +180,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -194,7 +194,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // toSnapshot 5 = iteration 3
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -207,7 +207,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 }, // Base to iteration 3
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -222,7 +222,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector className="custom-class" />);
@@ -236,7 +236,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -255,7 +255,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -273,7 +273,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -295,7 +295,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -317,7 +317,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -338,7 +338,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -354,7 +354,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -370,7 +370,7 @@ describe('IterationSelector', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -389,7 +389,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2), createMockIteration(3)],
         selectedRange: { fromSnapshot: 1, toSnapshot: 5 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -416,7 +416,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -433,7 +433,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1), createMockIteration(2)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);
@@ -450,7 +450,7 @@ describe('IterationSelector', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
-        isDegraded: false,
+        mode: 'stateful',
       });
 
       render(<IterationSelector />);

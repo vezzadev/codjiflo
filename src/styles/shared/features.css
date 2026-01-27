@@ -263,59 +263,6 @@
 /* Note: .sr-only moved to utilities.css */
 
 /* ============================================
-   DEGRADED MODE BANNER
-   ============================================ */
-.degraded-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background-color: var(--waiting-yellow);
-  border-bottom: 1px solid var(--combobox-border);
-}
-
-.degraded-banner-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--waiting-yellow-text);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.degraded-banner-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.degraded-banner-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--waiting-yellow-text);
-  margin: 0 0 4px 0;
-}
-
-.degraded-banner-text {
-  font-size: 13px;
-  color: var(--waiting-yellow-text);
-  margin: 0;
-}
-
-.degraded-banner-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--waiting-yellow-text);
-  text-decoration: underline;
-}
-
-.degraded-banner-link:hover {
-  text-decoration: none;
-}
-
-/* ============================================
    DIFF HEADER (Sticky)
    ============================================ */
 

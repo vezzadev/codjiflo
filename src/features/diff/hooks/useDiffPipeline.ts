@@ -37,7 +37,7 @@ import {
  * ```
  */
 export function useDiffPipeline(): DiffPipelineOutput {
-  // Stage 1: Get data from appropriate source (degraded vs iteration)
+  // Stage 1: Get data from appropriate source (stateless vs stateful)
   const source = useDiffSource();
 
   // Stage 2: Apply content filter (full file vs changes only)

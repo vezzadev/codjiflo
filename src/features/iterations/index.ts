@@ -6,7 +6,7 @@
  */
 
 // Components
-export { IterationSelector, DegradedModeBanner } from './components';
+export { IterationSelector } from './components';
 
 // Store
 export { useIterationStore } from './stores';
@@ -16,6 +16,7 @@ export type {
   Iteration,
   IterationRange,
   IterationPreset,
+  IterationMode,
   ReviewFileArtifact,
   FileContent,
   ArtifactReference,

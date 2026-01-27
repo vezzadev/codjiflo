@@ -96,7 +96,7 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectRange, isLoading, isDegraded, artifactReference } = useIterationStore();
+  const { iterations, selectRange, isLoading, mode, artifactReference } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -222,8 +222,8 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     return { start: minRev, end: maxRev };
   }, [dragState]);
 
-  // Don't render if degraded mode
-  if (isDegraded) {
+  // Don't render if stateless mode (no artifact)
+  if (mode === 'stateless') {
     return null;
   }
 

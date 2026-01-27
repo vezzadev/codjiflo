@@ -128,7 +128,7 @@ export class ArtifactLoader {
 
     // Check if artifact is still pending (workflow hasn't finished uploading)
     if (pendingMatch) {
-      console.warn('Artifact upload still pending, falling back to degraded mode');
+      console.warn('Artifact upload still pending, falling back to stateless mode');
       return null;
     }
 

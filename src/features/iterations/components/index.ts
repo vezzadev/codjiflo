@@ -5,4 +5,3 @@
  */
 
 export { IterationSelector } from './IterationSelector';
-export { DegradedModeBanner } from './DegradedModeBanner';
