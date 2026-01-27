@@ -35,7 +35,7 @@ GET /repos/{owner}/{repo}/issues/{pr_number}/timeline
 
 | Event | Data Extracted | Iteration Impact |
 |-------|----------------|------------------|
-| `force_pushed` | `before` SHA, `after` SHA | Creates new iteration |
+| `head_ref_force_pushed` | `before_commit.sha`, `after_commit.sha` | Creates new iteration |
 | `head_ref_deleted` | Branch name | Marks PR as abandoned |
 | `merged` | Merge commit SHA | Marks final state |
 
@@ -57,15 +57,15 @@ function buildIterationsFromTimeline(timeline: TimelineEvent[], pr: PR): Iterati
 
   // Force-push events create new iterations
   const forcePushes = timeline
-    .filter(e => e.event === 'force_pushed')
+    .filter(e => e.event === 'head_ref_force_pushed')
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   for (const event of forcePushes) {
     iterations.push({
       revision: revision++,
-      headSha: event.after,
+      headSha: event.after_commit.sha,
       baseSha: pr.base.sha,  // May need recalculation for rebases
-      beforeSha: event.before,
+      beforeSha: event.before_commit.sha,
       eventType: 'force_push',
     });
   }
@@ -373,7 +373,7 @@ interface GitHubStatelessIteration extends Iteration {
 ### Stateless Mode Specific
 
 - [ ] Detect iterations from Timeline API
-- [ ] Detect force-pushes via `force_pushed` events
+- [ ] Detect force-pushes via `head_ref_force_pushed` events
 - [ ] Compute diffs via Compare API (2-dot and 3-dot)
 - [ ] Compute SpanTrackers at runtime in Web Worker
 - [ ] Background precompute SpanTrackers for comment-containing files

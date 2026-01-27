@@ -48,7 +48,7 @@ Rename "degraded mode" to "stateless mode" and "iteration mode" to "stateful mod
    - [ ] [AC-4.2.0.6] Update any user-facing text from "degraded" to "stateless".
    - [ ] [AC-4.2.0.7] Iteration selector works identically in both modes (no visual distinction).
 3. **Test Updates**:
-   - [ ] [AC-4.2.0.8] Rename E2E test directories from `degraded-mode` to `stateless-mode`.
+   - [ ] [AC-4.2.0.8] Rename E2E test directories: `degraded-mode` → `stateless-mode`, `iteration-mode` → `stateful-mode`.
    - [ ] [AC-4.2.0.9] Update test assertions and fixtures.
 
 ---
@@ -58,7 +58,7 @@ Rename "degraded mode" to "stateless mode" and "iteration mode" to "stateful mod
 As a user viewing a PR without the CodjiFlo workflow, I want the app to detect iterations from the PR timeline so that I can compare changes across force-pushes.
 
 ### Description
-Implement a timeline loader that uses GitHub's Issues Timeline API to detect `force_pushed` events and build an iteration list. Combine with PR Commits endpoint for complete commit history. Each force-push creates a new iteration with preserved before/after SHAs.
+Implement a timeline loader that uses GitHub's Issues Timeline API to detect `head_ref_force_pushed` events and build an iteration list. Combine with PR Commits endpoint for complete commit history. Each force-push creates a new iteration with preserved before/after SHAs.
 
 ### Acceptance Criteria
 1. **API Integration**:
@@ -66,7 +66,7 @@ Implement a timeline loader that uses GitHub's Issues Timeline API to detect `fo
    - [ ] [AC-4.2.1.2] Fetch PR commits via `GET /repos/{owner}/{repo}/pulls/{pr_number}/commits`.
    - [ ] [AC-4.2.1.3] Fetch PR data for base SHA and metadata.
 2. **Force-Push Detection**:
-   - [ ] [AC-4.2.1.4] Extract `force_pushed` events from timeline.
+   - [ ] [AC-4.2.1.4] Extract `head_ref_force_pushed` events from timeline.
    - [ ] [AC-4.2.1.5] Capture `before` SHA (pre-force-push) and `after` SHA (post-force-push).
    - [ ] [AC-4.2.1.6] Build iteration list with sequential revision numbers.
 3. **Iteration Building**:

@@ -39,7 +39,7 @@ npm run test -- -t "should render toolbar"
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
 | Integration | `*.integration.test.tsx` | Use `data-testid`, helpers in `src/tests/helpers/`. Test happy AND unhappy paths |
-| E2E | `e2e/{mock\|prod}/{stateless\|stateful}-mode/**/*.spec.ts` | Playwright. Critical flows only. Organized by mode and artifact availability |
+| E2E | `e2e/{mock\|prod}/{degraded\|iteration}-mode/**/*.spec.ts` | Playwright. Critical flows only. Directories will be renamed to `{stateless\|stateful}-mode` in M4.2 |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
@@ -59,12 +59,12 @@ Both E2E test modes start a test server automatically. It is NOT necessary to st
 **Test Directory Structure:**
 ```
 e2e/
+├── common/                # Tests that run in both mock and prod modes
 ├── mock/
-│   ├── stateless-mode/    # Tests without iteration artifacts (Timeline API)
-│   └── stateful-mode/     # Tests with iteration artifacts (mocked)
+│   ├── degraded-mode/     # Tests without iteration artifacts (renamed to stateless-mode in M4.2)
+│   └── iteration-mode/    # Tests with iteration artifacts (renamed to stateful-mode in M4.2)
 ├── prod/
-│   ├── stateless-mode/    # Prod tests without iteration artifacts
-│   └── stateful-mode/     # Prod tests with real iteration artifacts
+│   └── iteration-mode/    # Prod tests with real iteration artifacts (renamed to stateful-mode in M4.2)
 └── fixtures/              # Shared test fixtures
 ```
 
@@ -238,7 +238,7 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 - Team sync via PR comment pointer
 - 90-day artifact retention (sufficient for active PRs)
 
-**Graceful degradation:** Repos without workflow get standard GitHub diff (no iteration tracking).
+**Stateless fallback:** Repos without workflow get near-parity iteration support via Timeline API (see M4.2).
 
 See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
 
