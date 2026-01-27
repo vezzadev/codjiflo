@@ -1,21 +1,22 @@
 'use client';
 
 import { useState, FormEvent, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { LogOut, LogIn } from 'lucide-react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { parseGitHubPRUrl } from '@/features/pr';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
-import { useRequireAuth } from '@/features/auth/hooks';
+import { useOptionalAuth } from '@/features/auth/hooks';
 import { AppShell, Titlebar } from '@/components/layout';
 
 function DashboardContent() {
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const pathname = usePathname();
   const logout = useAuthStore((s) => s.logout);
-  const { isAuthenticated } = useRequireAuth();
+  const { isAuthenticated, isLoading } = useOptionalAuth();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,10 +33,15 @@ function DashboardContent() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/login');
+    router.replace('/dashboard');
   };
 
-  if (!isAuthenticated) {
+  const handleLogin = () => {
+    const returnPath = encodeURIComponent(pathname);
+    router.push(`/login?returnPath=${returnPath}`);
+  };
+
+  if (isLoading) {
     return null;
   }
 
@@ -44,14 +50,27 @@ function DashboardContent() {
       <Titlebar
         title="Dashboard"
         rightContent={
-          <button
-            onClick={handleLogout}
-            className="btn-nav"
-            aria-label="Logout"
-            style={{ marginRight: '8px' }}
-          >
-            <LogOut size={16} />
-          </button>
+          isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="btn-nav"
+              title="Logout"
+              aria-label="Logout"
+              style={{ marginRight: '8px' }}
+            >
+              <LogOut size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              className="btn-nav"
+              title="Log in with GitHub"
+              aria-label="Log in with GitHub"
+              style={{ marginRight: '8px' }}
+            >
+              <LogIn size={16} />
+            </button>
+          )
         }
       />
 
