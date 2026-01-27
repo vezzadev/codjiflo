@@ -23,6 +23,14 @@ test.describe("Redirect After Login", () => {
     const repo = isMockMode() ? "repo" : prodModeConfig.testRepo.repo;
     const prNumber = isMockMode() ? 123 : prodModeConfig.testRepo.prNumber;
 
+    // Capture console errors - should be none for unauthenticated PR access (S-4.1.5)
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+
     // Set up mocks before navigation
     await setupAuthMock(page);
     await setupFullPRMocks(page, owner, repo, prNumber, {
@@ -77,6 +85,9 @@ test.describe("Redirect After Login", () => {
 
     // PR content should still be visible
     await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
+
+    // Verify no console errors occurred during unauthenticated PR page load (S-4.1.5)
+    expect(consoleErrors).toEqual([]);
   });
 
   test("should redirect to dashboard when accessing login directly and logging in", async ({
