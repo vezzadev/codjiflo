@@ -83,7 +83,10 @@
 | [backend-abstraction.md](backend-abstraction.md) | ✓ Complete | Multi-platform API layer |
 | [diff-viewing.md](diff-viewing.md) | ✓ Complete | Diff rendering system |
 | [comments.md](comments.md) | ✓ Complete | Bubble comments |
-| [iterations.md](iterations.md) | ✓ Complete | Cross-version tracking |
+| [iterations.md](iterations.md) | ✓ Complete | Cross-version tracking (index) |
+| [iterations-common.md](iterations-common.md) | ✓ Complete | Shared iteration concepts |
+| [iterations-stateful.md](iterations-stateful.md) | ✓ Complete | GitHub Action + Artifact mode |
+| [iterations-stateless.md](iterations-stateless.md) | ✓ Complete | Timeline API + Web Worker mode |
 | [review-lifecycle.md](review-lifecycle.md) | ✓ Complete | States & transitions |
 | [ui-components.md](ui-components.md) | ✓ Complete | Dashboard, Explorer, Properties |
 | [realtime.md](realtime.md) | ✓ Complete | Push notifications |
@@ -118,7 +121,7 @@ The beloved floating comment bubbles with lasso connectors.
 - Collapse to narrow margin
 
 ### 4. Iteration Management
-> [iterations.md](iterations.md)
+> [iterations.md](iterations.md) (index) | [common](iterations-common.md) | [stateful](iterations-stateful.md) | [stateless](iterations-stateless.md)
 
 Comments follow code across changes.
 
@@ -127,6 +130,8 @@ Comments follow code across changes.
 - SpanTracker: forward/backward position mapping
 - Artifact tracking: file lineage across renames
 - Cross-iteration comparison
+- Stateful mode: GitHub Action + SQLite artifact
+- Stateless mode: Timeline API + Web Worker
 
 ---
 
