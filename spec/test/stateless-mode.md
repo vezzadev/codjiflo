@@ -11,12 +11,12 @@ This document defines the test matrix for validating CodjiFlo's Stateless Mode (
 | ID | Test Case | Input | Expected Output | Story |
 |----|-----------|-------|-----------------|-------|
 | TL-U01 | Extract initial iteration from PR | PR opened event | Iteration 1 with head SHA | S-4.2.1 |
-| TL-U02 | Detect force-push from timeline | `force_pushed` event | New iteration with before/after SHAs | S-4.2.1 |
-| TL-U03 | Multiple force-pushes | 3 `force_pushed` events | 4 iterations (initial + 3) | S-4.2.1 |
+| TL-U02 | Detect force-push from timeline | `head_ref_force_pushed` event | New iteration with before/after SHAs | S-4.2.1 |
+| TL-U03 | Multiple force-pushes | 3 `head_ref_force_pushed` events | 4 iterations (initial + 3) | S-4.2.1 |
 | TL-U04 | Chronological ordering | Events in random order | Iterations sorted by timestamp | S-4.2.1 |
-| TL-U05 | Regular push (no force) | Push without `force_pushed` event | No new iteration created | S-4.2.1 |
+| TL-U05 | Regular push (no force) | Push without `head_ref_force_pushed` event | No new iteration created | S-4.2.1 |
 | TL-U06 | Handle empty timeline | No events | Single initial iteration | S-4.2.1 |
-| TL-U07 | Handle PR with only merges | `merged` event | Iteration + merged status | S-4.2.1 |
+| TL-U07 | Handle PR with only merges | `merged` event | Single iteration | S-4.2.1 |
 
 ### DiffScheduler
 
@@ -40,8 +40,8 @@ This document defines the test matrix for validating CodjiFlo's Stateless Mode (
 | DW-U02 | Compute word diff | Modified line pair | Word-level changes | S-4.2.2 |
 | DW-U03 | Compute alignment | Line diff | Aligned lines for side-by-side | S-4.2.2 |
 | DW-U04 | Handle cancellation | AbortController abort | status: 'cancelled' | S-4.2.2 |
-| DW-U05 | Handle fetch error | 404 from content API | status: 'error' with message | S-4.2.2 |
-| DW-U06 | Handle GC'd commit | 410 from content API | status: 'unavailable' | S-4.2.2 |
+| DW-U05 | Handle fetch error | 500 from content API | status: 'error' with message | S-4.2.2 |
+| DW-U06 | Handle GC'd commit | 404/410 from content API | status: 'unavailable' | S-4.2.2 |
 | DW-U07 | Empty file diff | Empty string vs content | All lines as additions | S-4.2.2 |
 | DW-U08 | Binary file detection | Binary content | status: 'error', reason: 'binary' | S-4.2.2 |
 
@@ -116,7 +116,7 @@ e2e/
 | ID | Test File | Test Case | Setup | Expected Behavior | Story |
 |----|-----------|-----------|-------|-------------------|-------|
 | SM-E01 | `iteration-selector.spec.ts` | Iteration selector shows in stateless mode | Mock PR without artifact | Selector visible with iterations | S-4.2.1 |
-| SM-E02 | `iteration-selector.spec.ts` | Force-push creates new iteration | Mock timeline with force_pushed | New iteration in selector | S-4.2.1 |
+| SM-E02 | `iteration-selector.spec.ts` | Force-push creates new iteration | Mock timeline with head_ref_force_pushed | New iteration in selector | S-4.2.1 |
 | SM-E03 | `diff-loading.spec.ts` | Diff shows loading state | Select file before diff ready | "Computing diff..." message | S-4.2.4 |
 | SM-E04 | `diff-loading.spec.ts` | Diff appears after computation | Wait for worker to complete | Diff lines visible | S-4.2.4 |
 | SM-E05 | `file-list.spec.ts` | File list appears immediately | PR loads | File list visible before diffs | S-4.2.4 |
@@ -152,16 +152,16 @@ e2e/
 // fixtures/mock-timeline.ts
 export const mockTimelineWithForcePush = [
   {
-    event: 'force_pushed',
-    before: 'abc123',
-    after: 'def456',
+    event: 'head_ref_force_pushed',
+    before_commit: { sha: 'abc123' },
+    after_commit: { sha: 'def456' },
     created_at: '2025-01-15T10:00:00Z',
     actor: { login: 'testuser' },
   },
   {
-    event: 'force_pushed',
-    before: 'def456',
-    after: 'ghi789',
+    event: 'head_ref_force_pushed',
+    before_commit: { sha: 'def456' },
+    after_commit: { sha: 'ghi789' },
     created_at: '2025-01-16T14:30:00Z',
     actor: { login: 'testuser' },
   },
