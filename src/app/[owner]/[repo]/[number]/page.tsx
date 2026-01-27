@@ -1,17 +1,15 @@
 'use client';
 
 import { useEffect, useState, useCallback, use, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Keyboard } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Keyboard, LogIn, LogOut } from 'lucide-react';
 import { usePRStore, useDocumentTitle } from '@/features/pr';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
 import { useOptionalAuth } from '@/features/auth/hooks';
-import {
-  useIterationStore,
-  DegradedModeBanner,
-} from '@/features/iterations';
+import { useAuthStore } from '@/features/auth/stores/useAuthStore';
+import { useIterationStore } from '@/features/iterations';
 import {
   AppShell,
   Titlebar,
@@ -33,7 +31,14 @@ interface PRPageProps {
 function PullRequestContent({ params }: PRPageProps) {
   const { owner, repo, number } = use(params);
   const router = useRouter();
-  const { isLoading } = useOptionalAuth();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading } = useOptionalAuth();
+  const logout = useAuthStore((s) => s.logout);
+
+  // Build return path with query params
+  const basePath = `/${owner}/${repo}/${number}`;
+  const queryString = searchParams.toString();
+  const returnPath = queryString ? `${basePath}?${queryString}` : basePath;
 
   const { currentPR, loadPR, reset: resetPR } = usePRStore();
   const { loadFiles, reset: resetDiff } = useDiffStore();
@@ -87,6 +92,10 @@ function PullRequestContent({ params }: PRPageProps) {
   const handleBackToDashboard = useCallback(() => {
     router.push('/dashboard');
   }, [router]);
+
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
 
   if (isLoading) {
     return (
@@ -168,14 +177,37 @@ function PullRequestContent({ params }: PRPageProps) {
           </button>
         }
         rightContent={
-          <button
-            onClick={() => setShowShortcuts(true)}
-            className="btn-nav"
-            aria-label="Show keyboard shortcuts"
-            style={{ marginRight: '8px' }}
-          >
-            <Keyboard size={16} />
-          </button>
+          <>
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="btn-nav"
+              aria-label="Show keyboard shortcuts"
+              style={{ marginRight: '8px' }}
+            >
+              <Keyboard size={16} />
+            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="btn-nav"
+                title="Logout"
+                aria-label="Logout"
+                style={{ marginRight: '8px' }}
+              >
+                <LogOut size={16} />
+              </button>
+            ) : (
+              <a
+                href={`/login?returnPath=${encodeURIComponent(returnPath)}`}
+                className="btn-nav"
+                title="Log in with GitHub"
+                aria-label="Log in with GitHub"
+                style={{ marginRight: '8px' }}
+              >
+                <LogIn size={16} />
+              </a>
+            )}
+          </>
         }
       />
 
