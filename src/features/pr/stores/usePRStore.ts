@@ -14,12 +14,24 @@ export const usePRStore = create<PRState>((set) => ({
       set({ currentPR: pr, isLoading: false });
     } catch (err) {
       let message = 'Failed to load pull request';
+      let kind: import('../types').PRErrorKind = 'generic';
 
       if (err instanceof GitHubAPIError) {
-        if (err.status === 404) {
-          message = 'Pull request not found. Please check the URL.';
-        } else if (err.status === 401 || err.status === 403) {
-          message = 'Access denied. Please check your token permissions.';
+        if (err.status === 404 && err.isPrivateRepo) {
+          message = 'This PR may be private or doesn\'t exist.';
+          kind = 'private-repo';
+        } else if (err.status === 404) {
+          message = 'Pull request not found.';
+          kind = 'not-found';
+        } else if (err.status === 403 && err.isPrivateRepo) {
+          message = 'This PR may be private or doesn\'t exist.';
+          kind = 'private-repo';
+        } else if (err.status === 401) {
+          message = err.message;
+          kind = 'forbidden';
+        } else if (err.status === 403) {
+          message = 'You don\'t have permission to view this pull request.';
+          kind = 'forbidden';
         } else {
           message = err.message;
         }
@@ -27,7 +39,7 @@ export const usePRStore = create<PRState>((set) => ({
         message = err.message;
       }
 
-      set({ error: message, isLoading: false, currentPR: null });
+      set({ error: { message, kind }, isLoading: false, currentPR: null });
     }
   },
 

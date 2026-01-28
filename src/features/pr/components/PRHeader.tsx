@@ -12,7 +12,7 @@ export function PRHeader() {
   if (error) {
     return (
       <div className="pr-header pr-header-error" role="alert" aria-live="polite">
-        <p className="error-text">{error}</p>
+        <p className="error-text">{error.message}</p>
       </div>
     );
   }

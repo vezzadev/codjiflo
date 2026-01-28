@@ -17,7 +17,7 @@ describe('PRHeader', () => {
     vi.mocked(usePRStore).mockReturnValue({
       currentPR: null,
       isLoading: false,
-      error: 'Failed to load PR',
+      error: { message: 'Failed to load PR', kind: 'generic' as const },
     });
 
     render(<PRHeader />);

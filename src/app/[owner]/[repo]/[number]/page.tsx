@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback, use, Suspense } from 'react';
+import { useEffect, useState, useCallback, use, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Keyboard, LogIn, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, Keyboard, Lock, LogIn, LogOut } from 'lucide-react';
 import { usePRStore, useDocumentTitle } from '@/features/pr';
+import type { PRError } from '@/features/pr/types';
 import { useDiffStore, FileList, DiffView } from '@/features/diff';
 import { useKeyboardShortcuts, ShortcutsModal } from '@/features/keyboard';
 import { useCommentsStore } from '@/features/comments';
@@ -40,7 +42,7 @@ function PullRequestContent({ params }: PRPageProps) {
   const queryString = searchParams.toString();
   const returnPath = queryString ? `${basePath}?${queryString}` : basePath;
 
-  const { currentPR, loadPR, reset: resetPR } = usePRStore();
+  const { currentPR, error: prError, loadPR, reset: resetPR } = usePRStore();
   const { loadFiles, reset: resetDiff } = useDiffStore();
   const { threads, loadThreads, reset: resetComments } = useCommentsStore();
   const { loadIterations, reset: resetIterations } = useIterationStore();
@@ -117,6 +119,18 @@ function PullRequestContent({ params }: PRPageProps) {
             Back to Dashboard
           </button>
         </div>
+      </AppShell>
+    );
+  }
+
+  if (prError) {
+    return (
+      <AppShell>
+        <PRErrorView
+          error={prError}
+          isAuthenticated={isAuthenticated}
+          returnPath={returnPath}
+        />
       </AppShell>
     );
   }
@@ -232,6 +246,61 @@ function PullRequestContent({ params }: PRPageProps) {
         onClose={() => setShowShortcuts(false)}
       />
     </AppShell>
+  );
+}
+
+function PRErrorView({ error, isAuthenticated, returnPath }: {
+  error: PRError;
+  isAuthenticated: boolean;
+  returnPath: string;
+}) {
+  const loginRef = useRef<HTMLAnchorElement>(null);
+  const { kind, message } = error;
+  const showLogin = !isAuthenticated && (kind === 'private-repo' || kind === 'forbidden');
+  const loginHref = `/login?returnPath=${encodeURIComponent(returnPath)}`;
+
+  const title = kind === 'not-found' ? 'Pull Request Not Found'
+    : kind === 'private-repo' && isAuthenticated ? 'Pull Request Not Found'
+    : kind === 'private-repo' ? 'Access Required'
+    : kind === 'forbidden' ? 'Access Denied'
+    : 'Error';
+
+  const description = kind === 'private-repo' && !isAuthenticated
+    ? 'This PR may be private or doesn\'t exist. Log in to access private repositories.'
+    : kind === 'forbidden' && isAuthenticated
+    ? 'You don\'t have permission to view this pull request. Request access from the repository owner.'
+    : kind === 'forbidden' && !isAuthenticated
+    ? 'You don\'t have permission to view this pull request.'
+    : message;
+
+  useEffect(() => {
+    loginRef.current?.focus();
+  }, []);
+
+  return (
+    <div className="pr-error-container" role="alert" aria-live="polite" data-testid="pr-error">
+      <div className="pr-error-card">
+        <div className="pr-error-icon" data-testid="pr-error-icon">
+          <Lock size={48} />
+        </div>
+        <h1 className="pr-error-title">{title}</h1>
+        <p className="pr-error-message">{description}</p>
+        <div className="pr-error-actions">
+          {showLogin && (
+            <a
+              ref={loginRef}
+              href={loginHref}
+              className="btn btn-colorful"
+            >
+              Log in to access
+            </a>
+          )}
+          <Link href="/dashboard" className="btn-link">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
