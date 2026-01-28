@@ -167,7 +167,7 @@ describe('PrecomputedSpanTracker', () => {
       ];
       const tracker = new PrecomputedSpanTracker(0, 1, mappings);
       const result = tracker.trackSpanForward({ startLine: 11, endLine: 11 });
-      // Distance from 11 to 1 is 10 (11 - 10 = 1), should find it
+      // Valid line at distance 10: algorithm checks 11 - 10 = line 1, should find it
       expect(result).toEqual({ startLine: 1, endLine: 1 });
     });
 
@@ -187,7 +187,7 @@ describe('PrecomputedSpanTracker', () => {
       ];
       const tracker = new PrecomputedSpanTracker(0, 1, mappings);
       const result = tracker.trackSpanForward({ startLine: 12, endLine: 12 });
-      // Distance from 12 to 1 is 11 (12 - 11 = 1), should NOT find it
+      // Valid line at distance 11: algorithm only checks up to distance 10 (12 - 10 = line 2), should NOT find line 1
       expect(result).toBeNull();
     });
 
