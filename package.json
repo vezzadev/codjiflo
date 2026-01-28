@@ -10,8 +10,8 @@
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
     "dev": "node scripts/dev.js",
-    "build": "next build",
-    "start": "next start",
+    "build": "cross-env NODE_OPTIONS=--use-system-ca next build",
+    "start": "cross-env NODE_OPTIONS=--use-system-ca next start",
     "lint": "eslint . --fix --quiet --max-warnings 0 --prune-suppressions",
     "lint:check": "eslint . --quiet --max-warnings 0",
     "storybook": "storybook dev -p 6006 --quiet",
