@@ -160,3 +160,7 @@ public/sql-wasm/
 tmpclaude-*
 trace-export/
 demos/
+
+# Letta agent configuration
+.letta/
+.claude/CLAUDE.md
