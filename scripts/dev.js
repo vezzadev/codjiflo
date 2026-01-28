@@ -81,7 +81,7 @@ function getPortForWorktree() {
   // Check if directory name is a single uppercase letter A-Z
   if (/^[A-Z]$/.test(dirName)) {
     const letter = dirName.charCodeAt(0); // ASCII code
-    const port = 3000 + (letter - 65) * 10; // A=3010, B=3020, ...
+    const port = 3010 + (letter - 65) * 10; // A=3010, B=3020, ...
     return { port, strict: true };
   }
   
