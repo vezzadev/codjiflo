@@ -12,6 +12,12 @@ interface TokenResponse {
     error_description?: string;
 }
 
+export interface RateLimitInfo {
+    remaining: number;
+    reset: Date;
+    limit: number;
+}
+
 interface AuthState {
     token: string | null;
     refreshToken: string | null;
@@ -21,6 +27,9 @@ interface AuthState {
     error: string | null;
     isValidating: boolean;
     hasHydrated: boolean;
+    rateLimitRemaining: number | null;
+    rateLimitReset: Date | null;
+    rateLimitLimit: number | null;
     setToken: (token: string) => void;
     logout: () => void;
     validateToken: (token: string) => Promise<boolean>;
@@ -29,6 +38,7 @@ interface AuthState {
     refreshAccessToken: () => Promise<boolean>;
     isTokenExpiringSoon: () => boolean;
     setHasHydrated: (hasHydrated: boolean) => void;
+    updateRateLimit: (info: RateLimitInfo) => void;
 }
 
 /**
@@ -73,8 +83,17 @@ export const useAuthStore = create<AuthState>()(
             error: null,
             isValidating: false,
             hasHydrated: false,
+            rateLimitRemaining: null,
+            rateLimitReset: null,
+            rateLimitLimit: null,
 
             setHasHydrated: (hasHydrated: boolean) => set({ hasHydrated }),
+
+            updateRateLimit: (info: RateLimitInfo) => set({
+                rateLimitRemaining: info.remaining,
+                rateLimitReset: info.reset,
+                rateLimitLimit: info.limit,
+            }),
 
             setToken: (token: string) => set({
                 token,

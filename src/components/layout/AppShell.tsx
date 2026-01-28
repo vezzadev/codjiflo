@@ -1,6 +1,12 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, lazy, Suspense } from 'react';
+
+const RateLimitBanner = lazy(() =>
+  import('@/features/auth/components/RateLimitBanner').then((m) => ({
+    default: m.RateLimitBanner,
+  }))
+);
 
 interface AppShellProps {
   children: ReactNode;
@@ -13,6 +19,9 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="window" id="mainWindow">
+      <Suspense fallback={null}>
+        <RateLimitBanner />
+      </Suspense>
       {children}
     </div>
   );
