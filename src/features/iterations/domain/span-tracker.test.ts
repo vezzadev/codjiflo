@@ -91,10 +91,10 @@ describe('PrecomputedSpanTracker', () => {
       expect(result).toEqual({ startLine: 1, endLine: 3 });
     });
 
-    it('should return null for added lines tracked backward', () => {
+    it('should find nearest valid span for added lines tracked backward', () => {
       const result = tracker.trackSpanBackward({ startLine: 1, endLine: 2 });
-      // Should find nearest valid span
-      expect(result).not.toBeNull();
+      // Added lines 1-2 (right) don't exist in left. Nearest valid is line 3 (right) -> line 1 (left)
+      expect(result).toEqual({ startLine: 1, endLine: 1 });
     });
   });
 
@@ -120,9 +120,9 @@ describe('PrecomputedSpanTracker', () => {
 
     it('should find nearest valid span for deleted lines', () => {
       const result = tracker.trackSpanForward({ startLine: 4, endLine: 6 });
-      // Should find nearest valid line
-      expect(result).not.toBeNull();
-      expect(result?.startLine).toBe(result?.endLine); // Single line result
+      // Deleted lines 4-6 (left). Nearest valid is line 3 (left) -> line 3 (right)
+      // The algorithm searches before first (startLine - distance), so finds line 3
+      expect(result).toEqual({ startLine: 3, endLine: 3 });
     });
 
     it('should return null if no valid span found within distance', () => {
@@ -147,6 +147,174 @@ describe('PrecomputedSpanTracker', () => {
       const span = { startLine: 50, endLine: 60 };
       expect(tracker.trackSpanForward(span)).toEqual(span);
       expect(tracker.trackSpanBackward(span)).toEqual(span);
+    });
+  });
+
+  describe('findNearestValidSpan boundary cases', () => {
+    it('should find valid line at exactly distance 10', () => {
+      // Deleted lines 11-20, with valid line at 1 (distance = 10 from startLine 11)
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 1 },
+          rightSpan: { startLine: 1, endLine: 1 },
+          type: 'unchanged',
+        },
+        {
+          leftSpan: { startLine: 11, endLine: 20 },
+          rightSpan: null,
+          type: 'deleted',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      const result = tracker.trackSpanForward({ startLine: 11, endLine: 11 });
+      // Distance from 11 to 1 is 10 (11 - 10 = 1), should find it
+      expect(result).toEqual({ startLine: 1, endLine: 1 });
+    });
+
+    it('should return null when valid line is at distance 11', () => {
+      // Deleted lines 12-20, with no valid line within distance 10
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 1 },
+          rightSpan: { startLine: 1, endLine: 1 },
+          type: 'unchanged',
+        },
+        {
+          leftSpan: { startLine: 12, endLine: 20 },
+          rightSpan: null,
+          type: 'deleted',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      const result = tracker.trackSpanForward({ startLine: 12, endLine: 12 });
+      // Distance from 12 to 1 is 11 (12 - 11 = 1), should NOT find it
+      expect(result).toBeNull();
+    });
+
+    it('should prefer "before" direction when both are equidistant', () => {
+      // Deleted line 5, with valid lines at 4 (before) and 6 (after)
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 4, endLine: 4 },
+          rightSpan: { startLine: 4, endLine: 4 },
+          type: 'unchanged',
+        },
+        {
+          leftSpan: { startLine: 5, endLine: 5 },
+          rightSpan: null,
+          type: 'deleted',
+        },
+        {
+          leftSpan: { startLine: 6, endLine: 6 },
+          rightSpan: { startLine: 5, endLine: 5 },
+          type: 'unchanged',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      const result = tracker.trackSpanForward({ startLine: 5, endLine: 5 });
+      // Algorithm checks "before" first, so should find line 4
+      expect(result).toEqual({ startLine: 4, endLine: 4 });
+    });
+
+    it('should find "after" when "before" is not available', () => {
+      // Deleted line 1, only valid line is after at line 2
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 1 },
+          rightSpan: null,
+          type: 'deleted',
+        },
+        {
+          leftSpan: { startLine: 2, endLine: 2 },
+          rightSpan: { startLine: 1, endLine: 1 },
+          type: 'unchanged',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      const result = tracker.trackSpanForward({ startLine: 1, endLine: 1 });
+      // Line 0 doesn't exist, so should find line 2 (endLine + 1)
+      expect(result).toEqual({ startLine: 1, endLine: 1 });
+    });
+  });
+
+  describe('with modified regions', () => {
+    it('should track forward through modified region with more lines on right', () => {
+      // 3 lines on left become 5 lines on right
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 3 },
+          rightSpan: { startLine: 1, endLine: 5 },
+          type: 'modified',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      // All left lines map to line 1 on right (first line of right span)
+      expect(tracker.trackSpanForward({ startLine: 1, endLine: 1 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanForward({ startLine: 2, endLine: 2 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanForward({ startLine: 3, endLine: 3 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+    });
+
+    it('should track backward through modified region with more lines on right', () => {
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 3 },
+          rightSpan: { startLine: 1, endLine: 5 },
+          type: 'modified',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      // All right lines map to line 1 on left (first line of left span)
+      expect(tracker.trackSpanBackward({ startLine: 1, endLine: 1 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanBackward({ startLine: 3, endLine: 3 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanBackward({ startLine: 5, endLine: 5 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+    });
+
+    it('should track through modified region with fewer lines on right', () => {
+      // 5 lines on left become 3 lines on right
+      const mappings: LineMapping[] = [
+        {
+          leftSpan: { startLine: 1, endLine: 5 },
+          rightSpan: { startLine: 1, endLine: 3 },
+          type: 'modified',
+        },
+      ];
+      const tracker = new PrecomputedSpanTracker(0, 1, mappings);
+      // All left lines map to line 1 on right
+      expect(tracker.trackSpanForward({ startLine: 1, endLine: 1 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanForward({ startLine: 5, endLine: 5 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      // All right lines map to line 1 on left
+      expect(tracker.trackSpanBackward({ startLine: 1, endLine: 1 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
+      expect(tracker.trackSpanBackward({ startLine: 3, endLine: 3 })).toEqual({
+        startLine: 1,
+        endLine: 1,
+      });
     });
   });
 });
