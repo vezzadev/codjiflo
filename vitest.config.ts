@@ -17,7 +17,6 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "action/src/**/*.test.ts", "e2e/fixtures/**/*.test.ts", "packages/*/src/**/*.test.ts"],
     exclude: [
       "node_modules/",
-      "src/app/**",
     ],
     coverage: {
       provider: "v8",
