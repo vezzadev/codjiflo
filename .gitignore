@@ -146,6 +146,7 @@ vite.config.ts.timestamp-*
 /blob-report/
 /playwright/.cache/
 .playwright-mcp/
+.playwright-cli/
 
 # Storybook
 storybook-static/

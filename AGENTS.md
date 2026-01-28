@@ -97,11 +97,12 @@ Tests in this project are finely tuned to run very fast. Each E2E test case MUST
 Leave the tests better than how you found them. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
 
 #### Don't guess - Use the Playwright test trace to understand what is happening
-When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code. The codebase uses an unreleased version of Playwright with a **new feature called export-trace that helps with investigations**.
+When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code. The codebase uses an unreleased version of Playwright with a **new feature called playwright-cli that helps with investigations**.
 
-1. Run `npx playwright export-trace <trace.zip>` - it converts the trace to markdown and contains everything you might need to troubleshoot: Step-by-step action timeline with links to exact DOM state before and after of each action, full error details with stack traces, browser console output, HTTP request log, etc.
-2. Follow the instructions in the README inside the trace output folder to start an HTTP server
-3. Use Playwright MCP to open the desired snapshot HTML and have full debugging capabilities
+1. Load the playwright-cli skill 
+2. Run `npx playwright show-trace --port 0 <trace.zip>` - it will start a web server with the trace information
+3. Traces have everything you might need to troubleshoot: Step-by-step action timeline with links to exact DOM state before and after of each action, full error details with stack traces, browser console output, HTTP request log, etc.
+3. Use Playwright skill **in headed mode** to open the desired snapshot HTML and have full debugging capabilities
 4. Look for actual failures: missing elements, wrong content, API errors, auth issues
 
 #### Proper use of waitFor methods
@@ -119,13 +120,13 @@ Unlike traditional selectors that perform a one-time query, locators are lazy an
 All E2E tests go through a stress test where they run 10x in parallel and 10x in sequence every new push to main in search of race conditions and flakiness. You may check the stress test health looking at the workflow history of the ci-cd-main workflow on GitHub.
 
 ## Manual testing
-You have access to Playwright via MCP. Use it sparingly in the following situations:
- * You are stuck trying to reproduce a bug through code analysis or test cases. `browser_evaluate` is invaluable to capture runtime information such as computed styles or library side effects.
+You have access to Playwright via playwright-cli skill. Make sure to **only use it in headed mode** so the user can see your work and assist you. Use it sparingly in the following situations:
+ * You are stuck trying to reproduce a bug through code analysis or test cases. `evaluate` is invaluable to capture runtime information such as computed styles or library side effects.
  * Sanity check your work as you reach a milestone in the implementation of a feature. Once you reach ~200 lines of code changes, the risk that you are compounding errors and don't have working code becomes high. A quick inspection in Playwright gives extra assurance that you are on the right track.
  * Final quality assurance. Don't ask the user to test a feature manually before you did it yourself!
 
 ## Shared environment
-There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3000 for A, 3010 for B, 3020 for C. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
+There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3010 for A, 3020 for B, etc. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
 
 ## Tech Stack
 

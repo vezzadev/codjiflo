@@ -72,17 +72,19 @@ function killZombieNextProcess() {
 
 /**
  * Maps worktree directory name to port number.
- * A=3000, B=3010, C=3020, D=3030, E=3040
+ * A=3010, B=3020, C=3030, D=3040, ...
  * Anything else gets a dynamic port starting at 4000.
  */
 function getPortForWorktree() {
   const dirName = basename(process.cwd());
-  const worktreePorts = { A: 3000, B: 3010, C: 3020, D: 3030, E: 3040 };
 
-  if (dirName in worktreePorts) {
-    return { port: worktreePorts[dirName], strict: true };
+  // Check if directory name is a single uppercase letter A-Z
+  if (/^[A-Z]$/.test(dirName)) {
+    const letter = dirName.charCodeAt(0); // ASCII code
+    const port = 3000 + (letter - 65) * 10; // A=3010, B=3020, ...
+    return { port, strict: true };
   }
-
+  
   // For non-worktree directories, find an available port starting at 4000
   return { port: 4000, strict: false };
 }
