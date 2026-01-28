@@ -45,11 +45,11 @@ Each commit in the PR maps to one iteration. Iterations represent cumulative dif
 ### Commit-Based Iteration Building Algorithm
 
 ```typescript
-function buildIterationsFromCommits(
+async function buildIterationsFromCommits(
   commits: PRCommit[],
   timeline: TimelineEvent[],
   pr: PR
-): { iterations: StatelessIteration[], collapsedGroups: CollapsedIterationGroup[] } {
+): Promise<{ iterations: StatelessIteration[], collapsedGroups: CollapsedIterationGroup[] }> {
   const iterations: StatelessIteration[] = [];
   const collapsedGroups: CollapsedIterationGroup[] = [];
   let revision = 1;
@@ -116,7 +116,7 @@ function buildIterationsFromCommits(
     revision++;
   }
 
-  // Step 4: Sort all iterations chronologically (collapsed first, then live)
+  // Step 4: Sort all iterations chronologically by createdAt
   iterations.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
   // Step 5: Reassign sequential revision numbers after sorting
@@ -149,6 +149,7 @@ async function discoverDiscardedCommits(
         sha: c.sha,
         message: c.commit.message,
         author: c.author?.login ?? c.commit.author.name,
+        date: c.commit.author.date,
         status: 'available',
       })),
     };
@@ -201,6 +202,7 @@ interface DiscardedCommit {
   sha: string;
   message: string;
   author: string;
+  date: string;
   status: 'available' | 'unavailable';  // GC'd or not
 }
 ```
