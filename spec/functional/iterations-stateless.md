@@ -6,7 +6,7 @@ This document covers the Stateless Mode implementation of iteration management, 
 
 ## Overview
 
-Stateless mode enables full iteration tracking without requiring the CodjiFlo GitHub Action. It uses GitHub's native APIs to detect iterations and compute diffs at runtime.
+Stateless mode enables full iteration tracking without requiring the CodjiFlo GitHub Action. It uses GitHub's native APIs to detect iterations and compute diffs at runtime. **Each commit in the PR maps to one iteration**, providing per-commit granularity. Force-pushes produce collapsed iteration groups for discarded commits.
 
 ---
 
@@ -17,69 +17,220 @@ CodjiFlo operates in one of two modes:
 | Mode | Trigger | Data Source |
 |------|---------|-------------|
 | **Stateful** | `<!-- codjiflo-data -->` comment found | SQLite artifact from GitHub Action |
-| **Stateless** | No artifact comment OR `?mode=stateless` query param | GitHub Timeline + Compare APIs |
+| **Stateless** | No artifact comment OR `?mode=stateless` query param | GitHub Commits + Timeline + Compare APIs |
 
 **Note:** The `?mode=stateless` query parameter forces stateless mode even when an artifact exists. Useful for testing and comparison.
 
 ---
 
-## Timeline-Based Iteration Detection
+## Commit-Based Iteration Detection
 
-Stateless mode builds iteration history from GitHub's Issues Timeline API:
+Stateless mode builds iteration history from GitHub's PR Commits API, supplemented by the Issues Timeline API for force-push detection:
 
 ```
-GET /repos/{owner}/{repo}/issues/{pr_number}/timeline
+GET /repos/{owner}/{repo}/pulls/{pr_number}/commits    # Current PR commits
+GET /repos/{owner}/{repo}/issues/{pr_number}/timeline   # Force-push history
 ```
 
-### Timeline Events Used
+### Core Model
 
-| Event | Data Extracted | Iteration Impact |
-|-------|----------------|------------------|
-| `head_ref_force_pushed` | `before_commit.sha`, `after_commit.sha` | Creates new iteration |
-| `head_ref_deleted` | Branch name | Marks PR as abandoned |
-| `merged` | Merge commit SHA | Marks final state |
+Each commit in the PR maps to one iteration. Iterations represent cumulative diffs from the PR base to that commit:
 
-### Iteration Building Algorithm
+| Concept | Description |
+|---------|-------------|
+| **Live iteration** | A commit currently on the PR branch; diff is `base...commit_sha` |
+| **Collapsed iteration** | A commit discarded by a force-push; may or may not be accessible |
+| **Iteration number** | Sequential 1-based across ALL commits (live + discarded), ordered chronologically |
+
+### Commit-Based Iteration Building Algorithm
 
 ```typescript
-function buildIterationsFromTimeline(timeline: TimelineEvent[], pr: PR): Iteration[] {
-  const iterations: Iteration[] = [];
+function buildIterationsFromCommits(
+  commits: PRCommit[],
+  timeline: TimelineEvent[],
+  pr: PR
+): { iterations: StatelessIteration[], collapsedGroups: CollapsedIterationGroup[] } {
+  const iterations: StatelessIteration[] = [];
+  const collapsedGroups: CollapsedIterationGroup[] = [];
   let revision = 1;
 
-  // Initial iteration: PR opened
-  iterations.push({
-    revision: revision++,
-    headSha: getInitialHeadSha(timeline, pr),
-    baseSha: pr.base.sha,
-    beforeSha: null,
-    eventType: 'initial',
-  });
-
-  // Force-push events create new iterations
+  // Step 1: Extract force-push events from timeline
   const forcePushes = timeline
     .filter(e => e.event === 'head_ref_force_pushed')
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
+  // Step 2: For each force-push, discover discarded commits
   for (const event of forcePushes) {
-    iterations.push({
-      revision: revision++,
-      headSha: event.after_commit.sha,
-      baseSha: pr.base.sha,  // May need recalculation for rebases
-      beforeSha: event.before_commit.sha,
-      eventType: 'force_push',
-    });
+    const discarded = await discoverDiscardedCommits(
+      pr.owner, pr.repo, event.after_commit.sha, event.before_commit.sha
+    );
+
+    if (discarded.status === 'discovered') {
+      // Add discarded commits as collapsed iterations
+      const group: CollapsedIterationGroup = {
+        forcePushEventId: event.id,
+        discardedRevisions: [],
+        commits: discarded.commits,
+        reason: 'force_push',
+        visibility: 'collapsed',
+      };
+
+      for (const commit of discarded.commits) {
+        iterations.push({
+          revision: revision,
+          commitSha: commit.sha,
+          baseSha: pr.base.sha,
+          author: commit.author,
+          createdAt: commit.date,
+          status: 'collapsed',
+          collapsedGroupId: event.id,
+        });
+        group.discardedRevisions.push(revision);
+        revision++;
+      }
+
+      collapsedGroups.push(group);
+    } else {
+      // GC'd before SHA: record unknown discarded count
+      collapsedGroups.push({
+        forcePushEventId: event.id,
+        discardedRevisions: [],
+        commits: [],
+        reason: 'force_push',
+        visibility: 'collapsed',
+        unknownCount: true,
+      });
+    }
   }
 
-  return iterations;
+  // Step 3: Add current PR commits as live iterations
+  for (const commit of commits) {
+    iterations.push({
+      revision: revision,
+      commitSha: commit.sha,
+      baseSha: pr.base.sha,
+      author: commit.author,
+      createdAt: commit.date,
+      status: 'live',
+    });
+    revision++;
+  }
+
+  // Step 4: Sort all iterations chronologically (collapsed first, then live)
+  iterations.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  // Step 5: Reassign sequential revision numbers after sorting
+  iterations.forEach((iter, i) => { iter.revision = i + 1; });
+
+  // Update collapsed group revision numbers after reassignment
+  for (const group of collapsedGroups) {
+    group.discardedRevisions = iterations
+      .filter(i => i.collapsedGroupId === group.forcePushEventId)
+      .map(i => i.revision);
+  }
+
+  return { iterations, collapsedGroups };
 }
 ```
 
+### Discovering Discarded Commits
+
+```typescript
+async function discoverDiscardedCommits(
+  owner: string, repo: string, afterSha: string, beforeSha: string
+): Promise<DiscoveryResult> {
+  // Use Compare API to find commits reachable from `before` but not from `after`
+  // GET /repos/{owner}/{repo}/compare/{after}...{before}
+  try {
+    const comparison = await github.compare(owner, repo, afterSha, beforeSha);
+    return {
+      status: 'discovered',
+      commits: comparison.commits.map(c => ({
+        sha: c.sha,
+        message: c.commit.message,
+        author: c.author?.login ?? c.commit.author.name,
+        status: 'available',
+      })),
+    };
+  } catch (error) {
+    if (error.status === 404 || error.status === 410) {
+      // Before SHA has been garbage-collected
+      return { status: 'gc', commits: [] };
+    }
+    throw error;
+  }
+}
+```
+
+### Timeline Events Used
+
+| Event | Data Extracted | Purpose |
+|-------|----------------|---------|
+| `head_ref_force_pushed` | `before_commit.sha`, `after_commit.sha` | Identifies discarded commit ranges |
+| `head_ref_deleted` | Branch name | Marks PR as abandoned |
+| `merged` | Merge commit SHA | Marks final state |
+
 ### Key Behaviors
 
-- Regular pushes (non-force) do NOT create new iterations
-- Each force-push preserves the `before` SHA for diffing
+- Each PR commit maps to one iteration (per-commit granularity)
+- Each iteration shows cumulative diff: `base...commit_sha`
+- Force-push timeline events identify discarded history
+- Discarded commits become collapsed iteration groups
 - Iterations are immutable once discovered
-- Timeline is fetched once on PR open, not polled
+- Timeline and commits are fetched once on PR open, not polled
+
+---
+
+## Collapsed Iterations
+
+When a force-push occurs, the commits it replaces become "collapsed iterations" - iterations whose underlying commits were discarded.
+
+### Data Model
+
+```typescript
+interface CollapsedIterationGroup {
+  forcePushEventId: string;          // Timeline event identifier
+  discardedRevisions: number[];      // Original revision numbers
+  commits: DiscardedCommit[];        // Individual commit details (if discoverable)
+  reason: 'force_push';
+  visibility: 'collapsed' | 'expanded';  // User toggled to include in range
+  unknownCount?: boolean;            // True if before SHA was GC'd
+}
+
+interface DiscardedCommit {
+  sha: string;
+  message: string;
+  author: string;
+  status: 'available' | 'unavailable';  // GC'd or not
+}
+```
+
+### Collapsed Iterations UI
+
+**Default display:**
+- Single tab per collapsed group, grayed out
+- Lucide `Eraser` icon
+- Hover tooltip: "N iterations discarded"
+
+**Click behavior:**
+- Replaces diff area with history view showing:
+  - Each discarded iteration with number and commit message
+  - "Include discarded iterations" button
+
+**When included (visibility = `expanded`):**
+- Collapsed tab expands to full-size individual tabs
+- Still grayed out visually (distinct from live iterations)
+- Can participate in iteration range diffs
+- Diffs use `base...discarded_commit_sha`
+- If commit GC'd, unavailable iteration handling applies
+
+**Range behavior:**
+- By default, collapsed tabs are skipped in range selection
+- When included, they participate normally in range diffs
+
+**Unknown discarded count:**
+- When compare API returns 404/410 for the `before` SHA, the collapsed group shows "Unknown iterations discarded" instead of individual commit details
+- No expand capability (no commit details to show)
 
 ---
 
@@ -249,7 +400,7 @@ Iteration 1 → 3 = (Iter 1 → 2) then (Iter 2 → 3)
 
 ## Unavailable Iterations
 
-When GitHub garbage-collects commits, iterations become unavailable.
+When GitHub garbage-collects commits, iterations become unavailable. This applies to both live and collapsed iterations.
 
 ### Detection
 
@@ -257,6 +408,12 @@ When GitHub garbage-collects commits, iterations become unavailable.
 |----------|---------|
 | 404 | Commit not found |
 | 410 | Explicitly deleted |
+
+### Scope
+
+- **Live iterations**: Detected when fetching commit content or computing diffs
+- **Collapsed iterations**: Detected during discovery (compare API fails) or when user expands collapsed group and attempts to view diffs
+- **Unknown discarded**: When the compare API returns 404/410 for the force-push `before` SHA, the entire collapsed group is marked as having unknown count with no individual commit details
 
 ### UI Treatment
 
@@ -273,6 +430,10 @@ interface IterationAvailability {
 - Selection disabled for unavailable iterations
 - Tooltip: "This iteration's commit data is no longer available on GitHub"
 - Link to Stateful Mode documentation
+
+**Collapsed iterations:**
+- When compare API fails for the `before` SHA, show "Unknown iterations discarded" (no individual commit details)
+- When individual collapsed commits are GC'd after discovery, show as unavailable within expanded view
 
 ### Persistence
 
@@ -316,9 +477,10 @@ interface DiscoveredIteration {
   key: string;  // `${owner}/${repo}/${prNumber}/${revision}`
   value: {
     revision: number;
-    headSha: string;
+    commitSha: string;
     baseSha: string;
-    beforeSha: string | null;
+    status: 'live' | 'collapsed';
+    collapsedGroupId?: string;
     discoveredAt: string;
   };
 }
@@ -347,16 +509,19 @@ interface UnavailableIteration {
 
 ```typescript
 interface GitHubStatelessIteration extends Iteration {
-  commitSha: string;           // Git commit SHA
-  baseSha: string;             // Base branch commit
-  beforeSha?: string;          // SHA before force-push (from timeline event)
-  eventType: 'initial' | 'force_push';
+  commitSha: string;                    // Git commit SHA
+  baseSha: string;                      // Base branch commit
+  eventType: 'commit';                  // All iterations are commit-based
+  status: 'live' | 'collapsed';        // Live or discarded by force-push
+  collapsedGroupId?: string;            // Links to CollapsedIterationGroup
 }
 ```
 
 **Features:**
-- Timeline-based iteration detection via GitHub Issues Timeline API
-- Force-push events captured with before/after SHAs
+- Commit-based iteration detection via GitHub PR Commits API
+- Force-push history captured via Timeline API
+- Discarded commits discoverable via Compare API
+- Collapsed iteration groups for force-push discards
 - Diff computed via Compare API (2-dot and 3-dot)
 - SpanTrackers computed at runtime in Web Worker
 - Line-level comment precision (no character-level)
@@ -365,6 +530,7 @@ interface GitHubStatelessIteration extends Iteration {
 - Commits may be garbage-collected (no content preservation)
 - Line-level only (no character-level comment anchors)
 - Requires API calls for each diff computation
+- Discarded commits may be undiscoverable if GC'd
 
 ---
 
@@ -372,13 +538,19 @@ interface GitHubStatelessIteration extends Iteration {
 
 ### Stateless Mode Specific
 
-- [ ] Detect iterations from Timeline API
-- [ ] Detect force-pushes via `head_ref_force_pushed` events
+- [ ] Fetch PR commits via Commits API
+- [ ] Map each commit to one iteration (per-commit granularity)
+- [ ] Detect force-pushes via `head_ref_force_pushed` timeline events
+- [ ] Discover discarded commits via Compare API
+- [ ] Build collapsed iteration groups for force-push discards
+- [ ] Handle GC'd before SHA (unknown discarded count)
+- [ ] Render collapsed groups as single grayed-out tab with Eraser icon
+- [ ] Support expanding collapsed groups to include in range diffs
 - [ ] Compute diffs via Compare API (2-dot and 3-dot)
 - [ ] Compute SpanTrackers at runtime in Web Worker
 - [ ] Background precompute SpanTrackers for comment-containing files
 - [ ] Priority queue with cancellation for responsive UI
-- [ ] Mark unavailable iterations (GC'd commits)
+- [ ] Mark unavailable iterations (GC'd commits) for both live and collapsed
 - [ ] Persist last seen iteration in IndexedDB
 - [ ] Support `?mode=stateless` query param for testing
 - [ ] Show file list immediately (before diffs computed)
