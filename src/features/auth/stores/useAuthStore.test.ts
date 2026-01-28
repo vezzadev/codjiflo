@@ -317,6 +317,49 @@ describe('useAuthStore OAuth methods', () => {
         });
     });
 
+    describe('updateRateLimit', () => {
+        it('should update rate limit state', () => {
+            const resetDate = new Date('2026-01-28T00:00:00Z');
+            useAuthStore.getState().updateRateLimit({
+                remaining: 42,
+                reset: resetDate,
+                limit: 60,
+            });
+
+            const state = useAuthStore.getState();
+            expect(state.rateLimitRemaining).toBe(42);
+            expect(state.rateLimitReset).toEqual(resetDate);
+            expect(state.rateLimitLimit).toBe(60);
+        });
+
+        it('should not persist rate limit state', () => {
+            const resetDate = new Date('2026-01-28T00:00:00Z');
+            useAuthStore.getState().updateRateLimit({
+                remaining: 10,
+                reset: resetDate,
+                limit: 60,
+            });
+
+            const storageValue = JSON.parse(localStorage.getItem('auth-storage') ?? '{}') as Record<string, unknown>;
+            const storedState = storageValue.state as Record<string, unknown>;
+            expect(storedState.rateLimitRemaining).toBeUndefined();
+            expect(storedState.rateLimitReset).toBeUndefined();
+            expect(storedState.rateLimitLimit).toBeUndefined();
+        });
+
+        it('should have null initial state for rate limit fields', () => {
+            useAuthStore.setState({
+                rateLimitRemaining: null,
+                rateLimitReset: null,
+                rateLimitLimit: null,
+            });
+            const state = useAuthStore.getState();
+            expect(state.rateLimitRemaining).toBeNull();
+            expect(state.rateLimitReset).toBeNull();
+            expect(state.rateLimitLimit).toBeNull();
+        });
+    });
+
     describe('logout with OAuth', () => {
         it('should clear all OAuth state', () => {
             useAuthStore.setState({

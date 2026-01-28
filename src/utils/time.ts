@@ -43,3 +43,32 @@ export function formatTimeAgo(date: Date): string {
   const diffYears = Math.floor(diffMonths / 12);
   return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
 }
+
+/**
+ * Format a future date as a human-readable relative time string.
+ * Examples: "less than a minute", "5 minutes", "2 hours"
+ *
+ * @param date - The future date to format
+ * @returns A human-readable string representing time until the date
+ */
+export function formatTimeUntil(date: Date): string {
+  const diffMs = date.getTime() - Date.now();
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+
+  if (diffSeconds < 45) {
+    return 'less than a minute';
+  }
+
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'}`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'}`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
+}

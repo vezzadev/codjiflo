@@ -79,7 +79,7 @@ describe('GitHubClient', () => {
 
     // GC-03: Rate limit headers parsed
     it('parses rate limit headers correctly (AC-4.1.2.3)', async () => {
-      vi.mocked(useAuthStore.getState).mockReturnValue({ token: null } as never);
+      vi.mocked(useAuthStore.getState).mockReturnValue({ token: null, rateLimitRemaining: null, updateRateLimit: vi.fn() } as never);
 
       const resetTimestamp = Math.floor(Date.now() / 1000) + 3600;
       global.fetch = vi.fn().mockResolvedValue({
@@ -202,7 +202,7 @@ describe('GitHubClient', () => {
     });
 
     it('distinguishes rate limit 403 from private repo 403 (AC-4.1.2.6)', async () => {
-      vi.mocked(useAuthStore.getState).mockReturnValue({ token: null } as never);
+      vi.mocked(useAuthStore.getState).mockReturnValue({ token: null, rateLimitRemaining: null, updateRateLimit: vi.fn() } as never);
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
@@ -435,6 +435,112 @@ describe('GitHubClient', () => {
       // Refresh called once, but no infinite loop - only 2 fetch calls (initial + retry)
       expect(mockRefreshAccessToken).toHaveBeenCalledOnce();
       expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('rate limit store integration (AC-4.1.3)', () => {
+    it('updates auth store with rate limit info from response headers', async () => {
+      const mockUpdateRateLimit = vi.fn();
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: null,
+        rateLimitRemaining: null,
+        updateRateLimit: mockUpdateRateLimit,
+      } as never);
+
+      const resetTimestamp = Math.floor(Date.now() / 1000) + 3600;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({
+          'X-RateLimit-Remaining': '45',
+          'X-RateLimit-Reset': String(resetTimestamp),
+          'X-RateLimit-Limit': '60',
+        }),
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      await client.fetch('/test');
+
+      expect(mockUpdateRateLimit).toHaveBeenCalledWith({
+        remaining: 45,
+        reset: new Date(resetTimestamp * 1000),
+        limit: 60,
+      });
+    });
+
+    it('does not call updateRateLimit when headers are missing', async () => {
+      const mockUpdateRateLimit = vi.fn();
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: null,
+        rateLimitRemaining: null,
+        updateRateLimit: mockUpdateRateLimit,
+      } as never);
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers(),
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      await client.fetch('/test');
+
+      expect(mockUpdateRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('throws 429 error without making fetch when rate limit is exhausted (AC-4.1.3.13)', async () => {
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: null,
+        rateLimitRemaining: 0,
+      } as never);
+
+      global.fetch = vi.fn();
+
+      try {
+        await client.fetch('/test');
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(GitHubAPIError);
+        const apiError = error as GitHubAPIError;
+        expect(apiError.status).toBe(429);
+        expect(apiError.isRateLimitError).toBe(true);
+      }
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('does not block when rateLimitRemaining is null', async () => {
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: null,
+        rateLimitRemaining: null,
+      } as never);
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers(),
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      const result = await client.fetch('/test');
+
+      expect(result).toEqual({ data: 'test' });
+      expect(global.fetch).toHaveBeenCalled();
+    });
+
+    it('does not block when rateLimitRemaining is positive', async () => {
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: null,
+        rateLimitRemaining: 10,
+        updateRateLimit: vi.fn(),
+      } as never);
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers(),
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      const result = await client.fetch('/test');
+
+      expect(result).toEqual({ data: 'test' });
     });
   });
 });

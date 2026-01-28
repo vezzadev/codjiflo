@@ -72,6 +72,58 @@
 }
 
 /* ============================================
+   RATE LIMIT BANNER
+   ============================================ */
+.rate-limit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background-color: var(--badge-merged);
+  color: var(--main-bg);
+  font-size: 13px;
+  min-height: 28px;
+}
+
+.rate-limit-banner-exhausted {
+  background-color: var(--diff-delete-gutter);
+  color: var(--diff-delete-fg);
+}
+
+.rate-limit-banner-message {
+  flex: 1;
+}
+
+.rate-limit-banner-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.rate-limit-banner-link:hover {
+  opacity: 0.8;
+}
+
+.rate-limit-banner-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 8px;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.rate-limit-banner-dismiss:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
    DIFF TABLE (Unified/Inline mode)
    ============================================ */
 .diff-table {

@@ -122,8 +122,20 @@ export class GitHubClient {
       requestInit.body = JSON.stringify(options.body);
     }
 
+    // Pre-request guard: block requests when rate limit is exhausted
+    const { rateLimitRemaining } = useAuthStore.getState();
+    if (rateLimitRemaining === 0) {
+      const error = new GitHubAPIError(429, 'Too Many Requests', 'Rate limit exceeded. Please wait for the rate limit to reset.');
+      error.isRateLimitError = true;
+      throw error;
+    }
+
     const response = await fetch(`${this.baseURL}${endpoint}`, requestInit);
     const rateLimit = parseRateLimitHeaders(response);
+
+    if (rateLimit) {
+      useAuthStore.getState().updateRateLimit(rateLimit);
+    }
 
     if (!response.ok) {
       // Handle 401 by attempting token refresh (OAuth only, token must have been present, and only on first attempt)
