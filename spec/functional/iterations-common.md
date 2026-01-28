@@ -20,6 +20,10 @@ This a CodjiFlo's key differentiator - treating comment locations as a "continuo
 
 An iteration represents a **pull request revision** that authors would like reviewers to inspect. It can be interpreted as an augmented git tag with a snapshot of the before and after states of the codebase. It can then be analyzed and compared independently from the git history. Therefore, it is resilient to git force push - a diff between two iterations is constained to the union of files in them. Each iteration is immutable after creation. Users may diff any range of iterations they prefer. The latest iteration represents the desired state of the codebase once the pull request is closed.
 
+**Iteration granularity differs by mode:**
+- **Stateful mode**: One iteration per push (captured by GitHub Action `synchronize` event). Multiple commits in a single push are grouped into one iteration.
+- **Stateless mode**: One iteration per commit (finer granularity). Each individual commit maps to its own iteration, providing more detailed history at the cost of more iterations to navigate.
+
 ```typescript
 interface Iteration {
   id: number;                    // Server-assigned, immutable
@@ -43,6 +47,17 @@ enum IterationStatus {
   Deleted = 'deleted'
 }
 ```
+
+### Collapsed Iterations
+
+In stateless mode, force-pushes discard commits that were previously part of the PR. These discarded commits become **collapsed iterations** - iterations that are no longer on the active branch but may still be accessible via their SHA.
+
+- **Applicable to**: Stateless mode only (stateful mode preserves all iterations in the SQLite artifact)
+- **Grouping**: One collapsed group per force-push event
+- **Visibility**: Collapsed by default; users can expand to include in range diffs
+- **Availability**: Collapsed iterations may become unavailable if their commits are garbage-collected
+
+See [iterations-stateless.md](./iterations-stateless.md) for full details on collapsed iteration data model and UI.
 
 ### The Snapshot Index System
 
@@ -305,9 +320,11 @@ interface GitHubIteration extends Iteration {
 
 | Feature | Azure DevOps | GitHub + Workflow (stateful) | GitHub (stateless) |
 |---------|--------------|------------------------------|-------------------|
-| Iteration ID stability | ✓ Server-assigned | ✓ Artifact-stored | ✓ Timeline-based |
+| Iteration granularity | Server-defined | Per-push | Per-commit |
+| Iteration ID stability | ✓ Server-assigned | ✓ Artifact-stored | ✓ Commit-based |
 | Character-level comments | ✓ | ✓ (in artifact) | ✗ Line-level |
 | Force-push handling | ✓ | ✓ (before SHA in artifact) | ✓ (timeline events) |
+| Collapsed iterations | N/A | N/A | ✓ Force-push discards |
 | Cross-iteration compare | ✓ | ✓ | ✓ |
 | SpanTracker (comment tracking) | ✓ | ✓ (precomputed) | ✓ (runtime computed) |
 | GC resilience | ✓ | ✓ (content in artifact) | ✗ (commits may be lost) |
