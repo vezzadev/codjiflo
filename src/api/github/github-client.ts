@@ -1,13 +1,7 @@
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
+import type { RateLimitInfo } from '@/features/auth/types';
 
-/**
- * Rate limit information from GitHub API response headers
- */
-export interface RateLimitInfo {
-  remaining: number;
-  reset: Date;
-  limit: number;
-}
+export type { RateLimitInfo };
 
 /**
  * GitHub API Error with status code and error metadata
