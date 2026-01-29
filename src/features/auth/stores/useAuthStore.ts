@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { oauthConfig } from '../config';
+import type { RateLimitInfo } from '../types';
+
+export type { RateLimitInfo };
 
 type AuthMethod = 'oauth' | 'pat' | null;
 
@@ -10,12 +13,6 @@ interface TokenResponse {
     expires_in?: number;
     error?: string;
     error_description?: string;
-}
-
-export interface RateLimitInfo {
-    remaining: number;
-    reset: Date;
-    limit: number;
 }
 
 interface AuthState {

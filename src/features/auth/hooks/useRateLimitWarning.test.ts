@@ -50,7 +50,7 @@ describe('useRateLimitWarning', () => {
     expect(result.current.isExhausted).toBe(false);
   });
 
-  it('returns shouldWarn true at exactly 20% boundary (12 is 20% of 60)', () => {
+  it('returns shouldWarn false at exactly 20% boundary (12 is 20% of 60)', () => {
     // 12 is exactly 20% of 60, so remaining < 0.2 * limit means 12 < 12 = false
     mockAuthStore({ rateLimitRemaining: 12, rateLimitLimit: 60 });
 
