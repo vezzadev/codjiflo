@@ -30,7 +30,7 @@
       "count": 83
     },
     "playwright/no-conditional-in-test": {
-      "count": 16
+      "count": 15
     },
     "playwright/no-raw-locators": {
       "count": 10
@@ -158,7 +158,7 @@
       "count": 1
     },
     "playwright/no-conditional-in-test": {
-      "count": 3
+      "count": 1
     },
     "playwright/no-raw-locators": {
       "count": 2
