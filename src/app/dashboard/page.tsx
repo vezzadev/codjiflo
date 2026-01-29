@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, LogIn } from 'lucide-react';
 import { Input } from '@/components/Input';
@@ -18,7 +18,7 @@ function DashboardContent() {
   const logout = useAuthStore((s) => s.logout);
   const { isAuthenticated, isLoading } = useOptionalAuth();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
