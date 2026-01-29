@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
@@ -26,7 +26,7 @@ function LoginContent() {
     initiateOAuth();
   };
 
-  const handlePATSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handlePATSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     void (async () => {
       const success = await validateToken(tokenInput);
