@@ -197,7 +197,7 @@ test.describe("Rate Limit Warning Banner (S-4.1.3)", () => {
 
     // The first API request will return remaining=0, and then the pre-request
     // guard kicks in for subsequent requests. But the banner should still show.
-    const banner = page.getByRole("alert").filter({ hasText: "Rate limit exceeded" });
+    const banner = page.getByRole("alert").filter({ hasText: "GitHub rate limit exceeded" });
     await expect(banner).toBeVisible();
     await expect(banner).toContainText(/Resets in/);
     await expect(banner).toHaveAttribute("aria-live", "assertive");

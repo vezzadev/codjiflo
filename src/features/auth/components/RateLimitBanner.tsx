@@ -38,7 +38,7 @@ export function RateLimitBanner() {
     return (
       <div className="rate-limit-banner rate-limit-banner-exhausted" role="alert" aria-live="assertive">
         <span className="rate-limit-banner-message">
-          Rate limit exceeded. Resets in {resetTimeStr}.
+          GitHub rate limit exceeded. Resets in {resetTimeStr}.
           {!isAuthenticated && (
             <>
               {' '}<Link href="/login" className="rate-limit-banner-link">Sign in</Link> for 5,000 requests/hour.
@@ -53,10 +53,10 @@ export function RateLimitBanner() {
     <div className="rate-limit-banner" role="alert" aria-live="polite">
       <span className="rate-limit-banner-message">
         {isAuthenticated ? (
-          <>{remaining} API requests remaining.</>
+          <>{remaining} GitHub API requests remaining.</>
         ) : (
           <>
-            {remaining} requests remaining.{' '}
+            {remaining} GitHub API requests remaining.{' '}
             <Link href="/login" className="rate-limit-banner-link">Sign in</Link> for 5,000 requests/hour.
           </>
         )}
