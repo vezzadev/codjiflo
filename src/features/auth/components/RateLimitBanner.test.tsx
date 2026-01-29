@@ -53,7 +53,7 @@ describe('RateLimitBanner', () => {
 
     render(<RateLimitBanner />);
 
-    expect(screen.getByText(/8 requests remaining/)).toBeInTheDocument();
+    expect(screen.getByText(/8 GitHub API requests remaining/)).toBeInTheDocument();
     expect(screen.getByText(/Sign in/)).toBeInTheDocument();
     expect(screen.getByText(/5,000 requests\/hour/)).toBeInTheDocument();
   });
@@ -64,7 +64,7 @@ describe('RateLimitBanner', () => {
 
     render(<RateLimitBanner />);
 
-    expect(screen.getByText(/200 API requests remaining/)).toBeInTheDocument();
+    expect(screen.getByText(/200 GitHub API requests remaining/)).toBeInTheDocument();
     expect(screen.queryByText(/Sign in/)).not.toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('RateLimitBanner', () => {
 
     render(<RateLimitBanner />);
 
-    expect(screen.getByText(/Rate limit exceeded/)).toBeInTheDocument();
+    expect(screen.getByText(/GitHub rate limit exceeded/)).toBeInTheDocument();
     expect(screen.getByText(/Resets in \d+ minutes/)).toBeInTheDocument();
   });
 
@@ -139,7 +139,7 @@ describe('RateLimitBanner', () => {
     // Drop to 2 (8 - 5 = 3, 2 < 3, reappears)
     mockWarning({ shouldWarn: true, remaining: 2 });
     rerender(<RateLimitBanner />);
-    expect(screen.getByText(/2 requests remaining/)).toBeInTheDocument();
+    expect(screen.getByText(/2 GitHub API requests remaining/)).toBeInTheDocument();
   });
 
   it('shows Sign in link pointing to /login for unauthenticated exhausted state', () => {
