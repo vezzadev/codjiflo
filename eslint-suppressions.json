@@ -107,11 +107,6 @@
       "count": 4
     }
   },
-  "e2e/mock/stateful-mode/minimap-with-comments.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 1
-    }
-  },
   "e2e/mock/stateless-mode/change-navigation-after-file-switch.spec.ts": {
     "playwright/no-raw-locators": {
       "count": 2
