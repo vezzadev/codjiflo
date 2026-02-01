@@ -119,8 +119,12 @@ export function IterationSelector({ className }: IterationSelectorProps) {
   });
 
   // Calculate which iterations are currently selected based on selectedRange
+  // This works for both stateful (iterations) and stateless (statelessIterations) modes
   const { selectedRevisions, rangeStart, rangeEnd } = useMemo(() => {
-    if (!selectedRange || iterations.length === 0) {
+    // Use stateless iterations in stateless mode, otherwise use stateful iterations
+    const iterationsToUse = mode === 'stateless' ? statelessIterations : iterations;
+
+    if (!selectedRange || iterationsToUse.length === 0) {
       return { selectedRevisions: new Set<number>(), rangeStart: null, rangeEnd: null };
     }
 
@@ -129,7 +133,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     let end: number | null = null;
 
     // Find which iterations correspond to the selected snapshot range
-    for (const iteration of iterations) {
+    for (const iteration of iterationsToUse) {
       const rightSnapshot = iterationToRightSnapshot(iteration.revision);
 
       // If fromSnapshot is 0 (base), the range starts before iteration 1
@@ -159,7 +163,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     }
 
     return { selectedRevisions: revisions, rangeStart: start, rangeEnd: end };
-  }, [selectedRange, iterations]);
+  }, [selectedRange, iterations, mode, statelessIterations]);
 
   // Handle mouse down on a tab - start potential drag
   const handleMouseDown = useCallback((revision: number) => {
@@ -293,6 +297,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
                   onToggleExpand={toggleCollapsedGroupVisibility}
                   onMouseDown={handleMouseDown}
                   onMouseEnter={handleMouseEnter}
+                  selectedRevisions={selectedRevisions}
                   previewRange={previewRange}
                 />
               );

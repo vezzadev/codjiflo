@@ -216,6 +216,84 @@ describe('CollapsedIterationGroup', () => {
 
       expect(onMouseEnter).toHaveBeenCalledWith(2);
     });
+
+    it('applies selected class when iteration is in selectedRevisions', () => {
+      const group = createMockCollapsedGroup({ visibility: 'expanded' });
+      const selectedRevisions = new Set([1]); // Revision 1 is selected
+
+      render(
+        <CollapsedIterationGroup
+          group={group}
+          onToggleExpand={vi.fn()}
+          onMouseDown={vi.fn()}
+          onMouseEnter={vi.fn()}
+          selectedRevisions={selectedRevisions}
+        />
+      );
+
+      const tab1 = screen.getByTestId('discarded-iteration-tab-1');
+      const tab2 = screen.getByTestId('discarded-iteration-tab-2');
+
+      // Tab 1 should have selected class
+      expect(tab1).toHaveClass('selected');
+      // Tab 2 should NOT have selected class
+      expect(tab2).not.toHaveClass('selected');
+    });
+
+    it('applies in-range class when iteration is in preview range', () => {
+      const group = createMockCollapsedGroup({ visibility: 'expanded' });
+      const previewRange = { start: 1, end: 2 };
+
+      render(
+        <CollapsedIterationGroup
+          group={group}
+          onToggleExpand={vi.fn()}
+          onMouseDown={vi.fn()}
+          onMouseEnter={vi.fn()}
+          previewRange={previewRange}
+        />
+      );
+
+      const tab1 = screen.getByTestId('discarded-iteration-tab-1');
+      const tab2 = screen.getByTestId('discarded-iteration-tab-2');
+
+      // Both tabs should have in-range class
+      expect(tab1).toHaveClass('in-range');
+      expect(tab2).toHaveClass('in-range');
+    });
+
+    it('applies in-range class only to iterations within preview range', () => {
+      const group = createMockCollapsedGroup({
+        visibility: 'expanded',
+        iterations: [
+          createMockStatelessIteration(1),
+          createMockStatelessIteration(2),
+          createMockStatelessIteration(3),
+        ],
+      });
+      // Only revisions 2-3 are in the preview range
+      const previewRange = { start: 2, end: 3 };
+
+      render(
+        <CollapsedIterationGroup
+          group={group}
+          onToggleExpand={vi.fn()}
+          onMouseDown={vi.fn()}
+          onMouseEnter={vi.fn()}
+          previewRange={previewRange}
+        />
+      );
+
+      const tab1 = screen.getByTestId('discarded-iteration-tab-1');
+      const tab2 = screen.getByTestId('discarded-iteration-tab-2');
+      const tab3 = screen.getByTestId('discarded-iteration-tab-3');
+
+      // Tab 1 should NOT have in-range class
+      expect(tab1).not.toHaveClass('in-range');
+      // Tabs 2 and 3 should have in-range class
+      expect(tab2).toHaveClass('in-range');
+      expect(tab3).toHaveClass('in-range');
+    });
   });
 
   describe('keyboard interaction', () => {
