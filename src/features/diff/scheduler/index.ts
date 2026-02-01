@@ -4,6 +4,7 @@
 
 export { PriorityQueue, type Comparator } from './priority-queue';
 export { createDiffScheduler } from './diff-scheduler';
+export { SchedulerProvider, useScheduler, type SchedulerProviderProps } from './context';
 export {
   DiffPriority,
   type DiffTask,
