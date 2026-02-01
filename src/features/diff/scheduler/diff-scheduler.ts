@@ -103,7 +103,10 @@ export function createDiffScheduler(worker: DiffComputeAPI): DiffScheduler {
     try {
       span.addEvent('task.started');
 
-      const result = await worker.computeDiff(next.task);
+      // Dispatch to appropriate worker method based on task type
+      const result = next.task.type === 'compute_span_tracker'
+        ? await worker.computeSpanTracker(next.task)
+        : await worker.computeDiff(next.task);
 
       span.addEvent('task.completed', {
         [SemanticAttributes.TASK_STATUS]: result.status,

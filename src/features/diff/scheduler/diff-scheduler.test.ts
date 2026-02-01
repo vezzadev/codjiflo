@@ -419,4 +419,35 @@ describe('DiffScheduler', () => {
       expect(mockWorker.computeDiffCalls).toHaveLength(1);
     });
   });
+
+  describe('task type routing', () => {
+    it('calls computeDiff for compute_diff tasks', async () => {
+      const task = createTask({ taskId: 'diff-task', type: 'compute_diff' });
+
+      scheduler.schedule(task, createOptions());
+      await vi.runAllTimersAsync();
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const computeDiffMock = mockWorker.computeDiff as ReturnType<typeof vi.fn>;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const computeSpanTrackerMock = mockWorker.computeSpanTracker as ReturnType<typeof vi.fn>;
+
+      expect(computeDiffMock).toHaveBeenCalledWith(task);
+      expect(computeSpanTrackerMock).not.toHaveBeenCalled();
+    });
+
+    it('calls computeSpanTracker for compute_span_tracker tasks', async () => {
+      const task = createTask({ taskId: 'span-task', type: 'compute_span_tracker' });
+
+      scheduler.schedule(task, createOptions());
+      await vi.runAllTimersAsync();
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const computeSpanTrackerMock = mockWorker.computeSpanTracker as ReturnType<typeof vi.fn>;
+
+      expect(computeSpanTrackerMock).toHaveBeenCalledWith(task);
+      // computeDiff should not have been called for this task
+      expect(mockWorker.computeDiffCalls).toHaveLength(0);
+    });
+  });
 });
