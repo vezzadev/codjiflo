@@ -21,6 +21,22 @@ export interface MockUser {
   avatar_url?: string;
 }
 
+export interface MockCommit {
+  sha: string;
+  message: string;
+  author: { login: string; date: string };
+  parentSha?: string;
+}
+
+export interface MockTimelineEvent {
+  event: string;
+  commit_id?: string;
+  before?: string;
+  after?: string;
+  actor?: MockUser;
+  created_at: string;
+}
+
 export interface MockPR {
   id: number;
   number: number;
@@ -570,4 +586,146 @@ export async function setupIterationArtifactMock(
       });
     }
   );
+}
+
+// ============================================================================
+// Stateless Mode Mock Functions (M4.2)
+// ============================================================================
+
+/**
+ * Set up mock for the GitHub Timeline API.
+ * Returns timeline events including force-push events.
+ */
+export async function setupTimelineMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  options?: { events?: MockTimelineEvent[] }
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  const events = options?.events ?? [];
+
+  // Transform MockTimelineEvent to GitHub API format
+  const apiEvents = events.map((event) => {
+    const apiEvent: Record<string, unknown> = {
+      event: event.event,
+      created_at: event.created_at,
+    };
+
+    if (event.commit_id) {
+      apiEvent.commit_id = event.commit_id;
+    }
+
+    if (event.before) {
+      apiEvent.before = { sha: event.before };
+    }
+
+    if (event.after) {
+      apiEvent.after = { sha: event.after };
+    }
+
+    if (event.actor) {
+      apiEvent.actor = {
+        login: event.actor.login,
+        id: event.actor.id,
+        avatar_url: event.actor.avatar_url,
+      };
+    }
+
+    return apiEvent;
+  });
+
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline*`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: {
+          "X-RateLimit-Remaining": "4999",
+          "X-RateLimit-Reset": String(Math.floor(Date.now() / 1000) + 3600),
+          "X-RateLimit-Limit": "5000",
+        },
+        body: JSON.stringify(apiEvents),
+      });
+    }
+  );
+}
+
+/**
+ * Set up mock for the GitHub PR Commits API.
+ * Returns commits for the PR.
+ */
+export async function setupCommitsMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  options?: { commits?: MockCommit[] }
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  const commits = options?.commits ?? [];
+
+  // Transform MockCommit to GitHub API format
+  const apiCommits = commits.map((commit) => ({
+    sha: commit.sha,
+    commit: {
+      message: commit.message,
+      author: {
+        date: commit.author.date,
+        name: commit.author.login,
+      },
+    },
+    author: { login: commit.author.login },
+    parents: commit.parentSha ? [{ sha: commit.parentSha }] : [],
+  }));
+
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits*`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: {
+          "X-RateLimit-Remaining": "4998",
+          "X-RateLimit-Reset": String(Math.floor(Date.now() / 1000) + 3600),
+          "X-RateLimit-Limit": "5000",
+        },
+        body: JSON.stringify(apiCommits),
+      });
+    }
+  );
+}
+
+/**
+ * Convenience function to set up all mocks needed for stateless iterations with force-push.
+ * Sets up Timeline API, Commits API, and iteration-related mocks.
+ */
+export async function setupStatelessIterationMocks(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  options: {
+    commits: MockCommit[];
+    forcePushEvents?: MockTimelineEvent[];
+  }
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  // Set up Timeline API mock with force-push events
+  await setupTimelineMock(page, owner, repo, prNumber, {
+    events: options.forcePushEvents ?? [],
+  });
+
+  // Set up Commits API mock
+  await setupCommitsMock(page, owner, repo, prNumber, {
+    commits: options.commits,
+  });
+
+  // Set up iteration mocks (returns empty to trigger stateless mode)
+  await setupIterationMocks(page, owner, repo, prNumber);
 }

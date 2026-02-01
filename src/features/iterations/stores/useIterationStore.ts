@@ -448,3 +448,9 @@ export const useIterationStore = create<IterationState>()(
     }
   )
 );
+
+// Expose store on window for E2E testing and debugging
+// This is safe since the store only contains iteration data, not sensitive information
+if (typeof window !== 'undefined') {
+  (window as unknown as { __CODJIFLO_ITERATION_STORE__: typeof useIterationStore }).__CODJIFLO_ITERATION_STORE__ = useIterationStore;
+}
