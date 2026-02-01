@@ -19,6 +19,9 @@ import type {
   IterationRange,
   IterationPreset,
   ArtifactReference,
+  StatelessIteration,
+  CollapsedIterationGroup,
+  CollapsedVisibility,
 } from '../types';
 import { iterationToLeftSnapshot, iterationToRightSnapshot } from '../types';
 
@@ -67,6 +70,10 @@ interface IterationState {
   artifactTimestamp: string | null;
   artifactReference: ArtifactReference | null;
 
+  // Stateless mode data (M4.2)
+  statelessIterations: StatelessIteration[];
+  collapsedGroups: CollapsedIterationGroup[];
+
   // Selection (partitioned by PR)
   currentPrKey: string | null;
   selectedRanges: Record<string, IterationRange>;
@@ -93,6 +100,11 @@ interface IterationState {
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
   getSpanTrackerService: () => SpanTrackerService | null;
+  toggleCollapsedGroupVisibility: (groupId: string) => void;
+  setStatelessIterations: (
+    iterations: StatelessIteration[],
+    groups: CollapsedIterationGroup[]
+  ) => void;
   reset: () => void;
 }
 
@@ -112,6 +124,8 @@ const initialState = {
   artifacts: [],
   artifactTimestamp: null,
   artifactReference: null,
+  statelessIterations: [],
+  collapsedGroups: [],
   currentPrKey: null,
   selectedRanges: {},
   client: null,
@@ -380,6 +394,26 @@ export const useIterationStore = create<IterationState>()(
 
       getSpanTrackerService: () => {
         return get().spanTrackerService;
+      },
+
+      toggleCollapsedGroupVisibility: (groupId: string) => {
+        const { collapsedGroups } = get();
+        const updatedGroups = collapsedGroups.map((group) => {
+          if (group.id !== groupId) {
+            return group;
+          }
+          const newVisibility: CollapsedVisibility =
+            group.visibility === 'collapsed' ? 'expanded' : 'collapsed';
+          return { ...group, visibility: newVisibility };
+        });
+        set({ collapsedGroups: updatedGroups });
+      },
+
+      setStatelessIterations: (iterations, groups) => {
+        set({
+          statelessIterations: iterations,
+          collapsedGroups: groups,
+        });
       },
 
       reset: () => {

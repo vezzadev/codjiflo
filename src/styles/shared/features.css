@@ -627,6 +627,120 @@
   animation: spin 1s linear infinite;
 }
 
+/* ============================================
+   COLLAPSED ITERATION GROUP (Stateless Mode)
+   ============================================ */
+
+/* Collapsed state - single compact tab */
+.collapsed-iteration-group.collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 36px;
+  min-width: 48px;
+  padding: 0 8px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  border-style: dashed;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.collapsed-iteration-group.collapsed:hover {
+  background-color: var(--btn-hover);
+  color: var(--main-fg);
+}
+
+.collapsed-iteration-group.collapsed:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+/* Unavailable state (commits GC'd) */
+.collapsed-iteration-group.collapsed.unavailable {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.collapsed-iteration-group.collapsed.unavailable:hover {
+  background-color: var(--control-bg);
+  color: var(--control-disabled-fg);
+}
+
+.collapsed-group-icon {
+  flex-shrink: 0;
+}
+
+.collapsed-group-count {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Expanded state - shows all discarded iterations */
+.collapsed-iteration-group.expanded {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.collapsed-group-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 36px;
+  padding: 0;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  border-right: none;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.collapsed-group-collapse-btn:hover {
+  background-color: var(--btn-hover);
+  color: var(--main-fg);
+}
+
+.collapsed-group-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Discarded iteration tab - strikethrough styling */
+.discarded-iteration-tab {
+  position: relative;
+  opacity: 0.7;
+  background-color: var(--control-bg);
+  border-style: dashed;
+}
+
+.discarded-iteration-tab::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background-color: var(--control-disabled-fg);
+  transform: translateY(-50%);
+}
+
+.discarded-iteration-tab:hover {
+  opacity: 0.9;
+}
+
+.discarded-iteration-tab .iteration-tab-number {
+  opacity: 0.8;
+}
+
 /* Legacy styles - keep for backwards compatibility */
 .iteration-selector {
   display: flex;

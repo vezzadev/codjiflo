@@ -4,11 +4,15 @@
  * Tab-based iteration selector with drag-to-select range functionality.
  * - Click single tab: diff from base to that iteration
  * - Click and drag from tab A to B: diff between iterations A and B
+ *
+ * Supports both stateful (artifact) and stateless (Timeline API) modes.
+ * In stateless mode, displays CollapsedIterationGroup components for force-pushed iterations.
  */
 
 import { useCallback, useMemo, useState } from 'react';
 import { useIterationStore, selectSelectedRange } from '../stores';
-import type { Iteration } from '../types';
+import { CollapsedIterationGroup } from './CollapsedIterationGroup';
+import type { Iteration, StatelessIteration } from '../types';
 import { iterationToRightSnapshot } from '../types';
 
 // Default number of skeleton tabs when iteration count is unknown
@@ -96,7 +100,16 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectRange, isLoading, mode, artifactReference } = useIterationStore();
+  const {
+    iterations,
+    selectRange,
+    isLoading,
+    mode,
+    artifactReference,
+    statelessIterations,
+    collapsedGroups,
+    toggleCollapsedGroupVisibility,
+  } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -222,9 +235,134 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     return { start: minRev, end: maxRev };
   }, [dragState]);
 
-  // Don't render if stateless mode (no artifact)
+  // Build render items for stateless mode (interleaved collapsed groups and live iterations)
+  const statelessRenderItems = useMemo(() => {
+    if (mode !== 'stateless' || statelessIterations.length === 0) {
+      return [];
+    }
+
+    // Group iterations by their collapsedGroupId or mark as live
+    const items: (| { type: 'iteration'; iteration: StatelessIteration }
+      | { type: 'collapsed-group'; groupId: string })[] = [];
+
+    const seenGroups = new Set<string>();
+
+    for (const iteration of statelessIterations) {
+      if (iteration.lineage === 'current') {
+        // Live iteration - always show
+        items.push({ type: 'iteration', iteration });
+      } else if (iteration.collapsedGroupId) {
+        // Discarded iteration - show collapsed group marker (once per group)
+        if (!seenGroups.has(iteration.collapsedGroupId)) {
+          seenGroups.add(iteration.collapsedGroupId);
+          items.push({ type: 'collapsed-group', groupId: iteration.collapsedGroupId });
+        }
+      }
+    }
+
+    return items;
+  }, [mode, statelessIterations]);
+
+  // Handle stateless mode rendering
   if (mode === 'stateless') {
-    return null;
+    // Don't render if no stateless iterations
+    if (statelessIterations.length === 0) {
+      return null;
+    }
+
+    const classes = ['iteration-tabs-container', className].filter(Boolean).join(' ');
+
+    return (
+      <div
+        data-testid="iteration-selector"
+        className={classes}
+        role="toolbar"
+        aria-label="Iteration range selector (stateless mode)"
+        onMouseUp={handleMouseUp}
+      >
+        <div className="iteration-tabs" role="group">
+          {statelessRenderItems.map((item) => {
+            if (item.type === 'collapsed-group') {
+              const group = collapsedGroups.find((g) => g.id === item.groupId);
+              if (!group) return null;
+
+              return (
+                <CollapsedIterationGroup
+                  key={`group-${item.groupId}`}
+                  group={group}
+                  onToggleExpand={toggleCollapsedGroupVisibility}
+                  onMouseDown={handleMouseDown}
+                  onMouseEnter={handleMouseEnter}
+                  previewRange={previewRange}
+                />
+              );
+            }
+
+            // Live iteration in stateless mode
+            const iteration = item.iteration;
+            const inPreviewRange =
+              previewRange !== null &&
+              iteration.revision >= previewRange.start &&
+              iteration.revision <= previewRange.end;
+
+            const isInRange = dragState.isDragging ? inPreviewRange : false;
+            const isRangeStartTab = dragState.isDragging
+              ? previewRange?.start === iteration.revision
+              : false;
+            const isRangeEndTab = dragState.isDragging
+              ? previewRange?.end === iteration.revision
+              : false;
+            const isSelected = isRangeStartTab || isRangeEndTab;
+
+            const tabClasses = [
+              'iteration-tab',
+              isSelected && 'selected',
+              isInRange && 'in-range',
+              isRangeStartTab && 'range-start',
+              isRangeEndTab && 'range-end',
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            const date = iteration.createdAt.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            });
+
+            return (
+              <button
+                key={iteration.commitSha}
+                type="button"
+                className={tabClasses}
+                onMouseDown={() => handleMouseDown(iteration.revision)}
+                onMouseEnter={() => handleMouseEnter(iteration.revision)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleKeyboardSelect(iteration.revision);
+                  }
+                }}
+                title={`${iteration.message} (${date})`}
+                aria-pressed={isSelected || isInRange}
+                data-testid={`iteration-tab-${iteration.revision}`}
+              >
+                <span className="iteration-tab-number" aria-hidden="true">
+                  {iteration.revision}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="iteration-loading" role="status" aria-live="polite">
+            <div className="spinner-small" aria-hidden="true" />
+            <span>Loading...</span>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Show skeleton while loading with no iterations yet

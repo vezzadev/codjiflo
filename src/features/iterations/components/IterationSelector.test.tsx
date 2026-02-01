@@ -1,7 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IterationSelector } from './IterationSelector';
-import type { Iteration, IterationRange, ArtifactReference } from '../types';
+import type {
+  Iteration,
+  IterationRange,
+  ArtifactReference,
+  StatelessIteration,
+  CollapsedIterationGroup,
+} from '../types';
 
 // Store state that tests can configure
 interface MockStoreState {
@@ -11,6 +17,9 @@ interface MockStoreState {
   isLoading: boolean;
   mode: 'stateful' | 'stateless';
   artifactReference: ArtifactReference | null;
+  statelessIterations: StatelessIteration[];
+  collapsedGroups: CollapsedIterationGroup[];
+  toggleCollapsedGroupVisibility: ReturnType<typeof vi.fn>;
 }
 
 let currentMockState: MockStoreState;
@@ -44,6 +53,7 @@ function createMockIteration(revision: number): Iteration {
 // Helper to setup mock state
 function setupMockState(state: Partial<MockStoreState>) {
   const mockSelectRange = vi.fn();
+  const mockToggleCollapsedGroupVisibility = vi.fn();
   currentMockState = {
     iterations: [],
     selectedRange: null,
@@ -51,9 +61,15 @@ function setupMockState(state: Partial<MockStoreState>) {
     isLoading: false,
     mode: 'stateful',
     artifactReference: null,
+    statelessIterations: [],
+    collapsedGroups: [],
+    toggleCollapsedGroupVisibility: mockToggleCollapsedGroupVisibility,
     ...state,
   };
-  return { mockSelectRange: currentMockState.selectRange };
+  return {
+    mockSelectRange: currentMockState.selectRange,
+    mockToggleCollapsedGroupVisibility: currentMockState.toggleCollapsedGroupVisibility,
+  };
 }
 
 describe('IterationSelector', () => {
