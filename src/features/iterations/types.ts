@@ -25,6 +25,70 @@ export enum IterationStatus {
 }
 
 // ============================================================================
+// Stateless Iteration Types (Milestone 4.2)
+// ============================================================================
+
+/** Git lineage state - whether commit is in current HEAD history or orphaned */
+export type IterationLineage = 'current' | 'discarded';
+
+/** UI visibility state for collapsed groups */
+export type CollapsedVisibility = 'collapsed' | 'expanded';
+
+/** An iteration derived from commit data (stateless mode) */
+export interface StatelessIteration {
+  /** Sequential revision number across all commits (live + discarded) */
+  revision: number;
+  /** Git commit SHA */
+  commitSha: string;
+  /** Parent commit SHA or PR base */
+  baseSha: string;
+  /** Commit author username */
+  author: string;
+  /** First line of commit message */
+  message: string;
+  /** Commit timestamp */
+  createdAt: Date;
+  /** Git lineage: current HEAD history or orphaned by force-push */
+  lineage: IterationLineage;
+  /** Group ID if this iteration was discarded by a force-push */
+  collapsedGroupId?: string;
+}
+
+/** A group of iterations discarded by a single force-push */
+export interface CollapsedIterationGroup {
+  /** Unique ID for this group */
+  id: string;
+  /** SHA of HEAD before force-push (discarded) */
+  beforeSha: string;
+  /** SHA of HEAD after force-push (new) */
+  afterSha: string;
+  /** Iterations that were discarded */
+  iterations: StatelessIteration[];
+  /** UI visibility state */
+  visibility: CollapsedVisibility;
+  /** Set if commits are no longer available (GC'd) */
+  unavailableReason?: string;
+}
+
+/** A force-push event from GitHub Timeline API */
+export interface ForcePushEvent {
+  /** SHA before force-push */
+  beforeSha: string;
+  /** SHA after force-push */
+  afterSha: string;
+  /** When the force-push occurred */
+  timestamp: Date;
+  /** User who performed the force-push */
+  actor: string;
+}
+
+/** Result of loading stateless iterations */
+export interface StatelessIterationData {
+  iterations: StatelessIteration[];
+  collapsedGroups: CollapsedIterationGroup[];
+}
+
+// ============================================================================
 // File Artifact Types
 // ============================================================================
 
