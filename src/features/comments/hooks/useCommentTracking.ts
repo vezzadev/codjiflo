@@ -13,7 +13,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useCommentsStore } from '../stores';
 import { useIterationStore, selectSelectedRange } from '@/features/iterations/stores';
 import { singleLine } from '@/features/iterations/domain';
-import { useScheduler } from '@/features/diff/scheduler/context';
+import { useOptionalScheduler } from '@/features/diff/scheduler/context';
 import { usePRStore } from '@/features/pr/stores';
 import type { ReviewThread } from '../types';
 import type { LineMapping, SpanTrackerResult, DiffResult } from '@/features/diff/scheduler/types';
@@ -85,7 +85,7 @@ export function useCommentTracking(): void {
   const { iterations, mode, artifacts, getSpanTrackerService } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
   const headSha = usePRStore((s) => s.currentPR?.headSha);
-  const scheduler = useScheduler();
+  const scheduler = useOptionalScheduler();
 
   // Cache keys to prevent redundant computation
   const statefulCacheKeyRef = useRef<string>('');
@@ -136,8 +136,8 @@ export function useCommentTracking(): void {
   const processStatelessThreads = useCallback(() => {
     if (mode !== 'stateless') return;
 
-    // Need PR headSha to know target commit
-    if (!headSha) return;
+    // Need scheduler and PR headSha to know target commit
+    if (!scheduler || !headSha) return;
 
     const targetSha = headSha;
 
@@ -208,6 +208,9 @@ export function useCommentTracking(): void {
   // Stateless mode effect - uses scheduler-computed SpanTracker results
   useEffect(() => {
     if (mode !== 'stateless') return;
+
+    // Need scheduler for stateless mode tracking
+    if (!scheduler) return;
 
     // Process immediately with any available results
     processStatelessThreads();

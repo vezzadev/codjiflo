@@ -73,7 +73,7 @@ vi.mock('@/features/pr/stores', () => ({
 }));
 
 vi.mock('@/features/diff/scheduler/context', () => ({
-  useScheduler: vi.fn(() => ({
+  useOptionalScheduler: vi.fn(() => ({
     schedule: vi.fn(),
     prioritize: vi.fn(),
     clear: vi.fn(),

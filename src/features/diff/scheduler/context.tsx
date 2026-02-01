@@ -49,3 +49,14 @@ export function useScheduler(): DiffScheduler {
   }
   return scheduler;
 }
+
+/**
+ * Hook to optionally access the DiffScheduler from context.
+ *
+ * Returns null if used outside of SchedulerProvider.
+ * Use this for components that need graceful degradation when no scheduler is available.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalScheduler(): DiffScheduler | null {
+  return useContext(SchedulerContext);
+}
