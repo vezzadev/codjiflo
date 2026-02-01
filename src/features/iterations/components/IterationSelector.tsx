@@ -311,13 +311,18 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               iteration.revision >= previewRange.start &&
               iteration.revision <= previewRange.end;
 
-            const isInRange = dragState.isDragging ? inPreviewRange : false;
+            // When not dragging, show actual selection from selectedRevisions
+            const isInRange = dragState.isDragging
+              ? inPreviewRange
+              : selectedRevisions.has(iteration.revision);
+
             const isRangeStartTab = dragState.isDragging
               ? previewRange?.start === iteration.revision
-              : false;
+              : rangeStart === iteration.revision;
+
             const isRangeEndTab = dragState.isDragging
               ? previewRange?.end === iteration.revision
-              : false;
+              : rangeEnd === iteration.revision;
             const isSelected = isRangeStartTab || isRangeEndTab;
 
             const tabClasses = [

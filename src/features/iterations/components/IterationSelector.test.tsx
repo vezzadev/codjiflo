@@ -50,6 +50,19 @@ function createMockIteration(revision: number): Iteration {
   };
 }
 
+// Helper to create stateless iterations
+function createMockStatelessIteration(revision: number): StatelessIteration {
+  return {
+    revision,
+    commitSha: `commit-sha-${revision}`,
+    baseSha: `base-sha-${revision}`,
+    author: 'testuser',
+    message: `Commit message ${revision}`,
+    createdAt: new Date('2024-01-15'),
+    lineage: 'current',
+  };
+}
+
 // Helper to setup mock state
 function setupMockState(state: Partial<MockStoreState>) {
   const mockSelectRange = vi.fn();
@@ -78,11 +91,12 @@ describe('IterationSelector', () => {
   });
 
   describe('rendering conditions', () => {
-    it('returns null when mode is stateless', () => {
+    it('returns null when mode is stateless with no statelessIterations', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
         mode: 'stateless',
+        statelessIterations: [],
       });
 
       const { container } = render(<IterationSelector />);
@@ -244,6 +258,40 @@ describe('IterationSelector', () => {
       render(<IterationSelector className="custom-class" />);
 
       expect(screen.getByTestId('iteration-selector')).toHaveClass('custom-class');
+    });
+
+    it('applies selection highlighting in stateless mode when not dragging', () => {
+      // Test for bug fix: stateless mode should show selection highlighting
+      // when a range is selected, not just during drag operations
+      setupMockState({
+        iterations: [],
+        mode: 'stateless',
+        statelessIterations: [
+          createMockStatelessIteration(1),
+          createMockStatelessIteration(2),
+          createMockStatelessIteration(3),
+        ],
+        // Range from iteration 1 to iteration 3 (snapshot 1 to snapshot 5)
+        selectedRange: { fromSnapshot: 1, toSnapshot: 5 },
+        collapsedGroups: [],
+      });
+
+      render(<IterationSelector />);
+
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      const tab2 = screen.getByTestId('iteration-tab-2');
+      const tab3 = screen.getByTestId('iteration-tab-3');
+
+      // Tab 1 should be range start (selected)
+      expect(tab1).toHaveClass('selected');
+      expect(tab1).toHaveClass('range-start');
+
+      // Tab 2 should be in range but not at boundary
+      expect(tab2).toHaveClass('in-range');
+
+      // Tab 3 should be range end (selected)
+      expect(tab3).toHaveClass('selected');
+      expect(tab3).toHaveClass('range-end');
     });
   });
 
