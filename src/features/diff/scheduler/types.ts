@@ -128,13 +128,18 @@ export interface DiffScheduler {
   clear(): void;
 
   /**
-   * Get the result of a completed task
+   * Get the result of a completed diff task
    */
   getResult(taskId: string): DiffResult | undefined;
+
+  /**
+   * Get the result of a completed SpanTracker task
+   */
+  getSpanTrackerResult(taskId: string): SpanTrackerResult | undefined;
 
   /**
    * Subscribe to task completion events
    * @returns Unsubscribe function
    */
-  onComplete(callback: (result: DiffResult) => void): () => void;
+  onComplete(callback: (result: DiffResult | SpanTrackerResult) => void): () => void;
 }

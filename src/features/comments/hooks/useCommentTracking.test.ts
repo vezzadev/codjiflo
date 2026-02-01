@@ -2,12 +2,14 @@
  * Tests for useCommentTracking hook.
  *
  * Tests position tracking for outdated comments using SpanTracker.
+ * Covers both stateful mode (artifact-based) and stateless mode (scheduler-based).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useCommentTracking } from './useCommentTracking';
 import type { ReviewThread } from '../types';
+import type { SpanTrackerResult, DiffResult, LineMapping } from '@/features/diff/scheduler/types';
 
 // Mock store state
 let mockThreads: ReviewThread[] = [];
@@ -21,6 +23,16 @@ let mockSelectedRange: { fromSnapshot: number; toSnapshot: number } | null = nul
 let mockSpanTrackerService: {
   trackCommentForward: ReturnType<typeof vi.fn>;
 } | null = null;
+
+// Mock PR store state
+let mockHeadSha: string | undefined = undefined;
+
+// Mock scheduler state
+type GetSpanTrackerResultFn = (taskId: string) => SpanTrackerResult | undefined;
+type OnCompleteFn = (callback: (result: DiffResult | SpanTrackerResult) => void) => () => void;
+let mockSchedulerGetSpanTrackerResult: ReturnType<typeof vi.fn<GetSpanTrackerResultFn>>;
+let mockSchedulerOnComplete: ReturnType<typeof vi.fn<OnCompleteFn>>;
+let mockOnCompleteCallback: ((result: SpanTrackerResult) => void) | null = null;
 
 vi.mock('../stores', () => ({
   useCommentsStore: vi.fn(() => ({
@@ -48,6 +60,27 @@ vi.mock('@/features/iterations/stores', () => ({
 
 vi.mock('@/features/iterations/domain', () => ({
   singleLine: (line: number) => ({ startLine: line, endLine: line }),
+}));
+
+vi.mock('@/features/pr/stores', () => ({
+  usePRStore: vi.fn((selector?: (state: { currentPR: { headSha: string } | null }) => unknown) => {
+    const state = { currentPR: mockHeadSha ? { headSha: mockHeadSha } : null };
+    if (selector) {
+      return selector(state);
+    }
+    return state;
+  }),
+}));
+
+vi.mock('@/features/diff/scheduler/context', () => ({
+  useScheduler: vi.fn(() => ({
+    schedule: vi.fn(),
+    prioritize: vi.fn(),
+    clear: vi.fn(),
+    getResult: vi.fn(),
+    getSpanTrackerResult: (taskId: string) => mockSchedulerGetSpanTrackerResult(taskId),
+    onComplete: (callback: (result: DiffResult | SpanTrackerResult) => void) => mockSchedulerOnComplete(callback),
+  })),
 }));
 
 // Helper to create a thread
@@ -90,6 +123,13 @@ describe('useCommentTracking', () => {
     mockSelectedRange = null;
     mockSpanTrackerService = null;
     mockUpdateTrackedPositions = vi.fn();
+    mockHeadSha = undefined;
+    mockSchedulerGetSpanTrackerResult = vi.fn().mockReturnValue(undefined);
+    mockSchedulerOnComplete = vi.fn().mockImplementation((callback: (result: SpanTrackerResult) => void) => {
+      mockOnCompleteCallback = callback;
+      return vi.fn(); // Return unsubscribe function
+    });
+    mockOnCompleteCallback = null;
   });
 
   afterEach(() => {
@@ -97,8 +137,9 @@ describe('useCommentTracking', () => {
   });
 
   describe('stateless mode', () => {
-    it('does nothing in stateless mode', () => {
+    it('does nothing when no PR is loaded', () => {
       mockMode = 'stateless';
+      mockHeadSha = undefined;
       mockThreads = [
         createThread({
           id: 'thread-1',
@@ -111,6 +152,251 @@ describe('useCommentTracking', () => {
 
       renderHook(() => useCommentTracking());
 
+      expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when no threads need tracking', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: 10, // Has valid line - doesn't need tracking
+          originalLine: 10,
+          originalCommitId: 'abc123',
+        }),
+      ];
+
+      renderHook(() => useCommentTracking());
+
+      expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
+    });
+
+    it('positions comments using scheduler results when available', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // Scheduler has a result for this file
+      const mappings: LineMapping[] = [
+        { leftLine: 10, rightLine: 15, type: 'modified' },
+      ];
+      mockSchedulerGetSpanTrackerResult.mockReturnValue({
+        taskId: 'span-tracker-src/file.ts-original-commit-head-sha',
+        status: 'completed',
+        mappings,
+      } as SpanTrackerResult);
+
+      renderHook(() => useCommentTracking());
+
+      expect(mockSchedulerGetSpanTrackerResult).toHaveBeenCalledWith(
+        'span-tracker-src/file.ts-original-commit-head-sha'
+      );
+      expect(mockUpdateTrackedPositions).toHaveBeenCalledWith(
+        new Map([['thread-1', 15]])
+      );
+    });
+
+    it('sets trackedLine to null when scheduler result is not yet available', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // No result yet
+      mockSchedulerGetSpanTrackerResult.mockReturnValue(undefined);
+
+      renderHook(() => useCommentTracking());
+
+      // Should not update - waiting for result
+      expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
+    });
+
+    it('updates trackedLine when scheduler result arrives', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // Initially no result
+      mockSchedulerGetSpanTrackerResult.mockReturnValue(undefined);
+
+      renderHook(() => useCommentTracking());
+
+      // Should subscribe to scheduler
+      expect(mockSchedulerOnComplete).toHaveBeenCalled();
+      expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
+
+      // Now result arrives
+      const mappings: LineMapping[] = [
+        { leftLine: 10, rightLine: 20, type: 'unchanged' },
+      ];
+      mockSchedulerGetSpanTrackerResult.mockReturnValue({
+        taskId: 'span-tracker-src/file.ts-original-commit-head-sha',
+        status: 'completed',
+        mappings,
+      } as SpanTrackerResult);
+
+      // Trigger the callback
+      act(() => {
+        mockOnCompleteCallback?.({
+          taskId: 'span-tracker-src/file.ts-original-commit-head-sha',
+          status: 'completed',
+          mappings,
+        });
+      });
+
+      expect(mockUpdateTrackedPositions).toHaveBeenCalledWith(
+        new Map([['thread-1', 20]])
+      );
+    });
+
+    it('sets trackedLine to null for deleted lines (rightLine: null)', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // Line was deleted
+      const mappings: LineMapping[] = [
+        { leftLine: 10, rightLine: null, type: 'deleted' },
+      ];
+      mockSchedulerGetSpanTrackerResult.mockReturnValue({
+        taskId: 'span-tracker-src/file.ts-original-commit-head-sha',
+        status: 'completed',
+        mappings,
+      } as SpanTrackerResult);
+
+      renderHook(() => useCommentTracking());
+
+      expect(mockUpdateTrackedPositions).toHaveBeenCalledWith(
+        new Map([['thread-1', null]])
+      );
+    });
+
+    it('sets trackedLine to null when scheduler result has error status', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // Result has error status
+      mockSchedulerGetSpanTrackerResult.mockReturnValue({
+        taskId: 'span-tracker-src/file.ts-original-commit-head-sha',
+        status: 'error',
+        error: 'File not found',
+      } as SpanTrackerResult);
+
+      renderHook(() => useCommentTracking());
+
+      expect(mockUpdateTrackedPositions).toHaveBeenCalledWith(
+        new Map([['thread-1', null]])
+      );
+    });
+
+    it('handles multiple threads with mixed results', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file1.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'commit-1',
+        }),
+        createThread({
+          id: 'thread-2',
+          path: 'src/file2.ts',
+          line: null,
+          originalLine: 20,
+          originalCommitId: 'commit-2',
+        }),
+      ];
+
+      // First file has result, second doesn't
+      mockSchedulerGetSpanTrackerResult
+        .mockReturnValueOnce({
+          taskId: 'span-tracker-src/file1.ts-commit-1-head-sha',
+          status: 'completed',
+          mappings: [{ leftLine: 10, rightLine: 15, type: 'modified' }],
+        } as SpanTrackerResult)
+        .mockReturnValueOnce(undefined);
+
+      renderHook(() => useCommentTracking());
+
+      // Should update with partial results
+      expect(mockUpdateTrackedPositions).toHaveBeenCalledWith(
+        new Map([['thread-1', 15]])
+      );
+    });
+
+    it('ignores non-SpanTracker completion events', () => {
+      mockMode = 'stateless';
+      mockHeadSha = 'head-sha';
+      mockThreads = [
+        createThread({
+          id: 'thread-1',
+          path: 'src/file.ts',
+          line: null,
+          originalLine: 10,
+          originalCommitId: 'original-commit',
+        }),
+      ];
+
+      // No result yet
+      mockSchedulerGetSpanTrackerResult.mockReturnValue(undefined);
+
+      renderHook(() => useCommentTracking());
+
+      expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
+
+      // Trigger with a diff result (not SpanTracker)
+      act(() => {
+        mockOnCompleteCallback?.({
+          taskId: 'diff-compute-src/file.ts',
+          status: 'completed',
+        } as unknown as SpanTrackerResult);
+      });
+
+      // Still should not update - result was not a SpanTracker result
       expect(mockUpdateTrackedPositions).not.toHaveBeenCalled();
     });
   });

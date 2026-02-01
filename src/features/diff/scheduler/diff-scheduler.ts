@@ -12,6 +12,7 @@ import type {
   DiffScheduler,
   ScheduleOptions,
   ScheduledTask,
+  SpanTrackerResult,
 } from './types';
 import { DiffPriority } from './types';
 import { PriorityQueue } from './priority-queue';
@@ -51,8 +52,8 @@ const scheduledTaskComparator = (a: ScheduledTask, b: ScheduledTask): number => 
  */
 export function createDiffScheduler(worker: DiffComputeAPI): DiffScheduler {
   const queue = new PriorityQueue<ScheduledTask>(scheduledTaskComparator);
-  const results = new Map<string, DiffResult>();
-  const callbacks = new Set<(result: DiffResult) => void>();
+  const results = new Map<string, DiffResult | SpanTrackerResult>();
+  const callbacks = new Set<(result: DiffResult | SpanTrackerResult) => void>();
 
   let inFlightTask: ScheduledTask | null = null;
   let isProcessing = false;
@@ -60,7 +61,7 @@ export function createDiffScheduler(worker: DiffComputeAPI): DiffScheduler {
   /**
    * Notify all callbacks of a completed task
    */
-  function notifyComplete(result: DiffResult): void {
+  function notifyComplete(result: DiffResult | SpanTrackerResult): void {
     for (const callback of callbacks) {
       callback(result);
     }
@@ -271,10 +272,35 @@ export function createDiffScheduler(worker: DiffComputeAPI): DiffScheduler {
     },
 
     getResult(taskId: string): DiffResult | undefined {
-      return results.get(taskId);
+      const result = results.get(taskId);
+      // Filter to only return DiffResult (has diffLines or alignedLines, not mappings)
+      if (result && 'diffLines' in result) {
+        return result;
+      }
+      if (result && 'alignedLines' in result) {
+        return result;
+      }
+      // Return result if it doesn't have mappings (basic DiffResult without data)
+      if (result && !('mappings' in result)) {
+        return result as DiffResult;
+      }
+      return undefined;
     },
 
-    onComplete(callback: (result: DiffResult) => void): () => void {
+    getSpanTrackerResult(taskId: string): SpanTrackerResult | undefined {
+      const result = results.get(taskId);
+      // Filter to only return SpanTrackerResult (has mappings field)
+      if (result && 'mappings' in result) {
+        return result;
+      }
+      // Also return if it's a SpanTracker result without mappings (error case)
+      if (result?.taskId.startsWith('span-tracker-')) {
+        return result as SpanTrackerResult;
+      }
+      return undefined;
+    },
+
+    onComplete(callback: (result: DiffResult | SpanTrackerResult) => void): () => void {
       callbacks.add(callback);
       return () => {
         callbacks.delete(callback);

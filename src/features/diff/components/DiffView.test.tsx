@@ -41,6 +41,7 @@ vi.mock('@/features/comments', async () => {
   return {
     ...actual,
     useCommentsStore: vi.fn(),
+    useCommentTracking: vi.fn(), // Mock to avoid SchedulerProvider requirement
   };
 });
 

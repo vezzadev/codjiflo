@@ -24,6 +24,7 @@ function createMockScheduler(): DiffScheduler & { scheduleMock: MockScheduleFn }
     prioritize: vi.fn(),
     clear: vi.fn(),
     getResult: vi.fn().mockReturnValue(undefined),
+    getSpanTrackerResult: vi.fn().mockReturnValue(undefined),
     onComplete: vi.fn().mockReturnValue(vi.fn()),
     scheduleMock,
   };
