@@ -10,3 +10,5 @@ export type {
   UnavailableRecord,
   StatelessStorage,
 } from './types';
+
+export { openStatelessStorage } from './stateless-storage';
