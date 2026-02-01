@@ -45,6 +45,23 @@ vi.mock('../infrastructure', () => ({
   SQLiteSpanTrackerReader: class MockSQLiteSpanTrackerReader {},
 }));
 
+// Mock tracer to avoid console noise
+vi.mock('@/lib/tracing', () => ({
+  tracer: {
+    startSpan: () => ({
+      addEvent: vi.fn(),
+      setStatus: vi.fn(),
+      end: vi.fn(),
+    }),
+  },
+  SemanticAttributes: {
+    GITHUB_OWNER: 'github.owner',
+    GITHUB_REPO: 'github.repo',
+    GITHUB_PR_NUMBER: 'github.pr.number',
+    ITERATION_COUNT: 'iteration.count',
+  },
+}));
+
 // Helper to create mock iterations
 function createMockIterations(count: number): Iteration[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -322,6 +339,72 @@ describe('useIterationStore', () => {
         expect.stringContaining('Failed to load iterations')
       );
       consoleSpy.mockRestore();
+    });
+
+    it('should skip artifact loading and enter stateless mode when forceStateless is true', async () => {
+      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1, { forceStateless: true });
+
+      const state = useIterationStore.getState();
+      expect(state.isLoading).toBe(false);
+      expect(state.mode).toBe('stateless');
+      expect(state.statelessReason).toBe('Stateless mode forced via ?mode=stateless query parameter.');
+      expect(state.iterations).toHaveLength(0);
+      expect(state.artifacts).toHaveLength(0);
+      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
+
+      // Should NOT have called artifact loader
+      expect(mockLoad).not.toHaveBeenCalled();
+      expect(mockFindArtifactReference).not.toHaveBeenCalled();
+
+      // Should have logged the forced stateless message
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('(forced stateless)')
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('should load artifacts normally when forceStateless is false', async () => {
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1, { forceStateless: false });
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateful');
+      expect(state.iterations).toHaveLength(2);
+      // Should have called artifact loader
+      expect(mockLoad).toHaveBeenCalled();
+    });
+
+    it('should load artifacts normally when options are not provided', async () => {
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateful');
+      expect(state.iterations).toHaveLength(2);
+      // Should have called artifact loader
+      expect(mockLoad).toHaveBeenCalled();
     });
 
     it('should invalidate cached range with fromSnapshot:0 after rebase (issue #151)', async () => {

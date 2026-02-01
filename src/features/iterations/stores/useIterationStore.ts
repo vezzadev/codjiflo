@@ -12,6 +12,7 @@ import { ArtifactLoader } from '../artifact-loader';
 import { IterationClient } from '../iteration-client';
 import { SpanTrackerService } from '../application';
 import { SQLiteSpanTrackerReader } from '../infrastructure';
+import { tracer, SemanticAttributes } from '@/lib/tracing';
 import type {
   Iteration,
   ReviewFileArtifact,
@@ -83,7 +84,12 @@ interface IterationState {
   statelessReason: string | null;
 
   // Actions
-  loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
+  loadIterations: (
+    owner: string,
+    repo: string,
+    prNumber: number,
+    options?: { forceStateless?: boolean }
+  ) => Promise<void>;
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
   getSpanTrackerService: () => SpanTrackerService | null;
@@ -125,10 +131,38 @@ export const useIterationStore = create<IterationState>()(
     (set, get) => ({
       ...initialState,
 
-      loadIterations: async (owner, repo, prNumber) => {
+      loadIterations: async (owner, repo, prNumber, options) => {
         const prKey = getPrKey(owner, repo, prNumber);
-        console.info(`[CodjiFlo] Loading iterations for ${prKey}`);
+        const forceStateless = options?.forceStateless ?? false;
+
+        // Create tracing span for this operation
+        const span = tracer.startSpan('iterations.load', {
+          [SemanticAttributes.GITHUB_OWNER]: owner,
+          [SemanticAttributes.GITHUB_REPO]: repo,
+          [SemanticAttributes.GITHUB_PR_NUMBER]: prNumber,
+          'iterations.force_stateless': forceStateless,
+        });
+
+        console.info(
+          `[CodjiFlo] Loading iterations for ${prKey}${forceStateless ? ' (forced stateless)' : ''}`
+        );
         set({ isLoading: true, error: null, currentPrKey: prKey });
+
+        // Handle forced stateless mode - skip artifact loading entirely
+        if (forceStateless) {
+          span.addEvent('stateless.forced');
+          span.setStatus('ok');
+          span.end();
+
+          set({
+            isLoading: false,
+            mode: 'stateless',
+            statelessReason: 'Stateless mode forced via ?mode=stateless query parameter.',
+            iterations: [],
+            artifacts: [],
+          });
+          return;
+        }
 
         try {
           const loader = new ArtifactLoader(owner, repo, prNumber);
@@ -151,11 +185,16 @@ export const useIterationStore = create<IterationState>()(
               // Artifact exists but can't download without auth (S-4.1.5)
               reason = 'Sign in to enable iteration tracking. CodjiFlo data is available for this PR.';
               console.info(`[CodjiFlo] Entering stateless mode: not authenticated for ${prKey}`);
+              span.addEvent('stateless.not_authenticated');
             } else {
               // No artifact found - workflow not installed
               reason = 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.';
               console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
+              span.addEvent('stateless.no_artifact');
             }
+
+            span.setStatus('ok');
+            span.end();
 
             set({
               isLoading: false,
@@ -225,6 +264,12 @@ export const useIterationStore = create<IterationState>()(
             ? updateLRUCache(selectedRanges, prKey, rangeToUse)
             : selectedRanges;
 
+          span.addEvent('stateful.loaded', {
+            [SemanticAttributes.ITERATION_COUNT]: iterations.length,
+          });
+          span.setStatus('ok');
+          span.end();
+
           set({
             iterations,
             artifacts,
@@ -241,6 +286,10 @@ export const useIterationStore = create<IterationState>()(
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Failed to load iterations';
           console.error(`[CodjiFlo] Failed to load iterations for ${prKey}: ${message}`);
+
+          span.setStatus('error', message);
+          span.end();
+
           set({
             isLoading: false,
             error: message,

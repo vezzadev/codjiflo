@@ -74,10 +74,13 @@ function PullRequestContent({ params }: PRPageProps) {
     const prNumber = parseInt(number, 10);
     if (isNaN(prNumber)) return;
 
+    // Check for ?mode=stateless query param to force stateless mode
+    const forceStateless = searchParams.get('mode') === 'stateless';
+
     void loadPR(owner, repo, prNumber);
     void loadFiles(owner, repo, prNumber);
     void loadThreads(owner, repo, prNumber);
-    void loadIterations(owner, repo, prNumber);
+    void loadIterations(owner, repo, prNumber, { forceStateless });
 
     return () => {
       resetPR();
@@ -85,7 +88,7 @@ function PullRequestContent({ params }: PRPageProps) {
       resetComments();
       resetIterations();
     };
-  }, [owner, repo, number, loadPR, loadFiles, loadThreads, loadIterations, resetPR, resetDiff, resetComments, resetIterations]);
+  }, [owner, repo, number, searchParams, loadPR, loadFiles, loadThreads, loadIterations, resetPR, resetDiff, resetComments, resetIterations]);
 
   useDocumentTitle({ currentPR, owner, repo, number });
 
