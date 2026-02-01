@@ -422,6 +422,72 @@ describe('loadCommits', () => {
     });
   });
 
+  describe('rate limit tracking', () => {
+    it('calls updateRateLimit with correct values from response headers', async () => {
+      const mockUpdateRateLimit = vi.fn();
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: 'test-token',
+        rateLimitRemaining: 100,
+        updateRateLimit: mockUpdateRateLimit,
+      } as never);
+
+      const mockCommits = [
+        {
+          sha: 'sha1',
+          commit: { message: 'Test', author: { date: '2024-01-15T10:00:00Z' } },
+          author: { login: 'user' },
+          parents: [],
+        },
+      ];
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({
+          'X-RateLimit-Remaining': '4999',
+          'X-RateLimit-Reset': '1705320000',
+          'X-RateLimit-Limit': '5000',
+        }),
+        json: () => Promise.resolve(mockCommits),
+      });
+
+      await loadCommits('owner', 'repo', 1);
+
+      expect(mockUpdateRateLimit).toHaveBeenCalledWith({
+        remaining: 4999,
+        reset: new Date(1705320000 * 1000),
+        limit: 5000,
+      });
+    });
+
+    it('does not call updateRateLimit when headers are missing', async () => {
+      const mockUpdateRateLimit = vi.fn();
+      vi.mocked(useAuthStore.getState).mockReturnValue({
+        token: 'test-token',
+        rateLimitRemaining: 100,
+        updateRateLimit: mockUpdateRateLimit,
+      } as never);
+
+      const mockCommits = [
+        {
+          sha: 'sha1',
+          commit: { message: 'Test', author: { date: '2024-01-15T10:00:00Z' } },
+          author: { login: 'user' },
+          parents: [],
+        },
+      ];
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers(), // No rate limit headers
+        json: () => Promise.resolve(mockCommits),
+      });
+
+      await loadCommits('owner', 'repo', 1);
+
+      expect(mockUpdateRateLimit).not.toHaveBeenCalled();
+    });
+  });
+
   describe('PRCommit interface', () => {
     it('has correct shape', async () => {
       const mockCommits = [

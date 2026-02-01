@@ -174,8 +174,6 @@ export async function loadCommits(
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({})) as { message?: string };
         const errorMessage = errorBody.message ?? response.statusText;
-        span.setStatus('error', errorMessage);
-        span.end();
         throw new Error(`GitHub API error: ${response.status} ${errorMessage}`);
       }
 
@@ -189,13 +187,13 @@ export async function loadCommits(
     span.setAttribute(Attr.ITERATION_COUNT, commits.length);
     span.addEvent('commits.loaded', { count: commits.length });
     span.setStatus('ok');
-    span.end();
 
     return commits;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     span.setStatus('error', message);
-    span.end();
     throw error;
+  } finally {
+    span.end();
   }
 }

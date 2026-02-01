@@ -156,6 +156,26 @@ async function fetchPage(
 
   const response = await fetch(url, { headers });
 
+  // Update rate limit from response headers
+  const { updateRateLimit } = useAuthStore.getState();
+  const remaining = response.headers.get('X-RateLimit-Remaining');
+  const reset = response.headers.get('X-RateLimit-Reset');
+  const limit = response.headers.get('X-RateLimit-Limit');
+
+  if (remaining !== null && reset !== null && limit !== null) {
+    const remainingInt = parseInt(remaining, 10);
+    const resetInt = parseInt(reset, 10);
+    const limitInt = parseInt(limit, 10);
+
+    if (!Number.isNaN(remainingInt) && !Number.isNaN(resetInt) && !Number.isNaN(limitInt)) {
+      updateRateLimit({
+        remaining: remainingInt,
+        reset: new Date(resetInt * 1000),
+        limit: limitInt,
+      });
+    }
+  }
+
   span.addEvent('page.fetched', {
     page: pageNumber,
     status: response.status,
