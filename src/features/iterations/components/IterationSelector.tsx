@@ -297,6 +297,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
                   onToggleExpand={toggleCollapsedGroupVisibility}
                   onMouseDown={handleMouseDown}
                   onMouseEnter={handleMouseEnter}
+                  onSelect={handleKeyboardSelect}
                   selectedRevisions={selectedRevisions}
                   previewRange={previewRange}
                 />

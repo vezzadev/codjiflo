@@ -22,6 +22,8 @@ interface CollapsedIterationGroupProps {
   onMouseDown: (revision: number) => void;
   /** Callback for drag selection - mouseenter on iteration tab */
   onMouseEnter: (revision: number) => void;
+  /** Callback for keyboard selection (Enter/Space) on iteration tab */
+  onSelect: (revision: number) => void;
   /** Optional: whether each iteration is selected (for highlighting) */
   selectedRevisions?: Set<number>;
   /** Optional: whether each iteration is in the drag preview range */
@@ -37,6 +39,7 @@ interface DiscardedIterationTabProps {
   message: string;
   onMouseDown: (revision: number) => void;
   onMouseEnter: (revision: number) => void;
+  onSelect: (revision: number) => void;
   isSelected?: boolean;
   isInRange?: boolean;
 }
@@ -46,6 +49,7 @@ function DiscardedIterationTab({
   message,
   onMouseDown,
   onMouseEnter,
+  onSelect,
   isSelected,
   isInRange,
 }: DiscardedIterationTabProps) {
@@ -58,6 +62,13 @@ function DiscardedIterationTab({
     .filter(Boolean)
     .join(' ');
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(revision);
+    }
+  };
+
   return (
     <button
       type="button"
@@ -65,6 +76,7 @@ function DiscardedIterationTab({
       data-testid={`discarded-iteration-tab-${revision}`}
       onMouseDown={() => onMouseDown(revision)}
       onMouseEnter={() => onMouseEnter(revision)}
+      onKeyDown={handleKeyDown}
       title={`Discarded: ${message}`}
     >
       <span className="iteration-tab-number" aria-hidden="true">
@@ -83,6 +95,7 @@ export function CollapsedIterationGroup({
   onToggleExpand,
   onMouseDown,
   onMouseEnter,
+  onSelect,
   selectedRevisions,
   previewRange,
 }: CollapsedIterationGroupProps) {
@@ -165,6 +178,7 @@ export function CollapsedIterationGroup({
               message={iteration.message}
               onMouseDown={onMouseDown}
               onMouseEnter={onMouseEnter}
+              onSelect={onSelect}
               isSelected={isSelected}
               isInRange={isInRange}
             />

@@ -49,6 +49,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={onToggleExpand}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -77,6 +78,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={onToggleExpand}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -97,6 +99,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -125,6 +128,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={onMouseDown}
           onMouseEnter={onMouseEnter}
+          onSelect={vi.fn()}
         />
       );
 
@@ -147,6 +151,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -167,6 +172,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={onToggleExpand}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -189,6 +195,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={onMouseDown}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -208,6 +215,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={onMouseEnter}
+          onSelect={vi.fn()}
         />
       );
 
@@ -227,6 +235,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
           selectedRevisions={selectedRevisions}
         />
       );
@@ -250,6 +259,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
           previewRange={previewRange}
         />
       );
@@ -280,6 +290,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
           previewRange={previewRange}
         />
       );
@@ -307,6 +318,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={onToggleExpand}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -326,6 +338,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={onToggleExpand}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -333,6 +346,46 @@ describe('CollapsedIterationGroup', () => {
       fireEvent.keyDown(collapsedTab, { key: ' ' });
 
       expect(onToggleExpand).toHaveBeenCalledWith('group-1');
+    });
+
+    it('calls onSelect when Enter key is pressed on expanded discarded iteration tab', () => {
+      const group = createMockCollapsedGroup({ visibility: 'expanded' });
+      const onSelect = vi.fn();
+
+      render(
+        <CollapsedIterationGroup
+          group={group}
+          onToggleExpand={vi.fn()}
+          onMouseDown={vi.fn()}
+          onMouseEnter={vi.fn()}
+          onSelect={onSelect}
+        />
+      );
+
+      const tab1 = screen.getByTestId('discarded-iteration-tab-1');
+      fireEvent.keyDown(tab1, { key: 'Enter' });
+
+      expect(onSelect).toHaveBeenCalledWith(1);
+    });
+
+    it('calls onSelect when Space key is pressed on expanded discarded iteration tab', () => {
+      const group = createMockCollapsedGroup({ visibility: 'expanded' });
+      const onSelect = vi.fn();
+
+      render(
+        <CollapsedIterationGroup
+          group={group}
+          onToggleExpand={vi.fn()}
+          onMouseDown={vi.fn()}
+          onMouseEnter={vi.fn()}
+          onSelect={onSelect}
+        />
+      );
+
+      const tab2 = screen.getByTestId('discarded-iteration-tab-2');
+      fireEvent.keyDown(tab2, { key: ' ' });
+
+      expect(onSelect).toHaveBeenCalledWith(2);
     });
   });
 
@@ -346,6 +399,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
@@ -365,6 +419,7 @@ describe('CollapsedIterationGroup', () => {
           onToggleExpand={vi.fn()}
           onMouseDown={vi.fn()}
           onMouseEnter={vi.fn()}
+          onSelect={vi.fn()}
         />
       );
 
