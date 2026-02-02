@@ -23,6 +23,7 @@
 @import '../styles/pages/login.css';
 @import '../styles/pages/dashboard.css';
 @import '../styles/pages/auth-status.css';
+@import '../styles/pages/pr-error.css';
 
 /* Modal Styles */
 @import '../styles/modals/modal-base.css';

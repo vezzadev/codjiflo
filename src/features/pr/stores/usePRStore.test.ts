@@ -19,6 +19,7 @@ vi.mock('@/api', () => {
       },
     },
     GitHubAPIError: class GitHubAPIError extends Error {
+      isPrivateRepo?: boolean;
       constructor(public status: number, public statusText: string, message: string) {
         super(message);
         this.name = 'GitHubAPIError';
@@ -80,46 +81,97 @@ describe('usePRStore', () => {
       await loadPromise;
     });
 
-    it('handles 404 error', async () => {
+    it('handles 404 error without isPrivateRepo as not-found', async () => {
       mockGetReview.mockRejectedValue(
         new api.GitHubAPIError(404, 'Not Found', 'Not Found')
       );
 
       await usePRStore.getState().loadPR('owner', 'repo', 999);
 
-      expect(usePRStore.getState().error).toBe('Pull request not found. Please check the URL.');
+      expect(usePRStore.getState().error).toEqual({
+        message: 'Pull request not found.',
+        kind: 'not-found',
+      });
       expect(usePRStore.getState().currentPR).toBeNull();
       expect(usePRStore.getState().isLoading).toBe(false);
     });
 
-    it('handles 401/403 authorization error', async () => {
+    it('handles 404 error with isPrivateRepo as private-repo', async () => {
+      const err = new api.GitHubAPIError(404, 'Not Found', 'Not Found');
+      err.isPrivateRepo = true;
+      mockGetReview.mockRejectedValue(err);
+
+      await usePRStore.getState().loadPR('owner', 'repo', 999);
+
+      expect(usePRStore.getState().error).toEqual({
+        message: "This PR may be private or doesn't exist.",
+        kind: 'private-repo',
+      });
+    });
+
+    it('handles 401 error as forbidden', async () => {
       mockGetReview.mockRejectedValue(
-        new api.GitHubAPIError(401, 'Unauthorized', 'Unauthorized')
+        new api.GitHubAPIError(401, 'Unauthorized', 'Session expired. Please log in again.')
       );
 
       await usePRStore.getState().loadPR('owner', 'repo', 123);
 
-      expect(usePRStore.getState().error).toBe('Access denied. Please check your token permissions.');
+      expect(usePRStore.getState().error).toEqual({
+        message: 'Session expired. Please log in again.',
+        kind: 'forbidden',
+      });
     });
 
-    it('handles other GitHubAPIError status codes', async () => {
+    it('handles 403 error without isPrivateRepo as forbidden', async () => {
+      mockGetReview.mockRejectedValue(
+        new api.GitHubAPIError(403, 'Forbidden', 'Forbidden')
+      );
+
+      await usePRStore.getState().loadPR('owner', 'repo', 123);
+
+      expect(usePRStore.getState().error).toEqual({
+        message: "You don't have permission to view this pull request.",
+        kind: 'forbidden',
+      });
+    });
+
+    it('handles 403 error with isPrivateRepo as private-repo', async () => {
+      const err = new api.GitHubAPIError(403, 'Forbidden', 'Forbidden');
+      err.isPrivateRepo = true;
+      mockGetReview.mockRejectedValue(err);
+
+      await usePRStore.getState().loadPR('owner', 'repo', 123);
+
+      expect(usePRStore.getState().error).toEqual({
+        message: "This PR may be private or doesn't exist.",
+        kind: 'private-repo',
+      });
+    });
+
+    it('handles other GitHubAPIError status codes as generic', async () => {
       mockGetReview.mockRejectedValue(
         new api.GitHubAPIError(500, 'Internal Server Error', 'Server error occurred')
       );
 
       await usePRStore.getState().loadPR('owner', 'repo', 123);
 
-      expect(usePRStore.getState().error).toBe('Server error occurred');
+      expect(usePRStore.getState().error).toEqual({
+        message: 'Server error occurred',
+        kind: 'generic',
+      });
       expect(usePRStore.getState().currentPR).toBeNull();
       expect(usePRStore.getState().isLoading).toBe(false);
     });
 
-    it('handles regular Error instances', async () => {
+    it('handles regular Error instances as generic', async () => {
       mockGetReview.mockRejectedValue(new Error('Network failure'));
 
       await usePRStore.getState().loadPR('owner', 'repo', 123);
 
-      expect(usePRStore.getState().error).toBe('Network failure');
+      expect(usePRStore.getState().error).toEqual({
+        message: 'Network failure',
+        kind: 'generic',
+      });
       expect(usePRStore.getState().currentPR).toBeNull();
       expect(usePRStore.getState().isLoading).toBe(false);
     });
@@ -131,7 +183,7 @@ describe('usePRStore', () => {
       usePRStore.setState({
         currentPR: { id: 1 } as never,
         isLoading: true,
-        error: 'Some error',
+        error: { message: 'Some error', kind: 'generic' as const },
       });
 
       usePRStore.getState().reset();
@@ -144,7 +196,7 @@ describe('usePRStore', () => {
 
   describe('clearError', () => {
     it('clears the error', () => {
-      usePRStore.setState({ error: 'Some error' });
+      usePRStore.setState({ error: { message: 'Some error', kind: 'generic' as const } });
 
       usePRStore.getState().clearError();
 

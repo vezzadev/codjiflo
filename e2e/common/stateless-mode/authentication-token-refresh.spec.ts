@@ -220,13 +220,15 @@ test.describe("Token Refresh Flow", () => {
     // Navigate to PR page
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
-    // PR page should still load (S-4.1.2: unauthenticated access to public repos)
+    // After token refresh failure, error page is shown with login prompt (S-4.1.4)
     await expect(page).toHaveURL(new RegExp(`/${owner}/${repo}/${String(prNumber)}`));
 
-    // PR content should be visible after retry as unauthenticated
-    await expect(page.getByPlaceholder("Filter by file name")).toBeVisible();
+    // Error page should be visible with login option
+    const errorContainer = page.getByTestId("pr-error");
+    await expect(errorContainer).toBeVisible();
+    await expect(errorContainer.getByRole("heading", { level: 1 })).toBeVisible();
 
-    // Login button should be visible (user is now unauthenticated)
-    await expect(page.getByRole("link", { name: /Log in/i })).toBeVisible();
+    // Login link should be visible (user is now unauthenticated after refresh failure)
+    await expect(errorContainer.getByRole("link", { name: /log in/i })).toBeVisible();
   });
 });
