@@ -508,6 +508,131 @@ export async function setupTokenRefreshMock(
   });
 }
 
+// ============================================================================
+// Stateless Iteration Mock Types
+// ============================================================================
+
+export interface MockCommitAuthor {
+  name: string;
+  email: string;
+  date: string;
+}
+
+export interface MockPRCommit {
+  sha: string;
+  commit: { message: string; author: MockCommitAuthor };
+  author: MockUser | null;
+}
+
+export interface MockTimelineForcePushEvent {
+  id: number;
+  event: "head_ref_force_pushed";
+  created_at: string;
+  before_commit: { sha: string };
+  after_commit: { sha: string };
+}
+
+export interface MockTimelineOtherEvent {
+  id: number;
+  event: string;
+  created_at: string;
+}
+
+export type MockTimelineEvent =
+  | MockTimelineForcePushEvent
+  | MockTimelineOtherEvent;
+
+export interface MockCompareResponse {
+  commits: MockPRCommit[];
+  status: "ahead" | "behind" | "diverged" | "identical";
+  ahead_by: number;
+  behind_by: number;
+}
+
+// ============================================================================
+// Stateless Iteration Mock Setup Functions
+// ============================================================================
+
+/**
+ * Set up mock for PR commits API (stateless mode).
+ * GET /repos/{owner}/{repo}/pulls/{prNumber}/commits
+ */
+export async function setupPRCommitsMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  commits: MockPRCommit[]
+): Promise<void> {
+  if (!isMockMode()) return;
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(commits),
+      });
+    }
+  );
+}
+
+/**
+ * Set up mock for Issues Timeline API (stateless mode).
+ * GET /repos/{owner}/{repo}/issues/{prNumber}/timeline
+ */
+export async function setupTimelineMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  events: MockTimelineEvent[]
+): Promise<void> {
+  if (!isMockMode()) return;
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(events),
+      });
+    }
+  );
+}
+
+/**
+ * Set up mock for Compare API (stateless mode force-push discovery).
+ * GET /repos/{owner}/{repo}/compare/{basehead}
+ */
+export async function setupCompareMock(
+  page: Page,
+  owner: string,
+  repo: string,
+  basehead: string,
+  response: MockCompareResponse | number
+): Promise<void> {
+  if (!isMockMode()) return;
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/compare/${basehead}`,
+    async (route) => {
+      if (typeof response === "number") {
+        await route.fulfill({
+          status: response,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Not Found" }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(response),
+      });
+    }
+  );
+}
+
 /**
  * Set up mocks for iteration artifact endpoints.
  * This enables E2E tests to use mock iteration databases instead of real artifacts.
