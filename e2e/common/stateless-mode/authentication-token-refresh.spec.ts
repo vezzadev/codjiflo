@@ -71,7 +71,7 @@ test.describe("Token Refresh Flow", () => {
 
     // Set up files and comments mocks (these succeed normally)
     await page.route(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files**`,
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -176,7 +176,7 @@ test.describe("Token Refresh Flow", () => {
 
     // Set up other mocks
     await page.route(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files**`,
       async (route) => {
         await route.fulfill({
           status: 200,

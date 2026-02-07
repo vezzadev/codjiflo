@@ -40,7 +40,7 @@ describe('GitHubFileBackend', () => {
 
       const result = await backend.getFiles('owner', 'repo', 42);
 
-      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/files');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/files?per_page=100&page=1');
       expect(result).toEqual([
         {
           filename: 'src/index.ts',
@@ -93,6 +93,78 @@ describe('GitHubFileBackend', () => {
 
       const [first] = await backend.getFiles('owner', 'repo', 1);
       expect(first?.patch).toBe('');
+    });
+
+    it('paginates when more than 100 files exist', async () => {
+      // Create 150 mock files split across 2 pages
+      const page1Files = Array.from({ length: 100 }, (_, i) => ({
+        filename: `file-${String(i).padStart(3, '0')}.ts`,
+        status: 'modified' as const,
+        additions: 1,
+        deletions: 0,
+        changes: 1,
+      }));
+      const page2Files = Array.from({ length: 50 }, (_, i) => ({
+        filename: `file-${String(i + 100).padStart(3, '0')}.ts`,
+        status: 'renamed' as const,
+        previous_filename: `old-${String(i + 100).padStart(3, '0')}.ts`,
+        additions: 0,
+        deletions: 0,
+        changes: 0,
+      }));
+
+      // First call returns 100 items, second call returns 50
+      mockFetch
+        .mockResolvedValueOnce(page1Files)
+        .mockResolvedValueOnce(page2Files);
+
+      const result = await backend.getFiles('owner', 'repo', 1);
+
+      expect(result).toHaveLength(150);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/1/files?per_page=100&page=1');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/1/files?per_page=100&page=2');
+      // Verify page 2 files have correct status
+      expect(result[100]?.status).toBe(FileChangeStatus.Renamed);
+      expect(result[100]?.previousFilename).toBe('old-100.ts');
+    });
+
+    it('fetches all files in single request when 100 or fewer', async () => {
+      const mockFiles = Array.from({ length: 30 }, (_, i) => ({
+        filename: `file-${i}.ts`,
+        status: 'modified' as const,
+        additions: 1,
+        deletions: 0,
+        changes: 1,
+      }));
+
+      mockFetch.mockResolvedValueOnce(mockFiles);
+
+      const result = await backend.getFiles('owner', 'repo', 1);
+
+      expect(result).toHaveLength(30);
+      // Should only make one request since fewer than 100 returned
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/1/files?per_page=100&page=1');
+    });
+
+    it('handles exactly 100 files with empty second page', async () => {
+      const page1Files = Array.from({ length: 100 }, (_, i) => ({
+        filename: `file-${String(i).padStart(3, '0')}.ts`,
+        status: 'modified' as const,
+        additions: 1,
+        deletions: 0,
+        changes: 1,
+      }));
+
+      mockFetch
+        .mockResolvedValueOnce(page1Files)
+        .mockResolvedValueOnce([]);
+
+      const result = await backend.getFiles('owner', 'repo', 1);
+
+      expect(result).toHaveLength(100);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
   });
 
