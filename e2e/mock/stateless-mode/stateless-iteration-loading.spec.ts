@@ -100,7 +100,7 @@ test.describe("Stateless Iteration Loading (S-4.2.1)", () => {
     // Override the default empty timeline mock with a 403 to simulate
     // the real unauthenticated scenario where Timeline API requires auth
     await page.route(
-      `https://api.github.com/repos/${config.owner}/${config.repo}/issues/${String(config.prNumber)}/timeline`,
+      `https://api.github.com/repos/${config.owner}/${config.repo}/issues/${String(config.prNumber)}/timeline**`,
       async (route) => {
         await route.fulfill({
           status: 403,

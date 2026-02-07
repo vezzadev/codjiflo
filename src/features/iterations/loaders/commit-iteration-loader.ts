@@ -49,14 +49,14 @@ export class CommitIterationLoader {
   }
 
   private async fetchCommits(): Promise<GitHubPRCommit[]> {
-    return githubClient.fetch<GitHubPRCommit[]>(
+    return this.fetchAllPages<GitHubPRCommit>(
       `/repos/${this.owner}/${this.repo}/pulls/${this.prNumber}/commits`
     );
   }
 
   private async fetchTimeline(): Promise<GitHubTimelineEvent[]> {
     try {
-      return await githubClient.fetch<GitHubTimelineEvent[]>(
+      return await this.fetchAllPages<GitHubTimelineEvent>(
         `/repos/${this.owner}/${this.repo}/issues/${this.prNumber}/timeline`
       );
     } catch (error) {
@@ -67,6 +67,27 @@ export class CommitIterationLoader {
       }
       throw error;
     }
+  }
+
+  /**
+   * Fetch all pages from a paginated GitHub REST endpoint.
+   * Uses per_page=100 and stops when a page returns fewer items.
+   */
+  private async fetchAllPages<T>(path: string): Promise<T[]> {
+    const perPage = 100;
+    const results: T[] = [];
+    let page = 1;
+
+    for (;;) {
+      const items = await githubClient.fetch<T[]>(
+        `${path}?per_page=${perPage}&page=${page}`
+      );
+      results.push(...items);
+      if (items.length < perPage) break;
+      page += 1;
+    }
+
+    return results;
   }
 
   private async fetchDiscardedCommits(

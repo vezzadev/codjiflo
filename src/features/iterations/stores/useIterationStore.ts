@@ -235,6 +235,10 @@ export const useIterationStore = create<IterationState>()(
                   collapsedGroups: commitResult.collapsedGroups,
                   selectedRanges: newSelectedRanges,
                   artifacts: [],
+                  artifactTimestamp: null,
+                  artifactReference: null,
+                  client: null,
+                  spanTrackerService: null,
                 });
                 console.info(
                   `[CodjiFlo] Loaded ${iterations.length} stateless iteration(s) for ${prKey}`
@@ -254,6 +258,10 @@ export const useIterationStore = create<IterationState>()(
               statelessIterations: [],
               collapsedGroups: [],
               artifacts: [],
+              artifactTimestamp: null,
+              artifactReference: null,
+              client: null,
+              spanTrackerService: null,
             });
             return;
           }

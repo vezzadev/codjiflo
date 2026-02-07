@@ -47,8 +47,8 @@ describe('CommitIterationLoader', () => {
 
       const result = await loader.load('base-sha');
 
-      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/commits');
-      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/issues/42/timeline');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/pulls/42/commits?per_page=100&page=1');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/owner/repo/issues/42/timeline?per_page=100&page=1');
       expect(result.iterations).toHaveLength(1);
       expect(result.iterations[0]).toMatchObject({ revision: 1, commitSha: 'aaa', status: 'live' });
     });

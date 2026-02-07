@@ -570,7 +570,7 @@ export async function setupPRCommitsMock(
 ): Promise<void> {
   if (!isMockMode()) return;
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits`,
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits**`,
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -594,7 +594,7 @@ export async function setupTimelineMock(
 ): Promise<void> {
   if (!isMockMode()) return;
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline`,
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline**`,
     async (route) => {
       await route.fulfill({
         status: 200,
