@@ -390,6 +390,10 @@ export async function setupFullPRMocks(
 
   // Set up iteration-related mocks (returns empty to trigger stateless mode)
   await setupIterationMocks(page, owner, repo, prNumber);
+
+  // Set up stateless iteration API mocks (commits + timeline return empty by default)
+  await setupPRCommitsMock(page, owner, repo, prNumber, []);
+  await setupTimelineMock(page, owner, repo, prNumber, []);
 }
 
 /**

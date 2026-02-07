@@ -117,6 +117,37 @@ describe('CommitIterationLoader', () => {
       expect(result.collapsedGroups[0]).toMatchObject({ unknownCount: true });
     });
 
+    it('gracefully degrades when timeline API requires auth (404)', async () => {
+      const commits: GitHubPRCommit[] = [
+        createMockPRCommit({ sha: 'aaa', commit: { message: 'First', author: { name: 'Dev', email: 'd@d.com', date: '2025-01-01T00:00:00Z' } }, author: { id: 1, login: 'dev', avatar_url: '' } }),
+      ];
+
+      mockFetch
+        .mockResolvedValueOnce(commits) // commits succeed
+        .mockRejectedValueOnce(new GitHubAPIError(404, 'Not Found', 'Not Found')); // timeline fails (auth required)
+
+      const result = await loader.load('base-sha');
+
+      expect(result.iterations).toHaveLength(1);
+      expect(result.iterations[0]).toMatchObject({ revision: 1, commitSha: 'aaa', status: 'live' });
+      expect(result.collapsedGroups).toHaveLength(0); // no force-push detection without timeline
+    });
+
+    it('gracefully degrades when timeline API returns 403 (rate limit/auth)', async () => {
+      const commits: GitHubPRCommit[] = [
+        createMockPRCommit({ sha: 'bbb', commit: { message: 'Second', author: { name: 'Dev', email: 'd@d.com', date: '2025-01-01T00:00:00Z' } }, author: { id: 1, login: 'dev', avatar_url: '' } }),
+      ];
+
+      mockFetch
+        .mockResolvedValueOnce(commits)
+        .mockRejectedValueOnce(new GitHubAPIError(403, 'Forbidden', 'Resource not accessible'));
+
+      const result = await loader.load('base-sha');
+
+      expect(result.iterations).toHaveLength(1);
+      expect(result.collapsedGroups).toHaveLength(0);
+    });
+
     it('propagates non-404/410 errors from compare API', async () => {
       const commits: GitHubPRCommit[] = [];
       const forcePush = createMockForcePushEvent({

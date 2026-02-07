@@ -20,9 +20,11 @@ const mockClearCache = vi.fn();
 const mockCommitLoaderLoad = vi.fn();
 
 const mockPRStoreGetState = vi.fn();
+const mockPRStoreSubscribe = vi.fn<(listener: unknown) => () => void>().mockReturnValue(vi.fn());
 vi.mock('@/features/pr/stores/usePRStore', () => ({
   usePRStore: {
     getState: (): unknown => mockPRStoreGetState(),
+    subscribe: (listener: unknown): (() => void) => mockPRStoreSubscribe(listener),
   },
 }));
 
@@ -125,6 +127,8 @@ describe('useIterationStore', () => {
     mockClearCache.mockReset();
     mockCommitLoaderLoad.mockReset();
     mockPRStoreGetState.mockReset();
+    mockPRStoreSubscribe.mockReset();
+    mockPRStoreSubscribe.mockReturnValue(vi.fn()); // Default: returns unsubscribe
 
     // Default: findArtifactReference returns the mock reference
     // Tests can override this when needed (e.g., for stateless mode)
@@ -476,7 +480,8 @@ describe('useIterationStore', () => {
     it('should fall back to empty iterations when baseSha is not available', async () => {
       mockFindArtifactReference.mockResolvedValue(null);
       mockLoad.mockResolvedValue(null);
-      mockPRStoreGetState.mockReturnValue({ currentPR: null });
+      // Simulate PR load failure: currentPR is null, isLoading false, error set
+      mockPRStoreGetState.mockReturnValue({ currentPR: null, isLoading: false, error: { message: 'Not found', kind: 'not-found' } });
 
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 

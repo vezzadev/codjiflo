@@ -170,8 +170,33 @@ export const useIterationStore = create<IterationState>()(
             try {
               const commitLoader = new CommitIterationLoader(owner, repo, prNumber);
               const { usePRStore } = await import('@/features/pr/stores/usePRStore');
-              const prData = usePRStore.getState().currentPR;
-              const baseSha = prData?.baseSha ?? '';
+
+              // Wait for PR data to be available (loaded concurrently by page component)
+              let baseSha = usePRStore.getState().currentPR?.baseSha ?? '';
+              if (!baseSha) {
+                console.info(`[CodjiFlo] Waiting for PR data before loading stateless iterations...`);
+                baseSha = await new Promise<string>((resolve) => {
+                  const unsubscribe = usePRStore.subscribe((state) => {
+                    if (state.currentPR?.baseSha) {
+                      unsubscribe();
+                      resolve(state.currentPR.baseSha);
+                    } else if (!state.isLoading && state.error) {
+                      // PR load failed — proceed without baseSha
+                      unsubscribe();
+                      resolve('');
+                    }
+                  });
+                  // Resolve immediately if already loaded or errored (race guard)
+                  const current = usePRStore.getState();
+                  if (current.currentPR?.baseSha) {
+                    unsubscribe();
+                    resolve(current.currentPR.baseSha);
+                  } else if (!current.isLoading && current.error) {
+                    unsubscribe();
+                    resolve('');
+                  }
+                });
+              }
 
               if (baseSha) {
                 const commitResult = await commitLoader.load(baseSha);

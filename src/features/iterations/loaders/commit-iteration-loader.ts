@@ -55,9 +55,18 @@ export class CommitIterationLoader {
   }
 
   private async fetchTimeline(): Promise<GitHubTimelineEvent[]> {
-    return githubClient.fetch<GitHubTimelineEvent[]>(
-      `/repos/${this.owner}/${this.repo}/issues/${this.prNumber}/timeline`
-    );
+    try {
+      return await githubClient.fetch<GitHubTimelineEvent[]>(
+        `/repos/${this.owner}/${this.repo}/issues/${this.prNumber}/timeline`
+      );
+    } catch (error) {
+      // Timeline API requires authentication — gracefully degrade without force-push detection
+      if (error instanceof GitHubAPIError && (error.status === 404 || error.status === 403)) {
+        console.info('[CodjiFlo] Timeline API unavailable, skipping force-push detection');
+        return [];
+      }
+      throw error;
+    }
   }
 
   private async fetchDiscardedCommits(

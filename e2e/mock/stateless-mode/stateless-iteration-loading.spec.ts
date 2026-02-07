@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
-  setupAuthState,
   setupFullPRMocks,
   setupPRCommitsMock,
-  setupTimelineMock,
   type MockPR,
   type MockFile,
   type MockPRCommit,
@@ -89,14 +87,30 @@ test.describe("Stateless Iteration Loading (S-4.2.1)", () => {
     pageUrl: "/test/repo/42",
   };
 
-  test.beforeEach(async ({ page }) => {
+  test("Loads iterations from commits when Timeline API is unavailable (unauthenticated)", async ({
+    page,
+  }) => {
     await setupLegacyDefaults(page);
-    await setupAuthState(page);
+    // No auth state — unauthenticated user
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,
       files: mockFiles,
     });
-    // Set up stateless iteration API mocks
+
+    // Override the default empty timeline mock with a 403 to simulate
+    // the real unauthenticated scenario where Timeline API requires auth
+    await page.route(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/issues/${String(config.prNumber)}/timeline`,
+      async (route) => {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Resource not accessible by personal access token" }),
+        });
+      }
+    );
+
+    // Override the default empty commits mock with actual commits
     await setupPRCommitsMock(
       page,
       config.owner,
@@ -104,18 +118,7 @@ test.describe("Stateless Iteration Loading (S-4.2.1)", () => {
       config.prNumber,
       mockCommits
     );
-    await setupTimelineMock(
-      page,
-      config.owner,
-      config.repo,
-      config.prNumber,
-      []
-    );
-  });
 
-  test("Loads iterations from GitHub Commits API when no artifact exists", async ({
-    page,
-  }) => {
     // Set up console listener BEFORE navigation to avoid race condition
     const infoPromise = page.waitForEvent("console", {
       predicate: (msg) =>
