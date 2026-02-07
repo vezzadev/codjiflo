@@ -77,15 +77,19 @@ test.describe("Renamed Files (Issue #349)", () => {
     await expect(pureRenamedItem).toBeVisible();
     await expect(pureRenamedItem.getByText("R")).toBeVisible();
 
-    // Renamed+edited file should also show R badge
+    // Renamed+edited file should also show R badge and +/- counters
     const editedRenamedItem = fileNav.getByRole("treeitem", { name: /auth\.spec\.ts/ });
     await expect(editedRenamedItem).toBeVisible();
     await expect(editedRenamedItem.getByText("R")).toBeVisible();
+    await expect(editedRenamedItem.getByText("+5")).toBeVisible();
+    await expect(editedRenamedItem.getByText("−3")).toBeVisible();
 
-    // Modified file should show M badge
+    // Modified file should show M badge and +/- counters
     const modifiedItem = fileNav.getByRole("treeitem", { name: /utils\.ts/ });
     await expect(modifiedItem).toBeVisible();
     await expect(modifiedItem.getByText("M")).toBeVisible();
+    await expect(modifiedItem.getByText("+2")).toBeVisible();
+    await expect(modifiedItem.getByText("−1")).toBeVisible();
   });
 
   test("pure renamed file renders diff page without 'no diff available'", async ({ page }) => {
