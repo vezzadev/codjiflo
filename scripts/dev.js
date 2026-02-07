@@ -69,7 +69,7 @@ function findZombiePidsWindows() {
     `$projectPath = '${escapedProjectPathForPwsh}'; ` +
     `$escapedProjectPath = [regex]::Escape($projectPath); ` +
     "Get-CimInstance Win32_Process | " +
-    "Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match $escapedProjectPath -and $_.CommandLine -match 'next\\s+dev' } | " +
+    "Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match $escapedProjectPath -and $_.CommandLine -match 'next\\W+dev' } | " +
     "Select-Object -ExpandProperty ProcessId";
   try {
     const output = execSync(`pwsh.exe -NoProfile -Command "${psCommand}"`, {
