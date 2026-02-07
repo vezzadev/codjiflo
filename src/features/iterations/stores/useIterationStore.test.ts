@@ -17,12 +17,26 @@ const mockGetIterations = vi.fn();
 const mockGetAllArtifacts = vi.fn();
 const mockClose = vi.fn();
 const mockClearCache = vi.fn();
+const mockCommitLoaderLoad = vi.fn();
+
+const mockPRStoreGetState = vi.fn();
+vi.mock('@/features/pr/stores/usePRStore', () => ({
+  usePRStore: {
+    getState: (): unknown => mockPRStoreGetState(),
+  },
+}));
 
 // Mock dependencies at module level
 vi.mock('../artifact-loader', () => ({
   ArtifactLoader: class MockArtifactLoader {
     load = mockLoad;
     findArtifactReference = mockFindArtifactReference;
+  },
+}));
+
+vi.mock('../loaders', () => ({
+  CommitIterationLoader: class MockCommitIterationLoader {
+    load = mockCommitLoaderLoad;
   },
 }));
 
@@ -97,6 +111,8 @@ describe('useIterationStore', () => {
       error: null,
       mode: 'stateful',
       statelessReason: null,
+      statelessIterations: [],
+      collapsedGroups: [],
     });
 
     // Reset all mocks
@@ -107,10 +123,14 @@ describe('useIterationStore', () => {
     mockGetAllArtifacts.mockReset();
     mockClose.mockReset();
     mockClearCache.mockReset();
+    mockCommitLoaderLoad.mockReset();
+    mockPRStoreGetState.mockReset();
 
     // Default: findArtifactReference returns the mock reference
     // Tests can override this when needed (e.g., for stateless mode)
     mockFindArtifactReference.mockResolvedValue(createMockReference());
+    // Default: PR has baseSha
+    mockPRStoreGetState.mockReturnValue({ currentPR: { baseSha: 'base-sha-1' } });
   });
 
   describe('loadIterations', () => {
@@ -298,7 +318,9 @@ describe('useIterationStore', () => {
     });
 
     it('should handle stateless mode when no artifact found', async () => {
+      mockFindArtifactReference.mockResolvedValue(null);
       mockLoad.mockResolvedValue(null);
+      mockCommitLoaderLoad.mockResolvedValue({ iterations: [], collapsedGroups: [] });
 
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
@@ -410,6 +432,101 @@ describe('useIterationStore', () => {
       expect(state.selectedRanges['https://github.com/new/repo/pull/999']).toBeDefined();
       // Second oldest should still exist
       expect(state.selectedRanges['https://github.com/old/repo/pull/2']).toBeDefined();
+    });
+
+    it('should load stateless iterations via CommitIterationLoader when no artifact is found', async () => {
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockLoad.mockResolvedValue(null);
+      mockCommitLoaderLoad.mockResolvedValue({
+        iterations: [
+          { revision: 1, commitSha: 'abc123', baseSha: 'base-sha-1', author: 'dev', createdAt: '2025-01-01T00:00:00Z', status: 'live' },
+          { revision: 2, commitSha: 'def456', baseSha: 'base-sha-1', author: 'dev', createdAt: '2025-01-02T00:00:00Z', status: 'live' },
+        ],
+        collapsedGroups: [],
+      });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.iterations).toHaveLength(2);
+      expect(state.iterations[0]).toMatchObject({
+        id: 1,
+        revision: 1,
+        headSha: 'abc123',
+        baseSha: 'base-sha-1',
+        author: 'dev',
+      });
+      expect(state.iterations[1]).toMatchObject({
+        id: 2,
+        revision: 2,
+        headSha: 'def456',
+      });
+      expect(state.statelessIterations).toHaveLength(2);
+      expect(state.collapsedGroups).toHaveLength(0);
+      // Default range should be set (latest iteration)
+      // For 2 iterations: left = (2-1)*2 = 2, right = (2-1)*2+1 = 3
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
+        fromSnapshot: 2,
+        toSnapshot: 3,
+      });
+      expect(state.isLoading).toBe(false);
+    });
+
+    it('should fall back to empty iterations when baseSha is not available', async () => {
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockLoad.mockResolvedValue(null);
+      mockPRStoreGetState.mockReturnValue({ currentPR: null });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.iterations).toHaveLength(0);
+      expect(state.statelessIterations).toHaveLength(0);
+    });
+
+    it('should fall back to empty iterations when CommitIterationLoader fails', async () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockLoad.mockResolvedValue(null);
+      mockCommitLoaderLoad.mockRejectedValue(new Error('API error'));
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.iterations).toHaveLength(0);
+      expect(state.statelessIterations).toHaveLength(0);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load stateless iterations'),
+        expect.any(Error)
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('should store collapsed groups from stateless iteration loading', async () => {
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockLoad.mockResolvedValue(null);
+      mockCommitLoaderLoad.mockResolvedValue({
+        iterations: [
+          { revision: 1, commitSha: 'old1', baseSha: 'base-sha-1', author: 'dev', createdAt: '2025-01-01T00:00:00Z', status: 'collapsed', collapsedGroupId: 100 },
+          { revision: 2, commitSha: 'new1', baseSha: 'base-sha-1', author: 'dev', createdAt: '2025-01-02T00:00:00Z', status: 'live' },
+        ],
+        collapsedGroups: [
+          { forcePushEventId: 100, discardedRevisions: [1], commits: [{ sha: 'old1', message: 'Old commit', author: 'dev', date: '2025-01-01T00:00:00Z', status: 'available' }], reason: 'force_push', visibility: 'collapsed' },
+        ],
+      });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.collapsedGroups).toHaveLength(1);
+      expect(state.collapsedGroups[0]).toMatchObject({
+        forcePushEventId: 100,
+        discardedRevisions: [1],
+      });
+      expect(state.iterations).toHaveLength(2);
     });
   });
 
@@ -543,6 +660,8 @@ describe('useIterationStore', () => {
       expect(state.client).toBeNull();
       expect(state.isLoading).toBe(false);
       expect(state.mode).toBe('stateful');
+      expect(state.statelessIterations).toHaveLength(0);
+      expect(state.collapsedGroups).toHaveLength(0);
       expect(mockClose).toHaveBeenCalled();
       expect(mockClearCache).toHaveBeenCalled();
     });

@@ -12,12 +12,15 @@ import { ArtifactLoader } from '../artifact-loader';
 import { IterationClient } from '../iteration-client';
 import { SpanTrackerService } from '../application';
 import { SQLiteSpanTrackerReader } from '../infrastructure';
+import { CommitIterationLoader } from '../loaders';
 import type {
   Iteration,
   ReviewFileArtifact,
   IterationRange,
   IterationPreset,
   ArtifactReference,
+  StatelessIteration,
+  CollapsedIterationGroup,
 } from '../types';
 import { iterationToLeftSnapshot, iterationToRightSnapshot } from '../types';
 
@@ -65,6 +68,10 @@ interface IterationState {
   artifacts: ReviewFileArtifact[];
   artifactTimestamp: string | null;
   artifactReference: ArtifactReference | null;
+  /** Raw stateless iterations from CommitIterationLoader (empty when stateful) */
+  statelessIterations: StatelessIteration[];
+  /** Collapsed iteration groups from force-push detection (empty when stateful) */
+  collapsedGroups: CollapsedIterationGroup[];
 
   // Selection (partitioned by PR)
   currentPrKey: string | null;
@@ -106,6 +113,8 @@ const initialState = {
   artifacts: [],
   artifactTimestamp: null,
   artifactReference: null,
+  statelessIterations: [] as StatelessIteration[],
+  collapsedGroups: [] as CollapsedIterationGroup[],
   currentPrKey: null,
   selectedRanges: {},
   client: null,
@@ -157,11 +166,68 @@ export const useIterationStore = create<IterationState>()(
               console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
             }
 
+            // Try loading iterations from GitHub APIs (stateless mode)
+            try {
+              const commitLoader = new CommitIterationLoader(owner, repo, prNumber);
+              const { usePRStore } = await import('@/features/pr/stores/usePRStore');
+              const prData = usePRStore.getState().currentPR;
+              const baseSha = prData?.baseSha ?? '';
+
+              if (baseSha) {
+                const commitResult = await commitLoader.load(baseSha);
+
+                // Convert StatelessIterations to Iteration format for store compatibility
+                const iterations: Iteration[] = commitResult.iterations.map((si, index) => ({
+                  id: index + 1,
+                  revision: si.revision,
+                  headSha: si.commitSha,
+                  baseSha: si.baseSha,
+                  beforeSha: null,
+                  author: si.author,
+                  createdAt: new Date(si.createdAt),
+                }));
+
+                // Set default range if we have iterations
+                const latestIteration = iterations[iterations.length - 1];
+                const defaultRange: IterationRange | null = latestIteration
+                  ? {
+                      fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
+                      toSnapshot: iterationToRightSnapshot(latestIteration.revision),
+                    }
+                  : null;
+
+                const { selectedRanges } = get();
+                const newSelectedRanges = defaultRange
+                  ? updateLRUCache(selectedRanges, prKey, defaultRange)
+                  : selectedRanges;
+
+                set({
+                  isLoading: false,
+                  mode: 'stateless',
+                  statelessReason: reason,
+                  iterations,
+                  statelessIterations: commitResult.iterations,
+                  collapsedGroups: commitResult.collapsedGroups,
+                  selectedRanges: newSelectedRanges,
+                  artifacts: [],
+                });
+                console.info(
+                  `[CodjiFlo] Loaded ${iterations.length} stateless iteration(s) for ${prKey}`
+                );
+                return;
+              }
+            } catch (err) {
+              console.warn('[CodjiFlo] Failed to load stateless iterations:', err);
+              // Fall through to empty stateless state
+            }
+
             set({
               isLoading: false,
               mode: 'stateless',
               statelessReason: reason,
               iterations: [],
+              statelessIterations: [],
+              collapsedGroups: [],
               artifacts: [],
             });
             return;
