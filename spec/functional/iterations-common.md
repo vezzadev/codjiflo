@@ -784,9 +784,40 @@ interface SubmoduleChange {
 
 ## Caching
 
-**SpanTracker Cache:** Computing span trackers is expensive. Cache by snapshot pair key (e.g., `"2-3"`) and reuse.
+### SpanTracker Cache
+
+Computing span trackers is expensive. Cache by snapshot pair key (e.g., `"2-3"`) and reuse.
 
 **Identity Optimization:** When files are identical between snapshots, use a trivial tracker that returns spans unchanged.
+
+### Iteration Range Selection Cache (Client-Side)
+
+The frontend maintains a per-PR cache of user-selected iteration ranges:
+
+| Property | Value |
+|----------|-------|
+| Storage | localStorage (persisted via Zustand middleware) |
+| Max entries | 50 PRs (LRU eviction) |
+| Key | GitHub PR URL (e.g., `https://github.com/owner/repo/pull/123`) |
+| Value | `{ fromSnapshot, toSnapshot }` |
+
+**Rebase-Aware Invalidation:**
+
+When a PR is loaded, cached ranges are validated against the current iteration data. A cached range is invalidated if:
+1. `fromSnapshot` or `toSnapshot` exceeds valid bounds
+2. `fromSnapshot >= toSnapshot` (invalid range)
+3. **Rebase detection:** `fromSnapshot === 0` but the latest iteration's left snapshot is > 0
+
+The third rule ensures that after a rebase, users see the correct diff against the new base instead of a stale diff against the old base (snapshot 0).
+
+**Example (rebase detection):**
+```
+Before rebase: User views PR, cached range = { fromSnapshot: 0, toSnapshot: 3 }
+After rebase:
+  - Latest iteration has leftSnapshot = 2 (new base)
+  - Cached range invalidated because fromSnapshot:0 ≠ latestLeftSnapshot:2
+  - New default range: { fromSnapshot: 2, toSnapshot: 3 }
+```
 
 ---
 
