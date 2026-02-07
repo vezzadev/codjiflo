@@ -2,10 +2,11 @@ import { execSync } from "child_process";
 import { existsSync, rmSync } from "fs";
 import { basename, join } from "path";
 import { createServer } from "net";
+import { platform } from "os";
 
 const LOCK_FILE = join(process.cwd(), ".next", "dev", "lock");
 const NEXT_CACHE = join(process.cwd(), ".next");
-const PROJECT_PATH = process.cwd().replace(/\//g, "\\"); // Normalize to Windows paths
+const IS_WINDOWS = platform() === "win32";
 
 /**
  * Kills zombie Next.js dev server for THIS project only.
@@ -17,24 +18,7 @@ function killZombieNextProcess() {
     return; // No lock file = no dev server was running
   }
 
-  // Find node processes that contain this project's path in their command line
-  const psCommand = `Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match '${PROJECT_PATH.replace(/\\/g, "\\\\")}' } | Select-Object -ExpandProperty ProcessId`;
-
-  let pids = [];
-  try {
-    const output = execSync(`pwsh.exe -NoProfile -Command "${psCommand}"`, {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    pids = output
-      .trim()
-      .split(/\r?\n/)
-      .filter((pid) => /^\d+$/.test(pid.trim()))
-      .map((pid) => pid.trim());
-  } catch {
-    // No matching processes found
-    return;
-  }
+  const pids = IS_WINDOWS ? findZombiePidsWindows() : findZombiePidsUnix();
 
   if (pids.length === 0) {
     return;
@@ -46,20 +30,28 @@ function killZombieNextProcess() {
 
   for (const pid of pids) {
     try {
-      execSync(`taskkill /PID ${pid} /T /F`, {
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      if (IS_WINDOWS) {
+        execSync(`taskkill /PID ${pid} /T /F`, {
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+      } else {
+        execSync(`kill -9 ${pid}`, {
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+      }
     } catch {
-      // Process may have already exited (e.g., killed as child of another)
+      // Process may have already exited
     }
   }
 
   console.log(`Killed ${pids.length} zombie process(es)`);
 
   // Small delay to ensure port is released
-  execSync("pwsh.exe -NoProfile -Command Start-Sleep -Milliseconds 500", {
-    stdio: "ignore",
-  });
+  execSync(IS_WINDOWS
+    ? "pwsh.exe -NoProfile -Command Start-Sleep -Milliseconds 500"
+    : "sleep 0.5",
+    { stdio: "ignore" }
+  );
 
   // Wipe .next cache for clean restart
   try {
@@ -67,6 +59,42 @@ function killZombieNextProcess() {
     console.log("Wiped .next cache");
   } catch {
     // Ignore if already deleted or inaccessible
+  }
+}
+
+function findZombiePidsWindows() {
+  const projectPath = process.cwd().replace(/\//g, "\\");
+  const psCommand = `Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match '${projectPath.replace(/\\/g, "\\\\")}' } | Select-Object -ExpandProperty ProcessId`;
+  try {
+    const output = execSync(`pwsh.exe -NoProfile -Command "${psCommand}"`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return output
+      .trim()
+      .split(/\r?\n/)
+      .filter((pid) => /^\d+$/.test(pid.trim()))
+      .map((pid) => pid.trim());
+  } catch {
+    return [];
+  }
+}
+
+function findZombiePidsUnix() {
+  const projectPath = process.cwd();
+  try {
+    // Find node processes whose command line contains this project's path
+    const output = execSync(
+      `ps ax -o pid,args | grep -E 'node.*${projectPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}' | grep -v grep`,
+      { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }
+    );
+    return output
+      .trim()
+      .split(/\n/)
+      .map((line) => line.trim().split(/\s+/)[0])
+      .filter((pid) => /^\d+$/.test(pid) && pid !== String(process.pid));
+  } catch {
+    return [];
   }
 }
 
@@ -78,9 +106,10 @@ function killZombieNextProcess() {
 function getPortForWorktree() {
   const dirName = basename(process.cwd());
 
-  // Check if directory name is a single uppercase letter A-Z
-  if (/^[A-Z]$/.test(dirName)) {
-    const letter = dirName.charCodeAt(0); // ASCII code
+  // Check if directory name ends with a single uppercase letter (e.g., "B" or "codjiflo-B")
+  const match = dirName.match(/(?:^|-)([A-Z])$/);
+  if (match) {
+    const letter = match[1].charCodeAt(0); // ASCII code
     const port = 3010 + (letter - 65) * 10; // A=3010, B=3020, ...
     return { port, strict: true };
   }
@@ -158,6 +187,7 @@ function startNextDev(port) {
   try {
     execSync(`npx next dev --turbopack --port ${port}`, {
       stdio: "inherit",
+      env: { ...process.env, NODE_OPTIONS: [process.env.NODE_OPTIONS, "--no-experimental-webstorage"].filter(Boolean).join(" ") },
     });
   } catch (error) {
     // execSync throws on non-zero exit or signal termination
