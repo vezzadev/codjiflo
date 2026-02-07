@@ -21,8 +21,9 @@ function contentCacheKey(owner: string, repo: string, path: string, ref: string)
 /**
  * Generate cache key for full file diff
  */
-function diffCacheKey(owner: string, repo: string, path: string, baseSHA: string, headSHA: string): string {
-  return `${owner}/${repo}/${path}@${baseSHA}:${headSHA}`;
+function diffCacheKey(owner: string, repo: string, path: string, baseSHA: string, headSHA: string, basePath?: string): string {
+  const resolvedBase = basePath ?? path;
+  return `${owner}/${repo}/${resolvedBase}→${path}@${baseSHA}:${headSHA}`;
 }
 
 export const useDiffContentStore = create<DiffContentState>((set, get) => ({
@@ -91,7 +92,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
    * Uses Web Worker for heavy computation
    */
   computeFullFileDiff: async (owner, repo, path, baseSHA, headSHA, basePath?): Promise<FullFileDiff> => {
-    const cacheKey = diffCacheKey(owner, repo, path, baseSHA, headSHA);
+    const cacheKey = diffCacheKey(owner, repo, path, baseSHA, headSHA, basePath);
     const cached = get().fullFileDiffs.get(cacheKey);
 
     if (cached) {
