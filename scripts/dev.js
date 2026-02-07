@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { existsSync, rmSync } from "fs";
 import { basename, join } from "path";
 import { createServer } from "net";
@@ -35,9 +35,8 @@ function killZombieNextProcess() {
           stdio: ["pipe", "pipe", "pipe"],
         });
       } else {
-        execSync(`kill -9 ${pid}`, {
-          stdio: ["pipe", "pipe", "pipe"],
-        });
+        // Kill entire process tree (like taskkill /T on Windows)
+        killProcessTree(pid);
       }
     } catch {
       // Process may have already exited
@@ -64,7 +63,14 @@ function killZombieNextProcess() {
 
 function findZombiePidsWindows() {
   const projectPath = process.cwd().replace(/\//g, "\\");
-  const psCommand = `Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match '${projectPath.replace(/\\/g, "\\\\")}' } | Select-Object -ExpandProperty ProcessId`;
+  // Escape single quotes for safe embedding in a PowerShell single-quoted string
+  const escapedProjectPathForPwsh = projectPath.replace(/'/g, "''");
+  const psCommand =
+    `$projectPath = '${escapedProjectPathForPwsh}'; ` +
+    `$escapedProjectPath = [regex]::Escape($projectPath); ` +
+    "Get-CimInstance Win32_Process | " +
+    "Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match $escapedProjectPath -and $_.CommandLine -match 'next\\s+dev' } | " +
+    "Select-Object -ExpandProperty ProcessId";
   try {
     const output = execSync(`pwsh.exe -NoProfile -Command "${psCommand}"`, {
       encoding: "utf8",
@@ -80,17 +86,40 @@ function findZombiePidsWindows() {
   }
 }
 
+/**
+ * Recursively kills a process and all its descendants (Unix equivalent of taskkill /T).
+ */
+function killProcessTree(pid) {
+  // Find children first (depth-first kill)
+  try {
+    const children = execFileSync("ps", ["-o", "pid", "--no-headers", "--ppid", pid], {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    for (const childPid of children.trim().split(/\n/).map(p => p.trim()).filter(p => /^\d+$/.test(p))) {
+      killProcessTree(childPid);
+    }
+  } catch {
+    // No children or ps failed
+  }
+  try {
+    process.kill(Number(pid), "SIGKILL");
+  } catch {
+    // Already exited
+  }
+}
+
 function findZombiePidsUnix() {
   const projectPath = process.cwd();
   try {
-    // Find node processes whose command line contains this project's path
-    const output = execSync(
-      `ps ax -o pid,args | grep -E 'node.*${projectPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}' | grep -v grep`,
-      { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }
-    );
-    return output
-      .trim()
+    // Use execFileSync to avoid shell injection risks from project paths
+    const psOutput = execFileSync("ps", ["ax", "-o", "pid,args"], {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return psOutput
       .split(/\n/)
+      .filter((line) => line.includes(projectPath) && /\bnext\s+dev\b/.test(line))
       .map((line) => line.trim().split(/\s+/)[0])
       .filter((pid) => /^\d+$/.test(pid) && pid !== String(process.pid));
   } catch {
