@@ -73,3 +73,70 @@ export interface GitHubContentsResponse {
   encoding?: string;
   download_url: string | null;
 }
+
+// ============================================================================
+// PR Commits API Types
+// GET /repos/{owner}/{repo}/pulls/{pr_number}/commits
+// ============================================================================
+
+export interface GitHubCommitAuthor {
+  name: string;
+  email: string;
+  date: string; // ISO 8601
+}
+
+export interface GitHubCommitDetail {
+  message: string;
+  author: GitHubCommitAuthor;
+}
+
+export interface GitHubPRCommit {
+  sha: string;
+  commit: GitHubCommitDetail;
+  author: GitHubUser | null; // null if author not a GitHub user
+}
+
+// ============================================================================
+// Issues Timeline API Types
+// GET /repos/{owner}/{repo}/issues/{pr_number}/timeline
+// ============================================================================
+
+export interface GitHubTimelineCommitRef {
+  sha: string;
+}
+
+export interface GitHubTimelineForcePushEvent {
+  id: number;
+  event: 'head_ref_force_pushed';
+  created_at: string;
+  before_commit: GitHubTimelineCommitRef;
+  after_commit: GitHubTimelineCommitRef;
+}
+
+export interface GitHubTimelineOtherEvent {
+  id: number;
+  event: string;
+  created_at: string;
+}
+
+export type GitHubTimelineEvent =
+  | GitHubTimelineForcePushEvent
+  | GitHubTimelineOtherEvent;
+
+// ============================================================================
+// Compare API Types
+// GET /repos/{owner}/{repo}/compare/{basehead}
+// ============================================================================
+
+export interface GitHubCompareCommit {
+  sha: string;
+  commit: GitHubCommitDetail;
+  author: GitHubUser | null;
+}
+
+export interface GitHubCompareResponse {
+  commits: GitHubCompareCommit[];
+  status: 'ahead' | 'behind' | 'diverged' | 'identical';
+  ahead_by: number;
+  behind_by: number;
+}

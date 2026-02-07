@@ -23,6 +23,14 @@ export type {
   IterationComparison,
   FileComparison,
   IterationState,
+  StatelessIteration,
+  StatelessIterationStatus,
+  CollapsedIterationGroup,
+  CollapsedGroupVisibility,
+  DiscardedCommit,
+  DiscardedCommitStatus,
+  DiscoveryResult,
+  CommitIterationResult,
 } from './types';
 
 export {

@@ -166,3 +166,78 @@ export interface IterationState {
 }
 
 export type IterationPreset = 'full' | 'latest' | 'lastReview';
+
+// ============================================================================
+// Stateless Iteration Types (S-4.2.1)
+// ============================================================================
+
+/** Status of an iteration in stateless mode */
+export type StatelessIterationStatus = 'live' | 'collapsed';
+
+/**
+ * An iteration detected from GitHub's PR Commits and Timeline APIs.
+ * Each PR commit maps to one iteration. Force-pushed commits become
+ * collapsed iterations grouped by the force-push event.
+ */
+export interface StatelessIteration {
+  /** Sequential 1-based number across ALL commits (live + discarded) */
+  revision: number;
+  /** Git commit SHA */
+  commitSha: string;
+  /** PR base branch commit SHA */
+  baseSha: string;
+  /** Commit author login or name */
+  author: string;
+  /** When the commit was created (ISO 8601) */
+  createdAt: string;
+  /** Whether this iteration is live or was discarded by force-push */
+  status: StatelessIterationStatus;
+  /** Links to CollapsedIterationGroup.forcePushEventId when status is 'collapsed' */
+  collapsedGroupId?: number;
+}
+
+/** Visibility state of a collapsed iteration group */
+export type CollapsedGroupVisibility = 'collapsed' | 'expanded';
+
+/** Status of a discarded commit's data availability */
+export type DiscardedCommitStatus = 'available' | 'unavailable';
+
+/**
+ * A discarded commit discovered via the Compare API.
+ */
+export interface DiscardedCommit {
+  sha: string;
+  message: string;
+  author: string;
+  date: string; // ISO 8601
+  status: DiscardedCommitStatus;
+}
+
+/**
+ * A group of iterations discarded by a single force-push event.
+ */
+export interface CollapsedIterationGroup {
+  /** Timeline event identifier for the force-push */
+  forcePushEventId: number;
+  /** Revision numbers of the discarded iterations (updated after chronological sorting) */
+  discardedRevisions: number[];
+  /** Individual commit details (empty if before SHA was GC'd) */
+  commits: DiscardedCommit[];
+  /** Reason for collapse */
+  reason: 'force_push';
+  /** Whether user has expanded this group to include in range diffs */
+  visibility: CollapsedGroupVisibility;
+  /** True if the before SHA was garbage-collected and commits couldn't be discovered */
+  unknownCount?: boolean;
+}
+
+/** Result of attempting to discover discarded commits via Compare API */
+export type DiscoveryResult =
+  | { status: 'discovered'; commits: DiscardedCommit[] }
+  | { status: 'gc'; commits: [] };
+
+/** Output of the commit-based iteration building algorithm */
+export interface CommitIterationResult {
+  iterations: StatelessIteration[];
+  collapsedGroups: CollapsedIterationGroup[];
+}
