@@ -90,7 +90,7 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
    * Compute full file diff between base and head versions (S-3.1)
    * Uses Web Worker for heavy computation
    */
-  computeFullFileDiff: async (owner, repo, path, baseSHA, headSHA): Promise<FullFileDiff> => {
+  computeFullFileDiff: async (owner, repo, path, baseSHA, headSHA, basePath?): Promise<FullFileDiff> => {
     const cacheKey = diffCacheKey(owner, repo, path, baseSHA, headSHA);
     const cached = get().fullFileDiffs.get(cacheKey);
 
@@ -102,8 +102,9 @@ export const useDiffContentStore = create<DiffContentState>((set, get) => ({
 
     try {
       // Fetch both versions in parallel
+      // For renamed files, basePath differs from path (the file was at a different location before)
       const [baseContent, headContent] = await Promise.all([
-        get().fetchFileContent(owner, repo, path, baseSHA).catch(() => null),
+        get().fetchFileContent(owner, repo, basePath ?? path, baseSHA).catch(() => null),
         get().fetchFileContent(owner, repo, path, headSHA).catch(() => null),
       ]);
 

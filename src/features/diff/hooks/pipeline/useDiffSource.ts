@@ -42,6 +42,9 @@ export function useDiffSource(): DiffSourceOutput {
   // Get file status
   const fileStatus = iterationSelectedFile?.status ?? selectedFile?.status;
 
+  // Get previous filename for renamed files
+  const previousFilename = iterationSelectedFile?.previousFilename ?? selectedFile?.previousFilename;
+
   // Get iteration-based diff when in iteration mode
   // selectedRange in dependency array ensures recomputation on iteration change
   const iterationDiff = useMemo(() => {
@@ -56,6 +59,7 @@ export function useDiffSource(): DiffSourceOutput {
     return {
       patch: undefined,
       filename: undefined,
+      previousFilename: undefined,
       fileStatus: undefined,
       iterationDiff: null,
       isIterationMode,
@@ -65,6 +69,7 @@ export function useDiffSource(): DiffSourceOutput {
   return {
     patch,
     filename,
+    previousFilename,
     fileStatus,
     iterationDiff,
     isIterationMode,

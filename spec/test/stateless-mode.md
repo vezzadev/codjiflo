@@ -125,6 +125,9 @@ e2e/
 | SM-E08 | `unavailable-iteration.spec.ts` | Cannot select unavailable | Click unavailable iteration | Selection disabled | S-4.2.7 |
 | SM-E09 | `force-stateless.spec.ts` | Query param forces stateless | PR with artifact, `?mode=stateless` | Stateless mode active | S-4.2.8 |
 | SM-E10 | `comment-tracking.spec.ts` | Comment position tracked | File with comment, change iteration | Comment at correct position | S-4.2.6 |
+| SM-E11b | `renamed-files.spec.ts` | Renamed files show R badge | PR with renamed files | R badge displayed, not A | #349 |
+| SM-E12b | `renamed-files.spec.ts` | Pure renamed file renders diff page | Click renamed file with 0 changes | Toolbar and header visible, no "No diff available" | #349 |
+| SM-E13b | `renamed-files.spec.ts` | Renamed+edited file renders diff with changes | Click renamed file with changes | CodeMirror editor visible with diff | #349 |
 
 ### Common Mode Tests (`e2e/common/stateless-mode/`)
 

@@ -35,7 +35,7 @@ export function useDiffFilter(source: DiffSourceOutput): DiffFilterOutput {
   const [fullFileDiff, setFullFileDiff] = useState<FullFileDiff | null>(null);
   const [fullFileError, setFullFileError] = useState<string | null>(null);
 
-  const { filename, patch, fileStatus, iterationDiff, isIterationMode } = source;
+  const { filename, previousFilename, patch, fileStatus, iterationDiff, isIterationMode } = source;
 
   // Determine if we should fetch full file content
   const shouldFetchFullFile = !isIterationMode &&
@@ -54,7 +54,7 @@ export function useDiffFilter(source: DiffSourceOutput): DiffFilterOutput {
 
     let cancelled = false;
 
-    computeFullFileDiff(owner, repo, filename, currentPR.baseSha, currentPR.headSha)
+    computeFullFileDiff(owner, repo, filename, currentPR.baseSha, currentPR.headSha, previousFilename)
       .then((result) => {
         if (!cancelled) {
           setFullFileDiff(result);
@@ -78,6 +78,7 @@ export function useDiffFilter(source: DiffSourceOutput): DiffFilterOutput {
   }, [
     shouldFetchFullFile,
     filename,
+    previousFilename,
     currentPR,
     owner,
     repo,

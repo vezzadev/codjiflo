@@ -148,7 +148,8 @@ export interface DiffContentState {
     repo: string,
     path: string,
     baseSHA: string,
-    headSHA: string
+    headSHA: string,
+    basePath?: string
   ) => Promise<FullFileDiff>;
   clearCache: () => void;
 }

@@ -263,6 +263,35 @@ For unsupported file types:
 
 ---
 
+## Renamed File Handling
+
+### File Status and Badge Display
+
+Renamed files from the GitHub API have `status: "renamed"` and include a `previousFilename` field pointing to the original path. The file list displays an `R` badge for these files.
+
+### Empty State Bypass
+
+When a renamed file has no content changes (0 additions, 0 deletions), GitHub returns no `patch` field. Unlike binary/too-large files which show "No diff available", renamed files bypass the empty state check and render the normal diff view:
+
+- **Renamed with changes**: Renders diff normally with additions/deletions highlighted
+- **Renamed without changes**: Renders the diff page (toolbar, filename header, code viewer) with no highlighted changes
+- **Binary/too-large**: Shows "No diff available (binary file or too large)" empty state
+
+### Full File Content Fetch for Renamed Files
+
+When "Full File" mode is activated, `computeFullFileDiff` fetches file content from the GitHub Contents API. For renamed files, the base content lives at the `previousFilename` path, not the current path:
+
+- **Base content**: Fetched using `previousFilename` (old path) at `baseSHA`
+- **Head content**: Fetched using `filename` (new path) at `headSHA`
+
+The diff pipeline threads `previousFilename` through `DiffSourceOutput` → `useDiffFilter` → `computeFullFileDiff` as the optional `basePath` parameter.
+
+### GitHub API Pagination for File Lists
+
+The GitHub PR files endpoint (`/repos/{owner}/{repo}/pulls/{number}/files`) returns 30 items per page by default. The file backend paginates with `per_page=100` to ensure all files are fetched for PRs with more than 30 changed files.
+
+---
+
 ## Editor Margins
 
 ### Overview Margin (Minimap)
