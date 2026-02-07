@@ -62,7 +62,7 @@ export function createMockForcePushEvent(
 }
 
 export function createMockTimelineOtherEvent(
-  event: string = 'commented',
+  event = 'commented',
   overrides?: Partial<GitHubTimelineOtherEvent>
 ): GitHubTimelineOtherEvent {
   eventCounter++;
