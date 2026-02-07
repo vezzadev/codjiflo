@@ -23,6 +23,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lockfile-check:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Verify package-lock.json is normalized
+        timeout-minutes: 2
+        run: |
+          npm install --ignore-scripts
+          if ! git diff --exit-code package-lock.json; then
+            echo ""
+            echo "❌ package-lock.json is not normalized."
+            echo "Run 'npm run sync-lockfile' locally and commit the result."
+            exit 1
+          fi
+
   lint:
     runs-on: ubuntu-slim
     steps:
