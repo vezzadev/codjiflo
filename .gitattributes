@@ -4,7 +4,11 @@
 # Force LF for files that npm/node generate
 package-lock.json text eol=lf
 *.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
 *.ts text eol=lf
+*.mts text eol=lf
+*.cts text eol=lf
 *.tsx text eol=lf
 *.json text eol=lf
 *.css text eol=lf
