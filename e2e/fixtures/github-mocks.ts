@@ -180,7 +180,7 @@ export async function setupFilesMock(
   if (!isMockMode()) return;
 
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files**`,
     async (route) => {
       if (options?.failWith) {
         await route.fulfill({

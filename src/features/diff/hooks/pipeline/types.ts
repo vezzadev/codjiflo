@@ -32,6 +32,8 @@ export interface DiffSourceOutput {
   patch: string | undefined;
   /** Current file path */
   filename: string | undefined;
+  /** Previous file path for renamed files */
+  previousFilename: string | undefined;
   /** File change status (added, modified, deleted, renamed) */
   fileStatus: FileChangeStatus | undefined;
   /** Pre-computed diff from iteration artifact (null in stateless mode) */

@@ -61,7 +61,7 @@ async function setupMocksWithRateLimit(
 
   // Files endpoint
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files`,
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/files**`,
     async (route) => {
       await route.fulfill({
         status: 200,

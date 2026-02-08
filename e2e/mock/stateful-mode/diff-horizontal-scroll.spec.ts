@@ -44,6 +44,10 @@ test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
     updated_at: "2024-01-02T15:00:00Z",
   };
 
+  // Construct full file content for base and head versions (used by Full File mode)
+  const baseFileContent = [contextLine1, contextLine2, contextLine3, "const old = 'short';", "const unchanged = 'value';"].join("\n");
+  const headFileContent = [contextLine1, contextLine2, contextLine3, longLine, "const anotherLine = 'test';", ...Array.from({ length: 50 }, (_, i) => `// Line ${String(i + 10)} - padding to make file tall`), "const unchanged = 'value';"].join("\n");
+
   const mockFiles: MockFile[] = [
     {
       filename: "src/long-lines.ts",
@@ -62,6 +66,8 @@ test.describe("Diff Horizontal Scroll (Header Fixed)", () => {
 +const anotherLine = 'test';
 +${manyLines}
  const unchanged = 'value';`,
+      baseContent: baseFileContent,
+      headContent: headFileContent,
     },
   ];
 

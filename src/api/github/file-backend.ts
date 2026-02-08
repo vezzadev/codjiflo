@@ -12,11 +12,22 @@ const MAX_FILE_SIZE_BYTES = 1024 * 1024;
  */
 export class GitHubFileBackend implements IFileBackend {
   async getFiles(owner: string, repo: string, number: number): Promise<FileChange[]> {
-    const data = await githubClient.fetch<GitHubFile[]>(
-      `/repos/${owner}/${repo}/pulls/${number}/files`
-    );
+    const endpoint = `/repos/${owner}/${repo}/pulls/${number}/files`;
+    const allFiles: GitHubFile[] = [];
+    let page = 1;
 
-    return data.map((file): FileChange => {
+    // GitHub API paginates at 30 items by default; fetch up to 100 per page
+    // and follow pagination until we get a page with fewer than per_page items
+    for (;;) {
+      const data = await githubClient.fetch<GitHubFile[]>(
+        `${endpoint}?per_page=100&page=${page}`
+      );
+      allFiles.push(...data);
+      if (data.length < 100) break;
+      page++;
+    }
+
+    return allFiles.map((file): FileChange => {
       const result: FileChange = {
         filename: file.filename,
         status: this.mapStatus(file.status),

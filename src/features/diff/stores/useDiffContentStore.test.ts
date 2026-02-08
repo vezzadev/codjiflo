@@ -277,6 +277,39 @@ describe('useDiffContentStore', () => {
       expect(result.alignedLines).toEqual([]);
     });
 
+    it('uses basePath for base content when provided (renamed files)', async () => {
+      const oldPathContent = {
+        path: 'src/old-name.ts',
+        content: 'const x = 1;',
+        sha: 'base123',
+        size: 12,
+        encoding: 'utf-8' as const,
+      };
+
+      mockGetFileContent.mockImplementation((_owner: string, _repo: string, path: string) => {
+        if (path === 'src/old-name.ts') return Promise.resolve(oldPathContent);
+        if (path === 'src/new-name.ts') return Promise.resolve(headContent);
+        return Promise.reject(new api.GitHubAPIError(404, 'Not Found', 'Not found'));
+      });
+
+      const result = await useDiffContentStore.getState().computeFullFileDiff(
+        'owner',
+        'repo',
+        'src/new-name.ts',
+        'base123',
+        'head123',
+        'src/old-name.ts'
+      );
+
+      expect(result.base).not.toBeNull();
+      expect(result.base?.content).toBe('const x = 1;');
+      expect(result.head).not.toBeNull();
+      expect(result.head?.content).toBe('const x = 2;');
+      // Verify it fetched base using old path
+      expect(mockGetFileContent).toHaveBeenCalledWith('owner', 'repo', 'src/old-name.ts', 'base123');
+      expect(mockGetFileContent).toHaveBeenCalledWith('owner', 'repo', 'src/new-name.ts', 'head123');
+    });
+
     it('enhances diff lines with word diffs for modifications', async () => {
       mockGetFileContent
         .mockResolvedValueOnce(baseContent)

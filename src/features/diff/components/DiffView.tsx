@@ -18,6 +18,7 @@ import {
 import { DiffToolbar } from './DiffToolbar';
 import { DiffLoadingState } from './DiffLoadingState';
 import { DiffEmptyState } from './DiffEmptyState';
+import { FileChangeStatus } from '@/api/types';
 import { Minimap } from './Minimap';
 import {
   UnifiedDiffEditor,
@@ -224,8 +225,8 @@ export function DiffView() {
     return <DiffEmptyState variant="no-file" />;
   }
 
-  // No patch available (binary file or too large)
-  if (!pipeline.isIterationMode && selectedFile && !selectedFile.patch) {
+  // No patch available (binary file or too large) - skip for renamed files which render normally
+  if (!pipeline.isIterationMode && selectedFile && !selectedFile.patch && selectedFile.status !== FileChangeStatus.Renamed) {
     return <DiffEmptyState variant="no-patch" />;
   }
 

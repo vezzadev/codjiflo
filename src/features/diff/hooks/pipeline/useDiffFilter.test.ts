@@ -40,6 +40,7 @@ describe('useDiffFilter', () => {
   const mockSourceInput: DiffSourceOutput = {
     patch: '@@ -1,1 +1,2 @@\n line1\n+line2',
     filename: 'test.ts',
+    previousFilename: undefined,
     fileStatus: FileChangeStatus.Modified,
     iterationDiff: null,
     isIterationMode: false,
@@ -203,7 +204,8 @@ describe('useDiffFilter', () => {
         'testrepo',
         'test.ts',
         'base123',
-        'head456'
+        'head456',
+        undefined
       );
     });
   });
