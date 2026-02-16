@@ -39,7 +39,7 @@ npm run test -- -t "should render toolbar"
 |------|---------|-------|
 | Unit | `src/**/*.test.ts(x)` | Primary. Use Vitest + RTL |
 | Integration | `*.integration.test.tsx` | Use `data-testid`, helpers in `src/tests/helpers/`. Test happy AND unhappy paths |
-| E2E | `e2e/{mock\|prod}/{degraded\|iteration}-mode/**/*.spec.ts` | Playwright. Critical flows only. Directories will be renamed to `{stateless\|stateful}-mode` in M4.2 |
+| E2E | `e2e/{mock\|prod}/{stateless\|stateful}-mode/**/*.spec.ts` | Playwright. Critical flows only |
 | Stories | `src/**/*.stories.tsx` | Visual docs only, no behavior tests |
 
 ### Show that your tests are working
@@ -59,12 +59,13 @@ Both E2E test modes start a test server automatically. It is NOT necessary to st
 **Test Directory Structure:**
 ```
 e2e/
-├── common/                # Tests that run in both mock and prod modes
+├── common/
+│   └── stateless-mode/    # Tests that run in both mock and prod modes
 ├── mock/
-│   ├── degraded-mode/     # Tests without iteration artifacts (renamed to stateless-mode in M4.2)
-│   └── iteration-mode/    # Tests with iteration artifacts (renamed to stateful-mode in M4.2)
+│   ├── stateless-mode/    # Mock-only tests without iteration artifacts
+│   └── stateful-mode/     # Mock-only tests with iteration artifacts
 ├── prod/
-│   └── iteration-mode/    # Prod tests with real iteration artifacts (renamed to stateful-mode in M4.2)
+│   └── stateful-mode/     # Prod tests with real iteration artifacts
 └── fixtures/              # Shared test fixtures
 ```
 
