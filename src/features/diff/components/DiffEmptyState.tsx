@@ -14,7 +14,7 @@ interface DiffEmptyStateProps {
 /**
  * Empty state messages for different scenarios.
  */
-const EMPTY_STATE_MESSAGES: Record<DiffEmptyStateVariant, { title: string; subtitle?: string }> = {
+const EMPTY_STATE_MESSAGES: { [K in DiffEmptyStateVariant]: { title: string; subtitle?: string } } = {
   'no-file': {
     title: 'Select a file to view diff',
   },

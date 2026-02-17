@@ -5,14 +5,14 @@ interface BadgeProps {
   className?: string;
 }
 
-const STATE_CSS_CLASSES: Record<ReviewState, string> = {
+const STATE_CSS_CLASSES: { [K in ReviewState]: string } = {
   [ReviewState.Open]: 'badge badge-success',
   [ReviewState.Closed]: 'badge badge-error',
   [ReviewState.Merged]: 'badge badge-merged',
   [ReviewState.Draft]: 'badge',
 };
 
-const STATE_LABELS: Record<ReviewState, string> = {
+const STATE_LABELS: { [K in ReviewState]: string } = {
   [ReviewState.Open]: 'Open',
   [ReviewState.Closed]: 'Closed',
   [ReviewState.Merged]: 'Merged',
