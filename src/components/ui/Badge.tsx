@@ -5,16 +5,14 @@ interface BadgeProps {
   className?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- Enum-keyed Record is more precise than index signature
-const STATE_CSS_CLASSES: Record<ReviewState, string> = {
+const STATE_CSS_CLASSES: { [key in ReviewState]: string } = {
   [ReviewState.Open]: 'badge badge-success',
   [ReviewState.Closed]: 'badge badge-error',
   [ReviewState.Merged]: 'badge badge-merged',
   [ReviewState.Draft]: 'badge',
 };
 
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- Enum-keyed Record is more precise than index signature
-const STATE_LABELS: Record<ReviewState, string> = {
+const STATE_LABELS: { [key in ReviewState]: string } = {
   [ReviewState.Open]: 'Open',
   [ReviewState.Closed]: 'Closed',
   [ReviewState.Merged]: 'Merged',

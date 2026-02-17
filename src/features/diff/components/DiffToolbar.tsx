@@ -205,8 +205,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
 
 // Content filter constants (defined outside component to avoid recreation on each render)
 const FILTER_POSITIONS: ContentFilter[] = ['left', 'both', 'right'];
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- String literal union-keyed Record is more precise than index signature
-const FILTER_LABELS: Record<ContentFilter, string> = {
+const FILTER_LABELS: { [key in ContentFilter]: string } = {
   left: 'Left Only',
   both: 'Show Both',
   right: 'Right Only',
@@ -223,8 +222,7 @@ function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   // Dynamic tooltip hints based on current position
-  // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- String literal union-keyed Record is more precise than index signature
-  const dragHints: Record<ContentFilter, string> = {
+  const dragHints: { [key in ContentFilter]: string } = {
     left: 'Drag for Both (O) or Right Only (R)',
     both: 'Drag for Left Only (L) or Right Only (R)',
     right: 'Drag for Left Only (L) or Both (O)',
