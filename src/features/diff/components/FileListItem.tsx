@@ -1,6 +1,7 @@
 import type { FileChange } from '@/api/types';
 import { FileChangeStatus } from '@/api/types';
 
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- Enum-keyed Record is more precise than index signature
 const CHANGE_TYPE_ICONS: Record<FileChangeStatus, string> = {
   [FileChangeStatus.Added]: 'A',
   [FileChangeStatus.Modified]: 'M',
@@ -8,6 +9,7 @@ const CHANGE_TYPE_ICONS: Record<FileChangeStatus, string> = {
   [FileChangeStatus.Renamed]: 'R',
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- Enum-keyed Record is more precise than index signature
 const CHANGE_TYPE_CLASSES: Record<FileChangeStatus, string> = {
   [FileChangeStatus.Added]: 'add',
   [FileChangeStatus.Modified]: 'edit',
@@ -15,6 +17,7 @@ const CHANGE_TYPE_CLASSES: Record<FileChangeStatus, string> = {
   [FileChangeStatus.Renamed]: 'edit',
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- Enum-keyed Record is more precise than index signature
 const CHANGE_TYPE_LABELS: Record<FileChangeStatus, string> = {
   [FileChangeStatus.Added]: 'added',
   [FileChangeStatus.Modified]: 'modified',
