@@ -137,7 +137,7 @@ export class IterationClient {
     );
 
     // Build repo paths map per artifact
-    const pathsByArtifact = new Map<number, Map<number, string | null>>();
+    const pathsByArtifact: Map<number, Map<number, string | null>> = new Map();
     for (const row of snapshotRows) {
       let artifactPaths = pathsByArtifact.get(row.artifact_id);
       if (!artifactPaths) {

@@ -42,7 +42,7 @@ export function useDiffComments(navigation: DiffNavigationOutput): DiffCommentsO
   // Uses trackedLine (SpanTracker result) if available, falling back to line
   // Threads with no position (both null) are excluded
   const threadsByLineAndSide = useMemo(() => {
-    const map = new Map<string, ReviewThread[]>();
+    const map: Map<string, ReviewThread[]> = new Map();
 
     threadsForFile.forEach((thread) => {
       // Use trackedLine (from SpanTracker) if available, otherwise fall back to line

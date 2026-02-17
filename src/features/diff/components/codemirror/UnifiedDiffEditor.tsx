@@ -157,7 +157,7 @@ export const UnifiedDiffEditor = forwardRef<UnifiedDiffEditorHandle, UnifiedDiff
 
     // Convert threadsByLineAndSide to line-indexed map for widget
     const threadsByLine = useMemo(() => {
-      const map = new Map<number, ReviewThread[]>();
+      const map: Map<number, ReviewThread[]> = new Map();
 
       threadsByLineAndSide.forEach((threads, key) => {
         // Key format: "lineNumber-side"

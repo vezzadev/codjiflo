@@ -340,8 +340,8 @@ describe('useAuthStore OAuth methods', () => {
                 limit: 60,
             });
 
-            const storageValue = JSON.parse(localStorage.getItem('auth-storage') ?? '{}') as Record<string, unknown>;
-            const storedState = storageValue.state as Record<string, unknown>;
+            const storageValue = JSON.parse(localStorage.getItem('auth-storage') ?? '{}') as { [key: string]: unknown };
+            const storedState = storageValue.state as { [key: string]: unknown };
             expect(storedState.rateLimitRemaining).toBeUndefined();
             expect(storedState.rateLimitReset).toBeUndefined();
             expect(storedState.rateLimitLimit).toBeUndefined();

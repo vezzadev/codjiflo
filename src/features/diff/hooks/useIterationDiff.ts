@@ -48,7 +48,7 @@ export function useIterationDiff(): IterationDiffResult {
 
   // Map path to ALL artifacts that have that path (needed because action uses SHA as tracking ID)
   const pathToArtifacts = useMemo(() => {
-    const map = new Map<string, ReviewFileArtifact[]>();
+    const map: Map<string, ReviewFileArtifact[]> = new Map();
     for (const artifact of artifacts) {
       // Map by all known paths
       for (const path of artifact.repoPaths) {

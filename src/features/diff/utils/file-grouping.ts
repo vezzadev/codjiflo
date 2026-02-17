@@ -36,7 +36,7 @@ export function getBasename(filename: string): string {
  * Folders are sorted alphabetically with root '/' first.
  */
 export function groupFilesByFolder(files: IterationAwareFile[]): FileGroup[] {
-  const groups = new Map<string, IterationAwareFile[]>();
+  const groups: Map<string, IterationAwareFile[]> = new Map();
   for (const file of files) {
     const folder = getParentPath(file.filename);
     const existing = groups.get(folder);

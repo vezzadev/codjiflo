@@ -112,7 +112,7 @@ export function DiffView() {
 
   // Build threads-by-id map for the portal manager
   const threadsById = useMemo(() => {
-    const map = new Map<string, ReviewThread>();
+    const map: Map<string, ReviewThread> = new Map();
     pipeline.threadsByLineAndSide.forEach((threads) => {
       for (const thread of threads) {
         map.set(thread.id, thread);

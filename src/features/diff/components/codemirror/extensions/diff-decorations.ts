@@ -74,7 +74,7 @@ export function buildDiffDecorations(
   diffLines: ParsedDiffLine[],
   showWordDiffs = true
 ): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>();
+  const builder: RangeSetBuilder<Decoration> = new RangeSetBuilder();
 
   for (let i = 0; i < diffLines.length && i < doc.lines; i++) {
     const diffLine = diffLines[i];

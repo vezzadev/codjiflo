@@ -28,7 +28,7 @@ const SCHEMA_SQL = schemaTemplate.replace('{{SCHEMA_VERSION}}', String(SCHEMA_VE
 // Types
 // ============================================================================
 
-export type InitialFiles = Record<string, string>;
+export interface InitialFiles { [key: string]: string }
 
 export interface IterationDbBuilderOptions {
   /** Initial file contents (base state before first iteration) */
@@ -74,7 +74,7 @@ export function buildIterationDb(
   db.exec(SCHEMA_SQL);
 
   // Track file artifacts and their content across iterations
-  const artifactIds = new Map<string, number>(); // path -> artifact_id
+  const artifactIds: Map<string, number> = new Map(); // path -> artifact_id
   let artifactIdCounter = 1;
   let snapshotCount = 0;
 

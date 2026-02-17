@@ -13,7 +13,7 @@ import {
 } from './pkce';
 
 // Mock document.cookie for testing
-let mockCookies: Record<string, string> = {};
+let mockCookies: { [key: string]: string } = {};
 
 const mockCookieGetter = vi.fn(() => {
   return Object.entries(mockCookies)

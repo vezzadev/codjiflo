@@ -239,8 +239,8 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
 
     // Convert threads to line-indexed maps for each side
     const { leftThreadsByLine, rightThreadsByLine } = useMemo(() => {
-      const leftMap = new Map<number, ReviewThread[]>();
-      const rightMap = new Map<number, ReviewThread[]>();
+      const leftMap: Map<number, ReviewThread[]> = new Map();
+      const rightMap: Map<number, ReviewThread[]> = new Map();
 
       threadsByLineAndSide.forEach((threads, key) => {
         const parts = key.split('-');

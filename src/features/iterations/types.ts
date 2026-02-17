@@ -138,7 +138,7 @@ export interface IterationState {
   currentPrKey: string | null;
 
   /** Selected ranges partitioned by PR key */
-  selectedRanges: Record<string, IterationRange>;
+  selectedRanges: { [key: string]: IterationRange };
 
   /** All file artifacts */
   artifacts: ReviewFileArtifact[];

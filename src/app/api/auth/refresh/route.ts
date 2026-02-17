@@ -35,7 +35,7 @@ export async function POST(req: Request): Promise<Response> {
     if (
       !rawBody ||
       typeof rawBody !== 'object' ||
-      typeof (rawBody as Record<string, unknown>).refresh_token !== 'string'
+      typeof (rawBody as { [key: string]: unknown }).refresh_token !== 'string'
     ) {
       return NextResponse.json(
         { error: 'Invalid parameter: refresh_token must be a non-empty string' },

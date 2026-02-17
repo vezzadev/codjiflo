@@ -185,7 +185,7 @@ interface LineArrayResult {
  */
 function linesToChars(text1: string, text2: string): LineArrayResult {
   const lineArray: string[] = [];
-  const lineHash = new Map<string, string>();
+  const lineHash: Map<string, string> = new Map();
 
   // Start at char 1 (char 0 reserved)
   lineArray[0] = "";

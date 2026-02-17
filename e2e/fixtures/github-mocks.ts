@@ -483,7 +483,7 @@ export async function setupTokenRefreshMock(
 
   await page.route("**/api/auth/refresh", async (route) => {
     if (success) {
-      const responseBody: Record<string, unknown> = {
+      const responseBody: { [key: string]: unknown } = {
         access_token: newToken,
         expires_in: 28800, // 8 hours
       };

@@ -50,6 +50,10 @@ export default tseslint.config(
       "jsx-a11y/role-supports-aria-props": "error",
       "jsx-a11y/role-has-required-aria-props": "error",
       "react-hooks/exhaustive-deps": "error",
+      // Claude style preferences — see https://github.com/pedropaulovc/lint-defaults
+      "@typescript-eslint/consistent-generic-constructors": ["error", "type-annotation"],
+      "@typescript-eslint/consistent-indexed-object-style": ["error", "index-signature"],
+      "@typescript-eslint/no-inferrable-types": "off",
     },
   },
   {

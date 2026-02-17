@@ -155,7 +155,7 @@ vi.mock('./codemirror', async () => {
 
   const MockSplitDiffEditor = MockUnifiedDiffEditor;
 
-  const MockCommentPortalManager = ({ children }: { children: (callbacks: Record<string, () => void>) => React.ReactNode }) => {
+  const MockCommentPortalManager = ({ children }: { children: (callbacks: { [key: string]: () => void }) => React.ReactNode }) => {
     return React.createElement(React.Fragment, null,
       children({
         onMountThread: () => { /* noop */ },
@@ -309,7 +309,7 @@ describe("DiffView comments integration", () => {
     });
 
     // Create threadsByLineAndSide map for the mock
-    const threadsByLineAndSide = new Map<string, ReviewThread[]>();
+    const threadsByLineAndSide: Map<string, ReviewThread[]> = new Map();
     threadsByLineAndSide.set(`1-RIGHT`, [mockThread]);
 
     vi.mocked(useDiffPipeline).mockReturnValue({

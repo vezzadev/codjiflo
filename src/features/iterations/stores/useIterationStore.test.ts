@@ -390,7 +390,7 @@ describe('useIterationStore', () => {
       mockGetAllArtifacts.mockReturnValue(mockArtifacts);
 
       // Pre-populate cache with 50 PRs
-      const initialRanges: Record<string, { fromSnapshot: number; toSnapshot: number }> = {};
+      const initialRanges: { [key: string]: { fromSnapshot: number; toSnapshot: number } } = {};
       for (let i = 1; i <= 50; i++) {
         initialRanges[`https://github.com/old/repo/pull/${i}`] = { fromSnapshot: 0, toSnapshot: 1 };
       }

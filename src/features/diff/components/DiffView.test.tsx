@@ -263,7 +263,7 @@ vi.mock('./codemirror', async () => {
   };
 
   // Mock CommentPortalManager - just render children directly, mocks handle the UI
-  const MockCommentPortalManager = ({ children }: { children: (callbacks: Record<string, () => void>) => React.ReactNode }) => {
+  const MockCommentPortalManager = ({ children }: { children: (callbacks: { [key: string]: () => void }) => React.ReactNode }) => {
     return React.createElement(React.Fragment, null,
       children({
         onMountThread: () => { /* noop */ },
@@ -737,7 +737,7 @@ describe('DiffView', () => {
     });
 
     // Configure pipeline with thread mapped to the correct line index
-    const threadMap = new Map<string, typeof thread[]>();
+    const threadMap: Map<string, typeof thread[]> = new Map();
     threadMap.set('1-RIGHT', [thread]); // index 1 is the addition line
 
     vi.mocked(useDiffPipeline).mockReturnValue({

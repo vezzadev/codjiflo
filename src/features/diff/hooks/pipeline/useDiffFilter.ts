@@ -24,8 +24,8 @@ import type { FullFileDiff, ParsedDiffLine } from '../../types';
  */
 export function useDiffFilter(source: DiffSourceOutput): DiffFilterOutput {
   const params = useParams<{ owner: string; repo: string }>();
-  const owner = (params as Record<string, string | undefined>).owner ?? '';
-  const repo = (params as Record<string, string | undefined>).repo ?? '';
+  const owner = (params as { [key: string]: string | undefined }).owner ?? '';
+  const repo = (params as { [key: string]: string | undefined }).repo ?? '';
 
   const { viewConfig } = useDiffStore();
   const { currentPR } = usePRStore();
