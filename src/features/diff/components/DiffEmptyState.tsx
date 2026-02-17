@@ -14,8 +14,7 @@ interface DiffEmptyStateProps {
 /**
  * Empty state messages for different scenarios.
  */
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- String literal union-keyed Record is more precise than index signature
-const EMPTY_STATE_MESSAGES: Record<DiffEmptyStateVariant, { title: string; subtitle?: string }> = {
+const EMPTY_STATE_MESSAGES: { [key in DiffEmptyStateVariant]: { title: string; subtitle?: string } } = {
   'no-file': {
     title: 'Select a file to view diff',
   },
