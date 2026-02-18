@@ -95,7 +95,7 @@ export class GitHubClient {
     const { token, authMethod, refreshAccessToken } = useAuthStore.getState();
     const hadToken = !!token;
 
-    const headers: Record<string, string> = {
+    const headers: { [key: string]: string } = {
       'Accept': 'application/vnd.github.v3+json',
     };
 

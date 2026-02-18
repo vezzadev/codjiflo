@@ -236,7 +236,7 @@ describe("useCommentsStore", () => {
     });
 
     // Simulate SpanTracker tracking thread-1 to line 15
-    const updates = new Map<string, number | null>();
+    const updates: Map<string, number | null> = new Map();
     updates.set("thread-1", 15);
     updates.set("thread-2", null); // Line was deleted
 
@@ -276,7 +276,7 @@ describe("useCommentsStore", () => {
     });
 
     // Only update thread-1
-    const updates = new Map<string, number | null>();
+    const updates: Map<string, number | null> = new Map();
     updates.set("thread-1", 15);
 
     useCommentsStore.getState().updateTrackedPositions(updates);

@@ -55,8 +55,8 @@ export function emptySpanMappingData(): SpanMappingData {
  * Create span mapping data from an array of mappings
  */
 export function createSpanMappingData(mappings: LineMapping[]): SpanMappingData {
-  const leftToRight = new Map<number, number | null>();
-  const rightToLeft = new Map<number, number | null>();
+  const leftToRight: Map<number, number | null> = new Map();
+  const rightToLeft: Map<number, number | null> = new Map();
 
   for (const mapping of mappings) {
     if (mapping.leftSpan && mapping.rightSpan) {

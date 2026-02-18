@@ -12,7 +12,7 @@ type LanguageLoader = () => Promise<LanguageSupport>;
  * Map of file extensions to CodeMirror language loaders.
  * Languages are loaded lazily to reduce initial bundle size.
  */
-const languageLoaders: Record<string, LanguageLoader> = {
+const languageLoaders: { [key: string]: LanguageLoader } = {
   // JavaScript/TypeScript
   js: async () => (await import('@codemirror/lang-javascript')).javascript(),
   jsx: async () => (await import('@codemirror/lang-javascript')).javascript({ jsx: true }),
@@ -75,7 +75,7 @@ const languageLoaders: Record<string, LanguageLoader> = {
 /**
  * Cache of loaded language supports to avoid repeated dynamic imports.
  */
-const languageCache = new Map<string, LanguageSupport>();
+const languageCache: Map<string, LanguageSupport> = new Map();
 
 /**
  * Detects the language from a filename or path.

@@ -1,21 +1,21 @@
 import type { FileChange } from '@/api/types';
 import { FileChangeStatus } from '@/api/types';
 
-const CHANGE_TYPE_ICONS: Record<FileChangeStatus, string> = {
+const CHANGE_TYPE_ICONS: { [key in FileChangeStatus]: string } = {
   [FileChangeStatus.Added]: 'A',
   [FileChangeStatus.Modified]: 'M',
   [FileChangeStatus.Deleted]: 'D',
   [FileChangeStatus.Renamed]: 'R',
 };
 
-const CHANGE_TYPE_CLASSES: Record<FileChangeStatus, string> = {
+const CHANGE_TYPE_CLASSES: { [key in FileChangeStatus]: string } = {
   [FileChangeStatus.Added]: 'add',
   [FileChangeStatus.Modified]: 'edit',
   [FileChangeStatus.Deleted]: 'delete',
   [FileChangeStatus.Renamed]: 'edit',
 };
 
-const CHANGE_TYPE_LABELS: Record<FileChangeStatus, string> = {
+const CHANGE_TYPE_LABELS: { [key in FileChangeStatus]: string } = {
   [FileChangeStatus.Added]: 'added',
   [FileChangeStatus.Modified]: 'modified',
   [FileChangeStatus.Deleted]: 'deleted',

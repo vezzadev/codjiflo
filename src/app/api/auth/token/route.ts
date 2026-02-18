@@ -36,8 +36,8 @@ export async function POST(req: Request): Promise<Response> {
     if (
       !rawBody ||
       typeof rawBody !== 'object' ||
-      typeof (rawBody as Record<string, unknown>).code !== 'string' ||
-      typeof (rawBody as Record<string, unknown>).code_verifier !== 'string'
+      typeof (rawBody as { [key: string]: unknown }).code !== 'string' ||
+      typeof (rawBody as { [key: string]: unknown }).code_verifier !== 'string'
     ) {
       return NextResponse.json(
         { error: 'Invalid or missing parameters: code and code_verifier must be strings' },

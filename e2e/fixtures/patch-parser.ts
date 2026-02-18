@@ -271,9 +271,9 @@ function parseHunk(lines: string[], startIndex: number): HunkResult | null {
  * Returns a new object with the updated file contents.
  */
 export function applyPatch(
-  files: Record<string, string>,
+  files: { [key: string]: string },
   patch: ParsedPatch
-): Record<string, string> {
+): { [key: string]: string } {
   const result = { ...files };
 
   for (const fileDiff of patch.files) {
@@ -284,7 +284,7 @@ export function applyPatch(
 }
 
 function applyFileDiff(
-  files: Record<string, string>,
+  files: { [key: string]: string },
   fileDiff: ParsedFileDiff
 ): void {
   // Handle file deletion

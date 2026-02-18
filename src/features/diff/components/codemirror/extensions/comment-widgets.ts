@@ -174,7 +174,7 @@ function buildCommentDecorations(
   state: Omit<CommentWidgetState, 'decorations'>
 ): DecorationSet {
   const { threadsByLine, showComments, draftLineIndex, config } = state;
-  const builder = new RangeSetBuilder<Decoration>();
+  const builder: RangeSetBuilder<Decoration> = new RangeSetBuilder();
 
   // Collect all positions where we need widgets
   const widgetPositions: {

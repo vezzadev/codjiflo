@@ -186,7 +186,7 @@ describe("applyPatch", () => {
   });
 
   it("creates new files", () => {
-    const files: Record<string, string> = {};
+    const files: { [key: string]: string } = {};
 
     const patch = parsePatch(`diff --git a/newfile.ts b/newfile.ts
 new file mode 100644

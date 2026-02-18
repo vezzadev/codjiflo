@@ -82,10 +82,10 @@ const mapGitHubComment = (comment: GitHubReviewComment): Comment => ({
 });
 
 const groupCommentsIntoThreads = (comments: GitHubReviewComment[]): ReviewThread[] => {
-  const commentMap = new Map<number, GitHubReviewComment>();
+  const commentMap: Map<number, GitHubReviewComment> = new Map();
   comments.forEach((comment) => commentMap.set(comment.id, comment));
 
-  const rootCache = new Map<number, number>();
+  const rootCache: Map<number, number> = new Map();
   const getRootId = (comment: GitHubReviewComment): number => {
     if (rootCache.has(comment.id)) {
       return rootCache.get(comment.id) ?? comment.id;
@@ -98,7 +98,7 @@ const groupCommentsIntoThreads = (comments: GitHubReviewComment[]): ReviewThread
     return current.id;
   };
 
-  const threadMap = new Map<number, ReviewThread>();
+  const threadMap: Map<number, ReviewThread> = new Map();
   comments.forEach((comment) => {
     const rootId = getRootId(comment);
     const thread = threadMap.get(rootId);

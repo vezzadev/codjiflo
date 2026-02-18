@@ -6,7 +6,7 @@ import { afterEach, beforeEach, vi } from "vitest";
 vi.mock('../features/diff/components/codemirror/utils/language-registry', () => ({
     detectLanguage: vi.fn((filename: string) => {
         const ext = filename.split('.').pop()?.toLowerCase() ?? '';
-        const extensionToLanguage: Record<string, string> = {
+        const extensionToLanguage: { [key: string]: string } = {
             'ts': 'typescript', 'tsx': 'tsx', 'js': 'javascript', 'jsx': 'jsx',
             'py': 'python', 'json': 'json', 'md': 'markdown', 'css': 'css',
             'html': 'html', 'rs': 'rust', 'go': 'go', 'java': 'java',
@@ -84,7 +84,7 @@ window.ResizeObserver = ResizeObserverMock;
 
 // Mock localStorage
 const localStorageMock = (function () {
-    let store: Record<string, string> = {};
+    let store: { [key: string]: string } = {};
     return {
         getItem: (key: string) => store[key] ?? null,
         setItem: (key: string, value: string) => {

@@ -103,7 +103,7 @@ async function trackPositions(
   spanTrackerService: { trackCommentForward: (artifactId: number, originalSnapshot: number, originalSpan: { startLine: number; endLine: number }, targetSnapshot: number) => Promise<{ startLine: number; endLine: number } | null> },
   updateTrackedPositions: (updates: Map<string, number | null>) => void
 ): Promise<void> {
-  const updates = new Map<string, number | null>();
+  const updates: Map<string, number | null> = new Map();
 
   for (const thread of threads) {
     // Skip if missing required fields (should not happen due to filter above)

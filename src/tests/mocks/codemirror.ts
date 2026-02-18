@@ -176,8 +176,8 @@ export class MockTransaction {
  * Mock EditorState
  */
 export class MockEditorState {
-  private fieldValues = new Map<MockStateField<unknown>, unknown>();
-  private facetValues = new Map<MockFacet<unknown, unknown>, unknown[]>();
+  private fieldValues: Map<MockStateField<unknown>, unknown> = new Map();
+  private facetValues: Map<MockFacet<unknown, unknown>, unknown[]> = new Map();
 
   constructor(
     public readonly doc: MockText,
@@ -297,13 +297,13 @@ export const RangeSet = MockRangeSet;
  * Mock Decoration
  */
 export class MockDecoration {
-  constructor(public readonly spec: Record<string, unknown>) {}
+  constructor(public readonly spec: { [key: string]: unknown }) {}
 
-  static line(spec: { class?: string; attributes?: Record<string, string> }): MockDecoration {
+  static line(spec: { class?: string; attributes?: { [key: string]: string } }): MockDecoration {
     return new MockDecoration({ ...spec, type: 'line' });
   }
 
-  static mark(spec: { class?: string; attributes?: Record<string, string> }): MockDecoration {
+  static mark(spec: { class?: string; attributes?: { [key: string]: string } }): MockDecoration {
     return new MockDecoration({ ...spec, type: 'mark' });
   }
 
@@ -457,7 +457,7 @@ export class MockEditorView {
     }),
   };
 
-  static baseTheme(spec: Record<string, Record<string, string>>): unknown {
+  static baseTheme(spec: { [key: string]: { [key: string]: string } }): unknown {
     return { type: 'theme', spec };
   }
 
@@ -492,7 +492,7 @@ export class MockViewPlugin<T> {
   constructor(
     private _create: (view: MockEditorView) => T,
     private _spec?: {
-      eventHandlers?: Record<string, (event: Event, view: MockEditorView) => boolean>;
+      eventHandlers?: { [key: string]: (event: Event, view: MockEditorView) => boolean };
     }
   ) {
     void this._create;
@@ -502,7 +502,7 @@ export class MockViewPlugin<T> {
   static fromClass<T>(
     cls: new (view: MockEditorView) => T,
     spec?: {
-      eventHandlers?: Record<string, (event: Event, view: MockEditorView) => boolean>;
+      eventHandlers?: { [key: string]: (event: Event, view: MockEditorView) => boolean };
     }
   ): MockViewPlugin<T> {
     return new MockViewPlugin((view) => new cls(view), spec);

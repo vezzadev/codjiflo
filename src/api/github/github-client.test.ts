@@ -47,7 +47,7 @@ describe('GitHubClient', () => {
       // Verify no Authorization header
       const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit] | undefined;
       expect(callArgs).toBeDefined();
-      const callHeaders = callArgs?.[1]?.headers as Record<string, string> | undefined;
+      const callHeaders = callArgs?.[1]?.headers as { [key: string]: string } | undefined;
       expect(callHeaders).toBeDefined();
       expect(callHeaders).not.toHaveProperty('Authorization');
     });

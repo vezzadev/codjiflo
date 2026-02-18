@@ -228,7 +228,7 @@ describe('useDraftComment', () => {
 
   it('sets isSubmitting during submission', async () => {
     let resolvePromise: () => void;
-    const pendingPromise = new Promise<void>((resolve) => {
+    const pendingPromise: Promise<void> = new Promise((resolve) => {
       resolvePromise = resolve;
     });
     mockAddComment.mockReturnValue(pendingPromise);

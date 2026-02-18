@@ -70,7 +70,7 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
 
   // Build lookup from GitHub files for originalIndex and previousFilename
   const githubFileMap = useMemo(() => {
-    const map = new Map<string, { index: number; file: FileChange }>();
+    const map: Map<string, { index: number; file: FileChange }> = new Map();
     for (let i = 0; i < githubFiles.length; i++) {
       const file = githubFiles[i];
       if (file) {
@@ -109,7 +109,7 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
 
     // Iteration mode: use artifact as source of truth
     const iterationFiles: IterationAwareFile[] = [];
-    const processedPaths = new Set<string>();
+    const processedPaths: Set<string> = new Set();
     // Next available index for artifact-only files (after GitHub files)
     let nextArtifactIndex = githubFiles.length;
 

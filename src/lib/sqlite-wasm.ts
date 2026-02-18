@@ -89,7 +89,7 @@ export class SQLiteDatabase {
    * @param params Parameters to bind
    * @returns Array of row objects
    */
-  query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): T[] {
+  query<T = { [key: string]: unknown }>(sql: string, params: unknown[] = []): T[] {
     this.ensureOpen();
 
     const stmt = this.db.prepare(sql);
@@ -175,4 +175,4 @@ export type SQLiteValue = string | number | null | Uint8Array;
 /**
  * Type for a generic SQLite row
  */
-export type SQLiteRow = Record<string, SQLiteValue>;
+export interface SQLiteRow { [key: string]: SQLiteValue }

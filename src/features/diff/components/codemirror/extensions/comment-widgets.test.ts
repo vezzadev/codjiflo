@@ -65,7 +65,7 @@ describe('commentWidgets', () => {
   });
 
   it('creates extension with threads', () => {
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [createMockThread('thread-1', 1)]);
     threadsByLine.set(2, [createMockThread('thread-2', 3)]);
 
@@ -126,7 +126,7 @@ describe('commentWidgets', () => {
   });
 
   it('creates extension with all config options', () => {
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(1, [createMockThread('thread-1', 2)]);
 
     const state = EditorState.create({
@@ -150,7 +150,7 @@ describe('commentWidgets', () => {
 
 describe('setCommentThreads effect', () => {
   it('can be created with threads map', () => {
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [createMockThread('thread-1', 1)]);
 
     const effect = setCommentThreads.of(threadsByLine);
@@ -171,7 +171,7 @@ describe('setCommentThreads effect', () => {
       extensions: [commentWidgets()],
     });
 
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(1, [createMockThread('thread-1', 2)]);
 
     const newState = state.update({
@@ -182,7 +182,7 @@ describe('setCommentThreads effect', () => {
   });
 
   it('handles multiple threads on same line', () => {
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [
       createMockThread('thread-1', 1),
       createMockThread('thread-2', 1),
@@ -312,7 +312,7 @@ describe('multiple effects combined', () => {
       extensions: [commentWidgets()],
     });
 
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [createMockThread('thread-1', 1)]);
 
     const newState = state.update({
@@ -332,7 +332,7 @@ describe('thread with resolved status', () => {
     const thread = createMockThread('thread-1', 1);
     thread.isResolved = true;
 
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [thread]);
 
     const state = EditorState.create({
@@ -365,7 +365,7 @@ describe('thread with multiple comments', () => {
       originalCommitId: 'abc123',
     });
 
-    const threadsByLine = new Map<number, ReviewThread[]>();
+    const threadsByLine: Map<number, ReviewThread[]> = new Map();
     threadsByLine.set(0, [thread]);
 
     const state = EditorState.create({

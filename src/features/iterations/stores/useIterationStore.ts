@@ -38,10 +38,10 @@ function getPrKey(owner: string, repo: string, prNumber: number): string {
  * Returns a new object with proper ordering.
  */
 function updateLRUCache(
-  cache: Record<string, IterationRange>,
+  cache: { [key: string]: IterationRange },
   key: string,
   value: IterationRange
-): Record<string, IterationRange> {
+): { [key: string]: IterationRange } {
   // Build new cache: exclude existing key (if any), add all others, then add current key at end
   const entries = Object.entries(cache).filter(([k]) => k !== key);
 
@@ -68,7 +68,7 @@ interface IterationState {
 
   // Selection (partitioned by PR)
   currentPrKey: string | null;
-  selectedRanges: Record<string, IterationRange>;
+  selectedRanges: { [key: string]: IterationRange };
 
   // Services (not persisted)
   client: IterationClient | null;

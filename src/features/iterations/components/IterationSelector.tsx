@@ -111,7 +111,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
       return { selectedRevisions: new Set<number>(), rangeStart: null, rangeEnd: null };
     }
 
-    const revisions = new Set<number>();
+    const revisions: Set<number> = new Set();
     let start: number | null = null;
     let end: number | null = null;
 

@@ -99,7 +99,7 @@ function createMockContent(
  */
 class MockIterationClient {
   private artifacts: ReviewFileArtifact[] = [];
-  private contentMap = new Map<string, FileContent>(); // key: `${artifactId}-${snapshotIndex}`
+  private contentMap: Map<string, FileContent> = new Map(); // key: `${artifactId}-${snapshotIndex}`
 
   constructor() {
     this.getArtifactsForRange = vi.fn(this.getArtifactsForRange.bind(this));
