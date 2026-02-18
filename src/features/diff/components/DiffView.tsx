@@ -201,27 +201,27 @@ export function DiffView() {
     return <DiffLoadingState />;
   }
 
+  // Collapsed iteration history view (shown regardless of file selection)
+  const activeCollapsedGroup = activeCollapsedGroupId
+    ? iterationCollapsedGroups.find(g => g.forcePushEventId === activeCollapsedGroupId) ?? null
+    : null;
+
+  if (activeCollapsedGroup) {
+    return (
+      <div className="diff-description-view">
+        <div className="diff-header-iterations">
+          <IterationSelector />
+        </div>
+        <CollapsedIterationHistoryView
+          group={activeCollapsedGroup}
+          onInclude={() => toggleCollapsedGroupVisibility(activeCollapsedGroupId!)}
+        />
+      </div>
+    );
+  }
+
   // PR description view
   if (isShowingDescription) {
-    const activeCollapsedGroup = activeCollapsedGroupId
-      ? iterationCollapsedGroups.find(g => g.forcePushEventId === activeCollapsedGroupId) ?? null
-      : null;
-
-    if (activeCollapsedGroup && activeCollapsedGroupId) {
-      const groupId = activeCollapsedGroupId;
-      return (
-        <div className="diff-description-view">
-          <div className="diff-header-iterations">
-            <IterationSelector />
-          </div>
-          <CollapsedIterationHistoryView
-            group={activeCollapsedGroup}
-            onInclude={() => toggleCollapsedGroupVisibility(groupId)}
-          />
-        </div>
-      );
-    }
-
     return (
       <div className="diff-description-view">
         <div className="diff-header-iterations">

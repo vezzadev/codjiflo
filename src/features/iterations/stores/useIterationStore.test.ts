@@ -722,6 +722,14 @@ describe('useIterationStore', () => {
         toSnapshot: 5,
       });
     });
+
+    it('should clear activeCollapsedGroupId when selecting a preset', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-100');
+
+      useIterationStore.getState().selectPreset('full');
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBeNull();
+    });
   });
 
   describe('reset', () => {

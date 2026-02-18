@@ -386,6 +386,7 @@ export const useIterationStore = create<IterationState>()(
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, newRange),
+          activeCollapsedGroupId: null,
         });
       },
 
