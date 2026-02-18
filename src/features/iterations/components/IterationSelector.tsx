@@ -36,6 +36,7 @@ interface IterationTabProps {
   isRangeStart: boolean;
   isRangeEnd: boolean;
   isDiscarded?: boolean;
+  isUnavailable?: boolean;
   onMouseDown: (revision: number) => void;
   onMouseEnter: (revision: number) => void;
   onSelect: (revision: number) => void;
@@ -47,7 +48,8 @@ function IterationTab({
   isInRange,
   isRangeStart,
   isRangeEnd,
-  isDiscarded,
+  isDiscarded = false,
+  isUnavailable = false,
   onMouseDown,
   onMouseEnter,
   onSelect,
@@ -59,6 +61,7 @@ function IterationTab({
     isRangeStart && 'range-start',
     isRangeEnd && 'range-end',
     isDiscarded && 'discarded',
+    isUnavailable && 'unavailable',
   ]
     .filter(Boolean)
     .join(' ');
@@ -68,7 +71,7 @@ function IterationTab({
     day: 'numeric',
   });
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = isUnavailable ? undefined : (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSelect(iteration.revision);
@@ -79,11 +82,12 @@ function IterationTab({
     <button
       type="button"
       className={classes}
-      onMouseDown={() => onMouseDown(iteration.revision)}
-      onMouseEnter={() => onMouseEnter(iteration.revision)}
+      onMouseDown={isUnavailable ? undefined : () => onMouseDown(iteration.revision)}
+      onMouseEnter={isUnavailable ? undefined : () => onMouseEnter(iteration.revision)}
       onKeyDown={handleKeyDown}
       title={`Iteration ${iteration.revision} (${date})`}
       aria-pressed={isSelected || isInRange}
+      aria-disabled={isUnavailable || undefined}
       data-testid={`iteration-tab-${iteration.revision}`}
     >
       <span className="iteration-tab-number" aria-hidden="true">{iteration.revision}</span>
@@ -257,7 +261,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
   // Build display items: live iterations as tabs, collapsed groups as single tabs
   const displayItems = useMemo(() => {
-    const items: (| { type: 'iteration'; iteration: Iteration }
+    const items: (| { type: 'iteration'; iteration: Iteration; isUnavailable?: boolean }
       | { type: 'collapsed-group'; group: CollapsedIterationGroup })[] = [];
 
     const processedGroups: Set<string> = new Set();
@@ -271,7 +275,9 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
         // When group is expanded, show individual iteration tabs instead of collapsed tab
         if (group?.visibility === 'expanded') {
-          items.push({ type: 'iteration', iteration });
+          const commit = group.commits.find(c => c.sha === iteration.headSha);
+          const isUnavailable = commit?.status === 'unavailable';
+          items.push({ type: 'iteration', iteration, isUnavailable });
           continue;
         }
 
@@ -353,7 +359,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
             );
           }
 
-          const { iteration } = item;
+          const { iteration, isUnavailable } = item;
 
           // During drag, show preview highlighting
           const inPreviewRange =
@@ -386,6 +392,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               isRangeStart={isRangeStartTab}
               isRangeEnd={isRangeEndTab}
               isDiscarded={iteration.status === 'collapsed'}
+              isUnavailable={isUnavailable ?? false}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onSelect={handleKeyboardSelect}

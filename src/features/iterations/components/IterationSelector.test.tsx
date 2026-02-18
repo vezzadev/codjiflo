@@ -732,6 +732,81 @@ describe('IterationSelector', () => {
       expect(mockSelectRange).toHaveBeenCalledWith(0, 1);
     });
 
+    it('unavailable expanded iteration gets unavailable class, aria-disabled, and is non-interactive', () => {
+      const { mockSelectRange } = setupMockState({
+        iterations: [
+          createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(2),
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [{
+            sha: 'head-sha-1',
+            message: 'GCd commit',
+            author: 'testuser',
+            date: '2024-01-01T10:00:00Z',
+            status: 'unavailable',
+          }],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
+        mode: 'stateless',
+      });
+
+      render(<IterationSelector />);
+
+      const tab1 = screen.getByTestId('iteration-tab-1');
+
+      // Should have both discarded and unavailable classes
+      expect(tab1).toHaveClass('discarded');
+      expect(tab1).toHaveClass('unavailable');
+
+      // Should have aria-disabled
+      expect(tab1).toHaveAttribute('aria-disabled', 'true');
+
+      // Mouse events should not trigger selectRange
+      fireEvent.mouseDown(tab1);
+      fireEvent.mouseUp(screen.getByTestId('iteration-selector'));
+      expect(mockSelectRange).not.toHaveBeenCalled();
+
+      // Keyboard events should not trigger selectRange
+      fireEvent.keyDown(tab1, { key: 'Enter' });
+      expect(mockSelectRange).not.toHaveBeenCalled();
+    });
+
+    it('available expanded iteration does not get unavailable class', () => {
+      setupMockState({
+        iterations: [
+          createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(2),
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [{
+            sha: 'head-sha-1',
+            message: 'Available commit',
+            author: 'testuser',
+            date: '2024-01-01T10:00:00Z',
+            status: 'available',
+          }],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
+        mode: 'stateless',
+      });
+
+      render(<IterationSelector />);
+
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      expect(tab1).toHaveClass('discarded');
+      expect(tab1).not.toHaveClass('unavailable');
+      expect(tab1).not.toHaveAttribute('aria-disabled');
+    });
+
     it('drag across live tabs skips collapsed group (no range includes collapsed)', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [
