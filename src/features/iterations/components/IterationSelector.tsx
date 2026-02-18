@@ -94,24 +94,26 @@ function IterationTab({
 
 interface CollapsedGroupTabProps {
   group: CollapsedIterationGroup;
+  onClick: (groupId: string) => void;
 }
 
-function CollapsedGroupTab({ group }: CollapsedGroupTabProps) {
+function CollapsedGroupTab({ group, onClick }: CollapsedGroupTabProps) {
   const count = group.discardedRevisions.length;
   const tooltip = group.unknownCount
     ? 'Unknown iterations discarded'
     : `${String(count)} iteration${count === 1 ? '' : 's'} discarded`;
 
   return (
-    <div
+    <button
+      type="button"
       className="iteration-tab collapsed"
       title={tooltip}
       data-testid={`collapsed-group-${group.forcePushEventId}`}
       aria-label={tooltip}
-      role="img"
+      onClick={() => onClick(group.forcePushEventId)}
     >
       <Eraser size={14} aria-hidden="true" />
-    </div>
+    </button>
   );
 }
 
@@ -124,7 +126,7 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, collapsedGroups, selectRange, isLoading, artifactReference } = useIterationStore();
+  const { iterations, collapsedGroups, selectRange, selectCollapsedGroup, isLoading, artifactReference } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -262,10 +264,17 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
     for (const iteration of iterations) {
       if (iteration.status === 'collapsed' && iteration.collapsedGroupId) {
+        const group = collapsedGroupById.get(iteration.collapsedGroupId);
+
+        // When group is expanded, show individual iteration tabs instead of collapsed tab
+        if (group?.visibility === 'expanded') {
+          items.push({ type: 'iteration', iteration });
+          continue;
+        }
+
         // Render collapsed group tab (once per group)
         if (!processedGroups.has(iteration.collapsedGroupId)) {
           processedGroups.add(iteration.collapsedGroupId);
-          const group = collapsedGroupById.get(iteration.collapsedGroupId);
           if (group) {
             items.push({ type: 'collapsed-group', group });
           }
@@ -336,6 +345,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               <CollapsedGroupTab
                 key={`collapsed-${item.group.forcePushEventId}`}
                 group={item.group}
+                onClick={selectCollapsedGroup}
               />
             );
           }

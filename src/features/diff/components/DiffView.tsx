@@ -32,7 +32,7 @@ import { useCommentsStore, useCommentTracking, type ReviewThread } from '@/featu
 import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
-import { IterationSelector } from '@/features/iterations';
+import { IterationSelector, CollapsedIterationHistoryView, useIterationStore } from '@/features/iterations';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -121,6 +121,8 @@ export function DiffView() {
     return map;
   }, [pipeline.threadsByLineAndSide]);
 
+  const { activeCollapsedGroupId, collapsedGroups: iterationCollapsedGroups, toggleCollapsedGroupVisibility } = useIterationStore();
+
   const isShowingDescription = selectedFileIndex === PR_DESCRIPTION_INDEX;
   const selectedFile = files[selectedFileIndex];
 
@@ -201,6 +203,25 @@ export function DiffView() {
 
   // PR description view
   if (isShowingDescription) {
+    const activeCollapsedGroup = activeCollapsedGroupId
+      ? iterationCollapsedGroups.find(g => g.forcePushEventId === activeCollapsedGroupId) ?? null
+      : null;
+
+    if (activeCollapsedGroup && activeCollapsedGroupId) {
+      const groupId = activeCollapsedGroupId;
+      return (
+        <div className="diff-description-view">
+          <div className="diff-header-iterations">
+            <IterationSelector />
+          </div>
+          <CollapsedIterationHistoryView
+            group={activeCollapsedGroup}
+            onInclude={() => toggleCollapsedGroupVisibility(groupId)}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="diff-description-view">
         <div className="diff-header-iterations">

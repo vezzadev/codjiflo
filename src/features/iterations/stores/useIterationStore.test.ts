@@ -123,6 +123,7 @@ describe('useIterationStore', () => {
       artifactReference: null,
       currentPrKey: null,
       selectedRanges: {},
+      activeCollapsedGroupId: null,
       client: null,
       spanTrackerService: null,
       isLoading: false,
@@ -755,8 +756,124 @@ describe('useIterationStore', () => {
       expect(state.isLoading).toBe(false);
       expect(state.mode).toBe('stateful');
       expect(state.collapsedGroups).toHaveLength(0);
+      expect(state.activeCollapsedGroupId).toBeNull();
       expect(mockClose).toHaveBeenCalled();
       expect(mockClearCache).toHaveBeenCalled();
+    });
+  });
+
+  describe('selectCollapsedGroup', () => {
+    it('should set activeCollapsedGroupId', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-100');
+    });
+
+    it('should replace previous activeCollapsedGroupId', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+      useIterationStore.getState().selectCollapsedGroup('group-200');
+
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-200');
+    });
+  });
+
+  describe('clearCollapsedGroup', () => {
+    it('should reset activeCollapsedGroupId to null', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-100');
+
+      useIterationStore.getState().clearCollapsedGroup();
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBeNull();
+    });
+  });
+
+  describe('selectRange clears activeCollapsedGroupId', () => {
+    beforeEach(async () => {
+      const mockIterations = createMockIterations(3);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+    });
+
+    it('should clear activeCollapsedGroupId when selecting a range', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-100');
+
+      useIterationStore.getState().selectRange(0, 5);
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBeNull();
+    });
+  });
+
+  describe('reset clears activeCollapsedGroupId', () => {
+    it('should clear activeCollapsedGroupId on reset', () => {
+      useIterationStore.getState().selectCollapsedGroup('group-100');
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBe('group-100');
+
+      useIterationStore.getState().reset();
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBeNull();
+    });
+  });
+
+  describe('toggleCollapsedGroupVisibility', () => {
+    it('should toggle visibility from collapsed to expanded', () => {
+      useIterationStore.setState({
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'collapsed',
+        }],
+      });
+
+      useIterationStore.getState().toggleCollapsedGroupVisibility('100');
+
+      const group = useIterationStore.getState().collapsedGroups[0];
+      expect(group).toBeDefined();
+      expect(group?.visibility).toBe('expanded');
+    });
+
+    it('should toggle visibility from expanded to collapsed', () => {
+      useIterationStore.setState({
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+      });
+
+      useIterationStore.getState().toggleCollapsedGroupVisibility('100');
+
+      const group = useIterationStore.getState().collapsedGroups[0];
+      expect(group).toBeDefined();
+      expect(group?.visibility).toBe('collapsed');
+    });
+
+    it('should clear activeCollapsedGroupId when toggling', () => {
+      useIterationStore.setState({
+        activeCollapsedGroupId: '100',
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'collapsed',
+        }],
+      });
+
+      useIterationStore.getState().toggleCollapsedGroupVisibility('100');
+
+      expect(useIterationStore.getState().activeCollapsedGroupId).toBeNull();
     });
   });
 

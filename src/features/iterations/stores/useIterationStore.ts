@@ -74,6 +74,9 @@ interface IterationState {
   currentPrKey: string | null;
   selectedRanges: { [key: string]: IterationRange };
 
+  // Collapsed group history view
+  activeCollapsedGroupId: string | null;
+
   // Services (not persisted)
   client: IterationClient | null;
   spanTrackerService: SpanTrackerService | null;
@@ -90,6 +93,9 @@ interface IterationState {
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
+  selectCollapsedGroup: (groupId: string) => void;
+  clearCollapsedGroup: () => void;
+  toggleCollapsedGroupVisibility: (groupId: string) => void;
   getSpanTrackerService: () => SpanTrackerService | null;
   reset: () => void;
 }
@@ -113,6 +119,7 @@ const initialState = {
   artifactReference: null,
   currentPrKey: null,
   selectedRanges: {},
+  activeCollapsedGroupId: null,
   client: null,
   spanTrackerService: null,
   isLoading: false,
@@ -313,6 +320,7 @@ export const useIterationStore = create<IterationState>()(
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, { fromSnapshot, toSnapshot }),
+          activeCollapsedGroupId: null,
         });
       },
 
@@ -378,6 +386,26 @@ export const useIterationStore = create<IterationState>()(
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, newRange),
+        });
+      },
+
+      selectCollapsedGroup: (groupId: string) => {
+        set({ activeCollapsedGroupId: groupId });
+      },
+
+      clearCollapsedGroup: () => {
+        set({ activeCollapsedGroupId: null });
+      },
+
+      toggleCollapsedGroupVisibility: (groupId: string) => {
+        const { collapsedGroups } = get();
+        set({
+          collapsedGroups: collapsedGroups.map(g =>
+            g.forcePushEventId === groupId
+              ? { ...g, visibility: g.visibility === 'collapsed' ? 'expanded' as const : 'collapsed' as const }
+              : g
+          ),
+          activeCollapsedGroupId: null,
         });
       },
 
