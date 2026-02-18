@@ -146,7 +146,7 @@ describe('TimelineLoader', () => {
       expect(at(result.iterations, 0).author).toBe('John Doe');
     });
 
-    it('preserves commit message in iteration data correctly', async () => {
+    it('parses commit date as createdAt', async () => {
       mockFetch
         .mockResolvedValueOnce([
           makeCommit('aaa111', '2024-01-01T10:00:00Z', 'dev', 'fix: critical bug'),
@@ -423,8 +423,8 @@ describe('TimelineLoader', () => {
       await loader.load();
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(mockFetch).toHaveBeenCalledWith('/repos/my-org/my-repo/pulls/42/commits');
-      expect(mockFetch).toHaveBeenCalledWith('/repos/my-org/my-repo/issues/42/timeline');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/my-org/my-repo/pulls/42/commits?per_page=100&page=1');
+      expect(mockFetch).toHaveBeenCalledWith('/repos/my-org/my-repo/issues/42/timeline?per_page=100&page=1');
     });
 
     it('calls compare API with correct afterSha...beforeSha format', async () => {
@@ -455,8 +455,8 @@ describe('TimelineLoader', () => {
 
       // Verify all 3 calls use the correct owner/repo
       const calls = mockFetch.mock.calls.map(c => c[0] as string);
-      expect(calls[0]).toBe('/repos/special-org/special-repo/pulls/999/commits');
-      expect(calls[1]).toBe('/repos/special-org/special-repo/issues/999/timeline');
+      expect(calls[0]).toBe('/repos/special-org/special-repo/pulls/999/commits?per_page=100&page=1');
+      expect(calls[1]).toBe('/repos/special-org/special-repo/issues/999/timeline?per_page=100&page=1');
       expect(calls[2]).toBe('/repos/special-org/special-repo/compare/a...b');
     });
   });

@@ -607,9 +607,9 @@ export async function setupStatelessIterationMocks(
 ): Promise<void> {
   if (!isMockMode()) return;
 
-  // Mock PR commits endpoint
+  // Mock PR commits endpoint (with pagination query params)
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits`,
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits**`,
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -628,9 +628,9 @@ export async function setupStatelessIterationMocks(
     }
   );
 
-  // Mock timeline endpoint
+  // Mock timeline endpoint (with pagination query params)
   await page.route(
-    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline`,
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline**`,
     async (route) => {
       await route.fulfill({
         status: 200,

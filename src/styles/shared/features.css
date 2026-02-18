@@ -615,7 +615,6 @@
   color: var(--watermark-text);
   opacity: 0.6;
   cursor: default;
-  pointer-events: none;
 }
 
 .iteration-tab.collapsed svg {

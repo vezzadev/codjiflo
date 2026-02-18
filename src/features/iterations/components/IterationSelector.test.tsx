@@ -612,7 +612,7 @@ describe('IterationSelector', () => {
       expect(screen.getByTestId('collapsed-group-100')).toHaveAttribute('title', '1 iteration discarded');
     });
 
-    it('collapsed group tab has role="presentation" for accessibility', () => {
+    it('collapsed group tab has role="img" for accessibility', () => {
       setupMockState({
         iterations: [
           createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
@@ -632,7 +632,7 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       const collapsedTab = screen.getByTestId('collapsed-group-100');
-      expect(collapsedTab).toHaveAttribute('role', 'presentation');
+      expect(collapsedTab).toHaveAttribute('role', 'img');
       expect(collapsedTab).toHaveAttribute('aria-label');
       // Should NOT be a button element (non-interactive)
       expect(collapsedTab.tagName).toBe('DIV');

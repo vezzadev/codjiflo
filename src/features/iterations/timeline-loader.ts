@@ -79,14 +79,36 @@ export class TimelineLoader {
   // API Fetchers
   // --------------------------------------------------------------------------
 
+  /**
+   * Fetch all pages for a paginated GitHub REST endpoint returning arrays.
+   * Uses per_page=100 and stops when a partial or empty page is returned.
+   */
+  private async fetchAllPages<T>(basePath: string): Promise<T[]> {
+    const perPage = 100;
+    const allItems: T[] = [];
+
+    for (let page = 1; ; page++) {
+      const pageItems = await githubClient.fetch<T[]>(
+        `${basePath}?per_page=${String(perPage)}&page=${String(page)}`
+      );
+      allItems.push(...pageItems);
+
+      if (pageItems.length < perPage) {
+        break;
+      }
+    }
+
+    return allItems;
+  }
+
   private async fetchCommits(): Promise<PRCommit[]> {
-    return githubClient.fetch<PRCommit[]>(
+    return this.fetchAllPages<PRCommit>(
       `/repos/${this.owner}/${this.repo}/pulls/${String(this.prNumber)}/commits`
     );
   }
 
   private async fetchTimeline(): Promise<TimelineEvent[]> {
-    return githubClient.fetch<TimelineEvent[]>(
+    return this.fetchAllPages<TimelineEvent>(
       `/repos/${this.owner}/${this.repo}/issues/${String(this.prNumber)}/timeline`
     );
   }

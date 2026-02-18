@@ -108,7 +108,7 @@ function CollapsedGroupTab({ group }: CollapsedGroupTabProps) {
       title={tooltip}
       data-testid={`collapsed-group-${group.forcePushEventId}`}
       aria-label={tooltip}
-      role="presentation"
+      role="img"
     >
       <Eraser size={14} aria-hidden="true" />
     </div>
@@ -256,15 +256,16 @@ export function IterationSelector({ className }: IterationSelectorProps) {
       | { type: 'collapsed-group'; group: CollapsedIterationGroup })[] = [];
 
     const processedGroups: Set<string> = new Set();
+    const collapsedGroupById = new Map(
+      collapsedGroups.map(group => [group.forcePushEventId, group] as const)
+    );
 
     for (const iteration of iterations) {
       if (iteration.status === 'collapsed' && iteration.collapsedGroupId) {
         // Render collapsed group tab (once per group)
         if (!processedGroups.has(iteration.collapsedGroupId)) {
           processedGroups.add(iteration.collapsedGroupId);
-          const group = (collapsedGroups).find(
-            g => g.forcePushEventId === iteration.collapsedGroupId
-          );
+          const group = collapsedGroupById.get(iteration.collapsedGroupId);
           if (group) {
             items.push({ type: 'collapsed-group', group });
           }
