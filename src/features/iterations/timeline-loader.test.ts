@@ -14,7 +14,9 @@ import { TimelineLoader } from './timeline-loader';
 import { GitHubAPIError } from '@/api/github/github-client';
 
 // Mock the GitHub client
-const mockFetch = vi.fn();
+const { mockFetch } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
+}));
 vi.mock('@/api/github/github-client', async () => {
   const actual = await vi.importActual<typeof import('@/api/github/github-client')>('@/api/github/github-client');
   return {
@@ -26,6 +28,13 @@ vi.mock('@/api/github/github-client', async () => {
 // ============================================================================
 // Test Helpers
 // ============================================================================
+
+/** Safe array accessor that throws on undefined (replaces non-null assertion in tests) */
+function at<T>(arr: T[], index: number): T {
+  const item = arr[index];
+  if (item === undefined) throw new Error(`Expected item at index ${index} but array has length ${String(arr.length)}`);
+  return item;
+}
 
 function makeCommit(sha: string, date: string, author = 'testuser', message = `commit ${sha}`) {
   return {
@@ -48,7 +57,7 @@ function makeForcePushEvent(id: number, beforeSha: string, afterSha: string, cre
   };
 }
 
-function makeCompareResult(commits: Array<{ sha: string; date: string; author?: string; message?: string }>) {
+function makeCompareResult(commits: { sha: string; date: string; author?: string; message?: string }[]) {
   return {
     commits: commits.map(c => makeCommit(c.sha, c.date, c.author, c.message)),
   };
@@ -99,9 +108,9 @@ describe('TimelineLoader', () => {
       });
 
       // IDs should be negative (stateless convention)
-      expect(result.iterations[0]!.id).toBeLessThan(0);
-      expect(result.iterations[1]!.id).toBeLessThan(0);
-      expect(result.iterations[2]!.id).toBeLessThan(0);
+      expect(at(result.iterations, 0).id).toBeLessThan(0);
+      expect(at(result.iterations, 1).id).toBeLessThan(0);
+      expect(at(result.iterations, 2).id).toBeLessThan(0);
 
       // IDs must be unique
       const ids = result.iterations.map(i => i.id);
@@ -134,7 +143,7 @@ describe('TimelineLoader', () => {
       const loader = new TimelineLoader('owner', 'repo', 123, 'base-sha');
       const result = await loader.load();
 
-      expect(result.iterations[0]!.author).toBe('John Doe');
+      expect(at(result.iterations, 0).author).toBe('John Doe');
     });
 
     it('preserves commit message in iteration data correctly', async () => {
@@ -148,7 +157,7 @@ describe('TimelineLoader', () => {
       const result = await loader.load();
 
       // Iteration should have valid createdAt date
-      expect(result.iterations[0]!.createdAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+      expect(at(result.iterations, 0).createdAt).toEqual(new Date('2024-01-01T10:00:00Z'));
     });
 
     it('sorts iterations chronologically even if commits come out of order', async () => {
@@ -165,9 +174,9 @@ describe('TimelineLoader', () => {
       const result = await loader.load();
 
       // Must be sorted chronologically
-      expect(result.iterations[0]!.headSha).toBe('earlier');
-      expect(result.iterations[1]!.headSha).toBe('middle');
-      expect(result.iterations[2]!.headSha).toBe('later');
+      expect(at(result.iterations, 0).headSha).toBe('earlier');
+      expect(at(result.iterations, 1).headSha).toBe('middle');
+      expect(at(result.iterations, 2).headSha).toBe('later');
 
       // Revisions must be sequential after sort
       expect(result.iterations.map(i => i.revision)).toEqual([1, 2, 3]);
@@ -198,9 +207,9 @@ describe('TimelineLoader', () => {
       const result = await loader.load();
 
       expect(result.iterations).toHaveLength(1);
-      expect(result.iterations[0]!.revision).toBe(1);
-      expect(result.iterations[0]!.status).toBe('live');
-      expect(result.iterations[0]!.collapsedGroupId).toBeUndefined();
+      expect(at(result.iterations, 0).revision).toBe(1);
+      expect(at(result.iterations, 0).status).toBe('live');
+      expect(at(result.iterations, 0).collapsedGroupId).toBeUndefined();
     });
   });
 
@@ -231,16 +240,16 @@ describe('TimelineLoader', () => {
       // Collapsed iterations (ordered chronologically, so they come first)
       const collapsed = result.iterations.filter(i => i.status === 'collapsed');
       expect(collapsed).toHaveLength(2);
-      expect(collapsed[0]!.headSha).toBe('disc-a');
-      expect(collapsed[0]!.collapsedGroupId).toBe('1001');
-      expect(collapsed[1]!.headSha).toBe('disc-b');
-      expect(collapsed[1]!.collapsedGroupId).toBe('1001');
+      expect(at(collapsed, 0).headSha).toBe('disc-a');
+      expect(at(collapsed, 0).collapsedGroupId).toBe('1001');
+      expect(at(collapsed, 1).headSha).toBe('disc-b');
+      expect(at(collapsed, 1).collapsedGroupId).toBe('1001');
 
       // Live iteration
       const live = result.iterations.filter(i => i.status === 'live');
       expect(live).toHaveLength(1);
-      expect(live[0]!.headSha).toBe('new111');
-      expect(live[0]!.collapsedGroupId).toBeUndefined();
+      expect(at(live, 0).headSha).toBe('new111');
+      expect(at(live, 0).collapsedGroupId).toBeUndefined();
 
       // Sequential revision numbers across all
       expect(result.iterations.map(i => i.revision)).toEqual([1, 2, 3]);
@@ -253,11 +262,12 @@ describe('TimelineLoader', () => {
         reason: 'force_push',
         visibility: 'collapsed',
       });
-      expect(result.collapsedGroups[0]!.commits).toHaveLength(2);
-      expect(result.collapsedGroups[0]!.commits[0]!.status).toBe('available');
-      expect(result.collapsedGroups[0]!.commits[0]!.sha).toBe('disc-a');
-      expect(result.collapsedGroups[0]!.commits[0]!.message).toBe('discarded 1');
-      expect(result.collapsedGroups[0]!.commits[1]!.sha).toBe('disc-b');
+      const group0 = at(result.collapsedGroups, 0);
+      expect(group0.commits).toHaveLength(2);
+      expect(at(group0.commits, 0).status).toBe('available');
+      expect(at(group0.commits, 0).sha).toBe('disc-a');
+      expect(at(group0.commits, 0).message).toBe('discarded 1');
+      expect(at(group0.commits, 1).sha).toBe('disc-b');
     });
 
     it('collapsed group unknownCount is NOT set for discoverable commits', async () => {
@@ -271,7 +281,7 @@ describe('TimelineLoader', () => {
       const loader = new TimelineLoader('o', 'r', 1, 'base');
       const result = await loader.load();
 
-      expect(result.collapsedGroups[0]!.unknownCount).toBeUndefined();
+      expect(at(result.collapsedGroups, 0).unknownCount).toBeUndefined();
     });
   });
 
@@ -293,8 +303,8 @@ describe('TimelineLoader', () => {
 
       // Only the live commit, no collapsed iterations (unknown count)
       expect(result.iterations).toHaveLength(1);
-      expect(result.iterations[0]!.status).toBe('live');
-      expect(result.iterations[0]!.revision).toBe(1);
+      expect(at(result.iterations, 0).status).toBe('live');
+      expect(at(result.iterations, 0).revision).toBe(1);
 
       // Collapsed group with unknownCount flag
       expect(result.collapsedGroups).toHaveLength(1);
@@ -320,9 +330,9 @@ describe('TimelineLoader', () => {
       const loader = new TimelineLoader('owner', 'repo', 123, 'base-sha');
       const result = await loader.load();
 
-      expect(result.collapsedGroups[0]!.unknownCount).toBe(true);
-      expect(result.collapsedGroups[0]!.commits).toHaveLength(0);
-      expect(result.collapsedGroups[0]!.discardedRevisions).toHaveLength(0);
+      expect(at(result.collapsedGroups, 0).unknownCount).toBe(true);
+      expect(at(result.collapsedGroups, 0).commits).toHaveLength(0);
+      expect(at(result.collapsedGroups, 0).discardedRevisions).toHaveLength(0);
     });
   });
 
@@ -356,9 +366,9 @@ describe('TimelineLoader', () => {
 
       // 2 collapsed groups (one with commits, one unknown)
       expect(result.collapsedGroups).toHaveLength(2);
-      expect(result.collapsedGroups[0]!.commits).toHaveLength(1);
-      expect(result.collapsedGroups[0]!.unknownCount).toBeUndefined();
-      expect(result.collapsedGroups[1]!.unknownCount).toBe(true);
+      expect(at(result.collapsedGroups, 0).commits).toHaveLength(1);
+      expect(at(result.collapsedGroups, 0).unknownCount).toBeUndefined();
+      expect(at(result.collapsedGroups, 1).unknownCount).toBe(true);
 
       // All iterations must have sequential revisions
       expect(result.iterations.map(i => i.revision)).toEqual([1, 2, 3]);
@@ -390,16 +400,16 @@ describe('TimelineLoader', () => {
 
       // Chronological order: early-disc (Jan 1), later-disc (Jan 5), latest (Jan 10)
       expect(result.iterations).toHaveLength(3);
-      expect(result.iterations[0]!.headSha).toBe('early-disc');
-      expect(result.iterations[0]!.status).toBe('collapsed');
-      expect(result.iterations[1]!.headSha).toBe('later-disc');
-      expect(result.iterations[1]!.status).toBe('collapsed');
-      expect(result.iterations[2]!.headSha).toBe('latest');
-      expect(result.iterations[2]!.status).toBe('live');
+      expect(at(result.iterations, 0).headSha).toBe('early-disc');
+      expect(at(result.iterations, 0).status).toBe('collapsed');
+      expect(at(result.iterations, 1).headSha).toBe('later-disc');
+      expect(at(result.iterations, 1).status).toBe('collapsed');
+      expect(at(result.iterations, 2).headSha).toBe('latest');
+      expect(at(result.iterations, 2).status).toBe('live');
 
       // Each collapsed group should reference correct revisions
-      expect(result.collapsedGroups[0]!.discardedRevisions).toEqual([1]);
-      expect(result.collapsedGroups[1]!.discardedRevisions).toEqual([2]);
+      expect(at(result.collapsedGroups, 0).discardedRevisions).toEqual([1]);
+      expect(at(result.collapsedGroups, 1).discardedRevisions).toEqual([2]);
     });
   });
 
@@ -470,7 +480,7 @@ describe('TimelineLoader', () => {
       expect(mockFetch).toHaveBeenCalledTimes(2); // only commits + timeline
       expect(result.collapsedGroups).toHaveLength(0);
       expect(result.iterations).toHaveLength(1);
-      expect(result.iterations[0]!.status).toBe('live');
+      expect(at(result.iterations, 0).status).toBe('live');
     });
 
     it('ignores force-push events missing before_commit or after_commit', async () => {
@@ -571,14 +581,14 @@ describe('TimelineLoader', () => {
 
       // Should have 1 live iteration
       expect(result.iterations).toHaveLength(1);
-      expect(result.iterations[0]!.status).toBe('live');
-      expect(result.iterations[0]!.revision).toBe(1);
+      expect(at(result.iterations, 0).status).toBe('live');
+      expect(at(result.iterations, 0).revision).toBe(1);
 
       // Collapsed group exists but with no discarded revisions
       expect(result.collapsedGroups).toHaveLength(1);
-      expect(result.collapsedGroups[0]!.discardedRevisions).toHaveLength(0);
-      expect(result.collapsedGroups[0]!.commits).toHaveLength(0);
-      expect(result.collapsedGroups[0]!.unknownCount).toBeUndefined();
+      expect(at(result.collapsedGroups, 0).discardedRevisions).toHaveLength(0);
+      expect(at(result.collapsedGroups, 0).commits).toHaveLength(0);
+      expect(at(result.collapsedGroups, 0).unknownCount).toBeUndefined();
     });
 
     it('all live iterations have no collapsedGroupId', async () => {
@@ -645,12 +655,12 @@ describe('TimelineLoader', () => {
       const loader = new TimelineLoader('o', 'r', 1, 'base');
       const result = await loader.load();
 
-      expect(typeof result.collapsedGroups[0]!.forcePushEventId).toBe('string');
-      expect(result.collapsedGroups[0]!.forcePushEventId).toBe('42');
+      expect(typeof at(result.collapsedGroups, 0).forcePushEventId).toBe('string');
+      expect(at(result.collapsedGroups, 0).forcePushEventId).toBe('42');
 
       // And the iteration's collapsedGroupId matches
       const collapsed = result.iterations.filter(i => i.status === 'collapsed');
-      expect(collapsed[0]!.collapsedGroupId).toBe('42');
+      expect(at(collapsed, 0).collapsedGroupId).toBe('42');
     });
   });
 });
