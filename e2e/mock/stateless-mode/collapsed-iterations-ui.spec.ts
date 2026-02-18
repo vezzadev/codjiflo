@@ -330,7 +330,7 @@ test.describe("Collapsed Iterations UI", () => {
     );
 
     // Should NOT have any individual commit rows (there are none to show)
-    const commitRows = page.locator('[data-testid^="collapsed-history-commit-"]');
+    const commitRows = page.getByTestId(/^collapsed-history-commit-/);
     await expect(commitRows).toHaveCount(0);
   });
 

@@ -206,7 +206,8 @@ export function DiffView() {
     ? iterationCollapsedGroups.find(g => g.forcePushEventId === activeCollapsedGroupId) ?? null
     : null;
 
-  if (activeCollapsedGroup) {
+  if (activeCollapsedGroup && activeCollapsedGroupId) {
+    const groupId = activeCollapsedGroupId;
     return (
       <div className="diff-description-view">
         <div className="diff-header-iterations">
@@ -214,7 +215,7 @@ export function DiffView() {
         </div>
         <CollapsedIterationHistoryView
           group={activeCollapsedGroup}
-          onInclude={() => toggleCollapsedGroupVisibility(activeCollapsedGroupId!)}
+          onInclude={() => toggleCollapsedGroupVisibility(groupId)}
         />
       </div>
     );

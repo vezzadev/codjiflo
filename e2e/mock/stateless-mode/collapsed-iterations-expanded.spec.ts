@@ -338,7 +338,7 @@ test.describe("Collapsed Iterations Expanded View", () => {
     // Inject 'unavailable' status on the second discarded commit via store mutation
     await page.evaluate(() => {
       // Access the Zustand store's internal state
-      const storeState = (window as Record<string, unknown>).__ITERATION_STORE__;
+      const storeState = (window as unknown as { [key: string]: unknown }).__ITERATION_STORE__;
       if (storeState) {
         // Direct store access — fallback below if not exposed
         return;
@@ -376,8 +376,8 @@ test.describe("Collapsed Iterations Expanded View", () => {
       // to use the store's persist key to check if the state can be modified.
 
       // Find the iteration store in Zustand's internal registry
-      const stores = (window as Record<string, unknown>).__ZUSTAND_DEVTOOLS_STORES__ as
-        | Map<string, { getState: () => Record<string, unknown>; setState: (s: Record<string, unknown>) => void }>
+      const stores = (window as unknown as { [key: string]: unknown }).__ZUSTAND_DEVTOOLS_STORES__ as
+        | Map<string, { getState: () => { [key: string]: unknown }; setState: (s: { [key: string]: unknown }) => void }>
         | undefined;
 
       if (!stores) {
