@@ -363,6 +363,31 @@ export async function setupIterationMocks(
       });
     }
   );
+
+  // Mock stateless iteration endpoints (timeline + commits) with empty responses.
+  // Without these, loadIterations' stateless fallback leaks requests to the real
+  // GitHub API, which returns 401 when using a mock PAT token.
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline**`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    }
+  );
+
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits**`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    }
+  );
 }
 
 /**
