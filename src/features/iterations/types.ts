@@ -178,6 +178,9 @@ export interface IterationState {
   /** All iterations loaded from artifact */
   iterations: Iteration[];
 
+  /** Collapsed iteration groups (stateless mode only) */
+  collapsedGroups: CollapsedIterationGroup[];
+
   /** Current PR key for lookup in selectedRanges */
   currentPrKey: string | null;
 
