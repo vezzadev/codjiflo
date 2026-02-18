@@ -94,6 +94,7 @@ interface IterationState {
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
   selectCollapsedGroup: (groupId: string) => void;
+  /** Available for future "dismiss without expanding" UX */
   clearCollapsedGroup: () => void;
   toggleCollapsedGroupVisibility: (groupId: string) => void;
   getSpanTrackerService: () => SpanTrackerService | null;

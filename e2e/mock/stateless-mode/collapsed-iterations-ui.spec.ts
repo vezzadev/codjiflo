@@ -1,138 +1,13 @@
 import { test, expect } from "@playwright/test";
 import {
-  setupAuthState,
-  setupFullPRMocks,
-  setupStatelessIterationMocks,
-  type MockPR,
-  type MockFile,
-} from "../../fixtures/github-mocks";
-import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
+  forcePushConfig,
+  setupForcePushDefaults,
+  setupForcePushScenario,
+} from "../../fixtures/force-push-helpers";
 
 test.describe("Collapsed Iterations UI", () => {
-  const mockPR: MockPR = {
-    id: 1,
-    number: 123,
-    title: "Test PR for Collapsed History",
-    body: "Testing collapsed iteration history view",
-    state: "open",
-    merged: false,
-    draft: false,
-    user: {
-      id: 1,
-      login: "testuser",
-      avatar_url: "https://avatars.githubusercontent.com/u/1",
-    },
-    head: { ref: "feature/test", sha: "abc123" },
-    base: { ref: "main", sha: "def456" },
-    html_url: "https://github.com/test/repo/pull/123",
-    created_at: "2024-01-01T10:00:00Z",
-    updated_at: "2024-01-05T15:00:00Z",
-  };
-
-  const mockFiles: MockFile[] = [
-    {
-      filename: "src/test.ts",
-      status: "modified",
-      additions: 10,
-      deletions: 5,
-      changes: 15,
-      patch: "@@ -1,5 +1,10 @@\n+// New code\n const x = 1;",
-    },
-  ];
-
-  const config = {
-    owner: "test",
-    repo: "repo",
-    prNumber: 123,
-    pageUrl: "/test/repo/123",
-  };
-
-  /**
-   * Helper: set up a force-push scenario with mock compare API.
-   * Returns the force-push event ID for collapsed group tab targeting.
-   */
-  async function setupForcePushScenario(
-    page: import("@playwright/test").Page,
-    options: {
-      eventId: number;
-      beforeSha: string;
-      afterSha: string;
-      liveCommits: {
-        sha: string;
-        message: string;
-        author: string;
-        date: string;
-      }[];
-      compareResponse:
-        | {
-            status: 200;
-            commits: {
-              sha: string;
-              message: string;
-              authorName: string;
-              authorLogin: string;
-              date: string;
-            }[];
-          }
-        | { status: 404 };
-    }
-  ): Promise<void> {
-    await setupStatelessIterationMocks(
-      page,
-      config.owner,
-      config.repo,
-      config.prNumber,
-      {
-        commits: options.liveCommits,
-        timeline: [
-          {
-            id: options.eventId,
-            event: "head_ref_force_pushed",
-            created_at: "2024-01-02T12:00:00Z",
-            before_commit: { sha: options.beforeSha },
-            after_commit: { sha: options.afterSha },
-          },
-        ],
-      }
-    );
-
-    await page.route(
-      `https://api.github.com/repos/${config.owner}/${config.repo}/compare/${options.afterSha}...${options.beforeSha}`,
-      async (route) => {
-        if (options.compareResponse.status === 404) {
-          await route.fulfill({
-            status: 404,
-            contentType: "application/json",
-            body: JSON.stringify({ message: "Not Found" }),
-          });
-          return;
-        }
-
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            commits: options.compareResponse.commits.map((c) => ({
-              sha: c.sha,
-              commit: {
-                message: c.message,
-                author: { name: c.authorName, date: c.date },
-              },
-              author: { login: c.authorLogin },
-            })),
-          }),
-        });
-      }
-    );
-  }
-
   test.beforeEach(async ({ page }) => {
-    await setupLegacyDefaults(page);
-    await setupAuthState(page);
-    await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
-      pr: mockPR,
-      files: mockFiles,
-    });
+    await setupForcePushDefaults(page);
   });
 
   test("Click collapsed tab shows history view with commit details and iteration selector stays visible", async ({
@@ -177,7 +52,7 @@ test.describe("Collapsed Iterations UI", () => {
       },
     });
 
-    await page.goto(config.pageUrl);
+    await page.goto(forcePushConfig.pageUrl);
 
     // Wait for iteration selector to appear
     const selector = page.getByTestId("iteration-selector");
@@ -221,10 +96,6 @@ test.describe("Collapsed Iterations UI", () => {
     await expect(commit2).toContainText("Another discarded commit with fixes");
     await expect(commit2).toContainText("bob");
 
-    // Multi-line commit message edge case: only first line shown
-    // (commit1 message is single-line, so this is a positive check —
-    //  the dedicated multi-line test below covers the negative assertion)
-
     // "Include discarded iterations" button must be present
     const includeBtn = page.getByTestId("collapsed-history-include-btn");
     await expect(includeBtn).toBeVisible();
@@ -267,7 +138,7 @@ test.describe("Collapsed Iterations UI", () => {
       },
     });
 
-    await page.goto(config.pageUrl);
+    await page.goto(forcePushConfig.pageUrl);
 
     // Open history view
     const collapsedTab = page.getByTestId("collapsed-group-6001");
@@ -307,7 +178,7 @@ test.describe("Collapsed Iterations UI", () => {
       compareResponse: { status: 404 },
     });
 
-    await page.goto(config.pageUrl);
+    await page.goto(forcePushConfig.pageUrl);
 
     const collapsedTab = page.getByTestId("collapsed-group-7001");
     await expect(collapsedTab).toBeVisible();
@@ -363,7 +234,7 @@ test.describe("Collapsed Iterations UI", () => {
       },
     });
 
-    await page.goto(config.pageUrl);
+    await page.goto(forcePushConfig.pageUrl);
 
     // Open history view
     const collapsedTab = page.getByTestId("collapsed-group-8001");
@@ -412,7 +283,7 @@ test.describe("Collapsed Iterations UI", () => {
       },
     });
 
-    await page.goto(config.pageUrl);
+    await page.goto(forcePushConfig.pageUrl);
 
     const collapsedTab = page.getByTestId("collapsed-group-9001");
     await expect(collapsedTab).toBeVisible();
