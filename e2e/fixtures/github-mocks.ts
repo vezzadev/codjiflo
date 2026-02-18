@@ -571,3 +571,72 @@ export async function setupIterationArtifactMock(
     }
   );
 }
+
+// ============================================================================
+// Stateless Iteration Mocks (Commits + Timeline APIs)
+// ============================================================================
+
+export interface MockPRCommit {
+  sha: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export interface MockTimelineEvent {
+  id: number;
+  event: string;
+  created_at: string;
+  before_commit?: { sha: string };
+  after_commit?: { sha: string };
+}
+
+/**
+ * Set up mocks for stateless iteration endpoints (commits + timeline).
+ * Used for testing commit-based iteration loading.
+ */
+export async function setupStatelessIterationMocks(
+  page: Page,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  options: {
+    commits: MockPRCommit[];
+    timeline?: MockTimelineEvent[];
+  }
+): Promise<void> {
+  if (!isMockMode()) return;
+
+  // Mock PR commits endpoint (with pagination query params)
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${String(prNumber)}/commits**`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          options.commits.map((c) => ({
+            sha: c.sha,
+            commit: {
+              message: c.message,
+              author: { name: c.author, date: c.date },
+            },
+            author: { login: c.author },
+          }))
+        ),
+      });
+    }
+  );
+
+  // Mock timeline endpoint (with pagination query params)
+  await page.route(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${String(prNumber)}/timeline**`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(options.timeline ?? []),
+      });
+    }
+  );
+}

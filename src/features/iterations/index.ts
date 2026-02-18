@@ -14,6 +14,7 @@ export { useIterationStore } from './stores';
 // Types
 export type {
   Iteration,
+  IterationLifecycle,
   IterationRange,
   IterationPreset,
   IterationMode,
@@ -23,6 +24,11 @@ export type {
   IterationComparison,
   FileComparison,
   IterationState,
+  DiscardedCommit,
+  DiscardedCommitAvailability,
+  CollapsedIterationGroup,
+  CollapsedGroupVisibility,
+  TimelineLoaderResult,
 } from './types';
 
 export {

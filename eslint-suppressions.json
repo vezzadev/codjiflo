@@ -127,11 +127,6 @@
       "count": 9
     }
   },
-  "e2e/mock/stateless-mode/iteration-stateless-mode.spec.ts": {
-    "playwright/no-raw-locators": {
-      "count": 1
-    }
-  },
   "e2e/mock/stateless-mode/minimap-zindex.spec.ts": {
     "playwright/no-conditional-expect": {
       "count": 2

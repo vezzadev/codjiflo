@@ -11,12 +11,43 @@ import { useIterationStore, selectSelectedRange } from './useIterationStore';
 import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types';
 
 // Create mock implementations that will be controlled by tests
-const mockLoad = vi.fn();
-const mockFindArtifactReference = vi.fn();
-const mockGetIterations = vi.fn();
-const mockGetAllArtifacts = vi.fn();
-const mockClose = vi.fn();
-const mockClearCache = vi.fn();
+// Use vi.hoisted() for mocks referenced inside vi.mock() factories
+const {
+  mockLoad,
+  mockFindArtifactReference,
+  mockGetIterations,
+  mockGetAllArtifacts,
+  mockClose,
+  mockClearCache,
+  mockTimelineLoad,
+  mockGithubClientFetch,
+} = vi.hoisted(() => ({
+  mockLoad: vi.fn(),
+  mockFindArtifactReference: vi.fn(),
+  mockGetIterations: vi.fn(),
+  mockGetAllArtifacts: vi.fn(),
+  mockClose: vi.fn(),
+  mockClearCache: vi.fn(),
+  mockTimelineLoad: vi.fn(),
+  mockGithubClientFetch: vi.fn(),
+}));
+
+// Mock TimelineLoader
+vi.mock('../timeline-loader', () => ({
+  TimelineLoader: class MockTimelineLoader {
+    load = mockTimelineLoad;
+  },
+}));
+
+// Mock githubClient (for PR base SHA fetch in stateless path)
+vi.mock('@/api/github/github-client', () => ({
+  githubClient: { fetch: mockGithubClientFetch },
+  GitHubAPIError: class MockGitHubAPIError extends Error {
+    constructor(public status: number, public statusText: string, message: string) {
+      super(message);
+    }
+  },
+}));
 
 // Mock dependencies at module level
 vi.mock('../artifact-loader', () => ({
@@ -55,6 +86,7 @@ function createMockIterations(count: number): Iteration[] {
     baseSha: 'base-sha',
     beforeSha: i === 0 ? null : `head-sha-${i}`,
     author: 'test-user',
+    status: 'live' as const,
   }));
 }
 
@@ -97,6 +129,7 @@ describe('useIterationStore', () => {
       error: null,
       mode: 'stateful',
       statelessReason: null,
+      collapsedGroups: [],
     });
 
     // Reset all mocks
@@ -107,6 +140,8 @@ describe('useIterationStore', () => {
     mockGetAllArtifacts.mockReset();
     mockClose.mockReset();
     mockClearCache.mockReset();
+    mockTimelineLoad.mockReset();
+    mockGithubClientFetch.mockReset();
 
     // Default: findArtifactReference returns the mock reference
     // Tests can override this when needed (e.g., for stateless mode)
@@ -297,16 +332,171 @@ describe('useIterationStore', () => {
       });
     });
 
-    it('should handle stateless mode when no artifact found', async () => {
+    it('should load stateless iterations via TimelineLoader when no artifact found', async () => {
       mockLoad.mockResolvedValue(null);
+      mockFindArtifactReference.mockResolvedValue(null);
+      // Mock PR data fetch for base SHA
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base-sha-from-pr' } });
+      mockTimelineLoad.mockResolvedValue({
+        iterations: [
+          {
+            id: -1,
+            revision: 1,
+            headSha: 'commit-sha-1',
+            baseSha: 'base-sha-from-pr',
+            beforeSha: null,
+            author: 'testuser',
+            createdAt: new Date('2024-01-01'),
+            status: 'live' as const,
+          },
+          {
+            id: -2,
+            revision: 2,
+            headSha: 'commit-sha-2',
+            baseSha: 'base-sha-from-pr',
+            beforeSha: null,
+            author: 'testuser',
+            createdAt: new Date('2024-01-02'),
+            status: 'live' as const,
+          },
+        ],
+        collapsedGroups: [],
+      });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.iterations).toHaveLength(2);
+      expect(state.iterations[0]).toMatchObject({ headSha: 'commit-sha-1' });
+      expect(state.iterations[1]).toMatchObject({ headSha: 'commit-sha-2' });
+      expect(state.collapsedGroups).toHaveLength(0);
+      // Default range: latest iteration
+      // For 2 iterations, latest revision is 2:
+      // - left = (2-1)*2 = 2
+      // - right = (2-1)*2+1 = 3
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
+        fromSnapshot: 2,
+        toSnapshot: 3,
+      });
+    });
+
+    it('should store collapsed groups from TimelineLoader', async () => {
+      mockLoad.mockResolvedValue(null);
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      mockTimelineLoad.mockResolvedValue({
+        iterations: [
+          {
+            id: -1, revision: 1, headSha: 'disc-1', baseSha: 'base',
+            beforeSha: 'old', author: 'user', createdAt: new Date('2024-01-01'),
+            status: 'collapsed' as const, collapsedGroupId: '100',
+          },
+          {
+            id: -2, revision: 2, headSha: 'live-1', baseSha: 'base',
+            beforeSha: null, author: 'user', createdAt: new Date('2024-01-02'),
+            status: 'live' as const,
+          },
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [{ sha: 'disc-1', message: 'old commit', author: 'user', date: '2024-01-01', status: 'available' as const }],
+          reason: 'force_push' as const,
+          visibility: 'collapsed' as const,
+        }],
+      });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.collapsedGroups).toHaveLength(1);
+      const group0 = state.collapsedGroups[0];
+      expect(group0).toBeDefined();
+      expect(group0).toMatchObject({ forcePushEventId: '100', discardedRevisions: [1] });
+      expect(state.iterations.filter(i => i.status === 'collapsed')).toHaveLength(1);
+      expect(state.iterations.filter(i => i.status === 'live')).toHaveLength(1);
+    });
+
+    it('should set empty iterations when TimelineLoader returns no commits', async () => {
+      mockLoad.mockResolvedValue(null);
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      mockTimelineLoad.mockResolvedValue({
+        iterations: [],
+        collapsedGroups: [],
+      });
 
       await useIterationStore.getState().loadIterations('owner', 'repo', 1);
 
       const state = useIterationStore.getState();
       expect(state.mode).toBe('stateless');
       expect(state.iterations).toHaveLength(0);
-      expect(state.currentPrKey).toBe('https://github.com/owner/repo/pull/1');
-      expect(selectSelectedRange(state)).toBeNull();
+      expect(state.collapsedGroups).toHaveLength(0);
+    });
+
+    it('should fall back to empty stateless mode when TimelineLoader throws', async () => {
+      mockLoad.mockResolvedValue(null);
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      mockTimelineLoad.mockRejectedValue(new Error('Timeline API failed'));
+
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.iterations).toHaveLength(0);
+      expect(state.collapsedGroups).toHaveLength(0);
+      expect(state.isLoading).toBe(false);
+      // Should NOT set error -- timeline failure is graceful fallback, not fatal
+      expect(state.error).toBeNull();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should select range based on latest LIVE iteration, not collapsed', async () => {
+      mockLoad.mockResolvedValue(null);
+      mockFindArtifactReference.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      // 2 collapsed + 1 live = 3 iterations, latest live is revision 3
+      mockTimelineLoad.mockResolvedValue({
+        iterations: [
+          {
+            id: -1, revision: 1, headSha: 'disc-1', baseSha: 'base',
+            beforeSha: 'old', author: 'user', createdAt: new Date('2024-01-01'),
+            status: 'collapsed' as const, collapsedGroupId: '100',
+          },
+          {
+            id: -2, revision: 2, headSha: 'disc-2', baseSha: 'base',
+            beforeSha: 'old', author: 'user', createdAt: new Date('2024-01-02'),
+            status: 'collapsed' as const, collapsedGroupId: '100',
+          },
+          {
+            id: -3, revision: 3, headSha: 'live-1', baseSha: 'base',
+            beforeSha: null, author: 'user', createdAt: new Date('2024-01-03'),
+            status: 'live' as const,
+          },
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1, 2],
+          commits: [],
+          reason: 'force_push' as const,
+          visibility: 'collapsed' as const,
+        }],
+      });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      // Default range should be based on latest LIVE iteration (revision 3)
+      // left = (3-1)*2 = 4, right = (3-1)*2+1 = 5
+      expect(state.selectedRanges['https://github.com/owner/repo/pull/1']).toEqual({
+        fromSnapshot: 4,
+        toSnapshot: 5,
+      });
     });
 
     it('should handle loading errors', async () => {
@@ -343,6 +533,7 @@ describe('useIterationStore', () => {
           baseSha: 'old-base-sha', // Original base
           beforeSha: null,
           author: 'test-user',
+          status: 'live',
         },
         {
           id: 2,
@@ -352,6 +543,7 @@ describe('useIterationStore', () => {
           baseSha: 'new-base-sha', // Different base after rebase!
           beforeSha: 'head-sha-1',
           author: 'test-user',
+          status: 'live',
         },
       ];
       const mockArtifacts = createMockArtifacts();
@@ -375,6 +567,25 @@ describe('useIterationStore', () => {
         fromSnapshot: 2, // Latest iteration's base, NOT the cached 0 (stale old base)
         toSnapshot: 3,
       });
+    });
+
+    it('should set collapsedGroups to empty array in stateful mode', async () => {
+      const mockIterations = createMockIterations(2);
+      const mockArtifacts = createMockArtifacts();
+      const mockDb = {};
+
+      mockLoad.mockResolvedValue({
+        db: mockDb,
+        reference: createMockReference(),
+      });
+      mockGetIterations.mockReturnValue(mockIterations);
+      mockGetAllArtifacts.mockReturnValue(mockArtifacts);
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateful');
+      expect(state.collapsedGroups).toEqual([]);
     });
 
     it('should evict oldest entries when cache exceeds 50 PRs (LRU)', async () => {
@@ -543,6 +754,7 @@ describe('useIterationStore', () => {
       expect(state.client).toBeNull();
       expect(state.isLoading).toBe(false);
       expect(state.mode).toBe('stateful');
+      expect(state.collapsedGroups).toHaveLength(0);
       expect(mockClose).toHaveBeenCalled();
       expect(mockClearCache).toHaveBeenCalled();
     });

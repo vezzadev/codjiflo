@@ -609,6 +609,18 @@
   animation: none;
 }
 
+/* Collapsed iteration group tab */
+.iteration-tab.collapsed {
+  background-color: var(--tab-inactive);
+  color: var(--watermark-text);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.iteration-tab.collapsed svg {
+  stroke: var(--watermark-text);
+}
+
 /* Loading indicator */
 .iteration-loading {
   display: flex;

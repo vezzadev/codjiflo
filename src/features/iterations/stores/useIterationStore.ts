@@ -8,8 +8,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
+import { githubClient } from '@/api/github/github-client';
 import { ArtifactLoader } from '../artifact-loader';
 import { IterationClient } from '../iteration-client';
+import { TimelineLoader } from '../timeline-loader';
 import { SpanTrackerService } from '../application';
 import { SQLiteSpanTrackerReader } from '../infrastructure';
 import type {
@@ -18,6 +20,7 @@ import type {
   IterationRange,
   IterationPreset,
   ArtifactReference,
+  CollapsedIterationGroup,
 } from '../types';
 import { iterationToLeftSnapshot, iterationToRightSnapshot } from '../types';
 
@@ -62,6 +65,7 @@ export type IterationMode = 'stateful' | 'stateless';
 interface IterationState {
   // Data
   iterations: Iteration[];
+  collapsedGroups: CollapsedIterationGroup[];
   artifacts: ReviewFileArtifact[];
   artifactTimestamp: string | null;
   artifactReference: ArtifactReference | null;
@@ -103,6 +107,7 @@ export function selectSelectedRange(state: IterationState): IterationRange | nul
 
 const initialState = {
   iterations: [],
+  collapsedGroups: [] as CollapsedIterationGroup[],
   artifacts: [],
   artifactTimestamp: null,
   artifactReference: null,
@@ -148,13 +153,58 @@ export const useIterationStore = create<IterationState>()(
 
             let reason: string;
             if (hasArtifactReference && !isAuthenticated) {
-              // Artifact exists but can't download without auth (S-4.1.5)
               reason = 'Sign in to enable iteration tracking. CodjiFlo data is available for this PR.';
               console.info(`[CodjiFlo] Entering stateless mode: not authenticated for ${prKey}`);
             } else {
-              // No artifact found - workflow not installed
               reason = 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.';
               console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
+            }
+
+            // Load iterations from GitHub Commits + Timeline APIs
+            try {
+              const prData = await githubClient.fetch<{ base: { sha: string } }>(
+                `/repos/${owner}/${repo}/pulls/${String(prNumber)}`
+              );
+              const timelineLoader = new TimelineLoader(owner, repo, prNumber, prData.base.sha);
+              const timelineResult = await timelineLoader.load();
+
+              if (timelineResult.iterations.length > 0) {
+                const latestLiveIteration = [...timelineResult.iterations]
+                  .reverse()
+                  .find(i => i.status === 'live');
+                const latestIteration = latestLiveIteration ?? timelineResult.iterations[timelineResult.iterations.length - 1];
+
+                const defaultRange = latestIteration
+                  ? {
+                      fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
+                      toSnapshot: iterationToRightSnapshot(latestIteration.revision),
+                    }
+                  : null;
+
+                const { selectedRanges } = get();
+                const newSelectedRanges = defaultRange
+                  ? updateLRUCache(selectedRanges, prKey, defaultRange)
+                  : selectedRanges;
+
+                console.info(
+                  `[CodjiFlo] Stateless mode: loaded ${String(timelineResult.iterations.length)} iteration(s) ` +
+                  `(${String(timelineResult.collapsedGroups.length)} collapsed group(s)) for ${prKey}`
+                );
+
+                set({
+                  isLoading: false,
+                  mode: 'stateless',
+                  statelessReason: reason,
+                  iterations: timelineResult.iterations,
+                  collapsedGroups: timelineResult.collapsedGroups,
+                  artifacts: [],
+                  selectedRanges: newSelectedRanges,
+                });
+                return;
+              }
+            } catch (timelineError) {
+              console.warn('[CodjiFlo] Failed to load stateless iterations:', timelineError);
+              // Fall through to empty stateless mode
             }
 
             set({
@@ -162,6 +212,7 @@ export const useIterationStore = create<IterationState>()(
               mode: 'stateless',
               statelessReason: reason,
               iterations: [],
+              collapsedGroups: [],
               artifacts: [],
             });
             return;
@@ -227,6 +278,7 @@ export const useIterationStore = create<IterationState>()(
 
           set({
             iterations,
+            collapsedGroups: [],
             artifacts,
             artifactTimestamp: reference.timestamp,
             artifactReference: reference,
