@@ -8,18 +8,31 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useIterationStore, selectSelectedRange } from './useIterationStore';
-import type { Iteration, ReviewFileArtifact, ArtifactReference, CollapsedIterationGroup } from '../types';
+import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types';
 
 // Create mock implementations that will be controlled by tests
-const mockLoad = vi.fn();
-const mockFindArtifactReference = vi.fn();
-const mockGetIterations = vi.fn();
-const mockGetAllArtifacts = vi.fn();
-const mockClose = vi.fn();
-const mockClearCache = vi.fn();
+// Use vi.hoisted() for mocks referenced inside vi.mock() factories
+const {
+  mockLoad,
+  mockFindArtifactReference,
+  mockGetIterations,
+  mockGetAllArtifacts,
+  mockClose,
+  mockClearCache,
+  mockTimelineLoad,
+  mockGithubClientFetch,
+} = vi.hoisted(() => ({
+  mockLoad: vi.fn(),
+  mockFindArtifactReference: vi.fn(),
+  mockGetIterations: vi.fn(),
+  mockGetAllArtifacts: vi.fn(),
+  mockClose: vi.fn(),
+  mockClearCache: vi.fn(),
+  mockTimelineLoad: vi.fn(),
+  mockGithubClientFetch: vi.fn(),
+}));
 
 // Mock TimelineLoader
-const mockTimelineLoad = vi.fn();
 vi.mock('../timeline-loader', () => ({
   TimelineLoader: class MockTimelineLoader {
     load = mockTimelineLoad;
@@ -27,7 +40,6 @@ vi.mock('../timeline-loader', () => ({
 }));
 
 // Mock githubClient (for PR base SHA fetch in stateless path)
-const mockGithubClientFetch = vi.fn();
 vi.mock('@/api/github/github-client', () => ({
   githubClient: { fetch: mockGithubClientFetch },
   GitHubAPIError: class MockGitHubAPIError extends Error {
@@ -356,8 +368,8 @@ describe('useIterationStore', () => {
       const state = useIterationStore.getState();
       expect(state.mode).toBe('stateless');
       expect(state.iterations).toHaveLength(2);
-      expect(state.iterations[0]!.headSha).toBe('commit-sha-1');
-      expect(state.iterations[1]!.headSha).toBe('commit-sha-2');
+      expect(state.iterations[0]).toMatchObject({ headSha: 'commit-sha-1' });
+      expect(state.iterations[1]).toMatchObject({ headSha: 'commit-sha-2' });
       expect(state.collapsedGroups).toHaveLength(0);
       // Default range: latest iteration
       // For 2 iterations, latest revision is 2:
@@ -399,8 +411,9 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       expect(state.collapsedGroups).toHaveLength(1);
-      expect(state.collapsedGroups[0]!.forcePushEventId).toBe('100');
-      expect(state.collapsedGroups[0]!.discardedRevisions).toEqual([1]);
+      const group0 = state.collapsedGroups[0];
+      expect(group0).toBeDefined();
+      expect(group0).toMatchObject({ forcePushEventId: '100', discardedRevisions: [1] });
       expect(state.iterations.filter(i => i.status === 'collapsed')).toHaveLength(1);
       expect(state.iterations.filter(i => i.status === 'live')).toHaveLength(1);
     });
