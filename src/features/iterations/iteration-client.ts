@@ -74,6 +74,7 @@ export class IterationClient {
       beforeSha: row.before_sha,
       author: row.author,
       createdAt: new Date(row.created_at),
+      status: 'live' as const,
     }));
   }
 
@@ -96,6 +97,7 @@ export class IterationClient {
       beforeSha: row.before_sha,
       author: row.author,
       createdAt: new Date(row.created_at),
+      status: 'live' as const,
     };
   }
 
@@ -117,6 +119,7 @@ export class IterationClient {
       beforeSha: row.before_sha,
       author: row.author,
       createdAt: new Date(row.created_at),
+      status: 'live' as const,
     };
   }
 

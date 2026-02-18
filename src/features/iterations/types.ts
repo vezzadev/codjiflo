@@ -9,6 +9,9 @@
 // Iteration Types
 // ============================================================================
 
+/** Whether an iteration is live (on the branch) or collapsed (discarded by force-push) */
+export type IterationLifecycle = 'live' | 'collapsed';
+
 export interface Iteration {
   id: number;
   revision: number; // Sequential 1-based number
@@ -17,11 +20,52 @@ export interface Iteration {
   beforeSha: string | null; // For force-push tracking
   author: string;
   createdAt: Date;
+  /** Live iteration or collapsed (discarded by force-push). Defaults to 'live' for stateful mode. */
+  status: IterationLifecycle;
+  /** Links to CollapsedIterationGroup when status is 'collapsed' */
+  collapsedGroupId?: string;
 }
 
 export enum IterationStatus {
   Submitted = 'submitted',
   Deleted = 'deleted',
+}
+
+// ============================================================================
+// Collapsed Iteration Types (Stateless Mode)
+// ============================================================================
+
+export type CollapsedGroupVisibility = 'collapsed' | 'expanded';
+export type DiscardedCommitAvailability = 'available' | 'unavailable';
+
+/** A commit discarded by a force-push */
+export interface DiscardedCommit {
+  sha: string;
+  message: string;
+  author: string;
+  date: string;
+  status: DiscardedCommitAvailability;
+}
+
+/** Group of iterations discarded by a single force-push event */
+export interface CollapsedIterationGroup {
+  forcePushEventId: string;
+  discardedRevisions: number[];
+  commits: DiscardedCommit[];
+  reason: 'force_push';
+  visibility: CollapsedGroupVisibility;
+  /** True when the before SHA was garbage-collected and individual commits are unknown */
+  unknownCount?: boolean;
+}
+
+// ============================================================================
+// Timeline Loader Result
+// ============================================================================
+
+/** Result of loading iterations from the Timeline API (stateless mode) */
+export interface TimelineLoaderResult {
+  iterations: Iteration[];
+  collapsedGroups: CollapsedIterationGroup[];
 }
 
 // ============================================================================

@@ -38,6 +38,7 @@ function createMockIteration(revision: number): Iteration {
     beforeSha: null,
     author: 'testuser',
     createdAt: new Date('2024-01-15'),
+    status: 'live',
   };
 }
 

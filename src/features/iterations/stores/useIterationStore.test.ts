@@ -55,6 +55,7 @@ function createMockIterations(count: number): Iteration[] {
     baseSha: 'base-sha',
     beforeSha: i === 0 ? null : `head-sha-${i}`,
     author: 'test-user',
+    status: 'live' as const,
   }));
 }
 
@@ -343,6 +344,7 @@ describe('useIterationStore', () => {
           baseSha: 'old-base-sha', // Original base
           beforeSha: null,
           author: 'test-user',
+          status: 'live',
         },
         {
           id: 2,
@@ -352,6 +354,7 @@ describe('useIterationStore', () => {
           baseSha: 'new-base-sha', // Different base after rebase!
           beforeSha: 'head-sha-1',
           author: 'test-user',
+          status: 'live',
         },
       ];
       const mockArtifacts = createMockArtifacts();
