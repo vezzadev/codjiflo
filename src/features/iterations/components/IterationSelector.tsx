@@ -7,8 +7,9 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
+import { Eraser } from 'lucide-react';
 import { useIterationStore, selectSelectedRange } from '../stores';
-import type { Iteration } from '../types';
+import type { Iteration, CollapsedIterationGroup } from '../types';
 import { iterationToRightSnapshot } from '../types';
 
 // Default number of skeleton tabs when iteration count is unknown
@@ -88,6 +89,33 @@ function IterationTab({
 }
 
 // ============================================================================
+// Collapsed Group Tab Component
+// ============================================================================
+
+interface CollapsedGroupTabProps {
+  group: CollapsedIterationGroup;
+}
+
+function CollapsedGroupTab({ group }: CollapsedGroupTabProps) {
+  const count = group.discardedRevisions.length;
+  const tooltip = group.unknownCount
+    ? 'Unknown iterations discarded'
+    : `${String(count)} iteration${count === 1 ? '' : 's'} discarded`;
+
+  return (
+    <div
+      className="iteration-tab collapsed"
+      title={tooltip}
+      data-testid={`collapsed-group-${group.forcePushEventId}`}
+      aria-label={tooltip}
+      role="presentation"
+    >
+      <Eraser size={14} aria-hidden="true" />
+    </div>
+  );
+}
+
+// ============================================================================
 // Main IterationSelector Component
 // ============================================================================
 
@@ -96,7 +124,7 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, selectRange, isLoading, mode, artifactReference } = useIterationStore();
+  const { iterations, collapsedGroups, selectRange, isLoading, artifactReference } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -222,10 +250,40 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     return { start: minRev, end: maxRev };
   }, [dragState]);
 
-  // Don't render if stateless mode (no artifact)
-  if (mode === 'stateless') {
-    return null;
-  }
+  // Build display items: live iterations as tabs, collapsed groups as single tabs
+  const displayItems = useMemo(() => {
+    const items: (| { type: 'iteration'; iteration: Iteration }
+      | { type: 'collapsed-group'; group: CollapsedIterationGroup })[] = [];
+
+    const processedGroups: Set<string> = new Set();
+
+    for (const iteration of iterations) {
+      if (iteration.status === 'collapsed' && iteration.collapsedGroupId) {
+        // Render collapsed group tab (once per group)
+        if (!processedGroups.has(iteration.collapsedGroupId)) {
+          processedGroups.add(iteration.collapsedGroupId);
+          const group = (collapsedGroups).find(
+            g => g.forcePushEventId === iteration.collapsedGroupId
+          );
+          if (group) {
+            items.push({ type: 'collapsed-group', group });
+          }
+        }
+        continue;
+      }
+
+      items.push({ type: 'iteration', iteration });
+    }
+
+    // Also add unknown-count groups that have no iterations
+    for (const group of collapsedGroups) {
+      if (group.unknownCount && !processedGroups.has(group.forcePushEventId)) {
+        items.unshift({ type: 'collapsed-group', group });
+      }
+    }
+
+    return items;
+  }, [iterations, collapsedGroups]);
 
   // Show skeleton while loading with no iterations yet
   if (isLoading && iterations.length === 0) {
@@ -271,7 +329,18 @@ export function IterationSelector({ className }: IterationSelectorProps) {
       onMouseUp={handleMouseUp}
     >
       <div className="iteration-tabs" role="group">
-        {iterations.map((iteration) => {
+        {displayItems.map((item) => {
+          if (item.type === 'collapsed-group') {
+            return (
+              <CollapsedGroupTab
+                key={`collapsed-${item.group.forcePushEventId}`}
+                group={item.group}
+              />
+            );
+          }
+
+          const { iteration } = item;
+
           // During drag, show preview highlighting
           const inPreviewRange =
             previewRange !== null &&
