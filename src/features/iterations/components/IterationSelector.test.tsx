@@ -639,6 +639,99 @@ describe('IterationSelector', () => {
       expect(collapsedTab.tagName).toBe('BUTTON');
     });
 
+    it('expanded group renders individual discarded iteration tabs with discarded class', () => {
+      setupMockState({
+        iterations: [
+          createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(2, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(3),
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1, 2],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 5 },
+        mode: 'stateless',
+      });
+
+      render(<IterationSelector />);
+
+      // Individual discarded tabs should render with discarded class
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      const tab2 = screen.getByTestId('iteration-tab-2');
+      expect(tab1).toHaveClass('discarded');
+      expect(tab2).toHaveClass('discarded');
+
+      // Collapsed group tab should NOT be present
+      expect(screen.queryByTestId('collapsed-group-100')).not.toBeInTheDocument();
+
+      // Live tab should NOT have discarded class
+      const tab3 = screen.getByTestId('iteration-tab-3');
+      expect(tab3).not.toHaveClass('discarded');
+    });
+
+    it('expanded discarded tabs participate in drag range selection', () => {
+      const { mockSelectRange } = setupMockState({
+        iterations: [
+          createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(2),
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
+        mode: 'stateless',
+      });
+
+      render(<IterationSelector />);
+
+      // Drag from discarded tab 1 to live tab 2
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      const tab2 = screen.getByTestId('iteration-tab-2');
+      const container = screen.getByTestId('iteration-selector');
+
+      fireEvent.mouseDown(tab1);
+      fireEvent.mouseEnter(tab2);
+      fireEvent.mouseUp(container);
+
+      // Range should include both tabs
+      expect(mockSelectRange).toHaveBeenCalledWith(1, 3);
+    });
+
+    it('clicking expanded discarded tab selects it like a regular tab', () => {
+      const { mockSelectRange } = setupMockState({
+        iterations: [
+          createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
+          createMockIteration(2),
+        ],
+        collapsedGroups: [{
+          forcePushEventId: '100',
+          discardedRevisions: [1],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'expanded',
+        }],
+        selectedRange: { fromSnapshot: 0, toSnapshot: 3 },
+        mode: 'stateless',
+      });
+
+      render(<IterationSelector />);
+
+      const tab1 = screen.getByTestId('iteration-tab-1');
+      fireEvent.mouseDown(tab1);
+      fireEvent.mouseUp(screen.getByTestId('iteration-selector'));
+
+      // Single click selects from base to this iteration
+      expect(mockSelectRange).toHaveBeenCalledWith(0, 1);
+    });
+
     it('drag across live tabs skips collapsed group (no range includes collapsed)', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [

@@ -621,6 +621,22 @@
   stroke: var(--watermark-text);
 }
 
+/* Discarded iteration tab (expanded from collapsed group) */
+.iteration-tab.discarded {
+  opacity: 0.6;
+}
+
+.iteration-tab.discarded:hover {
+  opacity: 0.8;
+}
+
+/* Unavailable iteration tab (GC'd commit) */
+.iteration-tab.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Collapsed iteration history view */
 .collapsed-history-view {
   padding: 16px;

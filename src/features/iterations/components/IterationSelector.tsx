@@ -35,6 +35,7 @@ interface IterationTabProps {
   isInRange: boolean;
   isRangeStart: boolean;
   isRangeEnd: boolean;
+  isDiscarded?: boolean;
   onMouseDown: (revision: number) => void;
   onMouseEnter: (revision: number) => void;
   onSelect: (revision: number) => void;
@@ -46,6 +47,7 @@ function IterationTab({
   isInRange,
   isRangeStart,
   isRangeEnd,
+  isDiscarded,
   onMouseDown,
   onMouseEnter,
   onSelect,
@@ -56,6 +58,7 @@ function IterationTab({
     isInRange && 'in-range',
     isRangeStart && 'range-start',
     isRangeEnd && 'range-end',
+    isDiscarded && 'discarded',
   ]
     .filter(Boolean)
     .join(' ');
@@ -382,6 +385,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               isInRange={isInRange}
               isRangeStart={isRangeStartTab}
               isRangeEnd={isRangeEndTab}
+              isDiscarded={iteration.status === 'collapsed'}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onSelect={handleKeyboardSelect}
