@@ -634,7 +634,6 @@
 .iteration-tab.unavailable {
   opacity: 0.4;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 /* Collapsed iteration history view */

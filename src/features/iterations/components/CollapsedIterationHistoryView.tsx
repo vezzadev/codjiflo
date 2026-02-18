@@ -27,6 +27,8 @@ export function CollapsedIterationHistoryView({ group, onInclude }: CollapsedIte
         ) : (
           <div className="collapsed-history-list">
             {group.commits.map((commit, index) => {
+              // Index coupling is safe: TimelineLoader builds both arrays from
+              // the same sorted iteration list, guaranteeing matching order.
               const revision = group.discardedRevisions[index];
               const firstLine = commit.message.split('\n')[0] ?? commit.message;
               const isUnavailable = commit.status === 'unavailable';

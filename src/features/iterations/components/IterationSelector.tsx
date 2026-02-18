@@ -82,12 +82,12 @@ function IterationTab({
     <button
       type="button"
       className={classes}
-      onMouseDown={isUnavailable ? undefined : () => onMouseDown(iteration.revision)}
-      onMouseEnter={isUnavailable ? undefined : () => onMouseEnter(iteration.revision)}
+      onMouseDown={() => onMouseDown(iteration.revision)}
+      onMouseEnter={() => onMouseEnter(iteration.revision)}
       onKeyDown={handleKeyDown}
       title={`Iteration ${iteration.revision} (${date})`}
       aria-pressed={isSelected || isInRange}
-      aria-disabled={isUnavailable || undefined}
+      disabled={isUnavailable}
       data-testid={`iteration-tab-${iteration.revision}`}
     >
       <span className="iteration-tab-number" aria-hidden="true">{iteration.revision}</span>

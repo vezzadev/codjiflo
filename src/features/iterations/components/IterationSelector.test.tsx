@@ -732,7 +732,7 @@ describe('IterationSelector', () => {
       expect(mockSelectRange).toHaveBeenCalledWith(0, 1);
     });
 
-    it('unavailable expanded iteration gets unavailable class, aria-disabled, and is non-interactive', () => {
+    it('unavailable expanded iteration gets unavailable class, disabled attribute, and is non-interactive', () => {
       const { mockSelectRange } = setupMockState({
         iterations: [
           createMockIteration(1, { status: 'collapsed', collapsedGroupId: '100' }),
@@ -763,8 +763,8 @@ describe('IterationSelector', () => {
       expect(tab1).toHaveClass('discarded');
       expect(tab1).toHaveClass('unavailable');
 
-      // Should have aria-disabled
-      expect(tab1).toHaveAttribute('aria-disabled', 'true');
+      // Should be disabled
+      expect(tab1).toBeDisabled();
 
       // Mouse events should not trigger selectRange
       fireEvent.mouseDown(tab1);
@@ -804,7 +804,7 @@ describe('IterationSelector', () => {
       const tab1 = screen.getByTestId('iteration-tab-1');
       expect(tab1).toHaveClass('discarded');
       expect(tab1).not.toHaveClass('unavailable');
-      expect(tab1).not.toHaveAttribute('aria-disabled');
+      expect(tab1).not.toBeDisabled();
     });
 
     it('drag across live tabs skips collapsed group (no range includes collapsed)', () => {

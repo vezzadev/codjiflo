@@ -159,7 +159,7 @@ test.describe("Collapsed Iterations Expanded View", () => {
     await expect(liveTab4).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("Unavailable commit tabs have unavailable class, aria-disabled, and cannot be clicked", async ({
+  test("CSS rule .iteration-tab.unavailable exists with correct opacity and cursor properties", async ({
     page,
   }) => {
     // AC-4.2.2.8: When a collapsed iteration's commit is GC'd, show as unavailable
@@ -232,7 +232,6 @@ test.describe("Collapsed Iterations Expanded View", () => {
               return {
                 opacity: rule.style.opacity,
                 cursor: rule.style.cursor,
-                pointerEvents: rule.style.pointerEvents,
               };
             }
           }
@@ -246,7 +245,6 @@ test.describe("Collapsed Iterations Expanded View", () => {
     expect(unavailableStyles).not.toBeNull();
     expect(unavailableStyles?.opacity).toBe("0.4");
     expect(unavailableStyles?.cursor).toBe("not-allowed");
-    expect(unavailableStyles?.pointerEvents).toBe("none");
   });
 
   test("Discarded tabs have reduced opacity and live tabs have full opacity", async ({
