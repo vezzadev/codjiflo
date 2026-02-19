@@ -24,6 +24,15 @@ This is a **requirement**:
 * **Any changes:** `npm run test:all` must pass
 * **New features:** Several unit tests + some integration tests + 1-2 new E2E tests + manual testing sanity check with Playwright
 
+### External API Integration Rule
+**Mocks are a liability when not validated against reality.** When building features that consume external APIs (GitHub, etc.):
+
+1. **Verify API response shapes with real data FIRST** — before writing specs, design docs, or mocks. Run the actual API call (e.g., `gh api ...`) and capture the real response. Include the real response in the design doc.
+2. **Add at least one prod-mode E2E test** (`e2e/prod/`) for any feature that parses external API responses. Mock-mode tests verify UI behavior; prod-mode tests verify the API contract.
+3. **Never assume API field names** — check the official API docs AND make a real call. APIs often differ from documentation or from what seems "obvious" (e.g., GitHub Timeline API's `head_ref_force_pushed` has `commit_id`, NOT `before_commit`/`after_commit`).
+
+**Rationale:** See `docs/retrospectives/2026-02-19-timeline-api-field-mismatch.md` — a wrong API shape assumption propagated from design doc → spec → mocks → all tests, and the bug was only caught during manual demo with real data. 1600+ automated tests all passed while the feature was fundamentally broken against real APIs.
+
 ### Running Specific Tests (Vitest)
 **Important:** This project uses **Vitest** (not Jest), so Jest-specific flags like `--testPathPattern` will **not work**.
 
