@@ -161,6 +161,51 @@ index abcdefg..bcdefgh 100644
     // The store should log "Entering stateless mode: forced via query param"
   });
 
+  test("without ?mode=stateless, forced-stateless console log is NOT emitted", async ({
+    page,
+  }) => {
+    // Set up stateless iteration data so the page loads successfully
+    await setupStatelessIterationMocks(
+      page,
+      config.owner,
+      config.repo,
+      config.prNumber,
+      {
+        commits: [
+          {
+            sha: "commit-1",
+            message: "Commit 1",
+            author: "testuser",
+            date: "2024-01-01T10:00:00Z",
+          },
+        ],
+      }
+    );
+
+    // Collect ALL console messages during navigation
+    const forcedStatelessLogs: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.text().includes("forced via query param")) {
+        forcedStatelessLogs.push(msg.text());
+      }
+    });
+
+    // Navigate WITHOUT ?mode=stateless
+    await page.goto(
+      `/${config.owner}/${config.repo}/${String(config.prNumber)}`
+    );
+
+    // Wait for iteration selector to confirm page finished loading
+    const selector = page.getByTestId("iteration-selector");
+    await expect(selector).toBeVisible();
+
+    // Wait for iteration tabs to confirm data loaded (stateless mode via commits)
+    await expect(page.getByTestId("iteration-tab-1")).toBeVisible();
+
+    // The "forced via query param" message should NOT have been emitted
+    expect(forcedStatelessLogs).toHaveLength(0);
+  });
+
   test("?mode=stateless emits console log confirming forced stateless mode", async ({
     page,
   }) => {
