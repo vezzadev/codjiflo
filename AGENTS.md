@@ -126,6 +126,36 @@ You have access to Playwright via playwright-cli skill. Make sure to **only use 
  * Sanity check your work as you reach a milestone in the implementation of a feature. Once you reach ~200 lines of code changes, the risk that you are compounding errors and don't have working code becomes high. A quick inspection in Playwright gives extra assurance that you are on the right track.
  * Final quality assurance. Don't ask the user to test a feature manually before you did it yourself!
 
+## E2E Test Repo & Demo Data
+
+**Repo:** [`pedropaulovc/codjiflo-e2e-test-repo`](https://github.com/pedropaulovc/codjiflo-e2e-test-repo) — local path: `../../codjiflo-e2e-test-repo`
+
+Dedicated public repo for real GitHub data used by prod-mode E2E tests (`e2e/prod/`) and demo-presenter agents. You have full control: create PRs, push to main, force-push, add comments, close/reopen, merge, etc. Create as many PRs as needed.
+
+### Creating Scenarios
+
+Each scenario gets its own folder on `main` (base data) and its own PR branch (modifications). Branch naming: `test/<slug>` for E2E, `demo/<slug>` for demos.
+
+```bash
+cd ../../codjiflo-e2e-test-repo
+git checkout main && git pull
+mkdir <scenario-slug>
+# Add base files, commit, push to main
+git checkout -b test/<scenario-slug>
+# Modify files, commit, push, create PR via gh
+```
+
+Manipulate PRs freely: force-push for iterations, `gh api` for line-level review comments, close/reopen, merge. Reference in tests as:
+```typescript
+const config = { owner: "pedropaulovc", repo: "codjiflo-e2e-test-repo", prNumber: <N> };
+```
+
+**Rules:** Never delete PRs/branches other tests depend on (`grep` for PR number in `e2e/`). PRs must stay open unless testing merged/closed state. Document new scenarios in `codjiflo-e2e-test-repo/README.md`.
+
+### For Demo-Presenter Agents
+
+Git operations against this repo ARE the "real user flows" for a code review tool — no mocking needed. Create PRs with the desired diff shape, add comments via `gh`, then navigate to the PR in CodjiFlo via Playwright (headed mode) to record the demo. Demo artifacts go to `spec/demo/` in the CodjiFlo repo. Escalate to coordinator/implementer for complex scenarios (multi-iteration force-push histories, etc.).
+
 ## Shared environment
 There are multiple instances of Claude Code running in parallel. Each one has multiple node.exe instances (MCP, dev server, etc.) they also have dev servers running. Each worktree has its own designated port: 3010 for A, 3020 for B, etc. The `npm run dev` command is smart to only kill zombie servers associated with your worktree and only start a server in its designated port automatically. DO NOT kill all node.exe or kill by port number. If `npm run dev` fails STOP and ask the user for assistance.
 
