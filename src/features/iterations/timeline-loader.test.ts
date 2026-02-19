@@ -47,13 +47,24 @@ function makeCommit(sha: string, date: string, author = 'testuser', message = `c
   };
 }
 
-function makeForcePushEvent(id: number, beforeSha: string, afterSha: string, createdAt: string) {
+function makeForcePushEvent(id: number, _beforeSha: string, afterSha: string, createdAt: string) {
+  // Real GitHub API only provides commit_id (the new HEAD after force-push).
+  // The beforeSha is inferred at runtime by walking committed events in the timeline.
   return {
     id,
     event: 'head_ref_force_pushed',
     created_at: createdAt,
-    before_commit: { sha: beforeSha },
-    after_commit: { sha: afterSha },
+    commit_id: afterSha,
+  };
+}
+
+/** Create a committed event (used to track current HEAD for force-push before-SHA inference) */
+function makeCommittedEvent(sha: string, createdAt: string) {
+  return {
+    id: 0,
+    event: 'committed',
+    created_at: createdAt,
+    sha,
   };
 }
 
@@ -215,13 +226,14 @@ describe('TimelineLoader', () => {
 
   describe('PR with force-push (discoverable discarded commits)', () => {
     it('builds collapsed iterations from discarded commits', async () => {
-      // Timeline: force-push replaced old-sha with new-sha
+      // Timeline: committed event establishes HEAD, then force-push replaces it
       // Compare API discovers 2 discarded commits
       mockFetch
         .mockResolvedValueOnce([ // commits (current)
           makeCommit('new111', '2024-01-03T10:00:00Z'),
         ])
         .mockResolvedValueOnce([ // timeline
+          makeCommittedEvent('old-sha', '2024-01-01T12:00:00Z'),
           makeForcePushEvent(1001, 'old-sha', 'new-sha', '2024-01-02T12:00:00Z'),
         ])
         .mockResolvedValueOnce( // compare: afterSha...beforeSha -> discarded commits
@@ -273,7 +285,10 @@ describe('TimelineLoader', () => {
     it('collapsed group unknownCount is NOT set for discoverable commits', async () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('new1', '2024-01-02T10:00:00Z')])
-        .mockResolvedValueOnce([makeForcePushEvent(100, 'old', 'new', '2024-01-01T12:00:00Z')])
+        .mockResolvedValueOnce([
+          makeCommittedEvent('old', '2024-01-01T10:00:00Z'),
+          makeForcePushEvent(100, 'old', 'new', '2024-01-01T12:00:00Z'),
+        ])
         .mockResolvedValueOnce(makeCompareResult([
           { sha: 'disc', date: '2024-01-01T10:00:00Z' },
         ]));
@@ -292,6 +307,7 @@ describe('TimelineLoader', () => {
           makeCommit('new111', '2024-01-03T10:00:00Z'),
         ])
         .mockResolvedValueOnce([ // timeline
+          makeCommittedEvent('gc-sha', '2024-01-01T12:00:00Z'),
           makeForcePushEvent(2001, 'gc-sha', 'new-sha', '2024-01-02T12:00:00Z'),
         ])
         .mockRejectedValueOnce( // compare returns 404
@@ -321,6 +337,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('new111', '2024-01-03T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('deleted-sha', '2024-01-01T12:00:00Z'),
           makeForcePushEvent(3001, 'deleted-sha', 'new-sha', '2024-01-02T12:00:00Z'),
         ])
         .mockRejectedValueOnce(
@@ -343,8 +360,10 @@ describe('TimelineLoader', () => {
           makeCommit('final-1', '2024-01-05T10:00:00Z'),
           makeCommit('final-2', '2024-01-06T10:00:00Z'),
         ])
-        .mockResolvedValueOnce([ // timeline: two force-pushes
+        .mockResolvedValueOnce([ // timeline: committed events + two force-pushes
+          makeCommittedEvent('old-before-1', '2024-01-01T10:00:00Z'),
           makeForcePushEvent(100, 'old-before-1', 'after-1', '2024-01-02T10:00:00Z'),
+          makeCommittedEvent('gc-before', '2024-01-03T10:00:00Z'),
           makeForcePushEvent(200, 'gc-before', 'after-2', '2024-01-04T10:00:00Z'),
         ])
         .mockResolvedValueOnce( // first compare: discoverable
@@ -380,8 +399,10 @@ describe('TimelineLoader', () => {
         .mockResolvedValueOnce([ // commits (current)
           makeCommit('latest', '2024-01-10T10:00:00Z'),
         ])
-        .mockResolvedValueOnce([ // timeline: two force-pushes in chronological order
+        .mockResolvedValueOnce([ // timeline: committed events + two force-pushes
+          makeCommittedEvent('old-1', '2024-01-02T10:00:00Z'),
           makeForcePushEvent(100, 'old-1', 'after-1', '2024-01-03T10:00:00Z'),
+          makeCommittedEvent('old-2', '2024-01-05T10:00:00Z'),
           makeForcePushEvent(200, 'old-2', 'after-2', '2024-01-06T10:00:00Z'),
         ])
         .mockResolvedValueOnce( // first compare
@@ -431,6 +452,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('curr', '2024-01-02T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('before-abc', '2024-01-01T10:00:00Z'),
           makeForcePushEvent(1, 'before-abc', 'after-def', '2024-01-01T12:00:00Z'),
         ])
         .mockResolvedValueOnce(makeCompareResult([]));
@@ -446,6 +468,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('c1', '2024-01-01T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('b', '2024-01-01T10:00:00Z'),
           makeForcePushEvent(1, 'b', 'a', '2024-01-01T12:00:00Z'),
         ])
         .mockResolvedValueOnce(makeCompareResult([]));
@@ -483,16 +506,14 @@ describe('TimelineLoader', () => {
       expect(at(result.iterations, 0).status).toBe('live');
     });
 
-    it('ignores force-push events missing before_commit or after_commit', async () => {
+    it('ignores force-push events missing commit_id', async () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('aaa', '2024-01-01T10:00:00Z')])
         .mockResolvedValueOnce([
-          // Missing before_commit
-          { id: 1, event: 'head_ref_force_pushed', created_at: '2024-01-01T10:00:00Z', after_commit: { sha: 'x' } },
-          // Missing after_commit
-          { id: 2, event: 'head_ref_force_pushed', created_at: '2024-01-01T11:00:00Z', before_commit: { sha: 'y' } },
-          // Missing both
-          { id: 3, event: 'head_ref_force_pushed', created_at: '2024-01-01T12:00:00Z' },
+          // Force-push event without commit_id — should be ignored
+          { id: 1, event: 'head_ref_force_pushed', created_at: '2024-01-01T10:00:00Z' },
+          // Another without commit_id
+          { id: 2, event: 'head_ref_force_pushed', created_at: '2024-01-01T11:00:00Z' },
         ]);
 
       const loader = new TimelineLoader('o', 'r', 1, 'base');
@@ -502,6 +523,23 @@ describe('TimelineLoader', () => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(result.collapsedGroups).toHaveLength(0);
     });
+
+    it('creates unknown-count group when no committed event precedes force-push', async () => {
+      // Force-push with commit_id but no prior committed event to infer before SHA
+      mockFetch
+        .mockResolvedValueOnce([makeCommit('aaa', '2024-01-02T10:00:00Z')])
+        .mockResolvedValueOnce([
+          makeForcePushEvent(99, '', 'new-head', '2024-01-01T10:00:00Z'),
+        ]);
+
+      const loader = new TimelineLoader('o', 'r', 1, 'base');
+      const result = await loader.load();
+
+      // No compare API call since before SHA is unknown
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.collapsedGroups).toHaveLength(1);
+      expect(at(result.collapsedGroups, 0).unknownCount).toBe(true);
+    });
   });
 
   describe('error propagation', () => {
@@ -509,6 +547,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('aaa', '2024-01-01T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('before', '2024-01-01T08:00:00Z'),
           makeForcePushEvent(1, 'before', 'after', '2024-01-01T10:00:00Z'),
         ])
         .mockRejectedValueOnce(
@@ -523,6 +562,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('aaa', '2024-01-01T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('before', '2024-01-01T08:00:00Z'),
           makeForcePushEvent(1, 'before', 'after', '2024-01-01T10:00:00Z'),
         ])
         .mockRejectedValueOnce(
@@ -557,6 +597,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('aaa', '2024-01-01T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('before', '2024-01-01T08:00:00Z'),
           makeForcePushEvent(1, 'before', 'after', '2024-01-01T10:00:00Z'),
         ])
         .mockRejectedValueOnce(new Error('Network failed'));
@@ -572,6 +613,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('new1', '2024-01-02T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('old', '2024-01-01T10:00:00Z'),
           makeForcePushEvent(100, 'old', 'new', '2024-01-01T12:00:00Z'),
         ])
         .mockResolvedValueOnce(makeCompareResult([])); // empty commits
@@ -611,6 +653,7 @@ describe('TimelineLoader', () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('live1', '2024-01-05T10:00:00Z')])
         .mockResolvedValueOnce([
+          makeCommittedEvent('old', '2024-01-02T10:00:00Z'),
           makeForcePushEvent(777, 'old', 'new', '2024-01-03T10:00:00Z'),
         ])
         .mockResolvedValueOnce(makeCompareResult([
@@ -647,7 +690,10 @@ describe('TimelineLoader', () => {
     it('collapsed group forcePushEventId is string even when event id is numeric', async () => {
       mockFetch
         .mockResolvedValueOnce([makeCommit('live', '2024-01-02T10:00:00Z')])
-        .mockResolvedValueOnce([makeForcePushEvent(42, 'old', 'new', '2024-01-01T10:00:00Z')])
+        .mockResolvedValueOnce([
+          makeCommittedEvent('old', '2024-01-01T08:00:00Z'),
+          makeForcePushEvent(42, 'old', 'new', '2024-01-01T10:00:00Z'),
+        ])
         .mockResolvedValueOnce(makeCompareResult([
           { sha: 'disc', date: '2024-01-01T08:00:00Z' },
         ]));

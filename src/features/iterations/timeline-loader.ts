@@ -33,8 +33,10 @@ interface TimelineEvent {
   id: number;
   event: string;
   created_at: string;
-  before_commit?: { sha: string };
-  after_commit?: { sha: string };
+  /** SHA of the new HEAD after force-push (real GitHub API field) */
+  commit_id?: string;
+  /** SHA from committed events in timeline */
+  sha?: string;
 }
 
 interface CompareResult {
@@ -141,6 +143,48 @@ export class TimelineLoader {
   }
 
   // --------------------------------------------------------------------------
+  // Force-Push SHA Inference
+  // --------------------------------------------------------------------------
+
+  /**
+   * Infer before/after SHAs for force-push events by walking the timeline
+   * chronologically. The real GitHub Timeline API's `head_ref_force_pushed`
+   * events only provide `commit_id` (the new HEAD after the force-push).
+   * We infer the "before" SHA by tracking the current HEAD via `committed` events.
+   *
+   * Events without a determinable before SHA are treated as GC'd (unknownCount).
+   */
+  private inferForcePushSHAs(
+    timeline: TimelineEvent[]
+  ): { event: TimelineEvent; beforeSha: string | null; afterSha: string }[] {
+    const sorted = [...timeline].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    const result: { event: TimelineEvent; beforeSha: string | null; afterSha: string }[] = [];
+    let currentHead: string | null = null;
+
+    for (const event of sorted) {
+      if (event.event === 'committed' && event.sha) {
+        currentHead = event.sha;
+        continue;
+      }
+
+      if (event.event !== 'head_ref_force_pushed' || !event.commit_id) {
+        continue;
+      }
+
+      const afterSha = event.commit_id;
+      result.push({ event, beforeSha: currentHead, afterSha });
+
+      // After force-push, the new HEAD is the after SHA
+      currentHead = afterSha;
+    }
+
+    return result;
+  }
+
+  // --------------------------------------------------------------------------
   // Iteration Building
   // --------------------------------------------------------------------------
 
@@ -151,23 +195,30 @@ export class TimelineLoader {
     const iterations: Iteration[] = [];
     const collapsedGroups: CollapsedIterationGroup[] = [];
 
-    // Step 1: Extract force-push events, sorted chronologically
-    const forcePushes = timeline
-      .filter((e): e is TimelineEvent & { before_commit: { sha: string }; after_commit: { sha: string } } =>
-        e.event === 'head_ref_force_pushed' &&
-        e.before_commit !== undefined &&
-        e.after_commit !== undefined
-      )
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    // Step 1: Infer before/after SHAs for force-push events by walking timeline
+    // chronologically. The real GitHub API only provides commit_id (the new HEAD
+    // after force-push). We track the current HEAD via committed events to infer
+    // what the HEAD was before each force-push.
+    const forcePushes = this.inferForcePushSHAs(timeline);
 
     // Step 2: Discover discarded commits for each force-push (sequential -- each needs API call)
-    for (const event of forcePushes) {
-      const discovery = await this.discoverDiscardedCommits(
-        event.after_commit.sha,
-        event.before_commit.sha
-      );
-
+    for (const { event, beforeSha, afterSha } of forcePushes) {
       const eventId = String(event.id);
+
+      // If we couldn't infer the before SHA, treat as unknown/GC'd
+      if (!beforeSha) {
+        collapsedGroups.push({
+          forcePushEventId: eventId,
+          discardedRevisions: [],
+          commits: [],
+          reason: 'force_push',
+          visibility: 'collapsed',
+          unknownCount: true,
+        });
+        continue;
+      }
+
+      const discovery = await this.discoverDiscardedCommits(afterSha, beforeSha);
 
       if (discovery.status === 'discovered') {
         const group: CollapsedIterationGroup = {
@@ -184,7 +235,7 @@ export class TimelineLoader {
             revision: 0, // placeholder, assigned after sorting
             headSha: commit.sha,
             baseSha: this.baseSha,
-            beforeSha: event.before_commit.sha,
+            beforeSha,
             author: commit.author,
             createdAt: new Date(commit.date),
             status: 'collapsed',

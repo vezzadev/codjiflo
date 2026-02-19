@@ -120,11 +120,16 @@ export async function setupForcePushScenario(
       commits: options.liveCommits,
       timeline: [
         {
+          id: 0,
+          event: "committed",
+          created_at: "2024-01-01T12:00:00Z",
+          sha: options.beforeSha,
+        },
+        {
           id: options.eventId,
           event: "head_ref_force_pushed",
           created_at: "2024-01-02T12:00:00Z",
-          before_commit: { sha: options.beforeSha },
-          after_commit: { sha: options.afterSha },
+          commit_id: options.afterSha,
         },
       ],
     }

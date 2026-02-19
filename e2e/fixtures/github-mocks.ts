@@ -638,8 +638,10 @@ export interface MockTimelineEvent {
   id: number;
   event: string;
   created_at: string;
-  before_commit?: { sha: string };
-  after_commit?: { sha: string };
+  /** SHA of the new HEAD after force-push (real GitHub API field) */
+  commit_id?: string;
+  /** SHA from committed events in timeline */
+  sha?: string;
 }
 
 /**
