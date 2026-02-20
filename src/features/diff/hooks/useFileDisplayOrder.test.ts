@@ -53,9 +53,9 @@ describe('useFileDisplayOrder', () => {
     expect(filenames[0]).toBe('README.md');
     // src/components comes before src/utils alphabetically
     expect(filenames[1]).toBe('src/components/Button.tsx');
-    // Then src/utils files
-    expect(filenames.includes('src/utils/helper.ts')).toBe(true);
-    expect(filenames.includes('src/utils/format.ts')).toBe(true);
+    // Then src/utils files, maintaining their input order
+    expect(filenames[2]).toBe('src/utils/helper.ts');
+    expect(filenames[3]).toBe('src/utils/format.ts');
   });
 
   it('returns empty array when no files', () => {

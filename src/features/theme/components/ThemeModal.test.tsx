@@ -139,9 +139,8 @@ describe('ThemeModal', () => {
       // Get all radio buttons with "High Contrast" - second one is the preview panel
       const hcRadios = screen.getAllByRole('radio', { name: /High Contrast/ });
       const previewHcRadio = hcRadios[1]; // Preview panel radio
-      if (previewHcRadio) {
-        fireEvent.click(previewHcRadio);
-      }
+      if (!previewHcRadio) throw new Error('High Contrast preview radio not found');
+      fireEvent.click(previewHcRadio);
 
       expect(useThemeStore.getState().useHighContrastDiff).toBe(true);
     });
@@ -172,10 +171,8 @@ describe('ThemeModal', () => {
 
       // The backdrop has aria-hidden="true" and className "modal-backdrop"
       const backdrop = document.querySelector('.modal-backdrop');
-      expect(backdrop).toBeInTheDocument();
-      if (backdrop) {
-        fireEvent.click(backdrop);
-      }
+      if (!backdrop) throw new Error('Backdrop not found');
+      fireEvent.click(backdrop);
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });

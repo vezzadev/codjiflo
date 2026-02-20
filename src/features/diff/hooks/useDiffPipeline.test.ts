@@ -255,12 +255,27 @@ describe('useDiffPipeline', () => {
 
   it('passes comment threads through pipeline', () => {
     const threadsMap = new Map([
-      ['1-right', [{ id: 1, originalLine: 1, path: 'test.ts', comments: [] }]],
+      [
+        '1-right',
+        [
+          {
+            id: '1',
+            originalLine: 1,
+            path: 'test.ts',
+            comments: [],
+            isResolved: false,
+            side: 'RIGHT' as const,
+            line: 1,
+            trackedLine: 1,
+            originalCommitId: 'test-commit-id',
+          },
+        ],
+      ],
     ]);
 
     const commentsWithThreads: DiffCommentsOutput = {
       ...mockNavigationOutput,
-      threadsByLineAndSide: threadsMap as unknown as Map<string, never[]>,
+      threadsByLineAndSide: threadsMap,
     };
 
     vi.mocked(useDiffComments).mockReturnValue(commentsWithThreads);
