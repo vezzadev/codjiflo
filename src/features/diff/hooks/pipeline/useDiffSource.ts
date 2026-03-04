@@ -2,8 +2,8 @@
  * Pipeline Stage 1: Data Source
  *
  * Gets raw diff data from the appropriate source:
- * - Degraded mode: GitHub API (files from useDiffStore)
- * - Iteration mode: Artifact database (via useIterationDiff)
+ * - Stateless mode: GitHub API (files from useDiffStore)
+ * - Stateful mode: Artifact database (via useIterationDiff)
  */
 
 import { useMemo } from 'react';
@@ -15,8 +15,8 @@ import type { DiffSourceOutput } from './types';
  * Hook to get raw diff data from the appropriate source.
  *
  * Branches:
- * - Degraded: Returns patch and file info from GitHub API
- * - Iteration: Returns pre-computed diff from artifact database
+ * - Stateless: Returns patch and file info from GitHub API
+ * - Stateful: Returns pre-computed diff from artifact database
  */
 export function useDiffSource(): DiffSourceOutput {
   const { files, selectedFileIndex } = useDiffStore();
