@@ -90,7 +90,7 @@ describe('parseGitHubPRUrl', () => {
     });
   });
 
-  it('returns null for URLs with leading zeros that create NaN', () => {
+  it('handles PR numbers with leading zeros', () => {
     // PR number with leading zeros should still parse as valid integer
     const result = parseGitHubPRUrl('https://github.com/owner/repo/pull/0123');
     expect(result).toEqual({
