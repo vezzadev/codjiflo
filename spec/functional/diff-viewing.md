@@ -813,9 +813,22 @@ interface SelectionBehavior {
 #### Display Toggles
 | Shortcut | Action |
 |----------|--------|
-| `F` | Toggle Full file / Changes only |
+| `F` | Show Full file (only when not already in full file mode) |
+| `C` | Show Changes only (only when in full file mode) |
 | `B` | Toggle whitespace visibility |
 | `D` | Toggle comments visibility (hides lasso when comments shown) |
+| `P` | Toggle text wrap (wrap ↔ nowrap) |
+
+**Note:** F and C are unidirectional shortcuts (not toggles). F only enables full file mode, C only enables changes-only mode. This prevents accidental double-toggle.
+
+#### Scroll Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Space` | Scroll down by 80% of viewport height |
+| `PageDown` | Scroll down by viewport height minus 50px (overlap for context) |
+| `PageUp` | Scroll up by viewport height minus 50px |
+| `Home` | Scroll to start of file |
+| `End` | Scroll to end of file |
 
 #### Other Shortcuts
 | Shortcut | Action |
@@ -942,3 +955,6 @@ For React/TypeScript reimplementation:
 - [ ] Minimap overview margin
 - [ ] Theme-aware colors
 - [ ] Keyboard navigation between diffs (J/K for changes, S/W for files)
+- [ ] Full keyboard shortcut support (I/X for view modes, L/O/R for filters, F/C for full/changes, B/D/P for toggles)
+- [ ] Scroll navigation (Space, PageDown/PageUp, Home/End)
+- [ ] Text wrap toggle
