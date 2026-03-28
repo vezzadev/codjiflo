@@ -813,13 +813,13 @@ interface SelectionBehavior {
 #### Display Toggles
 | Shortcut | Action |
 |----------|--------|
-| `F` | Show Full file (only when not already in full file mode) |
-| `C` | Show Changes only (only when in full file mode) |
+| `F` | Show Full file |
+| `C` | Show Changes only |
 | `B` | Toggle whitespace visibility |
 | `D` | Toggle comments visibility (hides lasso when comments shown) |
 | `P` | Toggle text wrap (wrap ↔ nowrap) |
 
-**Note:** F and C are unidirectional shortcuts (not toggles). F only enables full file mode, C only enables changes-only mode. This prevents accidental double-toggle.
+**Note:** F and C are unidirectional shortcuts (not toggles). F only works when not already in full file mode, C only works when in full file mode. This prevents accidental double-toggle.
 
 #### Scroll Navigation
 | Shortcut | Action |
