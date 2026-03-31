@@ -788,6 +788,8 @@ interface SelectionBehavior {
 |----------|--------|
 | `S` | Next file in file list |
 | `W` | Previous file in file list |
+| `↑`/`↓` | Navigate files (file list focused) |
+| `PgUp`/`PgDn` | Jump 10 files (file list focused) |
 
 #### Change Navigation (within file)
 | Shortcut | Action |
