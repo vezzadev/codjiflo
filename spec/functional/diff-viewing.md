@@ -813,14 +813,25 @@ interface SelectionBehavior {
 #### Display Toggles
 | Shortcut | Action |
 |----------|--------|
-| `F` | Toggle Full file / Changes only |
+| `F` | Show full file (unidirectional) |
+| `C` | Show changes only (unidirectional) |
 | `B` | Toggle whitespace visibility |
 | `D` | Toggle comments visibility (hides lasso when comments shown) |
+| `P` | Toggle text wrap |
+
+#### General Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Space` | Scroll down in diff view |
+| `PgUp`/`PgDn` | Page scroll (diff area focused) |
+| `Home`/`End` | Jump to start/end (diff area focused) |
 
 #### Other Shortcuts
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+F` | Find in file |
+| `F3` | Find next |
+| `Shift+F3` | Find previous |
 | `Ctrl+G` | Go to line |
 | `Ctrl+Mouse Wheel` | Zoom |
 | `?` | Show keyboard shortcuts modal |
