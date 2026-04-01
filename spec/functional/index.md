@@ -91,7 +91,6 @@
 | [ui-components.md](ui-components.md) | ✓ Complete | Dashboard, Explorer, Properties |
 | [realtime.md](realtime.md) | ✓ Complete | Push notifications |
 | [unauthenticated-access.md](unauthenticated-access.md) | ✓ Complete | Public repo access without login |
-| [meta-spec.md](meta-spec.md) | ✓ Complete | Extraction methodology |
 
 ---
 
