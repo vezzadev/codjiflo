@@ -124,6 +124,23 @@ export async function setupAuthMock(
       });
     }
   });
+
+  // Token validation uses /rate_limit (works with all token types including ghs_)
+  await page.route("https://api.github.com/rate_limit", async (route) => {
+    if (options?.failWith) {
+      await route.fulfill({
+        status: options.failWith,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Bad credentials" }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ rate: { limit: 5000, remaining: 4999, reset: 0 } }),
+      });
+    }
+  });
 }
 
 /**
@@ -390,6 +407,15 @@ export async function setupFullPRMocks(
 
   // Set up iteration-related mocks (returns empty to trigger stateless mode)
   await setupIterationMocks(page, owner, repo, prNumber);
+
+  // Mock rate_limit endpoint (used for token validation and rate limit tracking)
+  await page.route("https://api.github.com/rate_limit", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ rate: { limit: 5000, remaining: 4999, reset: 0 } }),
+    });
+  });
 }
 
 /**
@@ -400,11 +426,11 @@ export async function setupFullPRMocks(
 export async function setupAuthState(page: Page): Promise<void> {
   const token = isMockMode()
     ? "ghp_testtoken123"
-    : process.env.CODJIFLO_E2E_GITHUB_TOKEN;
+    : process.env.GITHUB_TOKEN;
 
   if (!token && !isMockMode()) {
     throw new Error(
-      "CODJIFLO_E2E_GITHUB_TOKEN required for prod mode E2E tests"
+      "GITHUB_TOKEN required for prod mode E2E tests"
     );
   }
 

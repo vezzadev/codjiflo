@@ -43,10 +43,10 @@ export function isProdMode(): boolean {
  * @throws Error if in prod mode but token is not configured
  */
 export function getE2EGitHubToken(): string | undefined {
-  const token = process.env.CODJIFLO_E2E_GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
   if (isProdMode() && !token) {
     throw new Error(
-      "E2E_DEPENDENCIES_MODE=prod requires CODJIFLO_E2E_GITHUB_TOKEN to be set"
+      "E2E_DEPENDENCIES_MODE=prod requires GITHUB_TOKEN to be set"
     );
   }
   return token;

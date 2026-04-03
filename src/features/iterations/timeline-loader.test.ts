@@ -662,5 +662,83 @@ describe('TimelineLoader', () => {
       const collapsed = result.iterations.filter(i => i.status === 'collapsed');
       expect(at(collapsed, 0).collapsedGroupId).toBe('42');
     });
+
+    it('IDs are sequential negative numbers matching -revision', async () => {
+      mockFetch
+        .mockResolvedValueOnce([
+          makeCommit('a', '2024-01-01T10:00:00Z'),
+          makeCommit('b', '2024-01-02T10:00:00Z'),
+          makeCommit('c', '2024-01-03T10:00:00Z'),
+        ])
+        .mockResolvedValueOnce([]);
+
+      const loader = new TimelineLoader('o', 'r', 1, 'base');
+      const result = await loader.load();
+
+      // IDs must be deterministic: -1, -2, -3 (not random)
+      expect(at(result.iterations, 0).id).toBe(-1);
+      expect(at(result.iterations, 1).id).toBe(-2);
+      expect(at(result.iterations, 2).id).toBe(-3);
+    });
+
+    it('collapsed iterations have beforeSha set to the force-push before_commit SHA', async () => {
+      mockFetch
+        .mockResolvedValueOnce([makeCommit('live1', '2024-01-05T10:00:00Z')])
+        .mockResolvedValueOnce([
+          makeForcePushEvent(100, 'the-before-sha', 'the-after-sha', '2024-01-03T10:00:00Z'),
+        ])
+        .mockResolvedValueOnce(makeCompareResult([
+          { sha: 'disc1', date: '2024-01-01T10:00:00Z' },
+        ]));
+
+      const loader = new TimelineLoader('o', 'r', 1, 'base');
+      const result = await loader.load();
+
+      const collapsed = result.iterations.filter(i => i.status === 'collapsed');
+      expect(collapsed).toHaveLength(1);
+      // beforeSha must be the force-push event's before_commit SHA (for force-push tracking)
+      expect(at(collapsed, 0).beforeSha).toBe('the-before-sha');
+
+      // Live iterations have null beforeSha
+      const live = result.iterations.filter(i => i.status === 'live');
+      expect(at(live, 0).beforeSha).toBeNull();
+    });
+  });
+
+  describe('pagination', () => {
+    it('fetches additional pages when first page returns exactly 100 items', async () => {
+      // Generate exactly 100 commits for page 1, then 3 for page 2
+      const page1Commits = Array.from({ length: 100 }, (_, i) =>
+        makeCommit(`sha-${String(i).padStart(3, '0')}`, `2024-01-01T${String(10 + Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`)
+      );
+      const page2Commits = [
+        makeCommit('sha-100', '2024-01-02T10:00:00Z'),
+        makeCommit('sha-101', '2024-01-02T11:00:00Z'),
+        makeCommit('sha-102', '2024-01-02T12:00:00Z'),
+      ];
+
+      // fetchCommits and fetchTimeline run in parallel via Promise.all.
+      // Both call fetchAllPages which issues sequential requests.
+      // The mock must return values in the order calls arrive:
+      // commits page 1, timeline page 1 (concurrent), then commits page 2 (sequential after page 1)
+      mockFetch.mockImplementation((url: string) => {
+        if (url.includes('/commits?per_page=100&page=1')) return Promise.resolve(page1Commits);
+        if (url.includes('/commits?per_page=100&page=2')) return Promise.resolve(page2Commits);
+        if (url.includes('/timeline')) return Promise.resolve([]);
+        throw new Error(`Unexpected URL: ${url}`);
+      });
+
+      const loader = new TimelineLoader('o', 'r', 1, 'base');
+      const result = await loader.load();
+
+      // All 103 commits should become iterations
+      expect(result.iterations).toHaveLength(103);
+      expect(result.iterations.map(i => i.revision)).toEqual(
+        Array.from({ length: 103 }, (_, i) => i + 1)
+      );
+
+      // Should have fetched page 2 for commits
+      expect(mockFetch).toHaveBeenCalledWith('/repos/o/r/pulls/1/commits?per_page=100&page=2');
+    });
   });
 });

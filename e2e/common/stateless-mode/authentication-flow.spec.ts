@@ -44,7 +44,7 @@ test.describe("Authentication Flow (S-1.1)", () => {
     // Use appropriate token based on mode
     const token = isMockMode()
       ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
+      : process.env.GITHUB_TOKEN ?? "";
 
     // Enter valid token and submit
     await input.fill(token);

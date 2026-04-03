@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { defineConfig, devices } from "@playwright/test";
 import { config } from "dotenv";
 
-// Load .env.local for local development (contains CODJIFLO_E2E_GITHUB_TOKEN)
+// Load .env.local for local development (contains GITHUB_TOKEN)
 const envLocalPath = ".env.local";
 if (existsSync(envLocalPath)) {
   config({ path: envLocalPath, quiet: true });
@@ -13,10 +13,10 @@ const e2eMode = process.env.E2E_DEPENDENCIES_MODE ?? 'mock';
 const isProdMode = e2eMode === 'prod';
 
 // Validate prod mode requirements
-if (isProdMode && !process.env.CODJIFLO_E2E_GITHUB_TOKEN) {
+if (isProdMode && !process.env.GITHUB_TOKEN) {
   throw new Error(
-    "E2E prod mode requires CODJIFLO_E2E_GITHUB_TOKEN.\n" +
-      "Set it in .env.local (local) or as a secret (CI)."
+    "E2E prod mode requires GITHUB_TOKEN.\n" +
+      "Set it in .env.local (local) or as GITHUB_TOKEN (CI)."
   );
 }
 

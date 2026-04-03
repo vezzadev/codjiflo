@@ -13,9 +13,16 @@ describe('isValidTokenFormat', () => {
         expect(isValidTokenFormat('github_pat_1234567890')).toBe(true);
     });
 
+    it('should return true for gho_ prefix (OAuth token)', () => {
+        expect(isValidTokenFormat('gho_1234567890')).toBe(true);
+    });
+
+    it('should return true for ghs_ prefix (GitHub App installation token)', () => {
+        expect(isValidTokenFormat('ghs_1234567890')).toBe(true);
+    });
+
     it('should return false for invalid prefix', () => {
         expect(isValidTokenFormat('invalid_token')).toBe(false);
-        expect(isValidTokenFormat('ghs_1234567890')).toBe(false);
         expect(isValidTokenFormat('')).toBe(false);
     });
 });

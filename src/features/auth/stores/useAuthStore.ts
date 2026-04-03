@@ -39,19 +39,21 @@ interface AuthState {
 }
 
 /**
- * Validates GitHub Personal Access Token format
- * Valid formats: ghp_* or github_pat_*
+ * Validates GitHub token format.
+ * Valid prefixes: ghp_ (classic PAT), github_pat_ (fine-grained PAT),
+ * gho_ (OAuth user token), ghs_ (GitHub App installation token)
  */
 export function isValidTokenFormat(token: string): boolean {
-    return token.startsWith('ghp_') || token.startsWith('github_pat_');
+    return token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('ghs_');
 }
 
 /**
- * Validates token by making a test request to GitHub API
+ * Validates token by making a test request to GitHub API.
+ * Uses /rate_limit instead of /user because installation tokens (ghs_) can't access /user.
  */
 async function validateGitHubToken(token: string): Promise<boolean> {
     try {
-        const response = await fetch('https://api.github.com/user', {
+        const response = await fetch('https://api.github.com/rate_limit', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json',
