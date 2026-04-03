@@ -181,6 +181,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   e2e-tests:
+    needs: [wait-for-vercel]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
