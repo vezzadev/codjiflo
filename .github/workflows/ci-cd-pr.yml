@@ -189,61 +189,7 @@ jobs:
         timeout-minutes: 1
         run: npm run test:storybook
 
-  manual-tests:
-    runs-on: ubuntu-slim
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        timeout-minutes: 1
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - name: Install dependencies
-        timeout-minutes: 2
-        run: for i in 1 2 3; do npm ci && break || sleep 15; done
-
-      - name: Resolve Vercel IDs
-        id: vercel-ids
-        run: |
-          echo "org_id=$(node -p "require('./.vercel/project.json').orgId")" >> $GITHUB_OUTPUT
-          echo "project_id=$(node -p "require('./.vercel/project.json').projectId")" >> $GITHUB_OUTPUT
-
-      - name: Deploy to Vercel
-        id: deploy
-        env:
-          VERCEL_ORG_ID: ${{ steps.vercel-ids.outputs.org_id }}
-          VERCEL_PROJECT_ID: ${{ steps.vercel-ids.outputs.project_id }}
-        run: |
-          url=$(npx vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }} --meta gitPrNumber=${{ env.PR_NUMBER }})
-          echo "url=$url" >> $GITHUB_OUTPUT
-
-      - name: Set deployment alias
-        run: |
-          npx vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ env.PR_NUMBER }}.codjiflo.vza.net --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ steps.vercel-ids.outputs.org_id }}
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ env.PR_NUMBER }}
-          comment-author: 'github-actions[bot]'
-          body-includes: 'Preview Deployment'
-
-      - name: Comment on PR
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ env.PR_NUMBER }}
-          body: |
-            ## Preview Deployment
-
-            :rocket: **Preview:** https://pr-${{ env.PR_NUMBER }}.codjiflo.vza.net/${{ github.repository }}/${{ env.PR_NUMBER }}
-
-            _Updated for commit ${{ github.event.pull_request.head.sha }}_
-          edit-mode: replace
+  # Preview deployments handled by Vercel GitHub App (no VERCEL_TOKEN needed)
 
   # Capture iteration data for CodjiFlo iteration tracking
   capture-iteration:

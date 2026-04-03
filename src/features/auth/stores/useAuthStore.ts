@@ -48,11 +48,12 @@ export function isValidTokenFormat(token: string): boolean {
 }
 
 /**
- * Validates token by making a test request to GitHub API
+ * Validates token by making a test request to GitHub API.
+ * Uses /rate_limit instead of /user because installation tokens (ghs_) can't access /user.
  */
 async function validateGitHubToken(token: string): Promise<boolean> {
     try {
-        const response = await fetch('https://api.github.com/user', {
+        const response = await fetch('https://api.github.com/rate_limit', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json',
