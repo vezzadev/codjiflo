@@ -407,6 +407,15 @@ export async function setupFullPRMocks(
 
   // Set up iteration-related mocks (returns empty to trigger stateless mode)
   await setupIterationMocks(page, owner, repo, prNumber);
+
+  // Mock rate_limit endpoint (used for token validation and rate limit tracking)
+  await page.route("https://api.github.com/rate_limit", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ rate: { limit: 5000, remaining: 4999, reset: 0 } }),
+    });
+  });
 }
 
 /**
