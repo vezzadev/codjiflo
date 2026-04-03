@@ -400,11 +400,11 @@ export async function setupFullPRMocks(
 export async function setupAuthState(page: Page): Promise<void> {
   const token = isMockMode()
     ? "ghp_testtoken123"
-    : process.env.CODJIFLO_E2E_GITHUB_TOKEN;
+    : process.env.GITHUB_TOKEN;
 
   if (!token && !isMockMode()) {
     throw new Error(
-      "CODJIFLO_E2E_GITHUB_TOKEN required for prod mode E2E tests"
+      "GITHUB_TOKEN required for prod mode E2E tests"
     );
   }
 

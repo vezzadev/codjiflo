@@ -101,7 +101,7 @@ function LoginContent() {
                   {...(error && { error })}
                   disabled={isValidating}
                   placeholder="ghp_xxxxxxxxxxxx or github_pat_xxxxxxxxxxxx"
-                  helperText="Your token must start with 'ghp_' or 'github_pat_'"
+                  helperText="Your token must start with 'ghp_', 'github_pat_', or 'gho_'"
                   required
                 />
 

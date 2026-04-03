@@ -114,7 +114,7 @@ E2E tests use Playwright and support two modes: mock (for local dev and PRs) and
 | Variable | Purpose |
 |----------|---------|
 | `E2E_DEPENDENCIES_MODE` | `mock` (default) or `prod` |
-| `CODJIFLO_E2E_GITHUB_TOKEN` | GitHub PAT for prod mode (needs `public_repo` scope) |
+| `GITHUB_TOKEN` | GitHub PAT for prod mode (needs `public_repo` scope); auto-provided in GitHub Actions |
 
 ### CI/CD Integration
 - **PR workflows:** `npm run test:e2e` (mock mode, fast, no external deps)

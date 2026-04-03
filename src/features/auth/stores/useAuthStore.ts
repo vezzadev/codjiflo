@@ -39,11 +39,12 @@ interface AuthState {
 }
 
 /**
- * Validates GitHub Personal Access Token format
- * Valid formats: ghp_* or github_pat_*
+ * Validates GitHub token format.
+ * Valid prefixes: ghp_ (classic PAT), github_pat_ (fine-grained PAT),
+ * gho_ (OAuth user token), ghs_ (GitHub App installation token)
  */
 export function isValidTokenFormat(token: string): boolean {
-    return token.startsWith('ghp_') || token.startsWith('github_pat_');
+    return token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('ghs_');
 }
 
 /**

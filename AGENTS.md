@@ -82,7 +82,7 @@ e2e/
 
 **Environment:**
 - `.env.local` - Created by running `npm run dev` (pulls from Vercel). Required for prod mode tests locally.
-- `CODJIFLO_E2E_GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, from secrets in CI)
+- `GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, auto-provided in CI)
 
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)

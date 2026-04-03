@@ -73,7 +73,7 @@ test.describe("Redirect After Login", () => {
 
     const token = isMockMode()
       ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
+      : process.env.GITHUB_TOKEN ?? "";
 
     await input.fill(token);
     await page.getByRole("button", { name: /Connect with PAT/i }).click();
@@ -105,7 +105,7 @@ test.describe("Redirect After Login", () => {
 
     const token = isMockMode()
       ? "ghp_validtoken123456789"
-      : process.env.CODJIFLO_E2E_GITHUB_TOKEN ?? "";
+      : process.env.GITHUB_TOKEN ?? "";
 
     await input.fill(token);
     await page.getByRole("button", { name: /Connect with PAT/i }).click();
