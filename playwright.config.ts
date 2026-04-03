@@ -11,6 +11,7 @@ if (existsSync(envLocalPath)) {
 const isCI = !!process.env.CI;
 const e2eMode = process.env.E2E_DEPENDENCIES_MODE ?? 'mock';
 const isProdMode = e2eMode === 'prod';
+const externalBaseURL = process.env.E2E_BASE_URL;
 
 // Validate prod mode requirements
 if (isProdMode && !process.env.GITHUB_TOKEN) {
@@ -41,8 +42,8 @@ export default defineConfig({
   },
   reporter: "html",
   use: {
-    // E2E_PORT is set by webServer stdout capture at runtime
-    baseURL: `http://localhost:${process.env.E2E_PORT}`,
+    // E2E_BASE_URL: external deployment (CI). E2E_PORT: local webServer (dev).
+    baseURL: externalBaseURL ?? `http://localhost:${process.env.E2E_PORT}`,
     trace: "retain-on-failure",
     actionTimeout: 2000,
   },
@@ -54,11 +55,14 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: "npm run build && npm run start -- -p 0",
-    // Wait for Next.js to output port and capture it in E2E_PORT env var
-    wait: { stdout: /localhost:(?<E2E_PORT>\d+)/ },
-    reuseExistingServer: !isCI,
-    timeout: 180_000,
-  },
+  // Skip local build when running against an external deployment (CI)
+  ...(!externalBaseURL && {
+    webServer: {
+      command: "npm run build && npm run start -- -p 0",
+      // Wait for Next.js to output port and capture it in E2E_PORT env var
+      wait: { stdout: /localhost:(?<E2E_PORT>\d+)/ },
+      reuseExistingServer: !isCI,
+      timeout: 180_000,
+    },
+  }),
 });
