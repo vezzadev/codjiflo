@@ -191,9 +191,6 @@ jobs:
 
   manual-tests:
     runs-on: ubuntu-slim
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -216,7 +213,8 @@ jobs:
 
       - name: Set deployment alias
         run: |
-          npx vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ env.PR_NUMBER }}.codjiflo.vza.net --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_ORG_ID=$(node -p "require('./.vercel/project.json').orgId")
+          npx vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ env.PR_NUMBER }}.codjiflo.vza.net --token=${{ secrets.VERCEL_TOKEN }} --scope=$VERCEL_ORG_ID
 
       - name: Find Comment
         uses: peter-evans/find-comment@v3
