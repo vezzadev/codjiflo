@@ -159,6 +159,8 @@ jobs:
 
       - name: Run E2E tests (prod mode)
         timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: npm run test:e2e:prod
 
   storybook-tests:

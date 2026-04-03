@@ -115,6 +115,8 @@ jobs:
 
       - name: Run E2E stress tests (max workers) - 10x
         timeout-minutes: 30
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
           npm run test:e2e -- --repeat-each=10 || MOCK_FAILED=1
@@ -155,6 +157,8 @@ jobs:
 
       - name: Run E2E stress tests (1 worker) - 10x
         timeout-minutes: 30
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm run test:e2e -- --workers=1 --repeat-each=10 || MOCK_FAILED=1
           npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
