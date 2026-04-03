@@ -2,6 +2,7 @@ name: CI/CD Main
 
 permissions:
   contents: read
+  deployments: read
 
 on:
   push:
@@ -45,41 +46,53 @@ jobs:
           path: coverage/coverage-summary.json
           retention-days: 10
 
-  deploy-main:
-    runs-on: ubuntu-latest
-    needs: [coverage-baseline]
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  wait-for-deployment:
+    runs-on: ubuntu-slim
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        timeout-minutes: 2
-        run: for i in 1 2 3; do npm ci && break || sleep 15; done
-
-      - name: Deploy to Vercel (Production)
-        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }}
-
-      - name: Wait for deployment to serve new commit
+      - name: Wait for Vercel Production deployment
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          EXPECTED_COMMIT="${{ github.sha }}"
+          SHA="${{ github.sha }}"
+          echo "Waiting for Vercel Production deployment for SHA: ${SHA:0:7}"
+
+          for i in $(seq 1 60); do
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Production" --jq '.[0].id // empty' 2>/dev/null)
+
+            if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
+              STATE=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0].state // empty' 2>/dev/null)
+
+              if [ "$STATE" = "success" ]; then
+                echo "✅ Production deployment ready"
+                break
+              fi
+              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
+                echo "❌ Production deployment failed: $STATE"
+                exit 1
+              fi
+              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
+            else
+              echo "No deployment found yet (attempt $i/60)"
+            fi
+            sleep 5
+          done
+
+      - name: Verify deployment serves new commit
+        timeout-minutes: 1
+        run: |
+          EXPECTED="${{ github.sha }}"
           URL="https://codjiflo.vza.net/api/health"
-          for i in {1..30}; do
+          for i in $(seq 1 15); do
             DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
-            if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
-              echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
+            if [ "$DEPLOYED" = "$EXPECTED" ]; then
+              echo "✅ Deployment verified with commit ${EXPECTED:0:7}"
               exit 0
             fi
-            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
+            echo "Health check attempt $i/15 (got: ${DEPLOYED:-no response})"
             sleep 2
           done
-          echo "❌ Timeout waiting for deployment"
+          echo "❌ Timeout waiting for health check"
           exit 1
 
   # ============================================================================
@@ -92,7 +105,7 @@ jobs:
 
   e2e-stress-parallel:
     runs-on: ubuntu-latest
-    needs: [deploy-main]
+    needs: [wait-for-deployment]
     steps:
       - name: Checkout repository
         timeout-minutes: 1
@@ -134,7 +147,7 @@ jobs:
 
   e2e-stress-sequential:
     runs-on: ubuntu-latest
-    needs: [deploy-main]
+    needs: [wait-for-deployment]
     steps:
       - name: Checkout repository
         timeout-minutes: 1

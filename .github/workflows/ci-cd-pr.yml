@@ -2,6 +2,7 @@ name: CI/CD Pull Request
 permissions:
   contents: read
   actions: read
+  deployments: read
   pull-requests: write
 
 on:
@@ -109,7 +110,78 @@ jobs:
           json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
           threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
 
+  wait-for-vercel:
+    runs-on: ubuntu-slim
+    outputs:
+      preview-url: ${{ steps.wait.outputs.preview-url }}
+    steps:
+      - name: Wait for Vercel Preview deployment
+        id: wait
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            SHA=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
+          fi
+
+          echo "Waiting for Vercel Preview deployment for SHA: ${SHA:0:7}"
+
+          for i in $(seq 1 60); do
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+
+            if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
+              STATUS=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0]' 2>/dev/null)
+              STATE=$(echo "$STATUS" | jq -r '.state // empty')
+
+              if [ "$STATE" = "success" ]; then
+                URL=$(echo "$STATUS" | jq -r '.target_url // empty')
+                echo "✅ Preview deployment ready: $URL"
+                echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
+                echo "❌ Preview deployment failed: $STATE"
+                exit 1
+              fi
+              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
+            else
+              echo "No deployment found yet (attempt $i/60)"
+            fi
+            sleep 5
+          done
+
+          echo "❌ Timeout waiting for Vercel Preview deployment"
+          exit 1
+
+      - name: Verify preview serves correct commit
+        timeout-minutes: 1
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            EXPECTED="${{ github.event.pull_request.head.sha }}"
+          else
+            EXPECTED=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
+          fi
+          URL="${{ steps.wait.outputs.preview-url }}/api/health"
+
+          for i in $(seq 1 15); do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED" ]; then
+              echo "✅ Preview verified with commit ${EXPECTED:0:7}"
+              exit 0
+            fi
+            echo "Health check attempt $i/15 (got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for health check"
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   e2e-tests:
+    needs: [wait-for-vercel]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -136,6 +208,7 @@ jobs:
         run: npm run test:e2e
 
   e2e-tests-prod:
+    needs: [wait-for-vercel]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
