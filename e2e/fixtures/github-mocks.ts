@@ -124,6 +124,23 @@ export async function setupAuthMock(
       });
     }
   });
+
+  // Token validation uses /rate_limit (works with all token types including ghs_)
+  await page.route("https://api.github.com/rate_limit", async (route) => {
+    if (options?.failWith) {
+      await route.fulfill({
+        status: options.failWith,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Bad credentials" }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ rate: { limit: 5000, remaining: 4999, reset: 0 } }),
+      });
+    }
+  });
 }
 
 /**
