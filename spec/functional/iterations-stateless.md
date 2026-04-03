@@ -180,6 +180,18 @@ async function discoverDiscardedCommits(
 - Iterations are immutable once discovered
 - Timeline and commits are fetched once on PR open, not polled
 
+### Pagination
+
+Both the Commits API and Timeline API may return paginated results. The loader must fetch **all pages** using `per_page=100` and incrementing the `page` parameter until a page returns fewer than 100 items.
+
+### Iteration ID Assignment
+
+Stateless iterations use **deterministic sequential negative IDs**: iteration with revision `N` gets `id = -N`. This ensures IDs are stable across page reloads (not random), negative to distinguish from server-assigned stateful IDs, and unique.
+
+### Collapsed Iteration `beforeSha`
+
+Collapsed iterations (discarded by force-push) must have their `beforeSha` field set to the force-push event's `before_commit.sha`. This preserves the pre-force-push reference for potential content recovery. Live iterations have `beforeSha: null`.
+
 ---
 
 ## Collapsed Iterations
