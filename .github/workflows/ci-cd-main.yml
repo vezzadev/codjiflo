@@ -130,11 +130,10 @@ jobs:
         timeout-minutes: 30
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          E2E_BASE_URL: https://codjiflo.vza.net
         run: |
           echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
           npm run test:e2e -- --repeat-each=10 || MOCK_FAILED=1
-          npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
+          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
           [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
 
       - name: Upload Playwright traces
@@ -173,10 +172,9 @@ jobs:
         timeout-minutes: 30
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          E2E_BASE_URL: https://codjiflo.vza.net
         run: |
           npm run test:e2e -- --workers=1 --repeat-each=10 || MOCK_FAILED=1
-          npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
+          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
           [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
 
       - name: Upload Playwright traces
