@@ -1,7 +1,6 @@
 {
   "enabledPlugins": {
-    "personal@personal-marketplace": true,
     "superpowers@personal-marketplace": true,
-    "playwright-cli@personal-marketplace": true
+    "personal@personal-marketplace": true
   }
 }
