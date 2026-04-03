@@ -121,6 +121,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set +e
+
           if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
             SHA="${{ github.event.pull_request.head.sha }}"
           else
@@ -132,7 +134,7 @@ jobs:
           for i in $(seq 1 60); do
             DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
 
-            if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
+            if [ $? -eq 0 ] && [[ "$DEPLOYMENT_ID" =~ ^[0-9]+$ ]]; then
               STATUS=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0]' 2>/dev/null)
               STATE=$(echo "$STATUS" | jq -r '.state // empty')
 
@@ -181,7 +183,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   e2e-tests:
-    needs: [wait-for-vercel]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
