@@ -45,41 +45,26 @@ jobs:
           path: coverage/coverage-summary.json
           retention-days: 10
 
+  # Production deployment handled by Vercel GitHub App.
+  # This job waits for it to complete before running stress tests.
   deploy-main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: [coverage-baseline]
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        timeout-minutes: 2
-        run: for i in 1 2 3; do npm ci && break || sleep 15; done
-
-      - name: Deploy to Vercel (Production)
-        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --meta gitCommitSha=${{ github.sha }}
-
-      - name: Wait for deployment to serve new commit
+      - name: Wait for Vercel production deployment
         run: |
           EXPECTED_COMMIT="${{ github.sha }}"
           URL="https://codjiflo.vza.net/api/health"
-          for i in {1..30}; do
+          for i in {1..60}; do
             DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
             if [ "$DEPLOYED" = "$EXPECTED_COMMIT" ]; then
               echo "✅ Deployment ready with commit $EXPECTED_COMMIT"
               exit 0
             fi
-            echo "Waiting... (attempt $i/30, got: ${DEPLOYED:-no response})"
-            sleep 2
+            echo "Waiting... (attempt $i/60, got: ${DEPLOYED:-no response})"
+            sleep 5
           done
-          echo "❌ Timeout waiting for deployment"
+          echo "❌ Timeout waiting for Vercel production deployment"
           exit 1
 
   # ============================================================================

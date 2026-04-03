@@ -109,7 +109,17 @@ jobs:
           json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
           threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
 
+  vercel-deploy:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Wait for Vercel deployment
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 300
+
   e2e-tests:
+    needs: [vercel-deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -136,6 +146,7 @@ jobs:
         run: npm run test:e2e
 
   e2e-tests-prod:
+    needs: [vercel-deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
