@@ -181,7 +181,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   e2e-tests:
-    needs: [wait-for-vercel]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -205,8 +204,6 @@ jobs:
 
       - name: Run E2E tests (mock mode)
         timeout-minutes: 3
-        env:
-          E2E_BASE_URL: ${{ needs.wait-for-vercel.outputs.preview-url }}
         run: npm run test:e2e
 
   e2e-tests-prod:
