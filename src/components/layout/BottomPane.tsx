@@ -39,9 +39,7 @@ export function BottomPane({ tabs, defaultTab, height }: BottomPaneProps) {
         </TabList>
         {tabs.map((tab) => (
           <TabPanel key={tab.id} id={tab.id} className="tab-content">
-            <div className="tab-panel" role="presentation">
-              {tab.content}
-            </div>
+            {tab.content}
           </TabPanel>
         ))}
       </Tabs>
