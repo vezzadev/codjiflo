@@ -1,5 +1,5 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
-import { TextField, Label, Input as AriaInput, Text, FieldError, type InputProps as AriaInputProps } from 'react-aria-components';
+import { TextField, Label, Input as AriaInput, Text, type InputProps as AriaInputProps } from 'react-aria-components';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'style'> {
   label?: string;
@@ -41,7 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...safeProps}
         />
         {helperText && !error && <Text slot="description" style={{ marginTop: '4px', fontSize: '12px', color: 'var(--control-disabled-fg)' }}>{helperText}</Text>}
-        {error && <FieldError style={{ marginTop: '4px', fontSize: '12px', color: 'var(--error-fg)' }}>{error}</FieldError>}
+        {error && <Text slot="errorMessage" role="alert" aria-live="polite" style={{ marginTop: '4px', fontSize: '12px', color: 'var(--error-fg)' }}>{error}</Text>}
       </TextField>
     );
   }

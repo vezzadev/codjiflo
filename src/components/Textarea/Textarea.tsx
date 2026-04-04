@@ -1,5 +1,5 @@
 import { forwardRef, type TextareaHTMLAttributes } from "react";
-import { TextField, Label, TextArea as AriaTextArea, Text, FieldError } from 'react-aria-components';
+import { TextField, Label, TextArea as AriaTextArea, Text } from 'react-aria-components';
 
 export interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'style'> {
   label?: string;
@@ -23,7 +23,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {helperText && !error && <Text slot="description" style={{ marginTop: '4px', fontSize: '12px', color: 'var(--control-disabled-fg)' }}>{helperText}</Text>}
-        {error && <FieldError style={{ marginTop: '4px', fontSize: '12px', color: 'var(--error-fg)' }}>{error}</FieldError>}
+        {error && <Text slot="errorMessage" role="alert" aria-live="polite" style={{ marginTop: '4px', fontSize: '12px', color: 'var(--error-fg)' }}>{error}</Text>}
       </TextField>
     );
   }

@@ -91,7 +91,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
       onChange={(key: Key | null) => { if (key !== null) onChange(key as T); }}
       aria-label={ariaLabel}
     >
-      <AriaButton className="toolbar-dropdown-button" {...(tooltip ? { title: tooltip } : {})}>
+      <AriaButton className="toolbar-dropdown-button" aria-label={ariaLabel} {...(tooltip ? { title: tooltip } : {})}>
         {selectedOption?.icon}
         <span className="toolbar-dropdown-label">{selectedOption?.label}</span>
         <svg className="toolbar-dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
