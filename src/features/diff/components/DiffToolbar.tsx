@@ -98,8 +98,8 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
           <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
         </svg>
       </AriaButton>
-      <Popover className="toolbar-dropdown-listbox-popover">
-        <ListBox className="toolbar-dropdown-listbox">
+      <Popover className="toolbar-dropdown-listbox-popover toolbar-dropdown-listbox">
+        <ListBox>
           {options.map((opt) => (
             <ListBoxItem
               key={opt.value}
