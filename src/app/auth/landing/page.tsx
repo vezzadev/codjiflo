@@ -83,9 +83,8 @@ function AuthLandingContent() {
             <h1 className="auth-error-title">Authentication Failed</h1>
             <p className="auth-error-message">{error}</p>
             <Button
-              onClick={() => router.push('/login')}
-              label="Back to Login"
-            />
+              onPress={() => router.push('/login')}
+            >Back to Login</Button>
           </div>
         </div>
       </AppShell>

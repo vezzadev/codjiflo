@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { Dialog, Modal, ModalOverlay, Heading, RadioGroup, Radio } from 'react-aria-components';
+import { Button as AriaButton } from 'react-aria-components';
 import { useThemeStore, Theme, DiffColorScheme } from '../stores/useThemeStore';
 
 interface ThemeModalProps {
@@ -81,122 +82,91 @@ function DiffPreview({ diffClassName, label, selected, onSelect }: DiffPreviewPr
 }
 
 export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
   const { theme, diffColorScheme, useHighContrastDiff, setTheme, setDiffColorScheme, setUseHighContrastDiff } = useThemeStore();
-
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    document.addEventListener('keydown', handleKeyDown);
-    modalRef.current?.focus();
-
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleKeyDown]);
-
-  if (!isOpen) return null;
 
   const regularClassName = getDiffClassName(theme, diffColorScheme, false);
   const hcClassName = getDiffClassName(theme, diffColorScheme, true);
 
   return (
-    <div
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={(open) => { if (!open) onClose(); }}
       className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="theme-modal-title"
     >
-      <div
-        className="modal-backdrop"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <Modal className="modal-content theme-modal-content">
+        <Dialog aria-labelledby="theme-modal-title">
+          <Heading slot="title" id="theme-modal-title" className="modal-title">
+            Appearance Settings
+          </Heading>
 
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        className="modal-content theme-modal-content"
-      >
-        <h2 id="theme-modal-title" className="modal-title">
-          Appearance Settings
-        </h2>
-
-        <div className="theme-modal-columns">
-          {/* UI Theme Column */}
-          <div className="theme-modal-section">
-            <h3 className="theme-modal-section-title">UI Theme</h3>
-            <div className="theme-modal-options">
-              {UI_THEMES.map((option) => (
-                <label key={option.value} className="theme-option">
-                  <input
-                    type="radio"
-                    name="ui-theme"
-                    value={option.value}
-                    checked={theme === option.value}
-                    onChange={() => setTheme(option.value)}
-                  />
-                  <span className="theme-option-label">{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Diff Colors Column */}
-          <div className="theme-modal-section">
-            <h3 className="theme-modal-section-title">Diff Colors</h3>
-            <div className="theme-modal-options">
-              {DIFF_SCHEMES.map((option) => (
-                <label key={option.value} className="theme-option">
-                  <input
-                    type="radio"
-                    name="diff-scheme"
-                    value={option.value}
-                    checked={diffColorScheme === option.value}
-                    onChange={() => setDiffColorScheme(option.value)}
-                  />
-                  <span className="theme-option-label">
+          <div className="theme-modal-columns">
+            {/* UI Theme Column */}
+            <div className="theme-modal-section">
+              <h3 className="theme-modal-section-title">UI Theme</h3>
+              <RadioGroup
+                value={theme}
+                onChange={(value) => setTheme(value as Theme)}
+                aria-label="UI Theme"
+                className="theme-modal-options"
+              >
+                {UI_THEMES.map((option) => (
+                  <Radio key={option.value} value={option.value} className="theme-option">
                     {option.label}
-                    {option.description && (
-                      <span className="theme-option-description">
-                        {option.description}
-                      </span>
-                    )}
-                  </span>
-                </label>
-              ))}
+                  </Radio>
+                ))}
+              </RadioGroup>
+            </div>
+
+            {/* Diff Colors Column */}
+            <div className="theme-modal-section">
+              <h3 className="theme-modal-section-title">Diff Colors</h3>
+              <RadioGroup
+                value={diffColorScheme}
+                onChange={(value) => setDiffColorScheme(value as DiffColorScheme)}
+                aria-label="Diff Colors"
+                className="theme-modal-options"
+              >
+                {DIFF_SCHEMES.map((option) => (
+                  <Radio key={option.value} value={option.value} className="theme-option">
+                    <span className="theme-option-label">
+                      {option.label}
+                      {option.description && (
+                        <span className="theme-option-description">
+                          {option.description}
+                        </span>
+                      )}
+                    </span>
+                  </Radio>
+                ))}
+              </RadioGroup>
             </div>
           </div>
-        </div>
 
-        {/* Preview Section - Two panels */}
-        <h3 className="theme-modal-section-title theme-modal-preview-title">Contrast</h3>
-        <div className="theme-modal-previews">
-          <DiffPreview
-            diffClassName={regularClassName}
-            label="Regular"
-            selected={!useHighContrastDiff}
-            onSelect={() => setUseHighContrastDiff(false)}
-          />
-          <DiffPreview
-            diffClassName={hcClassName}
-            label="High Contrast"
-            selected={useHighContrastDiff}
-            onSelect={() => setUseHighContrastDiff(true)}
-          />
-        </div>
+          {/* Preview Section - Two panels */}
+          <h3 className="theme-modal-section-title theme-modal-preview-title">Contrast</h3>
+          <div className="theme-modal-previews">
+            <DiffPreview
+              diffClassName={regularClassName}
+              label="Regular"
+              selected={!useHighContrastDiff}
+              onSelect={() => setUseHighContrastDiff(false)}
+            />
+            <DiffPreview
+              diffClassName={hcClassName}
+              label="High Contrast"
+              selected={useHighContrastDiff}
+              onSelect={() => setUseHighContrastDiff(true)}
+            />
+          </div>
 
-        <button
-          onClick={onClose}
-          className="btn-colorful modal-close-btn"
-        >
-          Close
-        </button>
-      </div>
-    </div>
+          <AriaButton
+            onPress={onClose}
+            className="btn-colorful modal-close-btn"
+          >
+            Close
+          </AriaButton>
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   );
 }

@@ -55,6 +55,7 @@
     "lucide-react": "^1.7.0",
     "next": "16.2.0",
     "react": "^19.2.4",
+    "react-aria-components": "^1.16.0",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
     "sql.js": "^1.11.0",

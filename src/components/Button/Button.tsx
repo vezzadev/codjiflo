@@ -1,39 +1,40 @@
+import { Button as AriaButton, type PressEvent } from 'react-aria-components';
+
 interface ButtonProps {
-  label: string;
-  onClick?: () => void;
+  children: React.ReactNode;
+  onPress?: ((e: PressEvent) => void) | undefined;
   variant?: "primary" | "secondary";
-  disabled?: boolean;
+  isDisabled?: boolean;
   type?: "button" | "submit" | "reset";
   size?: "default" | "sm" | "icon";
   className?: string;
-  ariaLabel?: string;
+  'aria-label'?: string;
 }
 
 export function Button({
-  label,
-  onClick,
+  children,
+  onPress,
   variant = "primary",
-  disabled = false,
+  isDisabled = false,
   type = "button",
   size = "default",
   className,
-  ariaLabel,
+  ...props
 }: ButtonProps) {
-  // Map variants to CSS classes from spec
   const variantClass = variant === "primary" ? "btn-colorful" : "btn";
   const sizeClass = size === "icon" ? "btn-icon" : "";
 
   const classes = [variantClass, sizeClass, className].filter(Boolean).join(" ");
 
   return (
-    <button
+    <AriaButton
       type={type}
-      onClick={onClick}
-      disabled={disabled}
+      {...(onPress ? { onPress } : {})}
+      isDisabled={isDisabled}
       className={classes}
-      aria-label={ariaLabel}
+      {...props}
     >
-      {label}
-    </button>
+      {children}
+    </AriaButton>
   );
 }

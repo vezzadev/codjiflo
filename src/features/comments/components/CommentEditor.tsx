@@ -46,17 +46,15 @@ export function CommentEditor({
       />
       <div className="comment-editor-actions">
         <Button
-          label={isSubmitting ? `${submitLabel}...` : submitLabel}
-          onClick={onSubmit}
-          disabled={isSubmitting || value.trim().length === 0}
-        />
+          onPress={onSubmit}
+          isDisabled={isSubmitting || value.trim().length === 0}
+        >{isSubmitting ? `${submitLabel}...` : submitLabel}</Button>
         {onCancel && (
           <Button
-            label="Cancel"
             variant="secondary"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          />
+            onPress={onCancel}
+            isDisabled={isSubmitting}
+          >Cancel</Button>
         )}
         {isSubmitting && (
           <span

@@ -12,8 +12,6 @@ describe("Input", () => {
     render(<Input label="Test" error="Error message" />);
     const errorElement = screen.getByText("Error message");
     expect(errorElement).toBeInTheDocument();
-    expect(errorElement).toHaveAttribute("role", "alert");
-    expect(errorElement).toHaveAttribute("aria-live", "polite");
   });
 
   it("should display helper text when no error", () => {

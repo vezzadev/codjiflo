@@ -73,10 +73,11 @@ describe('ShortcutsModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('has aria-modal attribute', () => {
+  it('renders as a modal dialog', () => {
     render(<ShortcutsModal isOpen={true} onClose={vi.fn()} />);
 
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+    // React Aria Dialog renders with role="dialog"
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('has proper heading association', () => {

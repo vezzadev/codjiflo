@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
+import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 
 interface TabConfig {
   id: string;
@@ -18,43 +19,32 @@ interface BottomPaneProps {
  * Bottom pane with tabbed content (Comments, Activity, Search Results)
  */
 export function BottomPane({ tabs, defaultTab, height }: BottomPaneProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '');
-
   if (tabs.length === 0) {
     return null;
   }
 
-  const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
-
   return (
     <div className="bottom-pane" id="bottomPane" style={height ? { height } : undefined}>
-      <div className="tabs">
-        <div className="tab-list" role="tablist">
+      <Tabs defaultSelectedKey={defaultTab ?? tabs[0]?.id ?? ''} className="tabs">
+        <TabList className="tab-list">
           {tabs.map((tab) => (
-            <div
+            <Tab
               key={tab.id}
-              className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setActiveTab(tab.id);
-                }
-              }}
+              id={tab.id}
+              className={({ isSelected }) => `tab-item ${isSelected ? 'active' : ''}`}
             >
               {tab.label}
-            </div>
+            </Tab>
           ))}
-        </div>
-        <div className="tab-content">
-          <div className="tab-panel active" role="tabpanel">
-            {activeTabContent}
-          </div>
-        </div>
-      </div>
+        </TabList>
+        {tabs.map((tab) => (
+          <TabPanel key={tab.id} id={tab.id} className="tab-content">
+            <div className="tab-panel active" role="presentation">
+              {tab.content}
+            </div>
+          </TabPanel>
+        ))}
+      </Tabs>
     </div>
   );
 }

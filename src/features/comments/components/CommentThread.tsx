@@ -85,11 +85,10 @@ export function CommentThread({
           )}
         </div>
         <Button
-          label={thread.isResolved ? 'Unresolve' : 'Resolve conversation'}
           variant="secondary"
           size="sm"
-          onClick={() => onToggleResolved(thread.id)}
-        />
+          onPress={() => onToggleResolved(thread.id)}
+        >{thread.isResolved ? 'Unresolve' : 'Resolve conversation'}</Button>
       </header>
       <div className="comment-thread-body">
         {thread.comments.map((comment) =>

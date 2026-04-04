@@ -178,11 +178,6 @@
       "count": 1
     }
   },
-  "src/features/diff/components/DiffToolbar.tsx": {
-    "jsx-a11y/role-supports-aria-props": {
-      "count": 1
-    }
-  },
   "src/features/diff/components/FileList.tsx": {
     "jsx-a11y/role-has-required-aria-props": {
       "count": 2

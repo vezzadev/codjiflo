@@ -368,7 +368,7 @@ describe('DiffToolbar', () => {
       expect(button).toHaveAttribute('aria-expanded', 'true');
     });
 
-    it('dropdown closes when focus leaves via Tab', async () => {
+    it('dropdown closes when Escape is pressed', async () => {
       const user = userEvent.setup();
       render(
         <>
@@ -383,8 +383,8 @@ describe('DiffToolbar', () => {
       await user.click(viewModeButton);
       expect(viewModeButton).toHaveAttribute('aria-expanded', 'true');
 
-      // Tab away from the dropdown
-      await user.tab();
+      // Press Escape to close the dropdown (WAI-ARIA Select pattern)
+      await user.keyboard('{Escape}');
 
       // Dropdown should close
       expect(viewModeButton).toHaveAttribute('aria-expanded', 'false');
