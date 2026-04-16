@@ -5,8 +5,6 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff, AlignJustify, WrapText } from 'lucide-react';
-import { Select, Button as AriaButton, Popover, ListBox, ListBoxItem } from 'react-aria-components';
-import type { Key } from 'react-aria-components';
 import { useDiffStore } from '../stores';
 import type { ContentFilter } from '../types';
 
@@ -81,39 +79,123 @@ interface ToolbarSelectProps<T extends string> {
   tooltip?: string;
 }
 
-/** Accessible dropdown using React Aria Select */
+/** Custom dropdown that supports icons in options */
 function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, tooltip }: ToolbarSelectProps<T>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [baseId] = useState(() => `dropdown-${Math.random().toString(36).slice(2, 9)}`);
+
   const selectedOption = options.find(opt => opt.value === value) ?? options[0];
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      if (e.relatedTarget && containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    containerRef.current?.addEventListener('focusout', handleFocusOut);
+
+    const container = containerRef.current;
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      container?.removeEventListener('focusout', handleFocusOut);
+    };
+  }, [isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(!isOpen);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const nextOption = options[Math.min(currentIndex + 1, options.length - 1)];
+          if (nextOption) onChange(nextOption.value);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        if (isOpen) {
+          const currentIndex = options.findIndex(opt => opt.value === value);
+          const prevOption = options[Math.max(currentIndex - 1, 0)];
+          if (prevOption) onChange(prevOption.value);
+        }
+        break;
+    }
+  };
+
+  const handleOptionClick = (optValue: T) => {
+    onChange(optValue);
+    setIsOpen(false);
+  };
+
   return (
-    <Select
-      value={value}
-      onChange={(key: Key | null) => { if (key !== null) onChange(key as T); }}
-      aria-label={ariaLabel}
-    >
-      <AriaButton className="toolbar-dropdown-button" aria-label={ariaLabel} {...(tooltip ? { title: tooltip } : {})}>
+    <div className="toolbar-dropdown" ref={containerRef}>
+      <button
+        type="button"
+        className="toolbar-dropdown-button"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${baseId}-listbox`}
+        aria-activedescendant={isOpen ? `${baseId}-option-${value}` : undefined}
+        title={tooltip}
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
+      >
         {selectedOption?.icon}
         <span className="toolbar-dropdown-label">{selectedOption?.label}</span>
         <svg className="toolbar-dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
           <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
         </svg>
-      </AriaButton>
-      <Popover className="toolbar-dropdown-listbox-popover toolbar-dropdown-listbox">
-        <ListBox>
+      </button>
+      {isOpen && (
+        <ul
+          id={`${baseId}-listbox`}
+          className="toolbar-dropdown-listbox"
+          role="listbox"
+          aria-label={ariaLabel}
+        >
           {options.map((opt) => (
-            <ListBoxItem
+            <li
               key={opt.value}
-              id={opt.value}
-              className={({ isSelected }) => `toolbar-dropdown-option ${isSelected ? 'selected' : ''}`}
-              textValue={opt.label}
+              id={`${baseId}-option-${opt.value}`}
+              role="option"
+              aria-selected={opt.value === value}
+              className={`toolbar-dropdown-option ${opt.value === value ? 'selected' : ''}`}
+              onClick={() => handleOptionClick(opt.value)}
             >
               {opt.icon}
               <span>{opt.label}</span>
-            </ListBoxItem>
+            </li>
           ))}
-        </ListBox>
-      </Popover>
-    </Select>
+        </ul>
+      )}
+    </div>
   );
 }
 
