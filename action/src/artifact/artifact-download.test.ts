@@ -267,16 +267,15 @@ describe('findNewestCodjifloArtifactForPR', () => {
   });
 
   it('should find artifact matching PR-specific pattern', async () => {
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 3,
-        artifacts: [
+    mockPaginateIterator.mockReturnValue(
+      buildAsyncIterator([
+        [
           { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
           { id: 99, name: 'codjiflo-pr-28-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
           { id: 98, name: 'codjiflo-pr-27-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
-      },
-    });
+      ])
+    );
 
     const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
@@ -294,15 +293,14 @@ describe('findNewestCodjifloArtifactForPR', () => {
   });
 
   it('should skip expired artifacts', async () => {
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 2,
-        artifacts: [
+    mockPaginateIterator.mockReturnValue(
+      buildAsyncIterator([
+        [
           { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: true, workflow_run: { id: 1000 } },
           { id: 99, name: 'codjiflo-pr-28-999', created_at: '2025-01-02T10:00:00Z', expired: false, workflow_run: { id: 999 } },
         ],
-      },
-    });
+      ])
+    );
 
     const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
@@ -359,14 +357,13 @@ describe('findNewestCodjifloArtifactForPR', () => {
   });
 
   it('should return null when no matching artifact exists for PR', async () => {
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 1,
-        artifacts: [
+    mockPaginateIterator.mockReturnValue(
+      buildAsyncIterator([
+        [
           { id: 98, name: 'codjiflo-pr-27-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
-      },
-    });
+      ])
+    );
 
     const result = await findNewestCodjifloArtifactForPR(
       mockOctokit as never,
@@ -463,15 +460,14 @@ describe('downloadArtifactWithFallback', () => {
     const mockZipData = new ArrayBuffer(100);
     // First call for specific artifact ID fails
     mockOctokit.rest.actions.getArtifact.mockRejectedValue(new Error('Not found'));
-    // Fallback call lists all artifacts (PR-specific pattern)
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 1,
-        artifacts: [
+    // Fallback call paginates over artifacts (PR-specific pattern)
+    mockPaginateIterator.mockReturnValue(
+      buildAsyncIterator([
+        [
           { id: 99, name: 'codjiflo-pr-28-998', created_at: '2025-01-01T10:00:00Z', expired: false, workflow_run: { id: 998 } },
         ],
-      },
-    });
+      ])
+    );
     mockOctokit.rest.actions.downloadArtifact.mockResolvedValue({
       data: mockZipData,
     });
@@ -489,14 +485,13 @@ describe('downloadArtifactWithFallback', () => {
 
   it('should try fallback when no specific ID is provided', async () => {
     const mockZipData = new ArrayBuffer(100);
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 1,
-        artifacts: [
+    mockPaginateIterator.mockReturnValue(
+      buildAsyncIterator([
+        [
           { id: 100, name: 'codjiflo-pr-28-1000', created_at: '2025-01-03T10:00:00Z', expired: false, workflow_run: { id: 1000 } },
         ],
-      },
-    });
+      ])
+    );
     mockOctokit.rest.actions.downloadArtifact.mockResolvedValue({
       data: mockZipData,
     });
@@ -513,12 +508,7 @@ describe('downloadArtifactWithFallback', () => {
   });
 
   it('should return null when no artifacts exist at all', async () => {
-    mockOctokit.rest.actions.listArtifactsForRepo.mockResolvedValue({
-      data: {
-        total_count: 0,
-        artifacts: [],
-      },
-    });
+    mockPaginateIterator.mockReturnValue(buildAsyncIterator([[]]));
 
     const result = await downloadArtifactWithFallback(
       mockOctokit as never,
