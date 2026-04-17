@@ -1,0 +1,347 @@
+/* ============================================
+   LEFT PANE
+   ============================================ */
+.left-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 10px;
+  background-color: var(--default-bg);
+  position: relative;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+}
+
+.left-pane-header {
+  padding: 8px 12px;
+}
+
+.logo-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-compact img {
+  width: 32px;
+  height: 32px;
+}
+
+/* ============================================
+   FILE EXPLORER
+   ============================================ */
+.file-explorer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+  overflow: hidden; /* Contain scrollable children */
+}
+
+.file-explorer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--file-explorer-header);
+  color: var(--file-explorer-file-fg);
+  font-weight: 500;
+}
+
+.file-count {
+  color: var(--control-disabled-fg);
+  font-weight: normal;
+  font-size: 12px;
+}
+
+.file-explorer-filter-inline {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.file-explorer-filter-inline .filter-icon {
+  position: absolute;
+  left: 6px;
+  color: var(--control-disabled-fg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.file-explorer-filter-inline .file-filter-input {
+  flex: 1;
+  width: 100%;
+  padding-left: 24px;
+  padding-right: 24px;
+  height: 24px;
+  background-color: var(--textbox-bg);
+  color: var(--textbox-fg);
+}
+
+.file-explorer-filter-inline .file-filter-input::placeholder {
+  color: var(--textbox-placeholder);
+}
+
+.file-explorer-filter-inline .filter-clear {
+  position: absolute;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--control-disabled-fg);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.file-explorer-filter-inline .filter-clear:hover {
+  opacity: 1;
+  color: var(--main-fg);
+}
+
+/* File Tree Navigation Container */
+.file-explorer > nav {
+  flex: 1;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   FILE TREE
+   ============================================ */
+.file-tree {
+  flex: 1;
+  min-height: 0; /* Allow flex child to shrink and enable scrolling */
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: var(--file-explorer-file-fg);
+}
+
+.tree-item:hover {
+  background-color: var(--listview-hover);
+}
+
+.tree-item.selected {
+  background-color: var(--treeview-selected);
+  color: var(--selected-fg);
+}
+
+.tree-item.indent-1 { padding-left: 28px; }
+.tree-item.indent-2 { padding-left: 44px; }
+.tree-item.indent-3 { padding-left: 60px; }
+
+.tree-toggle {
+  width: 10px;
+  height: 10px;
+  border: none;
+  background: transparent;
+}
+
+.tree-item.folder {
+  background-color: var(--file-explorer-header);
+  box-shadow: var(--folder-shadow);
+}
+
+.tree-item.folder .tree-toggle::before {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--main-fg);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.tree-item.folder.expanded .tree-toggle::before {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--main-fg);
+}
+
+.tree-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.line-counts {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.line-counts .additions {
+  color: var(--plusone);
+}
+
+.line-counts .deletions {
+  color: var(--error-fg);
+}
+
+.change-type {
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 2px;
+}
+
+.change-type.add { background-color: var(--plusone); color: white; }
+.change-type.edit { background-color: var(--waiting-yellow); color: black; }
+.change-type.delete { background-color: var(--error-fg); color: white; }
+
+/* ============================================
+   PROPERTIES SECTION
+   ============================================ */
+.properties-section {
+  border-top: 1px solid var(--grid-splitter);
+}
+
+.properties-collapse-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 10px;
+  background-color: var(--grid-splitter);
+  cursor: ns-resize;
+}
+
+.grip-line {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grip-line::before {
+  content: '';
+  width: 20px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    white 0px,
+    white 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.properties-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.property-group {
+  margin-bottom: 12px;
+}
+
+.property-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--main-fg);
+}
+
+.property-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.property-label {
+  color: var(--control-disabled-fg);
+  min-width: 60px;
+}
+
+.property-value {
+  color: var(--main-fg);
+}
+
+/* ============================================
+   REVIEWER ITEMS
+   ============================================ */
+.reviewer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.reviewer-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--toggle-btn-toggled);
+  color: var(--toggle-btn-toggled-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.reviewer-name {
+  flex: 1;
+  color: var(--main-fg);
+  font-size: 12px;
+}
+
+.reviewer-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.reviewer-status.waiting {
+  background-color: var(--waiting-yellow);
+  color: black;
+}
+
+.reviewer-status.approved {
+  background-color: var(--plusone);
+  color: white;
+}
+
+/* ============================================
+   RESIZE HANDLE VERTICAL
+   ============================================ */
+.resize-handle-v {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: ew-resize;
+}
+
+.grip-line-v {
+  width: 2px;
+  height: 20px;
+  background: repeating-linear-gradient(
+    to bottom,
+    white 0px,
+    white 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}

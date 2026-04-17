@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_lRkteVZ5029Wuxisfdmt1irg1wE1",
+  "orgId": "team_JtATWBt2mKxBkAJeZ0kwSuif",
+  "projectName": "codjiflo",
+  "settings": {
+    "createdAt": 1766864235461,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

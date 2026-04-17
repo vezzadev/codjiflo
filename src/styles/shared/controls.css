@@ -1,0 +1,538 @@
+/* ============================================
+   TEXT INPUT
+   ============================================ */
+.textbox {
+  padding: 4px 8px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  color: var(--control-fg);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.textbox:hover {
+  border-color: var(--checkbox-border);
+}
+
+.textbox:focus {
+  border-color: var(--focus-border);
+}
+
+.textbox:disabled {
+  background-color: var(--control-disabled);
+  color: var(--control-disabled-fg);
+  border-color: var(--control-disabled-border);
+}
+
+.textbox::placeholder {
+  color: var(--textbox-placeholder);
+  font-style: italic;
+}
+
+/* Textarea */
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ============================================
+   WATERMARKED TEXTBOX
+   ============================================ */
+.textbox-watermark-container {
+  position: relative;
+  display: inline-block;
+}
+
+.textbox-watermark-container .textbox {
+  width: 100%;
+}
+
+.textbox-watermark {
+  position: absolute;
+  left: 12px;
+  bottom: 6px;
+  color: var(--watermark-text);
+  font-style: italic;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.textbox-watermark-container .textbox:focus + .textbox-watermark,
+.textbox-watermark-container .textbox:not(:placeholder-shown) + .textbox-watermark {
+  opacity: 0;
+}
+
+/* ============================================
+   CHECKBOX
+   ============================================ */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  background-color: var(--control-bg);
+  border: 1px solid var(--checkbox-border);
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox input:hover {
+  background-color: var(--checkbox-hover);
+}
+
+.checkbox input:active {
+  background-color: var(--checkbox-press);
+}
+
+.checkbox input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+}
+
+.checkbox input:checked {
+  background-color: var(--toggle-btn-toggled);
+}
+
+.checkbox input:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--main-fg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox input:disabled {
+  background-color: var(--control-disabled);
+  border-color: var(--control-disabled-border);
+  cursor: not-allowed;
+}
+
+.checkbox span {
+  color: var(--main-fg);
+  font-size: 14px;
+}
+
+/* ============================================
+   COMBOBOX / SELECT
+   ============================================ */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 4px 28px 4px 8px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  color: var(--control-fg);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath fill='%23C4C4C4' d='M0 0l6 6 6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 100px;
+}
+
+.select:hover {
+  background-color: var(--combobox-hover);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--focus-border);
+}
+
+.select:disabled {
+  background-color: var(--control-disabled);
+  color: var(--control-disabled-fg);
+  cursor: not-allowed;
+}
+
+.select option {
+  background-color: var(--contextmenu-bg);
+  color: var(--main-fg);
+  padding: 4px 8px;
+}
+
+/* ============================================
+   TOOLBAR DROPDOWN (custom dropdown with icons)
+   ============================================ */
+.toolbar-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.toolbar-dropdown-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 25px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--main-fg);
+  background: transparent;
+  border: 1px solid var(--combobox-border);
+  cursor: pointer;
+}
+
+.toolbar-dropdown-button:hover {
+  background-color: var(--btn-hover);
+}
+
+.toolbar-dropdown-button:focus {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+.toolbar-dropdown-button[aria-expanded="true"] {
+  border-color: var(--focus-border);
+}
+
+.toolbar-dropdown-label {
+  white-space: nowrap;
+}
+
+.toolbar-dropdown-arrow {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Listbox dropdown */
+.toolbar-dropdown-listbox {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 100%;
+  margin: 2px 0 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background-color: var(--window-bg);
+  border: 1px solid var(--combobox-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Option items */
+.toolbar-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--main-fg);
+  background-color: var(--window-bg);
+}
+
+.toolbar-dropdown-option:hover {
+  background-color: var(--menu-hover);
+}
+
+.toolbar-dropdown-option.selected {
+  background-color: var(--menu-focus);
+}
+
+/* Icons in options */
+.toolbar-dropdown-option svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Text in options */
+.toolbar-dropdown-option span {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Icon sizing for lucide icons */
+.toolbar-dropdown-option svg.w-4 {
+  width: 14px;
+  height: 14px;
+}
+
+.toolbar-dropdown-button svg.w-4 {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================
+   SLIDER
+   ============================================ */
+.slider {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--control-bg);
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--scroll-thumb);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--combobox-border);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: var(--btn-hover);
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--scroll-thumb);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--combobox-border);
+}
+
+/* 3-position diff mode slider */
+.slider-diff-mode {
+  width: 60px;
+}
+
+/* ============================================
+   LABEL
+   ============================================ */
+.label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--main-fg);
+  font-size: 12px;
+}
+
+.label-inline {
+  display: inline;
+  margin-right: 8px;
+}
+
+/* ============================================
+   FORM GROUP
+   ============================================ */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   TAB CONTROL
+   ============================================ */
+.tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.tab-item {
+  padding: 8px 16px;
+  margin-bottom: -1px;
+  background-color: var(--tab-inactive);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  color: var(--main-fg);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.tab-item:hover:not(.active) {
+  background-color: var(--listheader-hover);
+  color: var(--listheader-hover-text);
+}
+
+.tab-item.active {
+  background-color: var(--main-bg);
+  border-bottom: 1px solid var(--main-bg);
+  z-index: 1;
+}
+
+.tab-content {
+  padding: 12px;
+  background-color: var(--main-bg);
+  border: 1px solid var(--combobox-border);
+  border-top: none;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ============================================
+   EXPANDER
+   ============================================ */
+.expander {
+  border: 1px solid var(--combobox-border);
+  margin-bottom: 4px;
+}
+
+.expander-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--control-bg);
+  cursor: pointer;
+  user-select: none;
+}
+
+.expander-header:hover {
+  background-color: var(--btn-hover);
+}
+
+.expander-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--main-fg);
+  margin-right: 8px;
+  transition: transform 0.2s ease;
+}
+
+.expander.collapsed .expander-arrow {
+  transform: rotate(-90deg);
+}
+
+.expander-content {
+  padding: 12px;
+  display: block;
+}
+
+.expander.collapsed .expander-content {
+  display: none;
+}
+
+/* ============================================
+   TOOLTIP
+   ============================================ */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background-color: var(--contextmenu-bg);
+  color: var(--main-fg);
+  font-size: 12px;
+  white-space: nowrap;
+  border: 1px solid var(--combobox-border);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   SCROLLABLE CONTAINER
+   ============================================ */
+.scrollable {
+  overflow: auto;
+  max-height: 400px;
+}
+
+.scrollable-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.scrollable-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ============================================
+   SEPARATOR
+   ============================================ */
+.separator {
+  height: 1px;
+  background-color: var(--combobox-border);
+  margin: 8px 0;
+}
+
+.separator-v {
+  width: 1px;
+  height: 100%;
+  background-color: var(--combobox-border);
+  margin: 0 8px;
+}
+
+/* ============================================
+   BADGE / TAG
+   ============================================ */
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: var(--toggle-btn-toggled);
+  color: var(--toggle-btn-toggled-fg);
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.badge-success {
+  background-color: var(--plusone);
+  color: white;
+}
+
+.badge-warning {
+  background-color: var(--waiting-yellow);
+  color: black;
+}
+
+.badge-error {
+  background-color: var(--error-fg);
+  color: white;
+}
+
+.badge-merged {
+  background-color: var(--badge-merged);
+  color: white;
+}
+
+/* Note: Skeleton loading classes moved to utilities.css */

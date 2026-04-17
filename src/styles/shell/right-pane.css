@@ -1,0 +1,42 @@
+/* ============================================
+   RIGHT PANE (News Feed)
+   ============================================ */
+.right-pane {
+  width: 358px;
+  background-color: var(--main-bg);
+  border-left: 1px solid var(--combobox-border);
+  overflow-y: auto;
+}
+
+.news-feed-header {
+  padding: 12px;
+  font-weight: bold;
+  color: var(--main-fg);
+  border-bottom: 1px solid var(--combobox-border);
+}
+
+.news-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--listview-hover);
+  font-size: 12px;
+}
+
+.news-author {
+  color: var(--newsfeed-author);
+  font-weight: 500;
+}
+
+.news-action {
+  color: var(--newsfeed-gray);
+}
+
+.news-target {
+  color: var(--hyperlink);
+}
+
+.news-time {
+  display: block;
+  color: var(--newsfeed-gray);
+  font-size: 11px;
+  margin-top: 2px;
+}

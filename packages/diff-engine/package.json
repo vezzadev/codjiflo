@@ -1,0 +1,28 @@
+{
+  "name": "@codjiflo/diff-engine",
+  "version": "1.0.0",
+  "description": "Line-level diff computation for CodjiFlo",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "diff-match-patch": "^1.0.5"
+  },
+  "devDependencies": {
+    "@types/diff-match-patch": "^1.0.36",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.17"
+  }
+}

@@ -1,0 +1,187 @@
+name: CI/CD Main
+
+permissions:
+  contents: read
+  deployments: read
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  coverage-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install action dependencies
+        timeout-minutes: 4
+        run: for i in 1 2 3; do (cd action && npm ci) && break || sleep 15; done
+
+      - name: Run unit tests with coverage
+        timeout-minutes: 2
+        run: npm run test:coverage
+
+      - name: Upload coverage baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-baseline
+          path: coverage/coverage-summary.json
+          retention-days: 10
+
+  wait-for-deployment:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Wait for Vercel Production deployment
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.sha }}"
+          echo "Waiting for Vercel Production deployment for SHA: ${SHA:0:7}"
+
+          for i in $(seq 1 60); do
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Production" --jq '.[0].id // empty' 2>/dev/null)
+
+            if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
+              STATE=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0].state // empty' 2>/dev/null)
+
+              if [ "$STATE" = "success" ]; then
+                echo "✅ Production deployment ready"
+                break
+              fi
+              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
+                echo "❌ Production deployment failed: $STATE"
+                exit 1
+              fi
+              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
+            else
+              echo "No deployment found yet (attempt $i/60)"
+            fi
+            sleep 5
+          done
+
+      - name: Verify deployment serves new commit
+        timeout-minutes: 1
+        run: |
+          EXPECTED="${{ github.sha }}"
+          URL="https://codjiflo.vza.net/api/health"
+          for i in $(seq 1 15); do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED" ]; then
+              echo "✅ Deployment verified with commit ${EXPECTED:0:7}"
+              exit 0
+            fi
+            echo "Health check attempt $i/15 (got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for health check"
+          exit 1
+
+  # ============================================================================
+  # E2E STRESS TESTS
+  # ============================================================================
+  # Runs e2e and e2e:prod with --repeat-each=10 (each test repeated 10 times).
+  # - Parallel: Playwright uses max workers (4-vCPU free OSS runner = 2 workers)
+  # - Sequential: Playwright uses 1 worker
+  # ============================================================================
+
+  e2e-stress-parallel:
+    runs-on: ubuntu-latest
+    needs: [wait-for-deployment]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E stress tests (max workers) - 10x
+        timeout-minutes: 30
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
+          npm run test:e2e -- --repeat-each=10 || MOCK_FAILED=1
+          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
+          [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-parallel
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  e2e-stress-sequential:
+    runs-on: ubuntu-latest
+    needs: [wait-for-deployment]
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E stress tests (1 worker) - 10x
+        timeout-minutes: 30
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          npm run test:e2e -- --workers=1 --repeat-each=10 || MOCK_FAILED=1
+          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
+          [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-sequential
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore

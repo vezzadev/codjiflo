@@ -1,0 +1,328 @@
+name: CI/CD Pull Request
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to run workflow on'
+        required: true
+        type: number
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Run linter
+        timeout-minutes: 2
+        run: npm run lint:check
+
+  typecheck:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Run typecheck
+        timeout-minutes: 2
+        run: npm run typecheck
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Run unit tests with coverage
+        timeout-minutes: 2
+        run: npm run test:coverage
+
+      - name: Download base coverage
+        if: always()
+        id: download-coverage-baseline
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: ci-cd-main.yml
+          branch: main
+          name: coverage-baseline
+          path: coverage-baseline
+        continue-on-error: true
+
+      - name: Coverage report with delta
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          file-coverage-mode: changes
+          pr-number: ${{ env.PR_NUMBER }}
+          json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
+          threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
+
+  wait-for-vercel:
+    runs-on: ubuntu-slim
+    outputs:
+      preview-url: ${{ steps.wait.outputs.preview-url }}
+    steps:
+      - name: Wait for Vercel Preview deployment
+        id: wait
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            SHA=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
+          fi
+
+          echo "Waiting for Vercel Preview deployment for SHA: ${SHA:0:7}"
+
+          for i in $(seq 1 60); do
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+
+            if [ $? -eq 0 ] && [[ "$DEPLOYMENT_ID" =~ ^[0-9]+$ ]]; then
+              STATUS=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0]' 2>/dev/null)
+              STATE=$(echo "$STATUS" | jq -r '.state // empty')
+
+              if [ "$STATE" = "success" ]; then
+                URL=$(echo "$STATUS" | jq -r '.target_url // empty')
+                echo "✅ Preview deployment ready: $URL"
+                echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
+                echo "❌ Preview deployment failed: $STATE"
+                exit 1
+              fi
+              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
+            else
+              echo "No deployment found yet (attempt $i/60)"
+            fi
+            sleep 5
+          done
+
+          echo "❌ Timeout waiting for Vercel Preview deployment"
+          exit 1
+
+      - name: Verify preview serves correct commit
+        timeout-minutes: 1
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            EXPECTED="${{ github.event.pull_request.head.sha }}"
+          else
+            EXPECTED=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
+          fi
+          URL="${{ steps.wait.outputs.preview-url }}/api/health"
+
+          for i in $(seq 1 15); do
+            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
+            if [ "$DEPLOYED" = "$EXPECTED" ]; then
+              echo "✅ Preview verified with commit ${EXPECTED:0:7}"
+              exit 0
+            fi
+            echo "Health check attempt $i/15 (got: ${DEPLOYED:-no response})"
+            sleep 2
+          done
+          echo "❌ Timeout waiting for health check"
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E tests (mock mode)
+        timeout-minutes: 3
+        run: npm run test:e2e
+
+  e2e-tests-prod:
+    needs: [wait-for-vercel]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run E2E tests (prod mode)
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          E2E_BASE_URL: ${{ needs.wait-for-vercel.outputs.preview-url }}
+        run: npm run test:e2e:prod
+
+  storybook-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 1
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        timeout-minutes: 1
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell
+
+      - name: Run storybook tests
+        timeout-minutes: 1
+        run: npm run test:storybook
+
+  # Preview deployments handled by Vercel GitHub App (no VERCEL_TOKEN needed)
+
+  # Capture iteration data for CodjiFlo iteration tracking
+  capture-iteration:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Capture PR iteration
+        id: capture
+        uses: ./action
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ env.PR_NUMBER }}
+
+      - name: Upload iteration artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: codjiflo-pr-${{ env.PR_NUMBER }}-${{ github.run_id }}
+          path: codjiflo-data/
+          retention-days: 90
+
+      - name: Update PR comment with artifact ID
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARTIFACT_ID="${{ steps.upload.outputs.artifact-id }}"
+          ITERATION_COUNT="${{ steps.capture.outputs.iteration-count }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
+          # Create comment body
+          BODY="<!-- codjiflo-data -->
+          ### CodjiFlo Iteration Tracking
+
+          **Iterations captured**: ${ITERATION_COUNT}
+          **Last updated**: ${TIMESTAMP}
+          **Artifact**: \`${ARTIFACT_ID}\`
+          **Run ID**: ${{ github.run_id }}
+
+          ---
+          <details>
+          <summary>What is this?</summary>
+
+          This comment is automatically updated by the [CodjiFlo GitHub Action](https://github.com/codjiflo/action) to enable force-push resilient code review with iteration tracking.
+
+          The artifact referenced above contains iteration data that the CodjiFlo frontend uses to:
+          - Track code changes across force-pushes
+          - Enable comment persistence across code modifications
+          - Allow comparison between any two iterations
+
+          </details>"
+
+          # Find existing comment or create new one
+          COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments --jq '.[] | select(.body | contains("<!-- codjiflo-data -->")) | .id')
+          if [ -n "$COMMENT_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X PATCH -f body="$BODY"
+          else
+            gh api repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments -f body="$BODY"
+          fi
+

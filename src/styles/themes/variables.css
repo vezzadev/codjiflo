@@ -1,0 +1,1404 @@
+/* ============================================
+   BASE THEME (Light)
+   ============================================ */
+:root {
+  /* Main colors */
+  --main-bg: #F0F0F0;
+  --main-fg: #1E1E1E;
+  --default-bg: #E8E8E8;
+  --error-fg: #C40000;
+  --selected-fg: #1E1E1E;
+
+  /* Controls */
+  --control-bg: #DDDDDD;
+  --control-fg: #1E1E1E;
+  --control-disabled: #A0A0A0;
+  --control-disabled-border: #808080;
+  --control-disabled-fg: #808080;
+
+  /* Checkbox */
+  --checkbox-border: #707070;
+  --checkbox-hover: #F3F9FF;
+  --checkbox-press: #D9ECFF;
+
+  /* Combobox */
+  --combobox-border: #ACACAC;
+  --combobox-hover: #DDECFC;
+
+  /* Buttons */
+  --btn-hover: #C4E5F6;
+  --btn-hover-fg: #1E1E1E;
+  --btn-press: #C4E5F6;
+  --btn-disabled: #F4F4F4;
+  --toggle-btn-toggled: #B4B4B4;
+  --toggle-btn-toggled-fg: #1E1E1E;
+
+  /* Scrollbar */
+  --scroll-hover: #DCDCDC;
+  --scroll-pressed: #CCCCCC;
+  --scroll-thumb: #646464;
+
+  /* List view */
+  --listview-header: #F8F9FA;
+  --listheader-hover: #B9E9FC;
+  --listheader-hover-text: black;
+  --listview-hover: #D6F2FE;
+  --listview-selected: #E1E0E0;
+  --listview-selected-lighter: #B0D0E8;
+  --listview-selected-transparent: #B8D8E8;
+  --listview-hover-lighter: #C6E2FA;
+  --list-lighter: #EEEEEE;
+
+  /* Hyperlink */
+  --hyperlink: Blue;
+
+  /* Tabs */
+  --tab-inactive: #E5E5E5;
+
+  /* Context menu */
+  --contextmenu-bg: #DDDDDD;
+
+  /* Tree view */
+  --treeview-selected: #3399FF;
+
+  /* Comment bubble */
+  --comment-accent: #207DAA;
+  --comment-titlebar-focused: #3A9FBF;
+  --comment-titlebar-unfocused: #C4E3EE;
+  --comment-btn-hover: #74BBD2;
+  --comment-minimize-focused: white;
+  --comment-minimize-unfocused: black;
+  --resolved-stroke: DimGray;
+  --plusone: DarkGreen;
+
+  /* News feed */
+  --newsfeed-gray: Gray;
+  --newsfeed-author: #3399FF;
+  --newsfeed-selected: #3399FF;
+
+  /* Dashboard */
+  --dashboard-remove-hover-bg: #E5C365;
+  --dashboard-remove-hover-border: #FFECB5;
+  --dashboard-remove-press: #FFE8A6;
+  --dashboard-expand-collapse: DarkGray;
+
+  /* Review */
+  --review-btn: #DADADA;
+  --review-selected: #3399FF;
+  --review-list-border: #E3E3E3;
+  --review-text: #1E1E1E;
+  --review-text-selected: white;
+  --review-subtext: #656565;
+  --review-subtext-selected: #656565;
+  --review-expander-hover: #222;
+  --review-header: #DBDBDB;
+
+  /* Preview bar */
+  --preview-bar-bg: #CA5100;
+  --preview-bg: #DBDBDB;
+  --preview-fg: #1E1E1E;
+  --preview-bar-btn-bg: #C0C0C0;
+  --preview-bar-btn-fg: #1E1E1E;
+
+  /* Checked reviewer */
+  --checked-reviewer-fg: DimGray;
+  --checked-reviewer-outer-border: #AAAAAA;
+  --checked-reviewer-inner-border: #DDDDDD;
+  --checked-reviewer-bg-start: #EEEEEE;
+  --checked-reviewer-bg-end: #CCCCCC;
+
+  /* Comment list */
+  --comment-list-status: #DDDDDD;
+  --comment-list-author: #767676;
+  --comments-pane-disabled: #A0A0A0;
+
+  /* Unpublished */
+  --unpublished-bg: LightYellow;
+
+  /* Add config */
+  --add-config: #F8FFF8;
+
+  /* Diff operation hover gradient */
+  --diff-op-hover-start: #F8FFF8;
+  --diff-op-hover-end: #E5E5E5;
+
+  /* Misc */
+  --cant-find-comment: Blue;
+  --onboarding-bg: Yellow;
+  --active-border: #0078D7;
+  --waiting-yellow: #FFC90E;
+  --waiting-yellow-text: #1E1E1E;
+  --grid-splitter: #404040;
+
+  /* Diff colors */
+  --diff-add-line: rgba(40, 130, 70, 0.2);
+  --diff-add-gutter: rgba(40, 130, 70, 0.3);
+  --diff-add-word: rgba(40, 180, 90, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #4ADE80;
+  --diff-add-word-fg: #4ADE80;
+  --diff-delete-line: rgba(180, 50, 50, 0.2);
+  --diff-delete-gutter: rgba(180, 50, 50, 0.3);
+  --diff-delete-word: rgba(220, 80, 80, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F87171;
+  --diff-delete-word-fg: #F87171;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+  --diff-area-bg: var(--main-bg);
+
+  /* File explorer */
+  --file-explorer-bg: #E0E0E0;
+  --file-explorer-header: #D0D0D0;
+  --folder-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --file-explorer-header-hover: rgba(0, 0, 0, 0.1);
+  --file-explorer-header-hover-fg: #1E1E1E;
+  --file-explorer-change-underlay: rgba(0, 0, 0, 0.05);
+  --file-explorer-file-fg: #1E1E1E;
+  --file-explorer-folder-fg: #1E1E1E;
+  --textbox-bg: #FFFFFF;
+  --textbox-fg: #1E1E1E;
+  --textbox-placeholder: #808080;
+
+  /* Colorful (accent) */
+  --accent: #59822D;
+  --accent-control: #59822D;
+  --colorful-btn-bg: #59822D;
+  --colorful-btn-fg: white;
+  --colorful-btn-disabled-fg: black;
+  --colorful-btn-hover: rgba(255, 255, 255, 0.2);
+  --colorful-btn-hover-border: rgba(255, 255, 255, 0.67);
+  --colorful-btn-hover-fg: #1E1E1E;
+
+  /* Image diff */
+  --imgdiff-bg: Beige;
+  --findinfiles-bg: #E9E9E9;
+
+  /* Diff layout constants (not theme-dependent) */
+  --diff-line-height: 23px; /* Measured from rendered .diff-line elements */
+  --diff-scroll-context-lines: 3; /* Context lines shown above change when navigating with J/K */
+
+  /* Window chrome */
+  --window-bg: #EEEEEE;
+  --titlebar-text: #1E1E1E;
+  --titlebar-text-inactive: #666666;
+  --window-btn-hover: #C0C0C0;
+  --window-btn-focus: #A0A0A0;
+  --sidebar-bg: #E0E0E0;
+
+  /* Interactive elements */
+  --focus-border: #005FB8;
+  --menu-hover: rgba(0, 0, 0, 0.06);
+  --menu-focus: rgba(0, 0, 0, 0.12);
+  --close-btn-hover: #C50F1F;
+  --close-btn-border: #CCCCCC;
+  --collapse-hover: #000000;
+  --watermark-text: #A0A0A0;
+  --badge-merged: #6f42c1;
+
+  /* Search match highlighting (purple - distinct from diff red/green/blue/yellow) */
+  --search-match-bg: rgba(147, 51, 234, 0.3);
+  --search-match-selected-bg: rgba(147, 51, 234, 0.7);
+  --search-match-selected-outline: 2px solid rgba(147, 51, 234, 0.9);
+}
+
+/* ============================================
+   DARK THEME
+   ============================================ */
+.theme-dark {
+  --main-bg: #313131;
+  --main-fg: #C4C4C4;
+  --default-bg: #202020;
+  --error-fg: #C40000;
+  --selected-fg: #C4C4C4;
+
+  --control-bg: #414141;
+  --control-fg: #C4C4C4;
+  --control-disabled: #717171;
+  --control-disabled-border: #717171;
+  --control-disabled-fg: #838383;
+
+  --checkbox-border: #818181;
+  --checkbox-hover: #515151;
+  --checkbox-press: #212121;
+
+  --combobox-border: #717171;
+  --combobox-hover: #515151;
+
+  --btn-hover: #515151;
+  --btn-hover-fg: #C4C4C4;
+  --btn-press: #414141;
+  --btn-disabled: #212121;
+  --toggle-btn-toggled: #717171;
+  --toggle-btn-toggled-fg: #C4C4C4;
+
+  --scroll-hover: #515151;
+  --scroll-pressed: #616161;
+  --scroll-thumb: #C4C4C4;
+
+  --listview-header: #282828;
+  --listheader-hover: #515151;
+  --listheader-hover-text: #C4C4C4;
+  --listview-hover: #212121;
+  --listview-selected: #111111;
+  --listview-selected-lighter: #4A4AA1;
+  --listview-selected-transparent: #4141A1;
+  --listview-hover-lighter: #2D2D2D;
+  --list-lighter: #414141;
+
+  --hyperlink: DodgerBlue;
+
+  --tab-inactive: #414141;
+
+  --contextmenu-bg: #111111;
+
+  --treeview-selected: #214191;
+
+  --comment-accent: #003D77;
+  --comment-titlebar-focused: #13353E;
+  --comment-titlebar-unfocused: #65757A;
+  --comment-btn-hover: #255E71;
+  --comment-minimize-focused: white;
+  --comment-minimize-unfocused: black;
+  --resolved-stroke: black;
+  --plusone: #008000;
+
+  --newsfeed-gray: #999999;
+  --newsfeed-author: #B4B4B4;
+  --newsfeed-selected: #212121;
+
+  --dashboard-remove-hover-bg: #735913;
+  --dashboard-remove-hover-border: #7A5B00;
+  --dashboard-remove-press: #7F5E00;
+  --dashboard-expand-collapse: #A0A0A0;
+
+  --review-btn: #313131;
+  --review-selected: #113388;
+  --review-list-border: #616161;
+  --review-text: #C4C4C4;
+  --review-text-selected: #C4C4C4;
+  --review-subtext: #EEEEEE;
+  --review-subtext-selected: #EEEEEE;
+  --review-expander-hover: #CCC;
+  --review-header: #212121;
+
+  --preview-bar-bg: #8A3100;
+  --preview-bg: #414141;
+  --preview-fg: #C4C4C4;
+  --preview-bar-btn-bg: #616161;
+  --preview-bar-btn-fg: #C4C4C4;
+
+  --checked-reviewer-fg: #BBBBBB;
+  --checked-reviewer-outer-border: #222222;
+  --checked-reviewer-inner-border: #555555;
+  --checked-reviewer-bg-start: #666666;
+  --checked-reviewer-bg-end: #444444;
+
+  --comment-list-status: #313131;
+  --comment-list-author: #A1A1A1;
+  --comments-pane-disabled: #414141;
+
+  --unpublished-bg: #555500;
+
+  --add-config: #616161;
+
+  --diff-op-hover-start: #313831;
+  --diff-op-hover-end: #415841;
+
+  --cant-find-comment: #0000AA;
+  --onboarding-bg: DarkGoldenrod;
+  --active-border: #505050;
+  --waiting-yellow: #F4BD00;
+  --grid-splitter: #404040;
+
+  --file-explorer-bg: #303030;
+  --file-explorer-header: #444444;
+  --folder-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --file-explorer-header-hover: rgba(255, 255, 255, 0.2);
+  --file-explorer-header-hover-fg: #DDDDDD;
+  --file-explorer-change-underlay: rgba(102, 102, 102, 0.13);
+  --file-explorer-file-fg: #DDDDDD;
+  --file-explorer-folder-fg: #DDDDDD;
+  --textbox-bg: #2F2F33;
+  --textbox-fg: #AAAAAA;
+  --textbox-placeholder: #969696;
+
+  --accent: #59822D;
+  --accent-control: #59822D;
+  --colorful-btn-bg: #59822D;
+  --colorful-btn-fg: white;
+  --colorful-btn-disabled-fg: black;
+  --colorful-btn-hover: rgba(255, 255, 255, 0.2);
+  --colorful-btn-hover-border: rgba(255, 255, 255, 0.67);
+  --colorful-btn-hover-fg: #C4C4C4;
+
+  --imgdiff-bg: #313131;
+  --findinfiles-bg: #313131;
+
+  --diff-area-bg: var(--main-bg);
+
+  --window-bg: #2D2D30;
+  --titlebar-text: #CECECE;
+  --titlebar-text-inactive: #9C9C9C;
+  --window-btn-hover: #515153;
+  --window-btn-focus: #AA6E6E6E;
+  --sidebar-bg: #202020;
+
+  /* Interactive elements */
+  --focus-border: #6AC5FB;
+  --menu-hover: rgba(153, 153, 153, 0.67);
+  --menu-focus: rgba(110, 110, 110, 0.67);
+  --close-btn-hover: #E81123;
+  --close-btn-border: #666666;
+  --collapse-hover: #AAAAAA;
+  --watermark-text: #BBB;
+  --badge-merged: #6f42c1;
+
+  /* Search match highlighting (purple - visible on dark backgrounds) */
+  --search-match-bg: rgba(168, 85, 247, 0.35);
+  --search-match-selected-bg: rgba(168, 85, 247, 0.75);
+  --search-match-selected-outline: 2px solid rgba(192, 132, 252, 1);
+}
+
+/* ============================================
+   BLACK THEME
+   ============================================ */
+.theme-black {
+  --main-bg: #0F0F0F;
+  --main-fg: #BFBFBF;
+  --default-bg: black;
+  --error-fg: #C40000;
+  --selected-fg: #BFBFBF;
+
+  --control-bg: #212121;
+  --control-fg: #CCCCCC;
+  --control-disabled: #414141;
+  --control-disabled-border: #414141;
+  --control-disabled-fg: #838383;
+
+  --checkbox-border: #717171;
+  --checkbox-hover: #313131;
+  --checkbox-press: #000000;
+
+  --combobox-border: #616161;
+  --combobox-hover: #313131;
+
+  --btn-hover: #313131;
+  --btn-hover-fg: #BFBFBF;
+  --btn-press: #212121;
+  --btn-disabled: #000000;
+  --toggle-btn-toggled: #616161;
+  --toggle-btn-toggled-fg: #BFBFBF;
+
+  --scroll-hover: #313131;
+  --scroll-pressed: #414141;
+  --scroll-thumb: #FFFFFF;
+
+  --listview-header: #080808;
+  --listheader-hover: #313131;
+  --listheader-hover-text: #DDDDDD;
+  --listview-hover: #313131;
+  --listview-selected: #414141;
+  --listview-selected-lighter: #4A4AA1;
+  --listview-selected-transparent: #4141A1;
+  --listview-hover-lighter: #3A3A3A;
+  --list-lighter: #212121;
+
+  --hyperlink: DodgerBlue;
+
+  --tab-inactive: #212121;
+
+  --contextmenu-bg: #212121;
+
+  --treeview-selected: #012161;
+
+  --comment-accent: #002D57;
+  --comment-titlebar-focused: #03252E;
+  --comment-titlebar-unfocused: #45555A;
+  --comment-btn-hover: #053E41;
+  --comment-minimize-focused: white;
+  --comment-minimize-unfocused: black;
+  --resolved-stroke: black;
+  --plusone: #00A000;
+
+  --newsfeed-gray: #666666;
+  --newsfeed-author: #545454;
+  --newsfeed-selected: #000000;
+
+  --dashboard-remove-hover-bg: #735913;
+  --dashboard-remove-hover-border: #7A5B00;
+  --dashboard-remove-press: #7F5E00;
+  --dashboard-expand-collapse: #A0A0A0;
+
+  --review-btn: #111111;
+  --review-selected: #113388;
+  --review-list-border: #717171;
+  --review-text: #BFBFBF;
+  --review-text-selected: #BFBFBF;
+  --review-subtext: #EEEEEE;
+  --review-subtext-selected: #EEEEEE;
+  --review-expander-hover: #CCCCCC;
+  --review-header: #000000;
+
+  --preview-bar-bg: #8A3100;
+  --preview-bg: #212121;
+  --preview-fg: #BFBFBF;
+  --preview-bar-btn-bg: #414141;
+  --preview-bar-btn-fg: #BFBFBF;
+
+  --checked-reviewer-fg: #BFBFBF;
+  --checked-reviewer-outer-border: #000000;
+  --checked-reviewer-inner-border: #333333;
+  --checked-reviewer-bg-start: #444444;
+  --checked-reviewer-bg-end: #222222;
+
+  --comment-list-status: #111111;
+  --comment-list-author: #A1A1A1;
+  --comments-pane-disabled: #212121;
+
+  --unpublished-bg: #555500;
+
+  --add-config: #818181;
+
+  --diff-op-hover-start: #313831;
+  --diff-op-hover-end: #415841;
+
+  --cant-find-comment: #000088;
+  --onboarding-bg: DarkGoldenrod;
+  --active-border: #303030;
+  --waiting-yellow: #F4BD00;
+  --grid-splitter: #212121;
+
+  --file-explorer-bg: #0F0F0F;
+  --file-explorer-header: #080808;
+  --folder-shadow: 0 1px 3px rgba(255, 255, 255, 0.15);
+  --file-explorer-header-hover: #313131;
+  --file-explorer-header-hover-fg: #DDDDDD;
+  --file-explorer-change-underlay: rgba(85, 85, 85, 0.13);
+  --file-explorer-file-fg: #DDDDDD;
+  --file-explorer-folder-fg: #DDDDDD;
+  --textbox-bg: #BFBFBF;
+  --textbox-fg: #BFBFBF;
+  --textbox-placeholder: #969696;
+
+  --accent: #59822D;
+  --accent-control: #59822D;
+  --colorful-btn-bg: #59822D;
+  --colorful-btn-fg: white;
+  --colorful-btn-disabled-fg: black;
+  --colorful-btn-hover: rgba(255, 255, 255, 0.2);
+  --colorful-btn-hover-border: rgba(255, 255, 255, 0.67);
+  --colorful-btn-hover-fg: #BFBFBF;
+
+  --imgdiff-bg: #111111;
+  --findinfiles-bg: #111111;
+
+  --diff-area-bg: var(--main-bg);
+
+  --window-bg: #0F0F0F;
+  --titlebar-text: #BFBFBF;
+  --titlebar-text-inactive: #666666;
+  --window-btn-hover: #313131;
+  --window-btn-focus: #212121;
+  --sidebar-bg: #000000;
+
+  /* Interactive elements */
+  --focus-border: #1AEBFF;
+  --menu-hover: rgba(255, 255, 255, 0.16);
+  --menu-focus: rgba(255, 255, 255, 0.24);
+  --close-btn-hover: #F1707A;
+  --close-btn-border: #CCCCCC;
+  --collapse-hover: #FFFFFF;
+  --watermark-text: #CCCCCC;
+  --badge-merged: #B18AE6;
+
+  /* Search match highlighting (purple - visible on black backgrounds) */
+  --search-match-bg: rgba(192, 132, 252, 0.4);
+  --search-match-selected-bg: rgba(192, 132, 252, 0.8);
+  --search-match-selected-outline: 2px solid rgba(216, 180, 254, 1);
+}
+
+/* ============================================
+   HIGH CONTRAST THEME
+   Uses system colors for accessibility
+   ============================================ */
+.theme-highcontrast {
+  --main-bg: #000000;
+  --main-fg: #FFFFFF;
+  --default-bg: #000000;
+  --error-fg: #FFFF00;
+  --selected-fg: #000000;
+
+  --control-bg: #000000;
+  --control-fg: #FFFFFF;
+  --control-disabled: #000000;
+  --control-disabled-border: #808080;
+  --control-disabled-fg: #808080;
+
+  --checkbox-border: #FFFFFF;
+  --checkbox-hover: #1AEBFF;
+  --checkbox-press: #212121;
+
+  --combobox-border: #FFFFFF;
+  --combobox-hover: #1AEBFF;
+
+  --btn-hover: #1AEBFF;
+  --btn-hover-fg: #000000;
+  --btn-press: #414141;
+  --btn-disabled: #000000;
+  --toggle-btn-toggled: #1AEBFF;
+  --toggle-btn-toggled-fg: #000000;
+
+  --scroll-hover: #1AEBFF;
+  --scroll-pressed: #616161;
+  --scroll-thumb: #FFFFFF;
+
+  --listview-header: #000000;
+  --listheader-hover: #1AEBFF;
+  --listheader-hover-text: #000000;
+  --listview-hover: #1AEBFF;
+  --listview-selected: #404040;
+  --listview-selected-lighter: #1AEBFF;
+  --listview-selected-transparent: #1AEBFF;
+  --listview-hover-lighter: transparent;
+  --list-lighter: transparent;
+
+  --hyperlink: #FFFF00;
+
+  --tab-inactive: #000000;
+
+  --contextmenu-bg: #000000;
+
+  --treeview-selected: #1AEBFF;
+
+  --comment-accent: #003D77;
+  --comment-titlebar-focused: #13353E;
+  --comment-titlebar-unfocused: #65757A;
+  --comment-btn-hover: #1AEBFF;
+  --comment-minimize-focused: BlanchedAlmond;
+  --comment-minimize-unfocused: white;
+  --resolved-stroke: #FFFFFF;
+  --plusone: #008000;
+
+  --newsfeed-gray: #999999;
+  --newsfeed-author: #B4B4B4;
+  --newsfeed-selected: #1AEBFF;
+
+  --dashboard-remove-hover-bg: #735913;
+  --dashboard-remove-hover-border: #7A5B00;
+  --dashboard-remove-press: #7F5E00;
+  --dashboard-expand-collapse: #A0A0A0;
+
+  --review-btn: #000000;
+  --review-selected: #1AEBFF;
+  --review-list-border: #616161;
+  --review-text: #FFFFFF;
+  --review-text-selected: #000000;
+  --review-subtext: #FFFFFF;
+  --review-subtext-selected: #000000;
+  --review-expander-hover: #FFFFFF;
+  --review-header: #000000;
+
+  --preview-bar-bg: #8A3100;
+  --preview-bg: #414141;
+  --preview-fg: white;
+  --preview-bar-btn-bg: #616161;
+  --preview-bar-btn-fg: white;
+
+  --checked-reviewer-fg: #BBBBBB;
+  --checked-reviewer-outer-border: #222222;
+  --checked-reviewer-inner-border: #555555;
+  --checked-reviewer-bg-start: #666666;
+  --checked-reviewer-bg-end: #444444;
+
+  --comment-list-status: #000000;
+  --comment-list-author: #FFFFFF;
+  --comments-pane-disabled: #404040;
+
+  --unpublished-bg: #555500;
+
+  --add-config: #616161;
+
+  --diff-op-hover-start: #313831;
+  --diff-op-hover-end: #415841;
+
+  --cant-find-comment: #0000AA;
+  --onboarding-bg: DarkGoldenrod;
+  --active-border: #505050;
+  --waiting-yellow: #F4BD00;
+  --grid-splitter: #1AEBFF;
+
+  --file-explorer-bg: #000000;
+  --file-explorer-header: #000000;
+  --folder-shadow: none;
+  --file-explorer-header-hover: #1AEBFF;
+  --file-explorer-header-hover-fg: #000000;
+  --file-explorer-change-underlay: #1AEBFF;
+  --file-explorer-file-fg: #FFFFFF;
+  --file-explorer-folder-fg: #000000;
+  --textbox-bg: #000000;
+  --textbox-fg: #FFFFFF;
+  --textbox-placeholder: #FFFFFF;
+
+  --accent: #FFFFFF;
+  --accent-control: #000000;
+  --colorful-btn-bg: #000000;
+  --colorful-btn-fg: #FFFFFF;
+  --colorful-btn-disabled-fg: #808080;
+  --colorful-btn-hover: #1AEBFF;
+  --colorful-btn-hover-border: #FFFFFF;
+  --colorful-btn-hover-fg: #000000;
+
+  --imgdiff-bg: #000000;
+  --findinfiles-bg: #000000;
+
+  --diff-area-bg: var(--main-bg);
+
+  --window-bg: #000000;
+  --titlebar-text: #FFFFFF;
+  --titlebar-text-inactive: #808080;
+  --window-btn-hover: #1AEBFF;
+  --window-btn-focus: #1AEBFF;
+  --sidebar-bg: #000000;
+
+  /* Interactive elements */
+  --focus-border: #FFFF00;
+  --menu-hover: #FFFFFF;
+  --menu-focus: #FFFF00;
+  --close-btn-hover: #FF0000;
+  --close-btn-border: #FFFFFF;
+  --collapse-hover: #FFFFFF;
+  --watermark-text: #FFFFFF;
+  --badge-merged: #00FFFF;
+
+  /* Search match highlighting (magenta - high visibility for accessibility) */
+  --search-match-bg: rgba(255, 0, 255, 0.4);
+  --search-match-selected-bg: rgba(255, 0, 255, 0.85);
+  --search-match-selected-outline: 3px solid #FF00FF;
+}
+
+/* ============================================
+   UTILITY CSS
+   ============================================ */
+
+/* Box sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Base styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Calibri, sans-serif;
+  font-size: 14px;
+  background-color: var(--main-bg);
+  color: var(--main-fg);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--control-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hover);
+}
+
+/* Selection */
+::selection {
+  background: var(--treeview-selected);
+  color: var(--selected-fg);
+}
+
+/* Links */
+a {
+  color: var(--hyperlink);
+  text-decoration: underline;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* ============================================
+   DIFF COLOR SCHEMES
+   Based on github-diff-colors-effective.csv
+   ============================================ */
+
+/* Default dark scheme (defined in :root) - used as fallback */
+
+/* ----------------------------------------
+   GitHub Default
+   ---------------------------------------- */
+.diff-github-light {
+  --diff-add-line: #DAFBE1;
+  --diff-add-gutter: #ACEEBB;
+  --diff-add-word: #ACEEBB;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFEBE9;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #DDF4FF;
+  --diff-hunk-gutter: #B6E3FF;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+}
+
+.diff-github-dark {
+  --diff-add-line: rgba(63, 185, 80, 0.1);
+  --diff-add-gutter: rgba(63, 185, 80, 0.3);
+  --diff-add-word: rgba(63, 185, 80, 0.4);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-light-hc {
+  --diff-add-line: #D2FEDB;
+  --diff-add-gutter: #82E596;
+  --diff-add-word: #055D20;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #A0111F;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #DFF7FF;
+  --diff-hunk-gutter: #9CD7FF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-github-dark-hc {
+  --diff-add-line: rgba(10, 199, 64, 0.2);
+  --diff-add-gutter: rgba(40, 215, 81, 0.3);
+  --diff-add-word: #006222;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.3);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: rgba(92, 172, 255, 0.2);
+  --diff-hunk-gutter: rgba(92, 172, 255, 0.4);
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-black {
+  --diff-add-line: rgba(63, 185, 80, 0.15);
+  --diff-add-gutter: rgba(63, 185, 80, 0.35);
+  --diff-add-word: rgba(63, 185, 80, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-black-hc {
+  --diff-add-line: rgba(10, 199, 64, 0.25);
+  --diff-add-gutter: rgba(40, 215, 81, 0.35);
+  --diff-add-word: #006222;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.35);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: rgba(92, 172, 255, 0.25);
+  --diff-hunk-gutter: rgba(92, 172, 255, 0.45);
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   GitHub Protanopia (red-green colorblind)
+   ---------------------------------------- */
+.diff-github-protanopia-light {
+  --diff-add-line: #DDF4FF;
+  --diff-add-gutter: rgba(84, 174, 255, 0.4);
+  --diff-add-word: rgba(84, 174, 255, 0.4);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #FAF0FE;
+  --diff-hunk-gutter: #E2C5F1;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+}
+
+.diff-github-protanopia-dark {
+  --diff-add-line: rgba(88, 166, 255, 0.15);
+  --diff-add-gutter: rgba(88, 166, 255, 0.3);
+  --diff-add-word: rgba(88, 166, 255, 0.4);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-protanopia-light-hc {
+  --diff-add-line: #DFF7FF;
+  --diff-add-gutter: #7ADBF7;
+  --diff-add-word: #0349B4;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #873800;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #F8E9FF;
+  --diff-hunk-gutter: #E0B8F7;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-github-protanopia-dark-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.2);
+  --diff-add-gutter: rgba(113, 183, 255, 0.3);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(244, 139, 37, 0.3);
+  --diff-delete-word: rgba(244, 139, 37, 0.4);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-protanopia-black {
+  --diff-add-line: rgba(88, 166, 255, 0.2);
+  --diff-add-gutter: rgba(88, 166, 255, 0.35);
+  --diff-add-word: rgba(88, 166, 255, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-protanopia-black-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.25);
+  --diff-add-gutter: rgba(113, 183, 255, 0.35);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(244, 139, 37, 0.35);
+  --diff-delete-word: rgba(244, 139, 37, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   GitHub Tritanopia (blue-yellow colorblind)
+   ---------------------------------------- */
+.diff-github-tritanopia-light {
+  --diff-add-line: #DAFBE1;
+  --diff-add-gutter: #ACEEBB;
+  --diff-add-word: #ACEEBB;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFCECB;
+  --diff-delete-word: #FFCECB;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #DDF4FF;
+  --diff-hunk-gutter: #B6E3FF;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+}
+
+.diff-github-tritanopia-dark {
+  --diff-add-line: rgba(56, 139, 253, 0.15);
+  --diff-add-gutter: rgba(88, 166, 255, 0.3);
+  --diff-add-word: rgba(56, 139, 253, 0.4);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.1);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.3);
+  --diff-delete-word: rgba(248, 81, 73, 0.4);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-tritanopia-light-hc {
+  --diff-add-line: #D2FEDB;
+  --diff-add-gutter: #82E596;
+  --diff-add-word: #055D20;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FFF0EE;
+  --diff-delete-gutter: #FFC1BC;
+  --diff-delete-word: #873800;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #DFF7FF;
+  --diff-hunk-gutter: #9CD7FF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+}
+
+.diff-github-tritanopia-dark-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.2);
+  --diff-add-gutter: rgba(113, 183, 255, 0.3);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.2);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.3);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #212830;
+  --diff-hunk-gutter: #2F3742;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+.diff-github-tritanopia-black {
+  --diff-add-line: rgba(56, 139, 253, 0.2);
+  --diff-add-gutter: rgba(88, 166, 255, 0.35);
+  --diff-add-word: rgba(56, 139, 253, 0.5);
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: rgba(248, 81, 73, 0.15);
+  --diff-delete-gutter: rgba(248, 81, 73, 0.35);
+  --diff-delete-word: rgba(248, 81, 73, 0.5);
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+.diff-github-tritanopia-black-hc {
+  --diff-add-line: rgba(92, 172, 255, 0.25);
+  --diff-add-gutter: rgba(113, 183, 255, 0.35);
+  --diff-add-word: #194FB1;
+  --diff-add-word-border: transparent;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: rgba(255, 128, 128, 0.25);
+  --diff-delete-gutter: rgba(255, 128, 128, 0.35);
+  --diff-delete-word: #AD0116;
+  --diff-delete-word-border: transparent;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #1A1A1A;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   Visual Studio
+   ---------------------------------------- */
+.diff-visual-studio-light {
+  --diff-add-line: #EBF1DD;
+  --diff-add-gutter: #EBF1DD;
+  --diff-add-word: #D7E3BC;
+  --diff-add-word-border: #76923C;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFCCCC;
+  --diff-delete-gutter: #FFCCCC;
+  --diff-delete-word: #FF9999;
+  --diff-delete-word-border: #FF6666;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-visual-studio-dark {
+  --diff-add-line: #15352C;
+  --diff-add-gutter: #15352C;
+  --diff-add-word: #265E4D;
+  --diff-add-word-border: #76923C;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #4F0000;
+  --diff-delete-word-border: #FF6666;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-visual-studio-black {
+  --diff-add-line: #15352C;
+  --diff-add-gutter: #15352C;
+  --diff-add-word: #265E4D;
+  --diff-add-word-border: #76923C;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #4F0000;
+  --diff-delete-word-border: #FF6666;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   CodeFlow Classic
+   ---------------------------------------- */
+.diff-codeflow-classic-light {
+  --diff-add-line: #FFFFBB;
+  --diff-add-gutter: #FFFFBB;
+  --diff-add-word: #FFFF80;
+  --diff-add-word-border: #FFFF00;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFA8A8;
+  --diff-delete-gutter: #FFA8A8;
+  --diff-delete-word: #FF7777;
+  --diff-delete-word-border: #FF0000;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-codeflow-classic-dark {
+  --diff-add-line: #404019;
+  --diff-add-gutter: #404019;
+  --diff-add-word: #5D5D16;
+  --diff-add-word-border: #8F8F0F;
+  --diff-add-fg: #D1D7E0;
+  --diff-add-word-fg: #D1D7E0;
+  --diff-delete-line: #561717;
+  --diff-delete-gutter: #561717;
+  --diff-delete-word: #6D1414;
+  --diff-delete-word-border: #B00B0B;
+  --diff-delete-fg: #D1D7E0;
+  --diff-delete-word-fg: #D1D7E0;
+  --diff-hunk-line: #262C36;
+  --diff-hunk-gutter: #262C36;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #262C36;
+}
+
+.diff-codeflow-classic-black {
+  --diff-add-line: #404019;
+  --diff-add-gutter: #404019;
+  --diff-add-word: #5D5D16;
+  --diff-add-word-border: #8F8F0F;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #561717;
+  --diff-delete-gutter: #561717;
+  --diff-delete-word: #6D1414;
+  --diff-delete-word-border: #B00B0B;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   CodeFlow RedGreen
+   ---------------------------------------- */
+.diff-codeflow-redgreen-light {
+  --diff-add-line: #A8FFA8;
+  --diff-add-gutter: #A8FFA8;
+  --diff-add-word: #94E694;
+  --diff-add-word-border: #64C864;
+  --diff-add-fg: #1F2328;
+  --diff-add-word-fg: #1F2328;
+  --diff-delete-line: #FFBBBB;
+  --diff-delete-gutter: #FFBBBB;
+  --diff-delete-word: #FFA8A8;
+  --diff-delete-word-border: #FF7878;
+  --diff-delete-fg: #1F2328;
+  --diff-delete-word-fg: #1F2328;
+  --diff-hunk-line: #F6F8FA;
+  --diff-hunk-gutter: #F6F8FA;
+  --diff-hunk-fg: #59636E;
+  --diff-empty-line: #F6F8FA;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-codeflow-redgreen-dark {
+  --diff-add-line: #003300;
+  --diff-add-gutter: #003300;
+  --diff-add-word: #004000;
+  --diff-add-word-border: #008000;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #4C0000;
+  --diff-delete-gutter: #4C0000;
+  --diff-delete-word: #500000;
+  --diff-delete-word-border: #900000;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #151B23;
+}
+
+.diff-codeflow-redgreen-black {
+  --diff-add-line: #002800;
+  --diff-add-gutter: #002800;
+  --diff-add-word: #003200;
+  --diff-add-word-border: #008000;
+  --diff-add-fg: #F0F6FC;
+  --diff-add-word-fg: #F0F6FC;
+  --diff-delete-line: #400000;
+  --diff-delete-gutter: #400000;
+  --diff-delete-word: #440000;
+  --diff-delete-word-border: #A01010;
+  --diff-delete-fg: #F0F6FC;
+  --diff-delete-word-fg: #F0F6FC;
+  --diff-hunk-line: #000000;
+  --diff-hunk-gutter: #000000;
+  --diff-hunk-fg: #9198A1;
+  --diff-empty-line: #000000;
+}
+
+/* ----------------------------------------
+   Visual Studio High Contrast
+   ---------------------------------------- */
+.diff-visual-studio-light-hc {
+  --diff-add-line: #D6F0D6;
+  --diff-add-gutter: #A8E0A8;
+  --diff-add-word: #0A5F1C;
+  --diff-add-word-border: #055D20;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FFDADA;
+  --diff-delete-gutter: #FFB8B8;
+  --diff-delete-word: #8B0000;
+  --diff-delete-word-border: #A0111F;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-visual-studio-dark-hc,
+.diff-visual-studio-black-hc {
+  --diff-add-line: #0D4030;
+  --diff-add-gutter: #0D4030;
+  --diff-add-word: #006840;
+  --diff-add-word-border: #00A060;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #4D0000;
+  --diff-delete-gutter: #4D0000;
+  --diff-delete-word: #8B0000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+/* ----------------------------------------
+   CodeFlow Classic High Contrast
+   ---------------------------------------- */
+.diff-codeflow-classic-light-hc {
+  --diff-add-line: #FFFF99;
+  --diff-add-gutter: #FFFF66;
+  --diff-add-word: #665500;
+  --diff-add-word-border: #8B7500;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FF9999;
+  --diff-delete-gutter: #FF7777;
+  --diff-delete-word: #990000;
+  --diff-delete-word-border: #CC0000;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-codeflow-classic-dark-hc,
+.diff-codeflow-classic-black-hc {
+  --diff-add-line: #4D4D00;
+  --diff-add-gutter: #4D4D00;
+  --diff-add-word: #7A7A00;
+  --diff-add-word-border: #AAAA00;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #660000;
+  --diff-delete-gutter: #660000;
+  --diff-delete-word: #990000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}
+
+/* ----------------------------------------
+   CodeFlow RedGreen High Contrast
+   ---------------------------------------- */
+.diff-codeflow-redgreen-light-hc {
+  --diff-add-line: #90EE90;
+  --diff-add-gutter: #7CDA7C;
+  --diff-add-word: #055D20;
+  --diff-add-word-border: #008000;
+  --diff-add-fg: #010409;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #FF9999;
+  --diff-delete-gutter: #FF8080;
+  --diff-delete-word: #A0111F;
+  --diff-delete-word-border: #CC0000;
+  --diff-delete-fg: #010409;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #E6EAEF;
+  --diff-hunk-gutter: #E6EAEF;
+  --diff-hunk-fg: #454C54;
+  --diff-empty-line: #E6EAEF;
+  --diff-area-bg: #FFFFFF;
+}
+
+.diff-codeflow-redgreen-dark-hc,
+.diff-codeflow-redgreen-black-hc {
+  --diff-add-line: #004400;
+  --diff-add-gutter: #004400;
+  --diff-add-word: #006600;
+  --diff-add-word-border: #00AA00;
+  --diff-add-fg: #FFFFFF;
+  --diff-add-word-fg: #FFFFFF;
+  --diff-delete-line: #5C0000;
+  --diff-delete-gutter: #5C0000;
+  --diff-delete-word: #800000;
+  --diff-delete-word-border: #FF4040;
+  --diff-delete-fg: #FFFFFF;
+  --diff-delete-word-fg: #FFFFFF;
+  --diff-hunk-line: #151B23;
+  --diff-hunk-gutter: #151B23;
+  --diff-hunk-fg: #B7BDC8;
+  --diff-empty-line: #151B23;
+}

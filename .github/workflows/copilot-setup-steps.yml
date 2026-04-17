@@ -1,0 +1,35 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install JavaScript dependencies
+        timeout-minutes: 2
+        run: for i in 1 2 3; do npm ci && break || sleep 15; done
+
+      - name: Install Playwright browsers
+        timeout-minutes: 1
+        run: npx playwright install --with-deps chromium-headless-shell

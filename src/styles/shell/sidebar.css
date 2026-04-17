@@ -1,0 +1,23 @@
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 60px;
+  background-color: var(--sidebar-bg);
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.sidebar-collapsed .sidebar {
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar-top,
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,43 @@
+name: 'CodjiFlo Iteration Tracker'
+description: 'Captures PR iterations for force-push resilient code review'
+author: 'CodjiFlo'
+
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token with repo and actions permissions'
+    required: true
+    default: ${{ github.token }}
+  pr-number:
+    description: 'PR number (for workflow_dispatch triggers)'
+    required: false
+
+outputs:
+  artifact-name:
+    description: 'Name of the uploaded artifact'
+    value: ${{ steps.capture.outputs.artifact-name }}
+  iteration-count:
+    description: 'Number of iterations captured'
+    value: ${{ steps.capture.outputs.iteration-count }}
+  work-dir:
+    description: 'Working directory containing iteration data'
+    value: ${{ steps.capture.outputs.work-dir }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Capture and upload iteration
+      id: capture
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
+      run: |
+        echo "::debug::Action path: ${{ github.action_path }}"
+        echo "::debug::Workspace: ${GITHUB_WORKSPACE}"
+        echo "::debug::PR number: ${PR_NUMBER}"
+        echo "::debug::Run ID: ${{ github.run_id }}"
+        node ${{ github.action_path }}/dist/bootstrap.js

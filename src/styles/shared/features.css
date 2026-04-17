@@ -1,0 +1,929 @@
+/* Feature Component Styles */
+
+/* ============================================
+   PR METADATA
+   ============================================ */
+.pr-metadata {
+  padding: 16px 16px 8px 16px;
+}
+
+.pr-title {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--main-fg);
+}
+
+.pr-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pr-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-author-avatar {
+  border-radius: 50%;
+}
+
+.pr-author-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--main-fg);
+}
+
+.pr-branches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.branch-name {
+  background-color: var(--control-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--main-fg);
+}
+
+.branch-separator {
+  color: var(--control-disabled-fg);
+  font-size: 13px;
+}
+
+.pr-description {
+  padding: 8px 16px 16px 16px;
+}
+
+.pr-description-empty {
+  color: var(--control-disabled-fg);
+  font-style: italic;
+}
+
+.pr-description-content {
+  color: var(--main-fg);
+}
+
+/* ============================================
+   RATE LIMIT BANNER
+   ============================================ */
+.rate-limit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background-color: var(--badge-merged);
+  color: var(--main-bg);
+  font-size: 13px;
+  min-height: 28px;
+}
+
+.rate-limit-banner-exhausted {
+  background-color: var(--diff-delete-gutter);
+  color: var(--diff-delete-fg);
+}
+
+.rate-limit-banner-message {
+  flex: 1;
+}
+
+.rate-limit-banner-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.rate-limit-banner-link:hover {
+  opacity: 0.8;
+}
+
+.rate-limit-banner-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 8px;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.rate-limit-banner-dismiss:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   DIFF TABLE (Unified/Inline mode)
+   ============================================ */
+.diff-table {
+  min-width: 100%;
+  width: max-content; /* Allow table to expand for long lines */
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+/* Constrain gutter and marker widths in unified/inline mode */
+.diff-table .diff-gutter {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+}
+
+.diff-table .diff-marker {
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+}
+
+/* ============================================
+   DIFF LINE STYLES
+   ============================================ */
+.diff-line {
+  transition: filter 0.1s ease;
+  scroll-margin-top: var(--diff-header-total-height); /* Account for sticky .diff-header */
+}
+
+.diff-line:hover {
+  filter: brightness(0.95);
+}
+
+.diff-line-addition {
+  background-color: var(--diff-add-line);
+  color: var(--diff-add-fg);
+}
+
+.diff-line-deletion {
+  background-color: var(--diff-delete-line);
+  color: var(--diff-delete-fg);
+}
+
+.diff-line-context {
+  background-color: var(--diff-area-bg);
+}
+
+.diff-line-header {
+  background-color: var(--diff-hunk-line);
+  color: var(--diff-hunk-fg);
+  font-weight: 600;
+}
+
+.diff-line-spacer {
+  background-color: var(--control-bg);
+}
+
+/* Diff gutter (line numbers) */
+.diff-gutter {
+  padding: 2px 8px;
+  text-align: right;
+  font-size: 12px;
+  user-select: none;
+  min-width: 48px;
+  border-right: 1px solid var(--combobox-border);
+}
+
+/* Annotation gutter column (left) - for code coverage, lint markers */
+.diff-gutter-annotation {
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  padding: 2px 4px;
+  text-align: center;
+  border-right: none; /* Visually connected to line number gutter */
+}
+
+/* Override table constraints for annotation gutter */
+.diff-table .diff-gutter-annotation,
+.side-by-side-pane .diff-gutter-annotation {
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+}
+
+.diff-gutter-addition {
+  color: var(--diff-add-fg);
+  background-color: var(--diff-add-gutter);
+}
+
+.diff-gutter-deletion {
+  color: var(--diff-delete-fg);
+  background-color: var(--diff-delete-gutter);
+}
+
+.diff-gutter-context {
+  color: var(--control-disabled-fg);
+  background-color: var(--control-bg);
+}
+
+.diff-gutter-header {
+  color: var(--diff-hunk-fg);
+  background-color: var(--diff-hunk-gutter);
+}
+
+.diff-gutter-spacer {
+  background-color: var(--control-bg);
+}
+
+/* Diff marker (+/-) column */
+.diff-marker {
+  position: relative;
+  padding: 2px 4px;
+  text-align: center;
+  user-select: none;
+  width: 32px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.diff-comment-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.diff-line:hover .diff-comment-btn,
+.diff-line:focus-within .diff-comment-btn {
+  opacity: 1;
+}
+
+/* Diff content */
+.diff-content {
+  padding: 2px 0 2px 8px;
+  overflow: hidden;
+}
+
+.diff-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  white-space: pre;
+  margin: 0;
+}
+
+/* Word wrap for diff code */
+.diff-code.word-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Allow wrapped content to expand cell height */
+[data-text-wrap="wrap"] .diff-content {
+  overflow: visible;
+}
+
+/* Word wrap for code blocks in comments when wrap is enabled */
+[data-text-wrap="wrap"] .comment-thread pre,
+[data-text-wrap="wrap"] .comment-thread code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Word-level diff highlighting */
+.word-diff-added {
+  background-color: var(--diff-add-word);
+  color: var(--diff-add-word-fg);
+  border: 2px solid var(--diff-add-word-border);
+  border-radius: 2px;
+}
+
+.word-diff-removed {
+  background-color: var(--diff-delete-word);
+  color: var(--diff-delete-word-fg);
+  border: 2px solid var(--diff-delete-word-border);
+  border-radius: 2px;
+}
+
+/* Visible whitespace */
+.whitespace-visible {
+  color: var(--control-disabled-fg);
+  opacity: 0.6;
+}
+
+/* Note: .sr-only moved to utilities.css */
+
+/* ============================================
+   DIFF HEADER (Sticky)
+   ============================================ */
+
+/* Header dimension variables for scroll-margin calculations (measured via Playwright getBoundingClientRect) */
+/* Note: --diff-line-height and --diff-scroll-context-lines are defined in :root (variables.css) */
+.diff-view-container {
+  --diff-header-toolbar-height: 33px;
+  --diff-header-iterations-height: 0px; /* Only present when iterations exist */
+  --diff-header-border: 1px;
+  --diff-header-total-height: calc(
+    var(--diff-header-toolbar-height) +
+    var(--diff-header-iterations-height) +
+    var(--diff-header-border) +
+    (var(--diff-line-height) * var(--diff-scroll-context-lines))
+  );
+  /* Flex layout to keep header fixed and content scrollable */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* When iterations are visible, include their height */
+.diff-view-container:has(.diff-header-iterations:not(:empty)) {
+  --diff-header-iterations-height: 36px;
+}
+
+.diff-header {
+  flex-shrink: 0; /* Don't shrink header */
+  z-index: 10;
+  background-color: var(--listview-header);
+  border-bottom: var(--diff-header-border) solid var(--combobox-border);
+}
+
+.diff-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.diff-content-area {
+  flex: 1;
+  min-height: 0; /* Allow flex child to shrink for scrolling */
+  overflow: auto; /* Both horizontal and vertical scroll */
+  background-color: var(--diff-area-bg);
+}
+
+.diff-content-wrapper {
+  position: relative; /* For minimap absolute positioning */
+}
+
+/* Add padding for minimap in inline mode */
+.diff-content-wrapper[data-view-mode="inline"] {
+  padding-left: 60px;
+}
+
+
+.diff-filename {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--main-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* ============================================
+   CONTENT FILTER SLIDER (3-stop)
+   ============================================ */
+.content-filter-slider {
+  display: flex;
+  align-items: center;
+  user-select: none;
+  /* Reset fieldset defaults */
+  border: none;
+  padding: 0;
+  margin: 0;
+  margin-top: -1px; /* Align with other toolbar buttons */
+  min-width: 0;
+  /* Prevent fieldset from showing its own focus ring */
+  outline: none;
+}
+
+.content-filter-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 90px;
+  height: 12px;
+  background-color: var(--control-bg);
+  cursor: pointer;
+}
+
+.content-filter-indicator {
+  flex: 1;
+  height: 100%;
+  border: 1px solid var(--combobox-border);
+}
+
+.content-filter-indicator-left {
+  background-color: var(--diff-add-word);
+  border-right: none;
+}
+
+.content-filter-indicator-both {
+  display: none;
+}
+
+.content-filter-indicator-right {
+  background-color: var(--diff-delete-word);
+  border-left: none;
+}
+
+/* Radio option labels - positioned to cover their respective areas */
+.content-filter-option {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+}
+
+.content-filter-option-left {
+  left: 0;
+  width: 33.33%;
+}
+
+.content-filter-option-both {
+  left: 33.33%;
+  width: 33.34%;
+}
+
+.content-filter-option-right {
+  left: 66.67%;
+  width: 33.33%;
+}
+
+/* Thumb - hidden by default, shown only when active */
+.content-filter-thumb {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 25px;
+  background-color: var(--listview-header);
+  border: 1px solid var(--combobox-border);
+  transition: left 0.15s ease;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--main-fg);
+  pointer-events: none; /* Allow clicks to pass through to the track */
+}
+
+/* Hover effect when hovering over the track */
+.content-filter-track:hover .content-filter-thumb {
+  background-color: var(--btn-hover);
+}
+
+/* Show thumb only when its radio is checked */
+.content-filter-option input:checked + .content-filter-thumb {
+  display: flex;
+}
+
+/* Show focus indicator on thumb when radio is focused */
+.content-filter-option input:focus + .content-filter-thumb,
+.content-filter-option input:focus-visible + .content-filter-thumb {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
+}
+
+/* Position thumbs relative to track (accounting for label offset) */
+/* Track is 90px, thumb is 70px */
+/* Left: thumb at track position 0, label at 0 → offset 0 */
+.content-filter-option-left .content-filter-thumb {
+  left: 0;
+}
+
+/* Both: thumb at track center (45px - 35px = 10px), label at 33.33% (30px) → offset -20px */
+.content-filter-option-both .content-filter-thumb {
+  left: -20px;
+}
+
+/* Right: thumb at track end (90px - 70px = 20px), label at 66.67% (60px) → offset -40px */
+.content-filter-option-right .content-filter-thumb {
+  left: -40px;
+}
+
+
+/* ============================================
+   ITERATION SELECTOR (Tab-based)
+   ============================================ */
+
+/* Container for iteration selector in diff header */
+.diff-header-iterations {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  background-color: var(--listview-header);
+}
+
+/* Hide when empty (no iterations available) */
+.diff-header-iterations:empty {
+  display: none;
+}
+
+.iteration-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.iteration-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: transparent;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.iteration-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 64px;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  background-color: var(--tab-inactive);
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+  color: var(--main-fg);
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+  position: relative;
+}
+
+.iteration-tab:hover {
+  background-color: var(--btn-hover);
+  color: var(--main-fg);
+}
+
+.iteration-tab:active {
+  background-color: var(--btn-press);
+}
+
+/* Selected tab (boundary of range) */
+.iteration-tab.selected {
+  background-color: var(--treeview-selected);
+  color: var(--selected-fg);
+}
+
+.iteration-tab.selected:hover {
+  background-color: var(--treeview-selected);
+  filter: brightness(1.1);
+}
+
+/* In range but not boundary - same as unselected */
+.iteration-tab.in-range:not(.selected) {
+  background-color: var(--tab-inactive);
+  color: var(--main-fg);
+}
+
+/* Tab number */
+.iteration-tab-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Skeleton loading state */
+.iteration-tab-skeleton {
+  aspect-ratio: 16 / 9;
+  min-height: 36px;
+  min-width: 64px;
+  border: 1px solid var(--combobox-border);
+  border-bottom: none;
+}
+
+.iteration-tab-skeleton.active {
+  background-color: var(--treeview-selected);
+  animation: none;
+}
+
+/* Collapsed iteration group tab */
+.iteration-tab.collapsed {
+  background-color: var(--tab-inactive);
+  color: var(--watermark-text);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.iteration-tab.collapsed svg {
+  stroke: var(--watermark-text);
+}
+
+/* Loading indicator */
+.iteration-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--control-disabled-fg);
+  font-size: 14px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--combobox-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Legacy styles - keep for backwards compatibility */
+.iteration-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+}
+
+.iteration-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--control-disabled-fg);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.iteration-separator {
+  width: 1px;
+  height: 24px;
+  background-color: var(--combobox-border);
+}
+
+.iteration-dropdown-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iteration-dropdown-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--control-disabled-fg);
+}
+
+.iteration-dropdown-container {
+  position: relative;
+}
+
+.iteration-dropdown-chevron {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--control-disabled-fg);
+  pointer-events: none;
+}
+
+.iteration-range-dropdowns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iteration-range-icon {
+  color: var(--control-disabled-fg);
+}
+
+/* ============================================
+   COMMENT THREAD
+   ============================================ */
+.comment-thread {
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  background-color: var(--main-bg);
+  padding: 16px;
+}
+
+.comment-thread.resolved {
+  opacity: 0.75;
+}
+
+.comment-thread-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.comment-thread-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--main-fg);
+}
+
+.comment-thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-thread-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--combobox-border);
+  margin-top: 16px;
+}
+
+/* ============================================
+   SIDE-BY-SIDE DIFF VIEW
+   ============================================ */
+.side-by-side-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  background-color: var(--main-bg);
+}
+
+.side-by-side-pane {
+  flex: 1;
+  overflow: auto;
+  min-width: 0;
+  background-color: var(--main-bg);
+}
+
+.side-by-side-pane-left {
+  border-right: 1px solid var(--combobox-border);
+}
+
+.side-by-side-pane table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+/* Constrain gutter and marker widths in side-by-side mode */
+.side-by-side-pane .diff-gutter {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+}
+
+.side-by-side-pane .diff-marker {
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+}
+
+/* Content cell takes remaining space */
+.side-by-side-pane .diff-content {
+  width: auto;
+}
+
+/* ============================================
+   VIRTUALIZED DIFF COMPONENTS
+   ============================================ */
+
+/* Container wrapper for virtualized inline diff.
+ * Sets CSS variable --diff-scroll-width via JavaScript for syncing table widths. */
+.virtualized-inline-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Virtualized row wrapper - enables horizontal scrolling for long lines.
+ * react-window sets rows to width: 100%, which clips content.
+ * We override this to allow rows to expand to fit wide content.
+ * The List container's overflow: auto then provides the horizontal scrollbar.
+ * !important is required to override react-window's inline style (width: 100%). */
+.virtualized-inline-list .virtualized-row {
+  width: max-content !important;
+  min-width: 100%;
+  overflow: visible; /* Allow content to extend for horizontal scroll on parent */
+}
+
+/* Table inside virtualized rows.
+ * Uses --diff-scroll-width CSS variable (set by JS) to ensure ALL tables
+ * extend to the same width as the widest content. This ensures diff backgrounds
+ * (addition/deletion highlighting) extend to the full scrollable width. */
+.virtualized-row .diff-table {
+  table-layout: auto; /* Allow table to expand with content */
+  width: max-content; /* Allow horizontal scroll for long lines */
+  min-width: var(--diff-scroll-width, 100%);
+}
+
+/* Word wrap overrides - must come AFTER max-content rules to take precedence.
+ * When word wrap is enabled, constrain row/table width to container width
+ * so that text can wrap instead of extending horizontally. */
+[data-text-wrap="wrap"] .virtualized-inline-list .virtualized-row {
+  width: 100% !important;
+  min-width: unset;
+}
+
+[data-text-wrap="wrap"] .virtualized-row .diff-table {
+  width: 100%;
+  min-width: unset;
+  table-layout: fixed;
+}
+
+/* Virtualized side-by-side container */
+.virtualized-sxs-wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+.virtualized-sxs-row {
+  overflow: hidden;
+}
+
+.virtualized-sxs-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.virtualized-sxs-pane {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.virtualized-sxs-pane-left {
+  border-right: 2px solid var(--combobox-border);
+}
+
+.virtualized-sxs-pane .diff-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* ============================================
+   MINIMAP COMPONENT
+   ============================================ */
+.minimap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  cursor: pointer;
+  user-select: none;
+  background-color: var(--control-bg);
+  z-index: 1; /* Below diff-header (z-index: 10) so toolbar dropdowns appear above */
+}
+
+/* Inline mode: minimap on left */
+.diff-content-wrapper[data-view-mode="inline"] .minimap {
+  left: 0;
+  border-right: 1px solid var(--combobox-border);
+}
+
+/* Split mode: minimap at center between panes */
+.diff-content-wrapper[data-view-mode="split"] .minimap {
+  right: 50%;
+  border-left: 1px solid var(--combobox-border);
+  border-right: 1px solid var(--combobox-border);
+}
+
+.minimap-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.minimap-bar {
+  fill: var(--diff-area-bg);
+}
+
+.minimap-bar-disabled {
+  fill: var(--control-disabled);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.minimap-deletion {
+  fill: var(--diff-delete-line);
+}
+
+.minimap-addition {
+  fill: var(--diff-add-line);
+}
+
+.minimap-lasso {
+  fill: none;
+  stroke: #505050;
+  stroke-width: 2;
+}

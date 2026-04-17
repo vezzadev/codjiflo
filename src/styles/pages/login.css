@@ -1,0 +1,102 @@
+/* ============================================
+   LOGIN PAGE
+   ============================================ */
+.login-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-header .logo {
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.login-header .logo img {
+  width: 48px;
+  height: 48px;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--main-fg);
+  margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+  color: var(--control-disabled-fg);
+  margin: 0;
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-divider {
+  position: relative;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.login-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background-color: var(--combobox-border);
+}
+
+.login-divider span {
+  position: relative;
+  padding: 0 12px;
+  background-color: var(--control-bg);
+  color: var(--control-disabled-fg);
+  font-size: 13px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.login-footer p {
+  margin: 0;
+  color: var(--control-disabled-fg);
+  font-size: 13px;
+}
+
+.login-footer a {
+  color: var(--hyperlink);
+  text-decoration: none;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
+}

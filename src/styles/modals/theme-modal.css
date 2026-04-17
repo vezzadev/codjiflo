@@ -1,0 +1,201 @@
+/* ============================================
+   THEME MODAL
+   ============================================ */
+.theme-modal-content {
+  width: 580px;
+  padding-bottom: 0;
+}
+
+.theme-modal-columns {
+  display: flex;
+  gap: 24px;
+  padding: 0 16px;
+}
+
+.theme-modal-section {
+  flex: 1;
+}
+
+.theme-modal-section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--main-fg);
+  border-bottom: 1px solid var(--combobox-border);
+  padding-bottom: 8px;
+}
+
+.theme-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.theme-option input[type="radio"] {
+  margin: 2px 0 0 0;
+  accent-color: var(--accent);
+}
+
+.theme-option-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: var(--main-fg);
+}
+
+.theme-option-description {
+  font-size: 11px;
+  color: var(--control-disabled-fg);
+}
+
+.theme-modal-preview-title {
+  margin: 0 16px 0;
+}
+
+/* ============================================
+   THEME MODAL PREVIEW - Dual Panel Layout
+   ============================================ */
+.theme-modal-previews {
+  display: flex;
+  gap: 12px;
+  margin: 16px;
+}
+
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background-color: var(--control-bg);
+  border: 2px solid var(--combobox-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.preview-panel:hover:not(.preview-panel-disabled) {
+  border-color: var(--accent);
+}
+
+.preview-panel-selected {
+  border-color: var(--accent);
+  background-color: var(--listview-selected);
+}
+
+.preview-panel-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preview-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-panel-header input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+.preview-panel-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--main-fg);
+}
+
+/* Preview Window - merged from duplicate selectors */
+.preview-window {
+  flex: 1;
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--diff-area-bg);
+}
+
+.preview-diff {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+}
+
+.preview-diff-line {
+  display: flex;
+  padding: 1px 6px;
+}
+
+.preview-gutter {
+  width: 14px;
+  color: var(--control-disabled-fg);
+  user-select: none;
+}
+
+.preview-code {
+  flex: 1;
+  color: var(--main-fg);
+  white-space: nowrap;
+}
+
+.preview-swatches {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.preview-swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--combobox-border);
+  border-radius: 2px;
+}
+
+/* ============================================
+   PREVIEW COLORS (using CSS variables)
+   ============================================ */
+.preview-context {
+  background-color: var(--diff-area-bg);
+}
+
+.preview-addition {
+  background-color: var(--diff-add-line);
+}
+
+.preview-deletion {
+  background-color: var(--diff-delete-line);
+}
+
+.preview-word-added {
+  background-color: var(--diff-add-word);
+  color: var(--diff-add-word-fg);
+  border: 2px solid var(--diff-add-word-border);
+  border-radius: 2px;
+}
+
+.preview-word-removed {
+  background-color: var(--diff-delete-word);
+  color: var(--diff-delete-word-fg);
+  border: 2px solid var(--diff-delete-word-border);
+  border-radius: 2px;
+}
+
+.preview-swatch-add {
+  background-color: var(--diff-add-word);
+}
+
+.preview-swatch-del {
+  background-color: var(--diff-delete-word);
+}
+
+.theme-modal-note {
+  margin: 0 16px 8px;
+  font-size: 11px;
+  color: var(--control-disabled-fg);
+  text-align: center;
+}

@@ -1,0 +1,44 @@
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Screen reader only - accessibility helper */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton {
+  background-color: var(--control-disabled);
+  border-radius: 2px;
+  animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 16px;
+}
+
+.skeleton-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
