@@ -17,6 +17,7 @@ import {
 } from './artifact-download';
 
 // Mock octokit
+const mockPaginateIterator = vi.fn();
 const mockOctokit = {
   rest: {
     actions: {
@@ -25,7 +26,23 @@ const mockOctokit = {
       getArtifact: vi.fn(),
     },
   },
+  paginate: {
+    iterator: mockPaginateIterator,
+  },
 };
+
+/**
+ * Helper to build an async iterator that yields the given pages.
+ */
+function buildAsyncIterator<T>(pages: T[][]): AsyncIterable<{ data: T[] }> {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const page of pages) {
+        yield { data: page };
+      }
+    },
+  };
+}
 
 describe('findLatestArtifact', () => {
   beforeEach(() => {
@@ -295,6 +312,50 @@ describe('findNewestCodjifloArtifactForPR', () => {
     );
 
     expect(result?.id).toBe(99);
+  });
+
+  it('should find target artifact on page 2 when page 1 is dominated by unrelated artifacts', async () => {
+    // Page 1: 100 non-matching artifacts (other CI jobs on a busy repo)
+    const page1 = Array.from({ length: 100 }, (_, i) => ({
+      id: 10000 + i,
+      name: `other-ci-artifact-${i}`,
+      created_at: '2025-01-10T10:00:00Z',
+      expired: false,
+      workflow_run: { id: 2000 + i },
+    }));
+    // Page 2: contains the target codjiflo artifact for PR 28
+    const page2 = [
+      {
+        id: 9000,
+        name: 'codjiflo-pr-28-1500',
+        created_at: '2025-01-05T10:00:00Z',
+        expired: false,
+        workflow_run: { id: 1500 },
+      },
+      {
+        id: 8999,
+        name: 'other-artifact',
+        created_at: '2025-01-04T10:00:00Z',
+        expired: false,
+        workflow_run: { id: 1499 },
+      },
+    ];
+
+    mockPaginateIterator.mockReturnValue(buildAsyncIterator([page1, page2]));
+
+    const result = await findNewestCodjifloArtifactForPR(
+      mockOctokit as never,
+      'owner',
+      'repo',
+      28
+    );
+
+    expect(result).toEqual({
+      id: 9000,
+      name: 'codjiflo-pr-28-1500',
+      created_at: '2025-01-05T10:00:00Z',
+      workflow_run_id: 1500,
+    });
   });
 
   it('should return null when no matching artifact exists for PR', async () => {
