@@ -17,6 +17,13 @@ export async function fetchFileContent(
   path: string,
   ref: string
 ): Promise<string | null> {
+  // Skip binary files up-front. GitHub returns encoding='base64' for ALL files
+  // under 1MB (text and binary alike), so we cannot rely on the encoding field
+  // to detect binaries. Decoding binary bytes as UTF-8 produces mojibake.
+  if (isBinaryFile(path)) {
+    return null;
+  }
+
   try {
     const { data } = await octokit.rest.repos.getContent({
       owner,
