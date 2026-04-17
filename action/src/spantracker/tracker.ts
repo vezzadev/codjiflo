@@ -7,6 +7,28 @@
 import type { IterationDatabase } from '../db/database';
 import { computeLineDiff, lineDiffToSpanMapping } from '@codjiflo/diff-engine';
 
+/**
+ * Count lines in a string.
+ *
+ * Matches the helper in `packages/diff-engine/src/line-diff.ts` so that
+ * the added/deleted branches here agree with the semantics used by the
+ * rest of the diff pipeline:
+ *
+ *   - ""          → 0 lines
+ *   - "foo"       → 1 line
+ *   - "foo\n"     → 1 line (trailing newline is a terminator, not a line)
+ *   - "foo\nbar"  → 2 lines
+ *   - "foo\nbar\n"→ 2 lines
+ *
+ * `content.split('\n').length` is wrong for both edge cases: it returns
+ * 1 for "" (a phantom line) and 2 for "foo\n" (off by one).
+ */
+function countLines(text: string): number {
+  if (!text) return 0;
+  const newlines = (text.match(/\n/g) ?? []).length;
+  return text.endsWith('\n') ? newlines : newlines + 1;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -58,13 +80,17 @@ function computeSingleTracker(
 
   if (leftContent === null) {
     // File added - all lines are "added"
-    const lines = (rightContent ?? '').split('\n');
+    const lineCount = countLines(rightContent ?? '');
+    if (lineCount === 0) {
+      // Empty added file: no lines to map.
+      return;
+    }
     db.insertSpanMapping(
       trackerId,
       null,
       null,
       1,
-      lines.length,
+      lineCount,
       'added'
     );
     return;
@@ -72,11 +98,15 @@ function computeSingleTracker(
 
   if (rightContent === null) {
     // File deleted - all lines are "deleted"
-    const lines = leftContent.split('\n');
+    const lineCount = countLines(leftContent);
+    if (lineCount === 0) {
+      // Previously-empty deleted file: no lines to map.
+      return;
+    }
     db.insertSpanMapping(
       trackerId,
       1,
-      lines.length,
+      lineCount,
       null,
       null,
       'deleted'
