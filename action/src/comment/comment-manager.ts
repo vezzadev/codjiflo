@@ -72,7 +72,7 @@ async function findExistingComment(
   repo: string,
   prNumber: number
 ): Promise<{ id: number; body: string } | null> {
-  const { data: comments } = await octokit.rest.issues.listComments({
+  const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     owner,
     repo,
     issue_number: prNumber,
