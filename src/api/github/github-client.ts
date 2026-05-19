@@ -110,11 +110,6 @@ export class GitHubClient {
     const requestInit: RequestInit = {
       method: options?.method ?? 'GET',
       headers,
-      // GitHub returns `cache-control: public, max-age=60` on most endpoints.
-      // Without `no-cache` the browser would serve stale responses for up to
-      // 60s on soft refresh, hiding new PR iterations (issue #494). `no-cache`
-      // forces ETag revalidation; 304 responses don't count toward rate limits.
-      cache: 'no-cache',
     };
 
     if (options?.body) {
