@@ -70,6 +70,13 @@ Stateful Mode uses a **GitHub Action + Artifact** approach to store iteration da
 5. Load precomputed SpanTrackers from artifact (adjacent pairs + base→latest)
 6. Compute cross-iteration SpanTrackers on-demand by chaining
 
+**Cache freshness:** GitHub returns `cache-control: public, max-age=60` on
+most endpoints. Frontend fetches must use `cache: 'no-cache'` so a soft
+refresh (F5 / Ctrl+R) re-revalidates the PR comment and discovers a freshly
+uploaded artifact pointer. Otherwise users would have to hard-refresh
+(Ctrl+F5) for up to 60s after a workflow run (issue #494). 304 responses
+from ETag revalidation don't count against the GitHub rate limit.
+
 ---
 
 ## SQLite Schema
@@ -200,3 +207,5 @@ interface GitHubStatefulIteration extends Iteration {
 - [ ] Download and cache artifact in IndexedDB
 - [ ] Find artifact reference in PR comments (`<!-- codjiflo-data -->`)
 - [ ] Handle artifact not found (fall back to stateless mode)
+- [ ] Soft refresh (F5 / Ctrl+R) picks up new iterations within 1 round-trip
+      — no hard refresh required (issue #494)
