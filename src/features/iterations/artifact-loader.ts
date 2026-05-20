@@ -142,11 +142,21 @@ export class ArtifactLoader {
       return null;
     }
 
+    const iterationCount = parseInt(iterationCountValue, 10);
+    const artifactId = parseInt(artifactIdValue, 10);
+    const runId = parseInt(runIdValue, 10);
+
+    // Validate parsed numbers (defensive check - regex should ensure digits only)
+    if (Number.isNaN(iterationCount) || Number.isNaN(artifactId) || Number.isNaN(runId)) {
+      console.warn('Invalid numeric values in CodjiFlo comment:', body);
+      return null;
+    }
+
     return {
-      iterationCount: parseInt(iterationCountValue, 10),
+      iterationCount,
       timestamp: timestampValue,
-      artifactId: parseInt(artifactIdValue, 10),
-      runId: parseInt(runIdValue, 10),
+      artifactId,
+      runId,
     };
   }
 
