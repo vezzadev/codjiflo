@@ -48,6 +48,7 @@
     "@codemirror/search": "^6.6.0",
     "@codemirror/state": "^6.5.4",
     "@codemirror/view": "^6.41.0",
+    "@swc/helpers": "^0.5.15",
     "@uiw/react-codemirror": "^4.25.9",
     "codemirror": "^6.0.2",
     "diff-match-patch": "^1.0.5",
