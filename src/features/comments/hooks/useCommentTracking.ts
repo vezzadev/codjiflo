@@ -68,17 +68,21 @@ export function useCommentTracking(): void {
       (t) => t.line === null && t.originalLine !== null && t.originalCommitId !== null
     );
 
-    const cacheKey = JSON.stringify({
-      threadIds: threadsNeedingTracking.map((t) => t.id).sort(),
-      range: selectedRange,
-    });
+    // Skip if no threads need tracking - avoid building cache key when nothing to do
+    if (threadsNeedingTracking.length === 0) {
+      // Clear cache key to ensure we process threads when they appear
+      lastCacheKeyRef.current = '';
+      return;
+    }
+
+    // Build cache key: collect IDs, sort them, and join with range info
+    // Using string concatenation instead of JSON.stringify for simpler equality comparison
+    const threadIds = threadsNeedingTracking.map((t) => t.id).sort();
+    const cacheKey = `${threadIds.join(',')}|${selectedRange.fromSnapshot}-${selectedRange.toSnapshot}`;
 
     // Skip if nothing changed
     if (cacheKey === lastCacheKeyRef.current) return;
     lastCacheKeyRef.current = cacheKey;
-
-    // Skip if no threads need tracking
-    if (threadsNeedingTracking.length === 0) return;
 
     // Track positions asynchronously
     void trackPositions(
