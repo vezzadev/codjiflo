@@ -815,18 +815,22 @@ interface SelectionBehavior {
 #### Display Toggles
 | Shortcut | Action |
 |----------|--------|
-| `F` | Show full file (unidirectional) |
-| `C` | Show changes only (unidirectional) |
+| `F` | Show Full file |
+| `C` | Show Changes only |
 | `B` | Toggle whitespace visibility |
 | `D` | Toggle comments visibility (hides lasso when comments shown) |
-| `P` | Toggle text wrap |
+| `P` | Toggle text wrap (wrap ↔ nowrap) |
 
-#### General Navigation
+**Note:** F and C are unidirectional shortcuts (not toggles). F only works when not already in full file mode, C only works when in full file mode. This prevents accidental double-toggle.
+
+#### Scroll Navigation
 | Shortcut | Action |
 |----------|--------|
-| `Space` | Scroll down in diff view |
-| `PgUp`/`PgDn` | Page scroll (diff area focused) |
-| `Home`/`End` | Jump to start/end (diff area focused) |
+| `Space` | Scroll down by 80% of viewport height |
+| `PageDown` | Scroll down by viewport height minus 50px (overlap for context) |
+| `PageUp` | Scroll up by viewport height minus 50px |
+| `Home` | Scroll to start of file |
+| `End` | Scroll to end of file |
 
 #### Other Shortcuts
 | Shortcut | Action |
@@ -955,3 +959,6 @@ For React/TypeScript reimplementation:
 - [ ] Minimap overview margin
 - [ ] Theme-aware colors
 - [ ] Keyboard navigation between diffs (J/K for changes, S/W for files)
+- [ ] Full keyboard shortcut support (I/X for view modes, L/O/R for filters, F/C for full/changes, B/D/P for toggles)
+- [ ] Scroll navigation (Space, PageDown/PageUp, Home/End)
+- [ ] Text wrap toggle
