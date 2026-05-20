@@ -27,7 +27,8 @@
     "test:e2e:headed": "cross-env E2E_DEPENDENCIES_MODE=mock playwright test --headed --reporter=dot",
     "test:e2e:ui": "cross-env E2E_DEPENDENCIES_MODE=mock playwright test --ui",
     "test:e2e:debug": "cross-env E2E_DEPENDENCIES_MODE=mock playwright test --debug",
-    "test:all": "npm run lint -s && npm run typecheck -s && npm run test -s -- --coverage && npm run test:e2e -s && npm run test:storybook -s"
+    "test:all": "npm run lint -s && npm run typecheck -s && npm run test -s -- --coverage && npm run test:e2e -s && npm run test:storybook -s",
+    "sync-lockfile": "npm install --ignore-scripts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
