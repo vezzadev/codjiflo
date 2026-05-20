@@ -70,6 +70,27 @@ Stateful Mode uses a **GitHub Action + Artifact** approach to store iteration da
 5. Load precomputed SpanTrackers from artifact (adjacent pairs + base→latest)
 6. Compute cross-iteration SpanTrackers on-demand by chaining
 
+### PR Comment Format
+
+The GitHub Action posts a comment with the following format:
+
+```markdown
+<!-- codjiflo-data -->
+### CodjiFlo Iteration Tracking
+**Iterations captured**: 3
+**Last updated**: 2025-01-15T10:30:00Z
+**Artifact**: `1234567890`
+**Run ID**: 9876543210
+```
+
+**Pending State**: During workflow execution, the artifact ID may be `pending` while the upload is in progress:
+
+```markdown
+**Artifact**: `pending`
+```
+
+When the frontend detects `pending`, it falls back to stateless mode and will retry on next load.
+
 ---
 
 ## SQLite Schema
@@ -148,8 +169,32 @@ CREATE TABLE span_trackers (
 ### Precomputed SpanTrackers
 
 - Adjacent pairs: 0→1, 2→3, 4→5 (each iteration's before/after)
-- Base→latest: 0→(latest right snapshot) for quick "full diff" view
+- Base→latest: (latest left snapshot)→(latest right snapshot) for quick "full diff" view
+  - Note: Uses latest iteration's left snapshot (not snapshot 0) to handle rebases correctly
+  - See `iterations-common.md` Base Equivalence section for details
 - Cross-iteration: computed client-side by chaining adjacent trackers
+
+---
+
+## Artifact Caching (IndexedDB)
+
+The frontend caches downloaded SQLite artifacts in IndexedDB to minimize repeated downloads:
+
+| Property | Value |
+|----------|-------|
+| Database | `codjiflo-artifacts` |
+| Store | `artifacts` |
+| Key | `{owner}/{repo}/{prNumber}` |
+| Value | `{ data: ArrayBuffer, timestamp: string }` |
+
+**Cache Validation:**
+- On load, the cached timestamp is compared against the PR comment's `Last updated` timestamp
+- If timestamps match, the cached artifact is used directly
+- If timestamps differ (new iteration captured), the artifact is re-downloaded
+
+**Cache Eviction:**
+- No automatic eviction; relies on browser storage limits
+- User can clear via browser settings (IndexedDB data)
 
 ---
 
