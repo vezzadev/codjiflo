@@ -2,6 +2,12 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Force-include @swc/helpers ESM files in serverless trace.
+  // Vercel's lambda bundler omits them otherwise, producing runtime
+  // `Cannot find module '/var/task/node_modules/@swc/helpers/esm/...'` errors.
+  outputFileTracingIncludes: {
+    '/**/*': ['./node_modules/@swc/helpers/**'],
+  },
   images: {
     remotePatterns: [
       {
