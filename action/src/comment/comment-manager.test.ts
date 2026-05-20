@@ -3,7 +3,83 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updatePRDescription } from './comment-manager';
+import { updatePRDescription, updatePRComment, getArtifactIdFromComment } from './comment-manager';
+
+describe('findExistingComment pagination', () => {
+  let mockOctokit: any;
+  const owner = 'testowner';
+  const repo = 'testrepo';
+  const prNumber = 123;
+
+  beforeEach(() => {
+    // Simulate 150 comments across 2 pages, with codjiflo marker on page 2
+    const page1 = Array.from({ length: 100 }, (_, i) => ({
+      id: i + 1,
+      body: `unrelated comment ${i + 1}`,
+    }));
+    const page2 = [
+      ...Array.from({ length: 20 }, (_, i) => ({
+        id: 101 + i,
+        body: `unrelated comment ${101 + i}`,
+      })),
+      {
+        id: 999,
+        body: '<!-- codjiflo-data -->\n**Artifact**: `42`\n',
+      },
+      ...Array.from({ length: 29 }, (_, i) => ({
+        id: 1000 + i,
+        body: `unrelated comment ${1000 + i}`,
+      })),
+    ];
+
+    mockOctokit = {
+      rest: {
+        issues: {
+          listComments: Object.assign(
+            vi.fn(async ({ page }: { page?: number }) => {
+              if (page === 1 || page === undefined) return { data: page1 };
+              if (page === 2) return { data: page2 };
+              return { data: [] };
+            }),
+            { endpoint: { merge: vi.fn() } }
+          ),
+          createComment: vi.fn().mockResolvedValue({}),
+          updateComment: vi.fn().mockResolvedValue({}),
+        },
+      },
+      paginate: vi.fn(async (fn: any, params: any) => {
+        const results: any[] = [];
+        let page = 1;
+        while (true) {
+          const { data } = await fn({ ...params, page });
+          if (!data || data.length === 0) break;
+          results.push(...data);
+          if (data.length < (params.per_page ?? 30)) break;
+          page += 1;
+        }
+        return results;
+      }),
+    };
+  });
+
+  it('should find marker comment on page 2 via getArtifactIdFromComment', async () => {
+    const artifactId = await getArtifactIdFromComment(mockOctokit, owner, repo, prNumber);
+    expect(artifactId).toBe(42);
+  });
+
+  it('should update (not create) when marker comment exists on page 2', async () => {
+    await updatePRComment(mockOctokit, owner, repo, prNumber, {
+      iterationCount: 1,
+      runId: 1,
+      timestamp: '2026-01-01',
+      artifactId: 42,
+    });
+    expect(mockOctokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({ comment_id: 999 })
+    );
+    expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled();
+  });
+});
 
 describe('updatePRDescription', () => {
   let mockOctokit: any;

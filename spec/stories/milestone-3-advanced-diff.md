@@ -60,6 +60,7 @@ Expand the diff view to show entire file contents with changes highlighted inlin
 4.  **Toggle Control**:
     - [ ] [AC-3.1.10] "Full file" / "Changes only" toggle in toolbar.
     - [ ] [AC-3.1.11] Toggle state persisted in local storage.
+    - [ ] [AC-3.1.14] Keyboard shortcut `F` to show full file, `C` to show changes only.
 5.  **Performance**:
     - [ ] [AC-3.1.12] Virtualized rendering for files > 500 lines (use `react-window` or similar).
     - [ ] [AC-3.1.13] Loading skeleton shown while fetching full content.
@@ -112,6 +113,7 @@ Implement a toolbar with toggle buttons for:
     - [ ] [AC-3.3.5] Three-way toggle: "Left", "Both", "Right".
     - [ ] [AC-3.3.6] "Both" shows the standard diff view (default).
     - [ ] [AC-3.3.7] Filter applies to both Unified and Split modes.
+    - [ ] [AC-3.3.23] Keyboard shortcut `L` for Left, `O` for Both, `R` for Right.
 3.  **Content Filter in Split Mode**:
     - [ ] [AC-3.3.8] "Left" hides the right pane, showing only the original file.
     - [ ] [AC-3.3.9] "Both" shows both panes side-by-side (default).
@@ -129,7 +131,10 @@ Implement a toolbar with toggle buttons for:
 6.  **State Persistence**:
     - [ ] [AC-3.3.19] View mode preference saved to local storage.
     - [ ] [AC-3.3.20] Content filter preference saved to local storage.
-7.  **Accessibility**:
+7.  **Additional Display Options**:
+    - [ ] [AC-3.3.24] Text wrap toggle (wrap/nowrap) with keyboard shortcut `P`.
+    - [ ] [AC-3.3.25] Comments visibility toggle (show/hide) with keyboard shortcut `D`.
+8.  **Accessibility**:
     - [ ] [AC-3.3.21] Toggle buttons are keyboard navigable (arrow keys within group).
     - [ ] [AC-3.3.22] Aria-pressed state correctly set on active button.
 
@@ -171,3 +176,4 @@ Add a settings toggle "Ignore Whitespace" that filters or hides whitespace-only 
 3.  **UI**:
     - [ ] [AC-3.5.4] Toggle in toolbar near view mode toggles.
     - [ ] [AC-3.5.5] Visual indicator when whitespace is being ignored.
+    - [ ] [AC-3.5.6] Keyboard shortcut `B` to toggle whitespace visibility.

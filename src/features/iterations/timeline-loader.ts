@@ -67,10 +67,18 @@ export class TimelineLoader {
    * Returns iterations (live + collapsed) and collapsed groups.
    */
   async load(): Promise<TimelineLoaderResult> {
+    const prKey = `${this.owner}/${this.repo}#${String(this.prNumber)}`;
+    console.info(`[CodjiFlo] TimelineLoader: fetching commits and timeline for ${prKey}`);
+
     const [commits, timeline] = await Promise.all([
       this.fetchCommits(),
       this.fetchTimeline(),
     ]);
+
+    console.info(
+      `[CodjiFlo] TimelineLoader: found ${String(commits.length)} commit(s) and ` +
+      `${String(timeline.length)} timeline event(s) for ${prKey}`
+    );
 
     return this.buildIterations(commits, timeline);
   }
@@ -160,6 +168,12 @@ export class TimelineLoader {
       )
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
+    if (forcePushes.length > 0) {
+      console.info(
+        `[CodjiFlo] TimelineLoader: detected ${String(forcePushes.length)} force-push event(s)`
+      );
+    }
+
     // Step 2: Discover discarded commits for each force-push (sequential -- each needs API call)
     for (const event of forcePushes) {
       const discovery = await this.discoverDiscardedCommits(
@@ -170,6 +184,11 @@ export class TimelineLoader {
       const eventId = String(event.id);
 
       if (discovery.status === 'discovered') {
+        console.info(
+          `[CodjiFlo] TimelineLoader: discovered ${String(discovery.commits.length)} discarded ` +
+          `commit(s) from force-push (before: ${event.before_commit.sha.slice(0, 7)})`
+        );
+
         const group: CollapsedIterationGroup = {
           forcePushEventId: eventId,
           discardedRevisions: [], // assigned after sorting
@@ -195,6 +214,11 @@ export class TimelineLoader {
         collapsedGroups.push(group);
       } else {
         // GC'd: no individual commits, just record the force-push happened
+        // This is an expected condition when old commits are garbage-collected
+        console.info(
+          `[CodjiFlo] TimelineLoader: discarded commits from force-push are no longer accessible ` +
+          `(before SHA ${event.before_commit.sha.slice(0, 7)} garbage-collected)`
+        );
         collapsedGroups.push({
           forcePushEventId: eventId,
           discardedRevisions: [],

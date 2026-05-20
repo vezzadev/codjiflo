@@ -243,6 +243,11 @@ export class SpanTrackerService {
       return new IdentitySpanTracker(left, right);
     }
 
+    console.info(
+      `[CodjiFlo] SpanTrackerService: chaining ${String(trackers.length)} tracker(s) ` +
+      `for artifact ${String(artifactId)} (${String(left)}→${String(right)})`
+    );
+
     return chainTrackers(trackers);
   }
 }

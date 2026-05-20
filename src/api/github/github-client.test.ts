@@ -545,6 +545,96 @@ describe('GitHubClient', () => {
   });
 });
 
+describe('HTTP cache bypass (issue #494)', () => {
+  // Regression tests for issue #494: new PR iterations were not picked up on
+  // soft refresh because GitHub returns `cache-control: public, max-age=60`
+  // and fetch() was using the default cache mode. The browser served stale
+  // PR comment data (containing the old artifact reference) from the HTTP
+  // cache, so the iteration store kept using the stale artifact in IndexedDB.
+  // The fix forces revalidation on every request via `cache: 'no-cache'`,
+  // which still allows GitHub to return 304 (which does not count against
+  // the rate limit).
+
+  let client: GitHubClient;
+
+  beforeEach(() => {
+    client = new GitHubClient();
+    vi.clearAllMocks();
+    vi.mocked(useAuthStore.getState).mockReturnValue({ token: null } as never);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('passes cache: "no-cache" on GET requests so soft refresh sees latest data', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers(),
+      json: () => Promise.resolve({ data: 'test' }),
+    });
+
+    await client.fetch('/repos/owner/repo/issues/1/comments');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/owner/repo/issues/1/comments',
+      expect.objectContaining({ cache: 'no-cache' })
+    );
+  });
+
+  it('passes cache: "no-cache" on POST requests with a body', async () => {
+    vi.mocked(useAuthStore.getState).mockReturnValue({ token: 'ghp_test123' } as never);
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      headers: new Headers(),
+      json: () => Promise.resolve({ id: 1 }),
+    });
+
+    await client.request('/repos/owner/repo/issues', {
+      method: 'POST',
+      body: { title: 'test' },
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/owner/repo/issues',
+      expect.objectContaining({ cache: 'no-cache' })
+    );
+  });
+
+  it('passes cache: "no-cache" when retrying after 401 token refresh', async () => {
+    const mockRefreshAccessToken = vi.fn().mockResolvedValue(true);
+    vi.mocked(useAuthStore.getState).mockReturnValue({
+      token: 'ghp_test123',
+      authMethod: 'oauth',
+      refreshAccessToken: mockRefreshAccessToken,
+    } as never);
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers(),
+        json: () => Promise.resolve({ message: 'Bad credentials' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers(),
+        json: () => Promise.resolve({ login: 'testuser' }),
+      });
+
+    await client.fetch('/user');
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const firstCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    const secondCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[1] as [string, RequestInit];
+    expect(firstCall[1].cache).toBe('no-cache');
+    expect(secondCall[1].cache).toBe('no-cache');
+  });
+});
+
 describe('GitHubAPIError', () => {
   it('has correct properties', () => {
     const error = new GitHubAPIError(401, 'Unauthorized', 'Bad credentials');

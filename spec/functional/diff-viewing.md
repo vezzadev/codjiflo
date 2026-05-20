@@ -788,6 +788,8 @@ interface SelectionBehavior {
 |----------|--------|
 | `S` | Next file in file list |
 | `W` | Previous file in file list |
+| `↑`/`↓` | Navigate files (file list focused) |
+| `PgUp`/`PgDn` | Jump 10 files (file list focused) |
 
 #### Change Navigation (within file)
 | Shortcut | Action |
@@ -834,6 +836,8 @@ interface SelectionBehavior {
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+F` | Find in file |
+| `F3` | Find next |
+| `Shift+F3` | Find previous |
 | `Ctrl+G` | Go to line |
 | `Ctrl+Mouse Wheel` | Zoom |
 | `?` | Show keyboard shortcuts modal |

@@ -56,18 +56,27 @@ export class ArtifactLoader {
    * @param prefetchedReference - Optional pre-fetched reference to avoid duplicate API call
    */
   async load(prefetchedReference?: ArtifactReference): Promise<{ db: SQLiteDatabase; reference: ArtifactReference } | null> {
+    const prKey = `${this.owner}/${this.repo}#${String(this.prNumber)}`;
+
     // 1. Find the CodjiFlo comment (skip if already fetched)
     const reference = prefetchedReference ?? await this.findArtifactReference();
     if (!reference) {
+      console.info(`[CodjiFlo] No artifact reference found for ${prKey}`);
       return null;
     }
 
     // 2. Check IndexedDB cache
     const cached = await this.getCached();
     if (cached?.timestamp === reference.timestamp) {
+      console.info(`[CodjiFlo] Cache hit for ${prKey} (artifact ${String(reference.artifactId)})`);
       const db = await SQLiteDatabase.fromArrayBuffer(cached.data);
       return { db, reference };
     }
+
+    console.info(
+      `[CodjiFlo] Cache miss for ${prKey}, downloading artifact ${String(reference.artifactId)} ` +
+      `(${String(reference.iterationCount)} iterations)`
+    );
 
     // 3. Download the artifact
     const artifactData = await this.downloadArtifact(reference);
@@ -77,6 +86,7 @@ export class ArtifactLoader {
 
     // 4. Cache for next time
     await this.setCached(artifactData, reference.timestamp);
+    console.info(`[CodjiFlo] Artifact cached for ${prKey}`);
 
     // 5. Create SQLite database
     const db = await SQLiteDatabase.fromArrayBuffer(artifactData);
@@ -142,11 +152,21 @@ export class ArtifactLoader {
       return null;
     }
 
+    const iterationCount = parseInt(iterationCountValue, 10);
+    const artifactId = parseInt(artifactIdValue, 10);
+    const runId = parseInt(runIdValue, 10);
+
+    // Validate parsed numbers (defensive check - regex should ensure digits only)
+    if (Number.isNaN(iterationCount) || Number.isNaN(artifactId) || Number.isNaN(runId)) {
+      console.warn('Invalid numeric values in CodjiFlo comment:', body);
+      return null;
+    }
+
     return {
-      iterationCount: parseInt(iterationCountValue, 10),
+      iterationCount,
       timestamp: timestampValue,
-      artifactId: parseInt(artifactIdValue, 10),
-      runId: parseInt(runIdValue, 10),
+      artifactId,
+      runId,
     };
   }
 
@@ -172,6 +192,9 @@ export class ArtifactLoader {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
+      // Bypass the browser HTTP cache so a freshly uploaded artifact is
+      // always retrieved on soft refresh (issue #494).
+      cache: 'no-cache',
     });
 
     if (!response.ok) {
