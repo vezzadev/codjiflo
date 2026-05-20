@@ -148,9 +148,8 @@ index 3334567..cbcdefg 100644
     // In iteration 1, only file-a.txt should be visible (plus PR description)
     // Use .tree-item.file to exclude folder headers from count
     const fileItems = fileList.locator('.tree-item.file');
-    const visibleFileCount = await fileItems.count();
     // Should have 2 items: PR description + file-a.txt
-    expect(visibleFileCount).toBe(2);
+    await expect(fileItems).toHaveCount(2);
 
     // Click on file-a.txt (second file item after PR description)
     await fileItems.nth(1).click();
@@ -191,8 +190,7 @@ index 3334567..cbcdefg 100644
     // Use .tree-item.file to exclude folder headers from count
     const fileItems = fileList.locator('.tree-item.file');
     // Should have 3 items: PR description + file-b.txt + file-c.txt
-    const visibleFileCount = await fileItems.count();
-    expect(visibleFileCount).toBe(3);
+    await expect(fileItems).toHaveCount(3);
 
     // Start at PR description
     await fileItems.first().click();
