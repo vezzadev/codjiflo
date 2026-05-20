@@ -172,6 +172,9 @@ export class ArtifactLoader {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
+      // Bypass the browser HTTP cache so a freshly uploaded artifact is
+      // always retrieved on soft refresh (issue #494).
+      cache: 'no-cache',
     });
 
     if (!response.ok) {

@@ -2,6 +2,14 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Vercel platform regression (started 2026-05-13): lambda bundler omits
+  // @swc/helpers/esm/* from serverless trace, producing runtime
+  // `Cannot find module '/var/task/node_modules/@swc/helpers/esm/...'`.
+  // Confirmed still broken on next@16.2.6 + @swc/helpers@0.5.21 (2026-05-20).
+  // Tracked: vercel/next.js#93852 and Vercel Community thread 41956.
+  outputFileTracingIncludes: {
+    '/**/*': ['./node_modules/@swc/helpers/**'],
+  },
   images: {
     remotePatterns: [
       {
