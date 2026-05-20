@@ -119,7 +119,7 @@
     "playwright": "npm:@pedropaulovc/playwright@1.59.0-next.8",
     "playwright-codemirror": "^0.7.0-alpha",
     "playwright-core": "npm:@pedropaulovc/playwright-core@1.59.0-next.8",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.10",
     "storybook": "^10.3.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.54.0",
