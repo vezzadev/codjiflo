@@ -6,7 +6,7 @@
  */
 
 // Components
-export { IterationSelector } from './components';
+export { IterationSelector, CollapsedIterationHistoryView } from './components';
 
 // Store
 export { useIterationStore } from './stores';

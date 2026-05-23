@@ -187,6 +187,9 @@ export interface IterationState {
   /** Selected ranges partitioned by PR key */
   selectedRanges: { [key: string]: IterationRange };
 
+  /** Active collapsed group ID for history view (not persisted) */
+  activeCollapsedGroupId: string | null;
+
   /** All file artifacts */
   artifacts: ReviewFileArtifact[];
 
@@ -209,6 +212,10 @@ export interface IterationState {
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
+  selectCollapsedGroup: (groupId: string) => void;
+  /** Available for future "dismiss without expanding" UX */
+  clearCollapsedGroup: () => void;
+  toggleCollapsedGroupVisibility: (groupId: string) => void;
   reset: () => void;
 }
 

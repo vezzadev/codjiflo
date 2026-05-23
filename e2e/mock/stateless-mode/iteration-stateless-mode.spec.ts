@@ -119,11 +119,16 @@ test.describe("Iteration Management - Stateless Mode", () => {
         ],
         timeline: [
           {
+            id: 0,
+            event: "committed",
+            created_at: "2024-01-01T12:00:00Z",
+            sha: "old-before-sha",
+          },
+          {
             id: 5001,
             event: "head_ref_force_pushed",
             created_at: "2024-01-02T12:00:00Z",
-            before_commit: { sha: "old-before-sha" },
-            after_commit: { sha: "new-after-sha" },
+            commit_id: "new-after-sha",
           },
         ],
       }

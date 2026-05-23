@@ -35,6 +35,8 @@ interface IterationTabProps {
   isInRange: boolean;
   isRangeStart: boolean;
   isRangeEnd: boolean;
+  isDiscarded?: boolean;
+  isUnavailable?: boolean;
   onMouseDown: (revision: number) => void;
   onMouseEnter: (revision: number) => void;
   onSelect: (revision: number) => void;
@@ -46,6 +48,8 @@ function IterationTab({
   isInRange,
   isRangeStart,
   isRangeEnd,
+  isDiscarded = false,
+  isUnavailable = false,
   onMouseDown,
   onMouseEnter,
   onSelect,
@@ -56,6 +60,8 @@ function IterationTab({
     isInRange && 'in-range',
     isRangeStart && 'range-start',
     isRangeEnd && 'range-end',
+    isDiscarded && 'discarded',
+    isUnavailable && 'unavailable',
   ]
     .filter(Boolean)
     .join(' ');
@@ -65,7 +71,7 @@ function IterationTab({
     day: 'numeric',
   });
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = isUnavailable ? undefined : (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSelect(iteration.revision);
@@ -81,6 +87,7 @@ function IterationTab({
       onKeyDown={handleKeyDown}
       title={`Iteration ${iteration.revision} (${date})`}
       aria-pressed={isSelected || isInRange}
+      disabled={isUnavailable}
       data-testid={`iteration-tab-${iteration.revision}`}
     >
       <span className="iteration-tab-number" aria-hidden="true">{iteration.revision}</span>
@@ -94,24 +101,26 @@ function IterationTab({
 
 interface CollapsedGroupTabProps {
   group: CollapsedIterationGroup;
+  onClick: (groupId: string) => void;
 }
 
-function CollapsedGroupTab({ group }: CollapsedGroupTabProps) {
+function CollapsedGroupTab({ group, onClick }: CollapsedGroupTabProps) {
   const count = group.discardedRevisions.length;
   const tooltip = group.unknownCount
     ? 'Unknown iterations discarded'
     : `${String(count)} iteration${count === 1 ? '' : 's'} discarded`;
 
   return (
-    <div
+    <button
+      type="button"
       className="iteration-tab collapsed"
       title={tooltip}
       data-testid={`collapsed-group-${group.forcePushEventId}`}
       aria-label={tooltip}
-      role="img"
+      onClick={() => onClick(group.forcePushEventId)}
     >
       <Eraser size={14} aria-hidden="true" />
-    </div>
+    </button>
   );
 }
 
@@ -124,7 +133,7 @@ interface IterationSelectorProps {
 }
 
 export function IterationSelector({ className }: IterationSelectorProps) {
-  const { iterations, collapsedGroups, selectRange, isLoading, artifactReference } = useIterationStore();
+  const { iterations, collapsedGroups, selectRange, selectCollapsedGroup, isLoading, artifactReference } = useIterationStore();
   const selectedRange = useIterationStore(selectSelectedRange);
 
   const [dragState, setDragState] = useState<DragState>({
@@ -252,7 +261,7 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
   // Build display items: live iterations as tabs, collapsed groups as single tabs
   const displayItems = useMemo(() => {
-    const items: (| { type: 'iteration'; iteration: Iteration }
+    const items: (| { type: 'iteration'; iteration: Iteration; isUnavailable?: boolean }
       | { type: 'collapsed-group'; group: CollapsedIterationGroup })[] = [];
 
     const processedGroups: Set<string> = new Set();
@@ -262,10 +271,19 @@ export function IterationSelector({ className }: IterationSelectorProps) {
 
     for (const iteration of iterations) {
       if (iteration.status === 'collapsed' && iteration.collapsedGroupId) {
+        const group = collapsedGroupById.get(iteration.collapsedGroupId);
+
+        // When group is expanded, show individual iteration tabs instead of collapsed tab
+        if (group?.visibility === 'expanded') {
+          const commit = group.commits.find(c => c.sha === iteration.headSha);
+          const isUnavailable = commit?.status === 'unavailable';
+          items.push({ type: 'iteration', iteration, isUnavailable });
+          continue;
+        }
+
         // Render collapsed group tab (once per group)
         if (!processedGroups.has(iteration.collapsedGroupId)) {
           processedGroups.add(iteration.collapsedGroupId);
-          const group = collapsedGroupById.get(iteration.collapsedGroupId);
           if (group) {
             items.push({ type: 'collapsed-group', group });
           }
@@ -336,11 +354,12 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               <CollapsedGroupTab
                 key={`collapsed-${item.group.forcePushEventId}`}
                 group={item.group}
+                onClick={selectCollapsedGroup}
               />
             );
           }
 
-          const { iteration } = item;
+          const { iteration, isUnavailable } = item;
 
           // During drag, show preview highlighting
           const inPreviewRange =
@@ -372,6 +391,8 @@ export function IterationSelector({ className }: IterationSelectorProps) {
               isInRange={isInRange}
               isRangeStart={isRangeStartTab}
               isRangeEnd={isRangeEndTab}
+              isDiscarded={iteration.status === 'collapsed'}
+              isUnavailable={isUnavailable ?? false}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onSelect={handleKeyboardSelect}

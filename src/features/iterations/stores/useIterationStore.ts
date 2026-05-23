@@ -74,6 +74,9 @@ interface IterationState {
   currentPrKey: string | null;
   selectedRanges: { [key: string]: IterationRange };
 
+  // Collapsed group history view
+  activeCollapsedGroupId: string | null;
+
   // Services (not persisted)
   client: IterationClient | null;
   spanTrackerService: SpanTrackerService | null;
@@ -90,6 +93,10 @@ interface IterationState {
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
   selectRange: (fromSnapshot: number, toSnapshot: number) => void;
   selectPreset: (preset: IterationPreset) => void;
+  selectCollapsedGroup: (groupId: string) => void;
+  /** Available for future "dismiss without expanding" UX */
+  clearCollapsedGroup: () => void;
+  toggleCollapsedGroupVisibility: (groupId: string) => void;
   getSpanTrackerService: () => SpanTrackerService | null;
   reset: () => void;
 }
@@ -113,6 +120,7 @@ const initialState = {
   artifactReference: null,
   currentPrKey: null,
   selectedRanges: {},
+  activeCollapsedGroupId: null,
   client: null,
   spanTrackerService: null,
   isLoading: false,
@@ -136,22 +144,98 @@ export const useIterationStore = create<IterationState>()(
         set({ isLoading: true, error: null, currentPrKey: prKey });
 
         try {
-          const loader = new ArtifactLoader(owner, repo, prNumber);
+          // Check for ?mode=stateless query parameter to bypass artifact loading
+          const forceStateless = typeof window !== 'undefined'
+            && new URLSearchParams(window.location.search).get('mode') === 'stateless';
 
-          // Get artifact reference early (from PR comment) so UI can show iteration count
-          const earlyReference = await loader.findArtifactReference();
-          if (earlyReference) {
-            set({ artifactReference: earlyReference });
+          // Try loading artifact (unless forced stateless)
+          if (!forceStateless) {
+            const loader = new ArtifactLoader(owner, repo, prNumber);
+
+            // Get artifact reference early (from PR comment) so UI can show iteration count
+            const earlyReference = await loader.findArtifactReference();
+            if (earlyReference) {
+              set({ artifactReference: earlyReference });
+            }
+
+            const result = await loader.load(earlyReference ?? undefined);
+
+            if (result) {
+              const { db, reference } = result;
+
+              // Create iteration client
+              const client = new IterationClient(db);
+
+              // Load iterations and artifacts
+              const iterations = client.getIterations();
+              const artifacts = client.getAllArtifacts();
+
+              // Create SpanTracker service
+              const spanTrackerReader = new SQLiteSpanTrackerReader(db);
+              const spanTrackerService = new SpanTrackerService(spanTrackerReader);
+
+              console.info(
+                `[CodjiFlo] Loaded ${iterations.length} iteration(s) and ${artifacts.length} artifact(s) for ${prKey}`
+              );
+
+              // Set default selection (full diff: base to latest)
+              const latestIteration = iterations[iterations.length - 1];
+              const defaultRange: IterationRange | null = latestIteration
+                ? {
+                    fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
+                    toSnapshot: iterationToRightSnapshot(latestIteration.revision),
+                  }
+                : null;
+
+              const { selectedRanges } = get();
+              const cachedRange = selectedRanges[prKey];
+
+              const maxValidSnapshot = latestIteration
+                ? iterationToRightSnapshot(latestIteration.revision)
+                : 0;
+              const latestLeftSnapshot = latestIteration
+                ? iterationToLeftSnapshot(latestIteration.revision)
+                : 0;
+              const isCachedRangeValid =
+                cachedRange !== undefined &&
+                cachedRange.fromSnapshot >= 0 &&
+                cachedRange.toSnapshot <= maxValidSnapshot &&
+                cachedRange.fromSnapshot < cachedRange.toSnapshot &&
+                !(cachedRange.fromSnapshot === 0 && latestLeftSnapshot > 0);
+
+              const rangeToUse = isCachedRangeValid ? cachedRange : defaultRange;
+
+              const newSelectedRanges = rangeToUse
+                ? updateLRUCache(selectedRanges, prKey, rangeToUse)
+                : selectedRanges;
+
+              set({
+                iterations,
+                collapsedGroups: [],
+                artifacts,
+                artifactTimestamp: reference.timestamp,
+                artifactReference: reference,
+                selectedRanges: newSelectedRanges,
+                client,
+                spanTrackerService,
+                isLoading: false,
+                mode: 'stateful',
+                statelessReason: null,
+                error: null,
+              });
+              return;
+            }
           }
 
-          const result = await loader.load(earlyReference ?? undefined);
-
-          if (!result) {
-            // Determine reason for stateless mode
-            const hasArtifactReference = earlyReference !== null;
+          // Stateless mode: no artifact available or forced via query param
+          let reason: string;
+          if (forceStateless) {
+            reason = 'Stateless mode forced via ?mode=stateless query parameter.';
+            console.info(`[CodjiFlo] Entering stateless mode: forced via query param for ${prKey}`);
+          } else {
+            const hasArtifactReference = get().artifactReference !== null;
             const isAuthenticated = useAuthStore.getState().token !== null;
 
-            let reason: string;
             if (hasArtifactReference && !isAuthenticated) {
               reason = 'Sign in to enable iteration tracking. CodjiFlo data is available for this PR.';
               console.info(`[CodjiFlo] Entering stateless mode: not authenticated for ${prKey}`);
@@ -159,136 +243,61 @@ export const useIterationStore = create<IterationState>()(
               reason = 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.';
               console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
             }
-
-            // Load iterations from GitHub Commits + Timeline APIs
-            try {
-              const prData = await githubClient.fetch<{ base: { sha: string } }>(
-                `/repos/${owner}/${repo}/pulls/${String(prNumber)}`
-              );
-              const timelineLoader = new TimelineLoader(owner, repo, prNumber, prData.base.sha);
-              const timelineResult = await timelineLoader.load();
-
-              if (timelineResult.iterations.length > 0) {
-                const latestLiveIteration = [...timelineResult.iterations]
-                  .reverse()
-                  .find(i => i.status === 'live');
-                const latestIteration = latestLiveIteration ?? timelineResult.iterations[timelineResult.iterations.length - 1];
-
-                const defaultRange = latestIteration
-                  ? {
-                      fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
-                      toSnapshot: iterationToRightSnapshot(latestIteration.revision),
-                    }
-                  : null;
-
-                const { selectedRanges } = get();
-                const newSelectedRanges = defaultRange
-                  ? updateLRUCache(selectedRanges, prKey, defaultRange)
-                  : selectedRanges;
-
-                console.info(
-                  `[CodjiFlo] Stateless mode: loaded ${String(timelineResult.iterations.length)} iteration(s) ` +
-                  `(${String(timelineResult.collapsedGroups.length)} collapsed group(s)) for ${prKey}`
-                );
-
-                set({
-                  isLoading: false,
-                  mode: 'stateless',
-                  statelessReason: reason,
-                  iterations: timelineResult.iterations,
-                  collapsedGroups: timelineResult.collapsedGroups,
-                  artifacts: [],
-                  selectedRanges: newSelectedRanges,
-                });
-                return;
-              }
-            } catch (timelineError) {
-              console.warn('[CodjiFlo] Failed to load stateless iterations:', timelineError);
-              // Fall through to empty stateless mode
-            }
-
-            set({
-              isLoading: false,
-              mode: 'stateless',
-              statelessReason: reason,
-              iterations: [],
-              collapsedGroups: [],
-              artifacts: [],
-            });
-            return;
           }
 
-          const { db, reference } = result;
+          // Load iterations from GitHub Commits + Timeline APIs
+          try {
+            const prData = await githubClient.fetch<{ base: { sha: string } }>(
+              `/repos/${owner}/${repo}/pulls/${String(prNumber)}`
+            );
+            const timelineLoader = new TimelineLoader(owner, repo, prNumber, prData.base.sha);
+            const timelineResult = await timelineLoader.load();
 
-          // Create iteration client
-          const client = new IterationClient(db);
+            if (timelineResult.iterations.length > 0) {
+              const latestLiveIteration = [...timelineResult.iterations]
+                .reverse()
+                .find(i => i.status === 'live');
+              const latestIteration = latestLiveIteration ?? timelineResult.iterations[timelineResult.iterations.length - 1];
 
-          // Load iterations and artifacts
-          const iterations = client.getIterations();
-          const artifacts = client.getAllArtifacts();
+              const defaultRange = latestIteration
+                ? {
+                    fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
+                    toSnapshot: iterationToRightSnapshot(latestIteration.revision),
+                  }
+                : null;
 
-          // Create SpanTracker service
-          const spanTrackerReader = new SQLiteSpanTrackerReader(db);
-          const spanTrackerService = new SpanTrackerService(spanTrackerReader);
+              const { selectedRanges } = get();
+              const newSelectedRanges = defaultRange
+                ? updateLRUCache(selectedRanges, prKey, defaultRange)
+                : selectedRanges;
 
-          console.info(
-            `[CodjiFlo] Loaded ${iterations.length} iteration(s) and ${artifacts.length} artifact(s) for ${prKey}`
-          );
+              console.info(
+                `[CodjiFlo] Stateless mode: loaded ${String(timelineResult.iterations.length)} iteration(s) ` +
+                `(${String(timelineResult.collapsedGroups.length)} collapsed group(s)) for ${prKey}`
+              );
 
-          // Set default selection (full diff: base to latest)
-          // Uses the base snapshot of the latest iteration to handle rebases correctly.
-          // After a rebase, the latest iteration's left snapshot contains the new base,
-          // while snapshot 0 would contain the stale old base.
-          const latestIteration = iterations[iterations.length - 1];
-          const defaultRange: IterationRange | null = latestIteration
-            ? {
-                fromSnapshot: iterationToLeftSnapshot(latestIteration.revision),
-                toSnapshot: iterationToRightSnapshot(latestIteration.revision),
-              }
-            : null;
-
-          // Check if we have a cached range for this specific PR
-          const { selectedRanges } = get();
-          const cachedRange = selectedRanges[prKey];
-
-          // Validate cached range against current PR's iterations
-          const maxValidSnapshot = latestIteration
-            ? iterationToRightSnapshot(latestIteration.revision)
-            : 0;
-          const latestLeftSnapshot = latestIteration
-            ? iterationToLeftSnapshot(latestIteration.revision)
-            : 0;
-          const isCachedRangeValid =
-            cachedRange !== undefined &&
-            cachedRange.fromSnapshot >= 0 &&
-            cachedRange.toSnapshot <= maxValidSnapshot &&
-            cachedRange.fromSnapshot < cachedRange.toSnapshot &&
-            // Invalidate cached "full diff" if a rebase occurred:
-            // If cached fromSnapshot is 0 but latest iteration's left snapshot is different,
-            // the base has changed (rebase) and we should use the new base instead.
-            !(cachedRange.fromSnapshot === 0 && latestLeftSnapshot > 0);
-
-          // Use cached range if valid, otherwise use default
-          const rangeToUse = isCachedRangeValid ? cachedRange : defaultRange;
-
-          // Update selectedRanges with LRU eviction
-          const newSelectedRanges = rangeToUse
-            ? updateLRUCache(selectedRanges, prKey, rangeToUse)
-            : selectedRanges;
+              set({
+                isLoading: false,
+                mode: 'stateless',
+                statelessReason: reason,
+                iterations: timelineResult.iterations,
+                collapsedGroups: timelineResult.collapsedGroups,
+                artifacts: [],
+                selectedRanges: newSelectedRanges,
+              });
+              return;
+            }
+          } catch (timelineError) {
+            console.warn('[CodjiFlo] Failed to load stateless iterations:', timelineError);
+          }
 
           set({
-            iterations,
-            collapsedGroups: [],
-            artifacts,
-            artifactTimestamp: reference.timestamp,
-            artifactReference: reference,
-            selectedRanges: newSelectedRanges,
-            client,
-            spanTrackerService,
             isLoading: false,
-            mode: 'stateful',
-            statelessReason: null,
-            error: null,
+            mode: 'stateless',
+            statelessReason: reason,
+            iterations: [],
+            collapsedGroups: [],
+            artifacts: [],
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Failed to load iterations';
@@ -313,6 +322,7 @@ export const useIterationStore = create<IterationState>()(
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, { fromSnapshot, toSnapshot }),
+          activeCollapsedGroupId: null,
         });
       },
 
@@ -378,6 +388,27 @@ export const useIterationStore = create<IterationState>()(
 
         set({
           selectedRanges: updateLRUCache(selectedRanges, currentPrKey, newRange),
+          activeCollapsedGroupId: null,
+        });
+      },
+
+      selectCollapsedGroup: (groupId: string) => {
+        set({ activeCollapsedGroupId: groupId });
+      },
+
+      clearCollapsedGroup: () => {
+        set({ activeCollapsedGroupId: null });
+      },
+
+      toggleCollapsedGroupVisibility: (groupId: string) => {
+        const { collapsedGroups } = get();
+        set({
+          collapsedGroups: collapsedGroups.map(g =>
+            g.forcePushEventId === groupId
+              ? { ...g, visibility: g.visibility === 'collapsed' ? 'expanded' as const : 'collapsed' as const }
+              : g
+          ),
+          activeCollapsedGroupId: null,
         });
       },
 

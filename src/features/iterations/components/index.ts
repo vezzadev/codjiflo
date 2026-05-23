@@ -5,3 +5,4 @@
  */
 
 export { IterationSelector } from './IterationSelector';
+export { CollapsedIterationHistoryView } from './CollapsedIterationHistoryView';

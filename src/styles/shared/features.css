@@ -614,11 +614,73 @@
   background-color: var(--tab-inactive);
   color: var(--watermark-text);
   opacity: 0.6;
-  cursor: default;
+  cursor: pointer;
 }
 
 .iteration-tab.collapsed svg {
   stroke: var(--watermark-text);
+}
+
+/* Discarded iteration tab (expanded from collapsed group) */
+.iteration-tab.discarded {
+  opacity: 0.6;
+}
+
+.iteration-tab.discarded:hover {
+  opacity: 0.8;
+}
+
+/* Unavailable iteration tab (GC'd commit) */
+.iteration-tab.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Collapsed iteration history view */
+.collapsed-history-view {
+  padding: 16px;
+  background-color: var(--control-bg);
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.collapsed-history-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.collapsed-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.collapsed-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--fg);
+  border-radius: 3px;
+}
+
+.collapsed-history-item.unavailable {
+  color: var(--watermark-text);
+  font-style: italic;
+}
+
+.collapsed-history-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* Loading indicator */
