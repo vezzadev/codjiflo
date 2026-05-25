@@ -6,7 +6,7 @@
  * - Viewport lasso showing visible portion
  * - Click and drag navigation (25% viewport positioning)
  *
- * See spec/functional/diff-viewing.md "Overview Margin (Minimap)" section
+ * See openspec/specs/diff-viewing/spec.md "Overview Margin (Minimap)" requirements
  */
 
 import { useCallback, useRef, useState, type RefObject, useMemo } from 'react';

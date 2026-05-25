@@ -222,7 +222,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/project.md](openspec/project.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 
@@ -242,92 +242,50 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 
 **Stateless fallback:** Repos without workflow get near-parity iteration support via Timeline API (see M4.2).
 
-See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
+See [the `iterations` capability spec](openspec/specs/iterations/spec.md) for full architecture.
 
 ### 1.7 Diff Pipeline Architecture
 
-Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#diff-pipeline-architecture).
+Composable pipeline of hooks for diff computation. See [openspec/project.md](openspec/project.md#diff-pipeline-architecture).
 
-## 2. Milestone Architectural Plans
+## 2. OpenSpec Layout
 
-### [Milestone 1: SPA Foundation](spec/stories/milestone-1-spa-github-data.md)
-**Goal**: Establish the app shell and GitHub Data integration.
-- **Scaffolding Needs**:
-  - `src/api/github-client.ts`: The central HTTP/Rest adapter.
-  - `src/features/auth`: OAuth + PAT authentication.
-  - `src/features/pr`: Dashboard and Navigation logic.
-  - `src/features/diff`: Basic "Unified Hacker View" renderer.
-- **Framework**: Next.js 15 with App Router. Pages in `src/app/`, API routes in `src/app/api/`.
+CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonical home for declarative product behaviour and in-flight work.
 
-### [Milestone 2: Comments Engine](spec/stories/milestone-2-minimal-comments.md)
-**Goal**: Inline commenting system.
-- **Scaffolding Needs**:
-  - `src/features/comments`:
-    - `comments-store.ts`: specific store for normalizing comment threads.
-    - `types.ts`: `ReviewComment` interface matching GitHub API.
-- **Constraint**: Comments must be mapped to `diff-line-index`. The logic for "which line does this belong to" belongs in a pure function/helper in `src/features/diff/utils`.
+| Path | What lives here |
+|------|------------------|
+| [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today) |
+| [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks |
+| [`openspec/archive/`](openspec/archive/) | Completed changes + the legacy `archive/legacy/` reference (milestone roadmaps + S-4.2.1 plans + demo) |
+| [`openspec/project.md`](openspec/project.md) | Project context (auth, iteration storage, diff pipeline) — loaded by every workflow run |
+| [`openspec/test-matrices/`](openspec/test-matrices/) | Acceptance-criteria-as-tests; companions to the live specs |
 
-### [Milestone 3: Advanced Diff Engine](spec/stories/milestone-3-advanced-diff.md)
-**Goal**: Side-by-Side view, full file content, word-level diffs.
-- **Scaffolding Needs**:
-  - `src/workers/diff-worker.ts`: Offload heavy text comparison (Myers Diff Algorithm) to a Web Worker.
-  - `src/features/diff/components/SideBySideView.tsx`: Side-by-side diff layout.
+### Live capabilities (`openspec/specs/`)
 
-### [Milestone 4: Iteration Management](spec/stories/milestone-4-iteration-management.md)
-**Goal**: Force-push resilient iteration tracking via GitHub Action artifacts.
-- **Phase 1 - Producer (GitHub Action)**:
-  - `codjiflo/action`: GitHub Action for iteration capture to SQLite.
-  - `codjiflo/comment-action`: GitHub Action for PR comment pointer updates.
-  - SQLite schema for iterations, file contents, and SpanTrackers.
-- **Phase 2 - Consumer (Frontend)**:
-  - `src/features/iterations/artifact-loader.ts`: Download and parse SQLite artifact.
-  - `src/lib/sqlite-wasm.ts`: SQL.js wrapper for browser SQLite reading.
-  - Iteration selector UI and cross-iteration diff computation.
+| Capability | What it covers |
+|-----------|------------|
+| [`data-models`](openspec/specs/data-models/spec.md) | Canonical TypeScript entities (CodeReview, Comment, Iteration, …) |
+| [`backend-abstraction`](openspec/specs/backend-abstraction/spec.md) | Platform-agnostic contracts (GitHub, Azure DevOps, GitLab) |
+| [`diff-viewing`](openspec/specs/diff-viewing/spec.md) | Four view modes, word-level highlighting, minimap, span tracking |
+| [`comments`](openspec/specs/comments/spec.md) | Bubble comments, threading, layout, anchoring |
+| [`iterations`](openspec/specs/iterations/spec.md) | Stateful (GitHub Action artifact) + stateless (Timeline API) iteration tracking |
+| [`review-lifecycle`](openspec/specs/review-lifecycle/spec.md) | Active/Completed/Aborted state machine + permissions |
+| [`realtime-updates`](openspec/specs/realtime-updates/spec.md) | SignalR, webhook + polling fallback, optimistic UI |
+| [`ui-shell`](openspec/specs/ui-shell/spec.md) | Dashboard, file explorer, properties panel, layout grid |
+| [`unauthenticated-access`](openspec/specs/unauthenticated-access/spec.md) | Public-PR review without login, rate-limit handling |
 
-### [Milestone 4.1: Unauthenticated Experience](spec/stories/milestone-4.1-unauthenticated-experience.md)
-**Goal**: Enable unauthenticated users to review public PRs without mandatory login.
-- **Scaffolding Needs**:
-  - `src/api/github/github-client.ts`: Support optional token for public repos.
-  - `src/features/auth/hooks/useOptionalAuth.ts`: Non-redirecting auth hook.
-  - Rate limit tracking in auth store.
-  - Contextual login prompts for auth-required features.
-- **Key Features**:
-  - Public PR access without authentication (60 req/hr rate limit).
-  - Private PR detection with login redirect.
-  - Read-only comments with "Log in to reply" prompts.
-  - Stateless iteration mode (artifacts require auth).
+### Historical milestones
 
-### [Milestone 4.2: Stateless Iteration Management](spec/stories/milestone-4.2-stateless-iteration-management.md)
-**Goal**: Near-parity iteration support without GitHub Action (stateless mode).
-- **Scaffolding Needs**:
-  - `src/features/iterations/loaders/timeline-loader.ts`: Load iterations from GitHub Timeline API.
-  - `src/features/diff/workers/diff-compute.worker.ts`: Web Worker for async diff computation.
-  - `src/features/diff/scheduler/diff-scheduler.ts`: Priority queue for diff tasks.
-  - `src/features/iterations/storage/stateless-storage.ts`: IndexedDB persistence for last seen iteration.
-- **Key Changes**:
-  - Rename "degraded mode" → "stateless mode", "iteration mode" → "stateful mode".
-  - Remove degraded mode banner.
-  - Timeline-based force-push detection via `force_pushed` events.
-  - Background SpanTracker precomputation for comment-containing files.
+The seven shipping milestones (M1–M7) are preserved as roadmap reference in [`openspec/archive/legacy/milestones/INDEX.md`](openspec/archive/legacy/milestones/INDEX.md). The capability specs above replace them as the canonical "what" the system does.
 
-### [Milestone 5: Full Comments & Canvas Layouts](spec/stories/milestone-5-full-comments.md)
-**Goal**: Floating Bubbles (The "CodeFlow" feel).
-- **Architecture**:
-  - **Layering**: Code View is Layer 0. SVG Connector Layer is Layer 1. Comment Cloud is Layer 2.
-  - **Layout Engine**: `src/features/comments/layout-engine.ts`. A pure logic class that takes a list of comments + scroll position and returns X/Y coordinates for bubbles.
+### Workflow commands
 
-### [Milestone 6: Real-Time & Polish](spec/stories/milestone-6-remaining-features.md)
-**Goal**: Performance and Synchronization.
-- **Architecture**:
-  - `src/api/realtime.ts`: A polling manager (Interval based) that checks `ETag` or `Last-Modified` headers to fetch delta updates.
+Use these slash commands (skills) for any non-trivial spec work:
 
-### [Milestone 7: Extension Bridge](spec/stories/milestone-7-browser-extension.md)
-**Goal**: Inject into GitHub.
-- **Architecture**:
-  - **Content Script**: Independent entry point `src/extension/content.tsx`.
-  - **Shadow DOM**: The React App must be capable of mounting inside a `shadowRoot` to avoid style bleeding.
-  - **Messaging**: Use `chrome.runtime.sendMessage` for auth updates if cookies are used (though M7 uses direct API calls).
-- **Refactor Alert**: The main layout component might need to support a "Widget Mode" vs "Full Page Mode".
+- `/opsx:propose <description>` — proposes a change, drafts proposal + design + capability specs + tasks
+- `/opsx:apply <change-name>` — implements an approved change, ticking off tasks.md as it goes
+- `/opsx:archive <change-name>` — promotes the change's spec deltas into `openspec/specs/` and moves the change to `openspec/archive/`
+- `/opsx:explore <topic>` — interactive thinking partner for early-stage scoping
 
 ## 3. General Agent Rules
 1.  **Do Not Delete Logic**: When refactoring, verify usage. Use "Find Usages".
@@ -340,7 +298,7 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
 *Guidelines to ensure efficient, error-free autonomous development.*
 
 ### 4.1 "Stop and Read" Policy
-- **Before Coding**: Agents must read `task.md` and the specific `spec/stories/milestone-X.md` they are working on.
+- **Before Coding**: Agents must read the relevant change directory under `openspec/changes/<change-name>/` (proposal, design, specs, tasks) before touching code. Historical milestone roadmaps are preserved under `openspec/archive/legacy/milestones/` for reference.
 - **Before Modifying**: Always read the existing file content (or a relevant chunk) before calling `replace_file_content`. Blind edits are forbidden.
 
 ### 4.2 Error Recovery Protocol

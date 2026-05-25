@@ -18,7 +18,7 @@ Follow these steps precisely, pausing for user confirmation at designated checkp
 
 ### Phase 1: Context Gathering
 1. **Read @AGENTS.md** to understand testing criteria, code structure, and project conventions
-2. **Read spec/functional/** to understand system behavior at a high level
+2. **Read openspec/specs/** to understand system behavior at a high level
 3. **Read the issue** provided by the user thoroughly
 
 ### Phase 2: Alignment Check (CHECKPOINT)
@@ -91,9 +91,8 @@ Follow these steps precisely, pausing for user confirmation at designated checkp
 
 ### Phase 7: Documentation
 18. **Update documentation**:
-    - `spec/functional/` - Update if behavior expectations changed
-    - `spec/stories/milestone-*.md` - Update if relevant to milestones
-    - `spec/test/*` - Update if behavior expectations changed or there is no test that accurately covers the bug
+    - `openspec/specs/` - Update if behavior expectations changed (use `/opsx:propose` for non-trivial spec changes)
+    - `openspec/test-matrices/*` - Update if behavior expectations changed or there is no test that accurately covers the bug
     - Ensure accuracy and currency
 
 19. **Push changes** (documentation)
