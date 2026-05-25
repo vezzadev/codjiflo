@@ -254,10 +254,9 @@ CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonica
 
 | Path | What lives here |
 |------|------------------|
-| [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today) |
+| [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today). Each requirement carries WHEN/THEN scenarios that double as acceptance tests. |
 | [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks (completed ones land under `changes/archive/`) |
 | [`openspec/project.md`](openspec/project.md) | Project context (auth, iteration storage, diff pipeline) — loaded by every workflow run |
-| [`openspec/test-matrices/`](openspec/test-matrices/) | Acceptance-criteria-as-tests; companions to the live specs |
 
 ### Live capabilities (`openspec/specs/`)
 
