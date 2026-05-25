@@ -60,7 +60,7 @@
     "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
     "sql.js": "^1.11.0",
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.13"
   },
   "overrides": {
     "esbuild": "^0.25.0",
