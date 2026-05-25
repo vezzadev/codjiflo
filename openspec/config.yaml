@@ -9,7 +9,7 @@ context: |
   components only (no native button/input), small Zustand stores per feature,
   Vitest (not Jest), no Tailwind, no arbitrary waitForTimeout in E2E.
   Implementation reference per capability lives in
-  openspec/specs/<capability>/ARCHITECTURE.md (sidecar to spec.md).
+  openspec/specs/<capability>/architecture.md (sidecar to spec.md).
   See AGENTS.md for code structure and testing standards.
 
 # Per-artifact rules (optional)
