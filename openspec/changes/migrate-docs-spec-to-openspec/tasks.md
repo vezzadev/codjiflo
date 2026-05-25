@@ -14,12 +14,12 @@
 
 ## 3. Relocate test matrices
 
-- [ ] 3.1 Create the target directory: `mkdir -p openspec/test-matrices`
-- [ ] 3.2 `git mv spec/test/stateless-mode.md openspec/test-matrices/stateless-mode.md`
-- [ ] 3.3 `git mv spec/test/azure-devops-test-matrix.md openspec/test-matrices/azure-devops-test-matrix.md`
-- [ ] 3.4 `git mv spec/test/unauthenticated-access-test-matrix.md openspec/test-matrices/unauthenticated-access-test-matrix.md`
-- [ ] 3.5 Rewrite intra-file `spec/functional/...` links inside the three matrices to `openspec/specs/<capability>/spec.md`
-- [ ] 3.6 Commit: `docs: relocate test matrices to openspec/test-matrices/`
+- [x] 3.1 Create the target directory: `mkdir -p openspec/test-matrices`
+- [x] 3.2 `git mv spec/test/stateless-mode.md openspec/test-matrices/stateless-mode.md`
+- [x] 3.3 `git mv spec/test/azure-devops-test-matrix.md openspec/test-matrices/azure-devops-test-matrix.md`
+- [x] 3.4 `git mv spec/test/unauthenticated-access-test-matrix.md openspec/test-matrices/unauthenticated-access-test-matrix.md`
+- [x] 3.5 ~~Rewrite intra-file~~ No-op — grep confirmed zero inbound `spec/functional/...` links in any test matrix `spec/functional/...` links inside the three matrices to `openspec/specs/<capability>/spec.md`
+- [x] 3.6 Commit: `docs: relocate test matrices to openspec/test-matrices/`
 
 ## 4. Archive milestone stories and implementation plans
 
