@@ -72,10 +72,10 @@
 
 ## 8. Update AGENTS.md to teach the new layout
 
-- [ ] 8.1 In `AGENTS.md`, replace the `## 2. Milestone Architectural Plans` section with a one-line pointer to `openspec/archive/legacy/milestones/INDEX.md`
-- [ ] 8.2 Add a `## OpenSpec Layout` section listing the nine live capabilities and pointing readers at `openspec/specs/`, `openspec/project.md`, `openspec/changes/`, `openspec/archive/`, and `openspec/test-matrices/`
-- [ ] 8.3 Reference the OpenSpec workflow commands (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`) so future agents know to use them
-- [ ] 8.4 Commit: `docs: teach AGENTS.md the openspec layout`
+- [x] 8.1 In `AGENTS.md`, replace the `## 2. Milestone Architectural Plans` section with a one-line pointer to `openspec/archive/legacy/milestones/INDEX.md`
+- [x] 8.2 Add a `## OpenSpec Layout` section listing the nine live capabilities and pointing readers at `openspec/specs/`, `openspec/project.md`, `openspec/changes/`, `openspec/archive/`, and `openspec/test-matrices/`
+- [x] 8.3 Reference the OpenSpec workflow commands (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`) so future agents know to use them
+- [x] 8.4 Commit: `docs: teach AGENTS.md the openspec layout`
 
 ## 9. Archive the migration change
 
