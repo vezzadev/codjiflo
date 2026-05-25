@@ -2,7 +2,7 @@
  * Milestone 4: Iteration Management Types
  *
  * Core types for iteration tracking, file artifacts, and snapshot management.
- * See spec/functional/iterations.md for full documentation.
+ * See openspec/specs/iterations/spec.md for full documentation.
  */
 
 // ============================================================================

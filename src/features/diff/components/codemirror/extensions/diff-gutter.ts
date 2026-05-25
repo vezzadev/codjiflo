@@ -75,7 +75,7 @@ class DiffLineMarker extends GutterMarker {
     }
 
     // Show line numbers based on mode
-    // Per spec (spec/functional/diff-viewing.md):
+    // Per spec (openspec/specs/diff-viewing/spec.md):
     // - 'left' filter: show old (left) line numbers
     // - 'both' filter: show new (right) line numbers only
     // - 'right' filter: show new (right) line numbers

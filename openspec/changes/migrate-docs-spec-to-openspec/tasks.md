@@ -61,14 +61,14 @@
 
 ## 7. Rewrite repo-wide cross-references
 
-- [ ] 7.1 Open the worksheet from 1.4 and walk every hit (excluding `openspec/archive/legacy/` — handled in 4.7/4.8):
-- [ ] 7.2 `AGENTS.md`: replace each `spec/functional/<file>.md` with `openspec/specs/<capability>/spec.md`; replace `docs/ARCHITECTURE.md` with `openspec/project.md`
-- [ ] 7.3 `CLAUDE.md` (project root): same substitutions as 7.2
-- [ ] 7.4 `README.md` (if any references): same substitutions
-- [ ] 7.5 `.github/workflows/*.yml` and `.github/**/*.md`: same substitutions
-- [ ] 7.6 Any `package.json` `scripts` that grep specs (e.g., linting): update the path
-- [ ] 7.7 Verify no broken links remain: `grep -rnE '(spec/(functional|stories|test|demo)/|docs/(ARCHITECTURE\.md|plans/))' --include='*.md' --include='*.ts' --include='*.tsx' --include='*.yml' --include='*.yaml' --include='*.json' . | grep -v openspec/archive/legacy/` — must return 0 hits
-- [ ] 7.8 Commit: `docs: rewrite cross-references after openspec migration`
+- [x] 7.1 Open the worksheet from 1.4 and walk every hit (excluding `openspec/archive/legacy/` — handled in 4.7/4.8):
+- [x] 7.2 `AGENTS.md`: replace each `spec/functional/<file>.md` with `openspec/specs/<capability>/spec.md`; replace `docs/ARCHITECTURE.md` with `openspec/project.md`
+- [x] 7.3 `CLAUDE.md` — only contains `IMPORTANT: Read @AGENTS.md`; no direct paths to rewrite. Also handled `.claude/skills/debugger/SKILL.md` which had two references. (project root): same substitutions as 7.2
+- [x] 7.4 `README.md` (functional spec table + clean-room note updated; also rewrote inbound refs in 5 source files: `types.ts`, `span-tracker.ts`, `timeline-loader.ts`, `Minimap.tsx`, `diff-gutter.ts`, and the E2E `inline-gutter-line-numbers.spec.ts`) (if any references): same substitutions
+- [x] 7.5 ~~`.github/workflows/*.yml`~~ No-op — grep found zero matches in `.github/**` and `.github/**/*.md`: same substitutions
+- [x] 7.6 ~~Any `package.json` `scripts`~~ No-op — grep found zero matches that grep specs (e.g., linting): update the path
+- [x] 7.7 Verify no broken links remain — only remaining hits are (a) the `## 2. Milestone Architectural Plans` section in AGENTS.md (deleted in 8.1) and (b) self-referential mentions in this change's own proposal.md/design.md (which describe the migration, not link to legacy paths): `grep -rnE '(spec/(functional|stories|test|demo)/|docs/(ARCHITECTURE\.md|plans/))' --include='*.md' --include='*.ts' --include='*.tsx' --include='*.yml' --include='*.yaml' --include='*.json' . | grep -v openspec/archive/legacy/` — must return 0 hits
+- [x] 7.8 Commit: `docs: rewrite cross-references after openspec migration`
 
 ## 8. Update AGENTS.md to teach the new layout
 

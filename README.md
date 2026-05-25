@@ -33,17 +33,19 @@ Backend abstraction layer supporting:
 
 ## Functional specification
 
-| Component | Description |
+Capability specs live under `openspec/specs/`. See [openspec/](openspec/) for the workflow ([changes](openspec/changes/), [archive](openspec/archive/), [test matrices](openspec/test-matrices/)).
+
+| Capability | Description |
 |-----------|-------------|
-| [Index](spec/functional/index.md) | High-level overview of key features |
-| [Data Models](spec/functional/models.md) | Core TypeScript interfaces |
-| [Backend Abstraction](spec/functional/backend-abstraction.md) | Platform-agnostic API layer |
-| [Diff Viewing](spec/functional/diff-viewing.md) | Multi-mode diff with word-level highlighting |
-| [Comments](spec/functional/comments.md) | Bubble comment system |
-| [Iterations](spec/functional/iterations.md) | Cross-version tracking |
-| [Review Lifecycle](spec/functional/review-lifecycle.md) | State machine & permissions |
-| [UI Components](spec/functional/ui-components.md) | Dashboard, Explorer, Properties |
-| [Real-Time](spec/functional/realtime.md) | Push notifications via WebSocket |
+| [data-models](openspec/specs/data-models/spec.md) | Core TypeScript interfaces |
+| [backend-abstraction](openspec/specs/backend-abstraction/spec.md) | Platform-agnostic API layer |
+| [diff-viewing](openspec/specs/diff-viewing/spec.md) | Multi-mode diff with word-level highlighting |
+| [comments](openspec/specs/comments/spec.md) | Bubble comment system |
+| [iterations](openspec/specs/iterations/spec.md) | Cross-version tracking (stateful + stateless) |
+| [review-lifecycle](openspec/specs/review-lifecycle/spec.md) | State machine & permissions |
+| [ui-shell](openspec/specs/ui-shell/spec.md) | Dashboard, Explorer, Properties |
+| [realtime-updates](openspec/specs/realtime-updates/spec.md) | Push notifications via WebSocket |
+| [unauthenticated-access](openspec/specs/unauthenticated-access/spec.md) | Public PR review without login |
 
 ## Key Differentiators
 
@@ -58,4 +60,4 @@ Backend abstraction layer supporting:
 CodjiFlo is a corrupted version (pt: [Corruptela](https://dicionario.priberam.org/corruptela)) of the word CodeFlow. Its pronunciation in English matches how a Brazilian with beginner level proficiency in English would say the word CodeFlow. It represents the fact that CodjiFlo is a "corrupted" version of the original CodeFlow and the author is Brazilian-American.
 
 ## Note
-This project is not associated or endorsed by Microsoft Corp. The [CodjiFlo specification](./spec/functional/index.md) was produced following a clean-room approach: the desired behavior was codified from research articles, interviews published by Microsoft, blog posts, linked in the spec, and the author's memory of how CodeFlow works.
+This project is not associated or endorsed by Microsoft Corp. The [CodjiFlo specification](./openspec/specs/) was produced following a clean-room approach: the desired behavior was codified from research articles, interviews published by Microsoft, blog posts, linked in the spec, and the author's memory of how CodeFlow works.

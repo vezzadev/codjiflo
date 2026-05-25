@@ -15,7 +15,7 @@ import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
  * (left and right line numbers). According to the spec, it should only show
  * the right (new) line numbers in a single column.
  *
- * Spec reference (spec/functional/diff-viewing.md):
+ * Spec reference (openspec/specs/diff-viewing/spec.md):
  * | Filter Mode | Line Numbers Shown |
  * |-------------|-------------------|
  * | **Both** | New (right) line numbers only |

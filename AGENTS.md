@@ -222,7 +222,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/project.md](openspec/project.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 
@@ -242,11 +242,11 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 
 **Stateless fallback:** Repos without workflow get near-parity iteration support via Timeline API (see M4.2).
 
-See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
+See [the `iterations` capability spec](openspec/specs/iterations/spec.md) for full architecture.
 
 ### 1.7 Diff Pipeline Architecture
 
-Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#diff-pipeline-architecture).
+Composable pipeline of hooks for diff computation. See [openspec/project.md](openspec/project.md#diff-pipeline-architecture).
 
 ## 2. Milestone Architectural Plans
 
@@ -340,7 +340,7 @@ Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](do
 *Guidelines to ensure efficient, error-free autonomous development.*
 
 ### 4.1 "Stop and Read" Policy
-- **Before Coding**: Agents must read `task.md` and the specific `spec/stories/milestone-X.md` they are working on.
+- **Before Coding**: Agents must read the relevant change directory under `openspec/changes/<change-name>/` (proposal, design, specs, tasks) before touching code. Historical milestone roadmaps are preserved under `openspec/archive/legacy/milestones/` for reference.
 - **Before Modifying**: Always read the existing file content (or a relevant chunk) before calling `replace_file_content`. Blind edits are forbidden.
 
 ### 4.2 Error Recovery Protocol

@@ -5,7 +5,7 @@
  * Each PR commit maps to one iteration. Force-push history detected via
  * Timeline API, discarded commits discovered via Compare API.
  *
- * See spec/functional/iterations-stateless.md for full architecture.
+ * See openspec/specs/iterations/spec.md (Stateless Mode requirements) for full architecture.
  */
 
 import { githubClient, GitHubAPIError } from '@/api/github/github-client';

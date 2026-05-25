@@ -4,7 +4,7 @@
  * Enables tracking text positions across code changes.
  * Pure domain logic with no infrastructure dependencies.
  *
- * See spec/functional/iterations.md for full documentation.
+ * See openspec/specs/iterations/spec.md for full documentation.
  */
 
 import type { LineSpan } from './text-span';
