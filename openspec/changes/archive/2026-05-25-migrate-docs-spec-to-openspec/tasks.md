@@ -79,18 +79,18 @@
 
 ## 9. Archive the migration change
 
-- [ ] 9.1 Run `openspec archive migrate-docs-spec-to-openspec` — moves this change directory into `openspec/changes/archive/` (idempotent; if step 5.2 already moved the spec dirs out, archive should not duplicate them)
-- [ ] 9.2 `openspec list` — confirm `migrate-docs-spec-to-openspec` no longer appears under active changes
-- [ ] 9.3 `openspec list --specs` — confirm the nine capabilities still appear in the live spec tree
-- [ ] 9.4 `openspec validate --strict` — final clean bill of health
+- [x] 9.1 Run `openspec archive migrate-docs-spec-to-openspec` — moves this change directory into `openspec/changes/archive/` (idempotent; if step 5.2 already moved the spec dirs out, archive should not duplicate them)
+- [x] 9.2 `openspec list` — confirm `migrate-docs-spec-to-openspec` no longer appears under active changes
+- [x] 9.3 `openspec list --specs` — confirm the nine capabilities still appear in the live spec tree
+- [x] 9.4 `openspec validate --strict` — final clean bill of health
 
 ## 10. Verification
 
-- [ ] 10.1 `npm run typecheck` — same exit status as the baseline from 1.3 (this change should NOT affect TypeScript)
-- [ ] 10.2 `npm run lint` — same exit status as baseline
-- [ ] 10.3 Sanity-check three random `openspec show <capability>` invocations render usefully (`diff-viewing`, `iterations`, `data-models`)
-- [ ] 10.4 Manual link-walk: from `AGENTS.md`, click through to each capability spec and confirm it resolves; from one archived milestone, click through to its referenced capability spec and confirm it resolves
-- [ ] 10.5 `git log --follow openspec/specs/comments/spec.md` shows pre-migration history from `spec/functional/comments.md` — confirms `git mv` chain preserved blame
+- [x] 10.1 `npm run typecheck` — same exit status as the baseline from 1.3 (this change should NOT affect TypeScript)
+- [x] 10.2 `npm run lint` — same exit status as baseline
+- [x] 10.3 Sanity-check three random `openspec show <capability>` invocations render usefully (`diff-viewing`, `iterations`, `data-models`)
+- [x] 10.4 Manual link-walk: from `AGENTS.md`, click through to each capability spec and confirm it resolves; from one archived milestone, click through to its referenced capability spec and confirm it resolves
+- [x] 10.5 `git log --follow openspec/specs/comments/spec.md` shows pre-migration history from `spec/functional/comments.md` — confirms `git mv` chain preserved blame
 
 ## 11. Open the PR
 
