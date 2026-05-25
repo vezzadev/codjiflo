@@ -223,7 +223,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/project.md](openspec/project.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/specs/authentication/ARCHITECTURE.md](openspec/specs/authentication/ARCHITECTURE.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 
@@ -243,11 +243,11 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 
 **Stateless fallback:** Repos without workflow get near-parity iteration support via Timeline API (see M4.2).
 
-See [the `iterations` capability spec](openspec/specs/iterations/spec.md) for full architecture.
+See [openspec/specs/iterations/ARCHITECTURE.md](openspec/specs/iterations/ARCHITECTURE.md) for the data flow, SQLite schema, and key files.
 
 ### 1.7 Diff Pipeline Architecture
 
-Composable pipeline of hooks for diff computation. See [openspec/project.md](openspec/project.md#diff-pipeline-architecture).
+Composable pipeline of hooks for diff computation. See [openspec/specs/diff-viewing/ARCHITECTURE.md](openspec/specs/diff-viewing/ARCHITECTURE.md).
 
 ## 2. OpenSpec Layout
 
@@ -255,9 +255,9 @@ CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonica
 
 | Path | What lives here |
 |------|------------------|
-| [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today). Each requirement carries WHEN/THEN scenarios that double as acceptance tests. |
+| [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today). Each requirement carries WHEN/THEN scenarios that double as acceptance tests. Optional `ARCHITECTURE.md` sidecar holds implementation reference. |
 | [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks (completed ones land under `changes/archive/`) |
-| [`openspec/project.md`](openspec/project.md) | Project context (auth, iteration storage, diff pipeline) — loaded by every workflow run |
+| [`openspec/config.yaml`](openspec/config.yaml) | Schema + the `context:` block loaded into every OpenSpec workflow run |
 
 ### Live capabilities (`openspec/specs/`)
 

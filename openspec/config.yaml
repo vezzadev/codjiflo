@@ -8,8 +8,9 @@ context: |
   Conventions: feature-first folder structure under src/features/, custom
   components only (no native button/input), small Zustand stores per feature,
   Vitest (not Jest), no Tailwind, no arbitrary waitForTimeout in E2E.
-  See openspec/project.md for full architecture (auth, iteration storage,
-  diff pipeline) and AGENTS.md for code structure and testing standards.
+  Implementation reference per capability lives in
+  openspec/specs/<capability>/ARCHITECTURE.md (sidecar to spec.md).
+  See AGENTS.md for code structure and testing standards.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
