@@ -14,7 +14,8 @@ npm run test:coverage    # Unit and integration tests with coverage, min 70% enf
 npm run test:storybook   # Storybook interaction tests
 npm run test:e2e         # Playwright E2E (mock mode, localhost)
 npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.vza.net)
-npm run test:all         # REQUIRED before push (lint + typecheck + coverage + e2e + storybook)
+npm run spec:validate    # OpenSpec strict validation (all specs + in-flight changes)
+npm run test:all         # REQUIRED before push (lint + typecheck + spec:validate + coverage + e2e + storybook)
 ```
 
 **Troubleshooting:** If any `npm run` command fails, the very first thing to try is `npm install`.
