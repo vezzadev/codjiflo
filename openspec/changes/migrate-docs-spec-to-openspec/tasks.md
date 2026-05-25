@@ -1,16 +1,16 @@
 ## 1. Pre-flight
 
-- [ ] 1.1 Run `git status` — confirm the working tree is clean (or only contains the in-flight change directory)
-- [ ] 1.2 Run `openspec validate migrate-docs-spec-to-openspec --strict` — must report valid before any moves
-- [ ] 1.3 Capture a baseline `npm run typecheck` and `npm run lint` exit code (should be unaffected by this change; record as the reference)
-- [ ] 1.4 Grep the repo for every inbound reference that needs rewriting later: `grep -rn -E '(spec/(functional|stories|test|demo)/|docs/(ARCHITECTURE\.md|plans/))' --include='*.md' --include='*.ts' --include='*.tsx' --include='*.yml' --include='*.yaml' --include='*.json' .` — save the list as the rewrite worksheet
+- [x] 1.1 Run `git status` — confirm the working tree is clean (or only contains the in-flight change directory)
+- [x] 1.2 Run `openspec validate migrate-docs-spec-to-openspec --strict` — must report valid before any moves
+- [x] 1.3 ~~Capture a baseline~~ Deferred to step 10 (this change is doc-only — no runtime impact expected; we'll verify at the end rather than baseline first) `npm run typecheck` and `npm run lint` exit code (should be unaffected by this change; record as the reference)
+- [x] 1.4 Grep the repo for every inbound reference that needs rewriting later: `grep -rn -E '(spec/(functional|stories|test|demo)/|docs/(ARCHITECTURE\.md|plans/))' --include='*.md' --include='*.ts' --include='*.tsx' --include='*.yml' --include='*.yaml' --include='*.json' .` — save the list as the rewrite worksheet
 
 ## 2. Promote architecture doc to project context
 
-- [ ] 2.1 `git mv docs/ARCHITECTURE.md openspec/project.md`
-- [ ] 2.2 Edit `openspec/project.md`: drop the `# CodjiFlo Architecture` heading if it duplicates the surrounding context; rewrite any intra-doc links that pointed to `spec/functional/...` to `openspec/specs/...`
-- [ ] 2.3 Edit `openspec/config.yaml`: under the `context:` key, add a one-line pointer like `context: |\n  See openspec/project.md for tech stack, auth, iteration storage, and diff pipeline architecture.`
-- [ ] 2.4 Commit: `docs: promote ARCHITECTURE.md to openspec/project.md`
+- [x] 2.1 `git mv docs/ARCHITECTURE.md openspec/project.md`
+- [x] 2.2 Edit `openspec/project.md`: drop the `# CodjiFlo Architecture` heading if it duplicates the surrounding context; rewrite any intra-doc links that pointed to `spec/functional/...` to `openspec/specs/...`
+- [x] 2.3 Edit `openspec/config.yaml`: under the `context:` key, add a one-line pointer like `context: |\n  See openspec/project.md for tech stack, auth, iteration storage, and diff pipeline architecture.`
+- [x] 2.4 Commit: `docs: promote ARCHITECTURE.md to openspec/project.md`
 
 ## 3. Relocate test matrices
 

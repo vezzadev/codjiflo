@@ -1,13 +1,15 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Project context shown to AI when creating artifacts.
+context: |
+  CodjiFlo: code-review tool, power-user-focused PR review UX.
+  Tech stack: Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict),
+  custom CSS with CSS variables, Zustand, Vitest, Playwright, Storybook.
+  Conventions: feature-first folder structure under src/features/, custom
+  components only (no native button/input), small Zustand stores per feature,
+  Vitest (not Jest), no Tailwind, no arbitrary waitForTimeout in E2E.
+  See openspec/project.md for full architecture (auth, iteration storage,
+  diff pipeline) and AGENTS.md for code structure and testing standards.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

@@ -1,4 +1,7 @@
-# Architecture Documentation
+# Project Context
+
+> Tech stack, authentication, iteration storage, and diff pipeline architecture.
+> This file is loaded as context by every OpenSpec workflow run.
 
 ## Authentication
 
@@ -245,7 +248,7 @@ Repos without the CodjiFlo workflow installed:
 | Can't use on repos you don't control | Graceful degradation |
 | Artifact download latency | Cache in IndexedDB |
 
-See [spec/functional/iterations.md](../spec/functional/iterations.md) for complete specification.
+See [the `iterations` capability spec](specs/iterations/spec.md) for complete specification.
 
 ## Diff Pipeline Architecture
 
