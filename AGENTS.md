@@ -222,7 +222,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/specs/auth/spec.md](openspec/specs/auth/spec.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 
@@ -242,11 +242,11 @@ CodjiFlo tracks PR iterations using a **no-backend** approach:
 
 **Stateless fallback:** Repos without workflow get near-parity iteration support via Timeline API (see M4.2).
 
-See [spec/functional/iterations.md](spec/functional/iterations.md) for full architecture.
+See [openspec/specs/iteration-storage/spec.md](openspec/specs/iteration-storage/spec.md) for full architecture.
 
 ### 1.7 Diff Pipeline Architecture
 
-Composable pipeline of hooks for diff computation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#diff-pipeline-architecture).
+Composable pipeline of hooks for diff computation. See [openspec/specs/diff-pipeline/spec.md](openspec/specs/diff-pipeline/spec.md).
 
 ## 2. Milestone Architectural Plans
 
