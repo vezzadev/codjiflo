@@ -255,8 +255,7 @@ CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonica
 | Path | What lives here |
 |------|------------------|
 | [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today) |
-| [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks |
-| [`openspec/archive/`](openspec/archive/) | Completed changes + the legacy `archive/legacy/` reference (milestone roadmaps + S-4.2.1 plans + demo) |
+| [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks (completed ones land under `changes/archive/`) |
 | [`openspec/project.md`](openspec/project.md) | Project context (auth, iteration storage, diff pipeline) — loaded by every workflow run |
 | [`openspec/test-matrices/`](openspec/test-matrices/) | Acceptance-criteria-as-tests; companions to the live specs |
 
@@ -276,7 +275,7 @@ CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonica
 
 ### Historical milestones
 
-The seven shipping milestones (M1–M7) are preserved as roadmap reference in [`openspec/archive/legacy/milestones/INDEX.md`](openspec/archive/legacy/milestones/INDEX.md). The capability specs above replace them as the canonical "what" the system does.
+The seven shipping milestones (M1–M7) and the S-4.2.1 commit-based iteration loader plan are preserved in git history. To browse them, walk back before the docs-to-openspec migration (PR #510, commit `c7a88a4`) — e.g. `git show c7a88a4^:spec/stories/milestone-4-iteration-management.md` or check out the parent commit and read `spec/`. The capability specs above are the canonical "what" the system does today.
 
 ### Workflow commands
 
