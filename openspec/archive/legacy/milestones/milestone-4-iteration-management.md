@@ -9,7 +9,7 @@
 ## Architecture & Scaffolding
 *Implementation must follow `AGENTS.md` (root). Focus on `codjiflo/action` (GitHub Action) and `features/iterations` (Frontend).*
 
-See [spec/functional/iterations.md](../functional/iterations.md) for the full iteration model and storage architecture.
+See [the `iterations` capability spec](../../../specs/iterations/spec.md) for the full iteration model and storage architecture.
 
 ## Dependency Graph
 

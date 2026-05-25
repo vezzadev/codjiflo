@@ -10,7 +10,7 @@
 ## Architecture & Scaffolding
 *Implementation must follow `AGENTS.md` (root). Focus on `features/iterations`, `features/diff/workers`, and `features/diff/scheduler`.*
 
-See [spec/functional/iterations.md](../functional/iterations.md) for the full iteration model and stateless mode architecture.
+See [the `iterations` capability spec](../../../specs/iterations/spec.md) for the full iteration model and stateless mode architecture.
 
 ## Dependency Graph
 

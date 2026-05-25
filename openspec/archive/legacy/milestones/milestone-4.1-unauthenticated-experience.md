@@ -19,7 +19,7 @@
 - `src/features/auth/stores/useAuthStore.ts`: Add rate limit tracking state
 - New components for contextual login prompts
 
-See [spec/functional/unauthenticated-access.md](../functional/unauthenticated-access.md) for the full specification.
+See [the `unauthenticated-access` capability spec](../../../specs/unauthenticated-access/spec.md) for the full specification.
 
 ## Dependency Graph
 

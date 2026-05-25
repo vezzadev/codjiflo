@@ -23,15 +23,15 @@
 
 ## 4. Archive milestone stories and implementation plans
 
-- [ ] 4.1 Create the archive directory: `mkdir -p openspec/archive/legacy/milestones openspec/archive/legacy/plans openspec/archive/legacy/demo`
-- [ ] 4.2 `git mv spec/stories/milestone-*.md openspec/archive/legacy/milestones/` (move all nine in one command)
-- [ ] 4.3 `git mv docs/plans/2026-02-17-s-4.2.1-commit-based-iteration-loader.md openspec/archive/legacy/plans/`
-- [ ] 4.4 `git mv docs/plans/2026-02-17-s-4.2.1-commit-based-iteration-loader-design.md openspec/archive/legacy/plans/`
-- [ ] 4.5 `git mv spec/demo/s-4.2.1 openspec/archive/legacy/demo/s-4.2.1`
-- [ ] 4.6 Write `openspec/archive/legacy/milestones/INDEX.md` — one line per milestone (`- [M1: SPA + GitHub Data](milestone-1-spa-github-data.md) — shipped, established app shell`)
-- [ ] 4.7 Rewrite cross-references inside the archived milestones: every `../functional/<file>.md` becomes `../../../specs/<capability>/spec.md`; intra-milestone links stay relative
-- [ ] 4.8 Rewrite cross-references inside the archived plans: every `../../spec/functional/<file>.md` becomes `../../../specs/<capability>/spec.md`
-- [ ] 4.9 Commit: `docs: archive milestone stories, S-4.2.1 plans, and S-4.2.1 demo under openspec/archive/legacy/`
+- [x] 4.1 Create the archive directory: `mkdir -p openspec/archive/legacy/milestones openspec/archive/legacy/plans openspec/archive/legacy/demo`
+- [x] 4.2 `git mv spec/stories/milestone-*.md openspec/archive/legacy/milestones/` (move all nine in one command)
+- [x] 4.3 `git mv docs/plans/2026-02-17-s-4.2.1-commit-based-iteration-loader.md openspec/archive/legacy/plans/`
+- [x] 4.4 `git mv docs/plans/2026-02-17-s-4.2.1-commit-based-iteration-loader-design.md openspec/archive/legacy/plans/`
+- [x] 4.5 `git mv spec/demo/s-4.2.1 openspec/archive/legacy/demo/s-4.2.1`
+- [x] 4.6 Write `openspec/archive/legacy/milestones/INDEX.md` — one line per milestone (`- [M1: SPA + GitHub Data](milestone-1-spa-github-data.md) — shipped, established app shell`)
+- [x] 4.7 Rewrite cross-references inside the archived milestones: every `../functional/<file>.md` becomes `../../../specs/<capability>/spec.md`; intra-milestone links stay relative
+- [x] 4.8 Rewrite cross-references inside the archived plans: every `../../spec/functional/<file>.md` becomes `../../../specs/<capability>/spec.md`
+- [x] 4.9 Commit: `docs: archive milestone stories, S-4.2.1 plans, and S-4.2.1 demo under openspec/archive/legacy/`
 
 ## 5. Move drafted capability specs into the live spec tree
 
