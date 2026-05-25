@@ -35,8 +35,8 @@
 
 ## 5. Move drafted capability specs into the live spec tree
 
-- [ ] 5.1 `mkdir -p openspec/specs`
-- [ ] 5.2 Move every drafted spec out of the change directory into the live tree:
+- [x] 5.1 ~~`mkdir -p openspec/specs`~~ Done by `openspec new change` originally
+- [x] 5.2 ~~Move every drafted spec out of the change directory into the live tree~~ Deferred to `openspec archive` (step 9.1) — verified `openspec archive --help` auto-handles the spec promotion via the delta-application path
   - `mv openspec/changes/migrate-docs-spec-to-openspec/specs/diff-viewing openspec/specs/`
   - `mv openspec/changes/migrate-docs-spec-to-openspec/specs/comments openspec/specs/`
   - `mv openspec/changes/migrate-docs-spec-to-openspec/specs/iterations openspec/specs/`
@@ -47,17 +47,17 @@
   - `mv openspec/changes/migrate-docs-spec-to-openspec/specs/ui-shell openspec/specs/`
   - `mv openspec/changes/migrate-docs-spec-to-openspec/specs/data-models openspec/specs/`
   - **NOTE**: If `openspec archive` (step 9.1) handles this automatically per its docs, skip 5.2 and rely on it; verify by running `openspec archive --help`. The manual `mv` is the fallback.
-- [ ] 5.3 `openspec list --specs` — confirm all nine capabilities are listed
-- [ ] 5.4 `openspec validate --strict` (no change name) — confirm the live spec tree validates clean
+- [x] 5.3 ~~`openspec list --specs`~~ Deferred to step 9.3 — confirm all nine capabilities are listed
+- [x] 5.4 ~~`openspec validate --strict`~~ Deferred to step 9.4 (no change name) — confirm the live spec tree validates clean
 
 ## 6. Delete the now-empty legacy folders
 
-- [ ] 6.1 Delete the now-migrated source files: `git rm -r spec/functional spec/stories spec/test spec/demo`
-- [ ] 6.2 Confirm `spec/` is empty: `find spec -type f | wc -l` must be 0
-- [ ] 6.3 `git rm -r spec` (remove the empty parent directory)
-- [ ] 6.4 Confirm `docs/` has no remaining tracked files: `find docs -type f | wc -l` must be 0
-- [ ] 6.5 `git rm -r docs`
-- [ ] 6.6 Commit: `docs: remove legacy docs/ and spec/ trees, migrated to openspec/`
+- [x] 6.1 Delete the now-migrated source files: `git rm -r spec/functional spec/stories spec/test spec/demo`
+- [x] 6.2 Confirm `spec/` is empty: `find spec -type f | wc -l` must be 0
+- [x] 6.3 `git rm -r spec` (subsumed by 6.1 — `git rm -r` already removed the empty subdirs) (remove the empty parent directory)
+- [x] 6.4 Confirm `docs/` has no remaining tracked files: `find docs -type f | wc -l` must be 0
+- [x] 6.5 ~~`git rm -r docs`~~ No-op — by the time we got here, every `docs/` file had already been `git mv`d out, so the dir was empty and tracked nothing. Removed from disk with `rmdir`.
+- [x] 6.6 Commit: `docs: remove legacy docs/ and spec/ trees, migrated to openspec/`
 
 ## 7. Rewrite repo-wide cross-references
 
