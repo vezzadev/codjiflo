@@ -63,6 +63,10 @@ The system SHALL display a dedicated, accessible login prompt in place of PR con
 - **WHEN** the user clicks "Log in with GitHub" on the private repo prompt at `/{owner}/{repo}/{number}`
 - **THEN** the system navigates to `/login?returnPath=/{owner}/{repo}/{number}` and, after a successful OAuth completion, returns the user to the original PR page
 
+#### Scenario: Back to dashboard link navigates home
+- **WHEN** the user clicks the "Back to Dashboard" link on the private repo prompt
+- **THEN** the system navigates to `/dashboard`
+
 ### Requirement: Rate Limit Accounting
 The system SHALL parse `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers from every GitHub API response and update transient rate-limit state available to the UI.
 
@@ -73,6 +77,18 @@ The system SHALL parse `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-Rate
 #### Scenario: Rate limit state is not persisted
 - **WHEN** the user reloads the application
 - **THEN** rate-limit state MUST be reinitialized to null and MUST NOT be restored from persistent storage
+
+#### Scenario: Rate limit headers absent on response
+- **WHEN** a GitHub API response is received that does not include any `X-RateLimit-*` headers
+- **THEN** the system MUST NOT raise an error and the rate-limit state remains unchanged (left as `undefined`/`null`)
+
+#### Scenario: Initial rate limit state before any request
+- **WHEN** the auth store is freshly instantiated and no GitHub API response has been processed
+- **THEN** `rateLimitRemaining`, `rateLimitReset`, and `rateLimitLimit` MUST all be `null`
+
+#### Scenario: updateRateLimit action stores all three fields
+- **WHEN** the auth store's `updateRateLimit` action is called with a `RateLimitInfo` object
+- **THEN** the store reflects the provided `remaining`, `reset`, and `limit` values atomically
 
 ### Requirement: Rate Limit Warning Banner
 The system SHALL surface a rate-limit warning banner to unauthenticated users when the remaining request budget falls below 20% of the limit, encouraging sign-in for a higher quota.
@@ -88,6 +104,30 @@ The system SHALL surface a rate-limit warning banner to unauthenticated users wh
 #### Scenario: Above warning threshold
 - **WHEN** `rateLimitRemaining` is at or above 20% of `rateLimitLimit`
 - **THEN** the rate-limit warning banner MUST NOT be displayed
+
+#### Scenario: Warning suppressed for authenticated users
+- **WHEN** the user is authenticated, regardless of remaining quota
+- **THEN** the rate-limit warning banner MUST NOT be displayed (authenticated users have a higher quota and a separate flow)
+
+#### Scenario: Warning suppressed when limit is unknown
+- **WHEN** `rateLimitRemaining` is `null` (no API response has populated rate-limit state yet)
+- **THEN** the rate-limit warning banner MUST NOT be displayed
+
+#### Scenario: Warning threshold boundary at exactly 20%
+- **WHEN** `rateLimitRemaining` equals exactly 20% of `rateLimitLimit` (e.g., 12 of 60)
+- **THEN** the warning banner IS displayed (the 20% threshold is inclusive)
+
+#### Scenario: Just above warning threshold
+- **WHEN** `rateLimitRemaining` is one above the 20% threshold (e.g., 13 of 60)
+- **THEN** the warning banner MUST NOT be displayed
+
+#### Scenario: Banner sign-in button navigates to login
+- **WHEN** the user clicks the "Sign in" call to action on the rate-limit warning banner
+- **THEN** the system navigates to `/login` preserving the current `returnPath`
+
+#### Scenario: Banner displays time until reset
+- **WHEN** the rate-limit warning banner is visible and `rateLimitReset` is set
+- **THEN** the banner displays a human-readable "Resets in {N} minutes" string derived from the reset timestamp
 
 ### Requirement: Contextual Login Prompts for Write Actions
 The system SHALL gate every comment write action (post, reply, resolve, edit, delete, react) behind authentication and SHALL replace each disabled control with a contextual login prompt rather than a generic error.
@@ -130,6 +170,18 @@ The system SHALL fall back to stateless iteration mode for unauthenticated users
 - **WHEN** an unauthenticated user is in stateless mode because of missing authentication
 - **THEN** the UI presents the message "Sign in to enable iteration tracking" rather than a generic artifact error
 
+#### Scenario: Artifact loader short-circuits without a token
+- **WHEN** the artifact loader's `load()` is invoked and no auth token is present
+- **THEN** it returns `null` immediately without issuing any GitHub Actions API requests
+
+#### Scenario: Artifact pointer comment is still discoverable
+- **WHEN** an unauthenticated user opens a public PR that has a `<!-- codjiflo-data -->` pointer comment
+- **THEN** `findArtifactReference()` succeeds against the public Issues API and returns the parsed reference, even though the artifact itself cannot be downloaded
+
+#### Scenario: downloadArtifact returns null without a token
+- **WHEN** `downloadArtifact()` is invoked without an auth token
+- **THEN** it returns `null` and logs a warning indicating that artifact downloads require authentication
+
 ### Requirement: Contextual Error Messaging by Auth State
 The system SHALL tailor error messages for 404, 403, rate-limit, and artifact failures based on whether the user is authenticated, prompting unauthenticated users to log in when relevant.
 
@@ -159,6 +211,29 @@ The system SHALL only trigger automatic logout on an HTTP 401 response when a to
 #### Scenario: 401 received with a token
 - **WHEN** the GitHub API responds with HTTP 401 to a request that included an `Authorization` header
 - **THEN** the system clears the stored token and transitions the user to the unauthenticated state
+
+### Requirement: Non-Redirecting Optional Auth Hook
+The system SHALL expose an optional-auth surface for routes that work without authentication, reporting auth status and hydration state to consumers without ever forcing navigation to the login page.
+
+#### Scenario: Reports unauthenticated when no token is present
+- **WHEN** a component reads the optional-auth surface and no token is stored
+- **THEN** the surface reports `isAuthenticated: false`
+
+#### Scenario: Reports authenticated when token is present
+- **WHEN** a component reads the optional-auth surface and a valid token is stored
+- **THEN** the surface reports `isAuthenticated: true`
+
+#### Scenario: Reports loading while auth state hydrates
+- **WHEN** the auth store has not yet rehydrated from persistent storage
+- **THEN** the optional-auth surface reports `isLoading: true`
+
+#### Scenario: Reports not loading after hydration completes
+- **WHEN** the auth store has finished rehydrating
+- **THEN** the optional-auth surface reports `isLoading: false`
+
+#### Scenario: Never triggers a redirect
+- **WHEN** an unauthenticated user reads the optional-auth surface from any route
+- **THEN** the surface MUST NOT initiate a router navigation to `/login` or any other route
 
 ### Requirement: Route Guards Honor Unauthenticated Access
 The system SHALL allow the dashboard and PR routes to render for unauthenticated users while continuing to redirect authenticated users away from the login route.

@@ -42,6 +42,29 @@ The system SHALL only permit transitions that match the documented state machine
 - **WHEN** any actor attempts a transition that is not in the documented state machine (for example, Completed back to Active)
 - **THEN** the system rejects the request and leaves the state unchanged
 
+#### Scenario: Active review supports full interactivity
+- **WHEN** a review is in the Active state
+- **THEN** participants can create, edit, resolve, and reply to comments and the system records every mutation
+
+#### Scenario: Abandoned review keeps comments accessible
+- **WHEN** a review is transitioned from Active to Aborted (abandoned)
+- **THEN** existing comments and threads remain readable and the iteration history remains browsable
+
+#### Scenario: Reactivated review restores comment editability
+- **WHEN** the author reactivates an Aborted review back to Active
+- **THEN** comments become editable, resolvable, and reply-able again under the same author and reviewer permissions that applied before the abort
+
+### Requirement: Draft Reviews Accept Comments
+The system SHALL allow comments to be created, edited, replied to, and resolved on reviews in the Draft state so that authors and invited reviewers can collaborate before the review is published.
+
+#### Scenario: Reviewer comments on a draft review
+- **WHEN** a participant adds a comment to a review whose state is Draft
+- **THEN** the system accepts the comment and treats the thread identically to comments on Active reviews for status, reply, and visibility purposes
+
+#### Scenario: Comments survive draft publication
+- **WHEN** a Draft review with existing comments is published (transitions to Active)
+- **THEN** all existing comments remain attached to the review with their original authorship, timestamps, and statuses
+
 ### Requirement: Author-Only Lifecycle Actions
 The system SHALL restrict Recall and Reactivate transitions to the review's author, rejecting attempts by reviewers or other users.
 

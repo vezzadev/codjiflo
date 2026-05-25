@@ -157,6 +157,36 @@ interface IIterationBackend {
 - **WHEN** the application calls `compareIterations(reviewId, base, target)`
 - **THEN** the adapter SHALL return an `IterationComparison` containing `changedFiles` and `spanMappings` usable for comment tracking (see `iterations` capability)
 
+#### Scenario: Cumulative comparison skips intermediate iterations
+
+- **WHEN** the application calls `compareIterations(reviewId, 1, 3)` on a review whose iteration 2 introduced and then deleted a file
+- **THEN** the returned `IterationComparison.changedFiles` SHALL reflect only the net delta between iterations 1 and 3 (omitting the transient file) rather than concatenating intermediate deltas
+
+#### Scenario: Comparison surfaces merge-commit parent metadata
+
+- **WHEN** an iteration introduced by a merge commit (two or more parents) is one of the endpoints of a comparison
+- **THEN** the adapter SHALL still return a single coherent `IterationComparison` and SHALL expose the multiple parent SHAs on the iteration metadata returned from `getIteration`
+
+#### Scenario: Comparison after a rebase uses the new base snapshot
+
+- **WHEN** a review's branch is rebased onto an updated base and the application requests `compareIterations(reviewId, base, latest)`
+- **THEN** the adapter SHALL compute the comparison against the post-rebase base snapshot, so changes pulled in by the rebase are not attributed to the author's iterations
+
+#### Scenario: Comparison falls back to artifact when commits are unreachable
+
+- **WHEN** a comparison endpoint references a commit SHA that the underlying platform has garbage-collected
+- **THEN** the adapter SHALL satisfy the comparison from any preserved iteration-capture artifact rather than failing with an unreachable-commit error, and SHALL annotate the affected iteration as `degraded` or `unavailable` if no artifact is available
+
+#### Scenario: Comparison fetches missing blobs on shallow clones
+
+- **WHEN** the platform's repository data is shallow-cloned and a comparison requires content for a commit outside the clone depth
+- **THEN** the adapter SHALL fetch the missing blobs/trees via the platform's API on demand rather than failing the comparison
+
+#### Scenario: Late-modified file shown as modified, not added
+
+- **WHEN** a file exists in the review's base but is first modified only at iteration N, and the application requests `compareIterations(reviewId, base, N)`
+- **THEN** the file SHALL appear in `changedFiles` with `changeType` of `modified` (not `added`), even when the iteration-capture artifact does not include earlier iterations
+
 ### Requirement: IParticipantBackend Contract
 
 The system SHALL expose reviewer and participant management through an `IParticipantBackend` interface with capability flags for voting, groups, and status granularity.
@@ -339,6 +369,33 @@ enum CommentThreadStatus {
 
 - **WHEN** the application calls `updateThreadStatus` with `ByDesign` on a GitHub or GitLab adapter
 - **THEN** the adapter SHALL reject the call because `ByDesign` is not in its `selectableThreadStatuses`
+
+#### Scenario: Adapter normalizes platform-native status tokens
+
+- **WHEN** an adapter receives a platform-native thread status (for example Azure DevOps numeric `1` for active, `2` for fixed, `3` for wontfix, `4` for closed, `5` for bydesign, `6` for pending; GitHub `RESOLVED`/`UNRESOLVED`; GitLab `resolved`/`unresolved`)
+- **THEN** it SHALL map every native status to a value of `CommentThreadStatus` before returning the thread to the application, so consumers never branch on platform-specific tokens
+
+### Requirement: Unified Comment Type Enumeration
+
+The system SHALL normalize the kind of a comment across platforms using a `CommentType` enumeration so that the UI can distinguish regular user comments from system-generated code-change comments and other system messages without inspecting platform-specific fields.
+
+```typescript
+enum CommentType {
+  Text = 'text',           // Regular user comment
+  CodeChange = 'codechange', // Applied suggestion or system-applied code change
+  System = 'system'        // System-generated message
+}
+```
+
+#### Scenario: Adapter maps platform-native comment types
+
+- **WHEN** an adapter receives a platform-native comment-type token (for example Azure DevOps numeric `1` for text, `2` for code change, `3` for system; GitHub review-comment vs system event)
+- **THEN** it SHALL map every native value to a member of `CommentType` before returning the comment to the application
+
+#### Scenario: UI distinguishes system and code-change comments
+
+- **WHEN** a comment carries `CommentType.System` or `CommentType.CodeChange`
+- **THEN** the UI SHALL render it with system-comment styling and SHALL NOT expose edit, delete, or reply affordances meant for user comments
 
 ### Requirement: Unified Reviewer Status Enumeration
 
@@ -573,4 +630,19 @@ interface SpanMapping {
 
 - **WHEN** a consumer inspects a `SpanMapping`
 - **THEN** its `changeType` SHALL be exactly one of `'unchanged'`, `'modified'`, `'deleted'`, or `'added'`, enabling the comment system to reposition or orphan threads accordingly (see `iterations` and `comments`)
+
+#### Scenario: Span mapping survives a force-push
+
+- **WHEN** an iteration was produced by a force-push (amend, interactive rebase, or reset) that rewrote commit SHAs
+- **THEN** `compareIterations` SHALL still return `spanMappings` for content preserved across the force-push so comment threads can be re-anchored without relying on the original SHAs
+
+#### Scenario: Span mapping carries deletion classification for orphaned spans
+
+- **WHEN** the code anchored by a span in the base iteration no longer exists in the target iteration
+- **THEN** the corresponding `SpanMapping` SHALL carry `changeType: 'deleted'` so the comments capability can mark the thread as orphaned (see `comments` capability)
+
+#### Scenario: Span mapping resolves across file renames
+
+- **WHEN** a file is renamed between the base and target iterations
+- **THEN** the adapter SHALL emit `SpanMapping` entries against the renamed file path rather than treating the rename as a delete + add
 
