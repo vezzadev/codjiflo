@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -48,22 +47,14 @@ test.describe("File explorer keyboard model (react-aria Tree)", () => {
     },
   ];
 
-  const config = isMockMode()
-    ? { pageUrl: "/test/repo/700" }
-    : {
-        pageUrl: `/${prodModeConfig.testRepo.owner}/${prodModeConfig.testRepo.repo}/${String(prodModeConfig.testRepo.prNumber)}`,
-      };
-
   test.beforeEach(async ({ page }) => {
     await setupLegacyDefaults(page);
-    if (isMockMode()) {
-      await setupAuthState(page);
-      await setupFullPRMocks(page, "test", "repo", 700, { pr: mockPR, files: mockFiles });
-    }
+    await setupAuthState(page);
+    await setupFullPRMocks(page, "test", "repo", 700, { pr: mockPR, files: mockFiles });
   });
 
   test("ArrowDown moves between rows; Left collapses a folder; Right re-expands", async ({ page }) => {
-    await page.goto(config.pageUrl);
+    await page.goto("/test/repo/700");
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileNav).toBeVisible();
