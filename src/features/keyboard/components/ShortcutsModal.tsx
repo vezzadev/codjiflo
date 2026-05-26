@@ -1,5 +1,6 @@
 import { getShortcutsList } from '../hooks';
 import { Modal } from '@/components/ui';
+import { Button } from '@/components/Button';
 
 interface ShortcutsModalProps {
   isOpen: boolean;
@@ -36,13 +37,9 @@ export function ShortcutsModal({ isOpen, onOpenChange }: ShortcutsModalProps) {
             </tbody>
           </table>
 
-          <button
-            type="button"
-            onClick={close}
-            className="btn-colorful modal-close-btn"
-          >
+          <Button onPress={close} className="modal-close-btn">
             Close
-          </button>
+          </Button>
         </>
       )}
     </Modal>

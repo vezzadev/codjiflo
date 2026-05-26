@@ -97,11 +97,9 @@ function DashboardContent() {
               autoFocus
             />
 
-            <Button
-              type="submit"
-              label="Load Pull Request"
-              disabled={!url.trim()}
-            />
+            <Button type="submit" isDisabled={!url.trim()}>
+              Load Pull Request
+            </Button>
           </form>
         </div>
 

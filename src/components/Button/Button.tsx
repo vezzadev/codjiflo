@@ -1,39 +1,25 @@
-interface ButtonProps {
-  label: string;
-  onClick?: () => void;
-  variant?: "primary" | "secondary";
-  disabled?: boolean;
-  type?: "button" | "submit" | "reset";
-  size?: "default" | "sm" | "icon";
+import { Button as RAButton, type ButtonProps as RAButtonProps } from 'react-aria-components';
+
+export interface ButtonProps extends Omit<RAButtonProps, 'className' | 'style'> {
+  variant?: 'primary' | 'secondary';
+  size?: 'default' | 'sm' | 'icon';
   className?: string;
-  ariaLabel?: string;
 }
 
 export function Button({
-  label,
-  onClick,
-  variant = "primary",
-  disabled = false,
-  type = "button",
-  size = "default",
+  variant = 'primary',
+  size = 'default',
   className,
-  ariaLabel,
+  children,
+  ...rest
 }: ButtonProps) {
-  // Map variants to CSS classes from spec
-  const variantClass = variant === "primary" ? "btn-colorful" : "btn";
-  const sizeClass = size === "icon" ? "btn-icon" : "";
-
-  const classes = [variantClass, sizeClass, className].filter(Boolean).join(" ");
+  const variantClass = variant === 'primary' ? 'btn-colorful' : 'btn';
+  const sizeClass = size === 'icon' ? 'btn-icon' : '';
+  const classes = [variantClass, sizeClass, className].filter(Boolean).join(' ');
 
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={classes}
-      aria-label={ariaLabel}
-    >
-      {label}
-    </button>
+    <RAButton className={classes} {...rest}>
+      {children}
+    </RAButton>
   );
 }

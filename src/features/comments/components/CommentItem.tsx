@@ -72,18 +72,12 @@ export function CommentItem({ comment, isCurrentUser, onEdit, onDelete }: Commen
         </div>
         {isCurrentUser && (
           <div className="comment-actions">
-            <Button
-              label="Edit"
-              variant="secondary"
-              size="sm"
-              onClick={onEdit}
-            />
-            <Button
-              label="Delete"
-              variant="secondary"
-              size="sm"
-              onClick={onDelete}
-            />
+            <Button variant="secondary" size="sm" onPress={onEdit}>
+              Edit
+            </Button>
+            <Button variant="secondary" size="sm" onPress={onDelete}>
+              Delete
+            </Button>
           </div>
         )}
       </div>

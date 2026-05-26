@@ -72,10 +72,11 @@ function LoginContent() {
           <div className="login-actions">
             <Button
               type="button"
-              label={isInitiating ? 'Redirecting...' : 'Login with GitHub'}
-              onClick={handleOAuthLogin}
-              disabled={isInitiating}
-            />
+              onPress={handleOAuthLogin}
+              isDisabled={isInitiating}
+            >
+              {isInitiating ? 'Redirecting...' : 'Login with GitHub'}
+            </Button>
 
             <div className="login-divider">
               <span>or</span>
@@ -107,9 +108,10 @@ function LoginContent() {
 
                 <Button
                   type="submit"
-                  label={isValidating ? 'Validating...' : 'Connect with PAT'}
-                  disabled={isValidating || !tokenInput.trim()}
-                />
+                  isDisabled={isValidating || !tokenInput.trim()}
+                >
+                  {isValidating ? 'Validating...' : 'Connect with PAT'}
+                </Button>
               </form>
             )}
           </div>

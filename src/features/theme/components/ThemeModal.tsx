@@ -2,6 +2,7 @@
 
 import { useThemeStore, Theme, DiffColorScheme } from '../stores/useThemeStore';
 import { Modal } from '@/components/ui';
+import { Button } from '@/components/Button';
 
 interface ThemeModalProps {
   isOpen: boolean;
@@ -155,13 +156,9 @@ export function ThemeModal({ isOpen, onOpenChange }: ThemeModalProps) {
             />
           </div>
 
-          <button
-            type="button"
-            onClick={close}
-            className="btn-colorful modal-close-btn"
-          >
+          <Button onPress={close} className="modal-close-btn">
             Close
-          </button>
+          </Button>
         </>
       )}
     </Modal>
