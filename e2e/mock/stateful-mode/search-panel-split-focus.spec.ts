@@ -117,7 +117,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file to open diff
-    const fileItem = fileList.getByRole('treeitem', { name: /content\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /content\.ts/i });
     await fileItem.click();
 
     // Wait for diff content
@@ -170,7 +170,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file
-    const fileItem = fileList.getByRole('treeitem', { name: /content\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /content\.ts/i });
     await fileItem.click();
 
     // Wait for diff content
@@ -223,7 +223,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file
-    const fileItem = fileList.getByRole('treeitem', { name: /content\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /content\.ts/i });
     await fileItem.click();
 
     // Wait for diff content
@@ -288,7 +288,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file
-    const fileItem = fileList.getByRole('treeitem', { name: /content\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /content\.ts/i });
     await fileItem.click();
 
     // Wait for diff content (starts in inline mode by default)

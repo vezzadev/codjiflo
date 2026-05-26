@@ -73,19 +73,19 @@ test.describe("Renamed Files (Issue #349)", () => {
     await expect(fileNav).toBeVisible();
 
     // Pure renamed file should show R badge
-    const pureRenamedItem = fileNav.getByRole("treeitem", { name: /app\.spec\.ts/ });
+    const pureRenamedItem = fileNav.getByRole("row", { name: /app\.spec\.ts/ });
     await expect(pureRenamedItem).toBeVisible();
     await expect(pureRenamedItem.getByText("R")).toBeVisible();
 
     // Renamed+edited file should also show R badge and +/- counters
-    const editedRenamedItem = fileNav.getByRole("treeitem", { name: /auth\.spec\.ts/ });
+    const editedRenamedItem = fileNav.getByRole("row", { name: /auth\.spec\.ts/ });
     await expect(editedRenamedItem).toBeVisible();
     await expect(editedRenamedItem.getByText("R")).toBeVisible();
     await expect(editedRenamedItem.getByText("+5")).toBeVisible();
     await expect(editedRenamedItem.getByText("−3")).toBeVisible();
 
     // Modified file should show M badge and +/- counters
-    const modifiedItem = fileNav.getByRole("treeitem", { name: /utils\.ts/ });
+    const modifiedItem = fileNav.getByRole("row", { name: /utils\.ts/ });
     await expect(modifiedItem).toBeVisible();
     await expect(modifiedItem.getByText("M")).toBeVisible();
     await expect(modifiedItem.getByText("+2")).toBeVisible();

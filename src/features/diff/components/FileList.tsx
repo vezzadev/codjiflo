@@ -1,28 +1,52 @@
-import { useState, useMemo, useCallback, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useRef, type ChangeEvent, type KeyboardEvent } from 'react';
 import { Search, X } from 'lucide-react';
+import { Tree, TreeItem, TreeItemContent, Collection, Button as RAButton } from 'react-aria-components';
+import type { Selection, Key } from 'react-aria-components';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { useIterationAwareFiles } from '../hooks';
 import { groupFilesByFolder, getBasename } from '../utils';
-import { FileListItem } from './FileListItem';
 import { Skeleton } from '@/components/ui';
+import type { IterationAwareFile } from '../hooks';
+import { FileChangeStatus } from '@/api/types';
 
-/** Number of items to skip with PageUp/PageDown */
-const PAGE_JUMP_SIZE = 10;
+const PR_DESCRIPTION_KEY = '__pr_description__';
 
-/**
- * List of changed files in the PR
- * S-1.3: AC-1.3.1 through AC-1.3.9
- * M4: AC-4.8.11 through AC-4.8.15 (iteration-aware filtering)
- */
+const CHANGE_TYPE_ICONS: { [key in FileChangeStatus]: string } = {
+  [FileChangeStatus.Added]: 'A',
+  [FileChangeStatus.Modified]: 'M',
+  [FileChangeStatus.Deleted]: 'D',
+  [FileChangeStatus.Renamed]: 'R',
+};
+
+const CHANGE_TYPE_CLASSES: { [key in FileChangeStatus]: string } = {
+  [FileChangeStatus.Added]: 'add',
+  [FileChangeStatus.Modified]: 'edit',
+  [FileChangeStatus.Deleted]: 'delete',
+  [FileChangeStatus.Renamed]: 'edit',
+};
+
+const CHANGE_TYPE_LABELS: { [key in FileChangeStatus]: string } = {
+  [FileChangeStatus.Added]: 'added',
+  [FileChangeStatus.Modified]: 'modified',
+  [FileChangeStatus.Deleted]: 'deleted',
+  [FileChangeStatus.Renamed]: 'renamed',
+};
+
+function fileKey(file: IterationAwareFile): string {
+  return `file:${String(file.originalIndex)}:${file.filename}`;
+}
+
+function folderKey(folder: string): string {
+  return `folder:${folder}`;
+}
+
 export function FileList() {
   const { selectedFileIndex, selectFile, isLoading, error } = useDiffStore();
   const { files } = useIterationAwareFiles();
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [filterText, setFilterText] = useState('');
-  const treeRef = useRef<HTMLDivElement>(null);
   const filterInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter files by filename (case-insensitive match)
   const filteredFiles = useMemo(() => {
     if (!filterText.trim()) return files;
     const lowerFilter = filterText.toLowerCase();
@@ -30,6 +54,8 @@ export function FileList() {
   }, [files, filterText]);
 
   const groupedFiles = useMemo(() => groupFilesByFolder(filteredFiles), [filteredFiles]);
+
+  const showPrDescription = !filterText.trim() || 'pull request description'.includes(filterText.toLowerCase());
 
   const handleFilterChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setFilterText(e.target.value);
@@ -40,7 +66,6 @@ export function FileList() {
       setFilterText('');
       filterInputRef.current?.blur();
     }
-    // Prevent tree keyboard navigation from triggering when in filter input
     e.stopPropagation();
   }, []);
 
@@ -49,82 +74,63 @@ export function FileList() {
     filterInputRef.current?.focus();
   }, []);
 
-  const toggleFolder = (folder: string) => {
-    setCollapsedFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(folder)) next.delete(folder);
-      else next.add(folder);
-      return next;
-    });
-  };
+  const expandedKeys = useMemo<Set<Key>>(() => {
+    const keys: Set<Key> = new Set();
+    for (const { folder } of groupedFiles) {
+      if (!collapsedFolders.has(folder)) keys.add(folderKey(folder));
+    }
+    return keys;
+  }, [groupedFiles, collapsedFolders]);
 
-  /**
-   * Get all focusable tree items in DOM order
-   */
-  const getTreeItems = useCallback((): HTMLElement[] => {
-    if (!treeRef.current) return [];
-    return Array.from(treeRef.current.querySelectorAll<HTMLElement>('[role="treeitem"]'));
-  }, []);
-
-  /**
-   * Handle keyboard navigation within the file tree
-   * Arrow keys move focus, PageUp/PageDown jump by PAGE_JUMP_SIZE
-   */
-  const handleTreeKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLDivElement>) => {
-      const items = getTreeItems();
-      if (items.length === 0) return;
-
-      const currentIndex = items.findIndex((item) => item === document.activeElement);
-      let nextIndex: number | null = null;
-
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          // When no item is focused (currentIndex === -1), start at first item
-          // Otherwise move to next item, stopping at the end (no wrap)
-          if (currentIndex === -1) {
-            nextIndex = 0;
-          } else if (currentIndex < items.length - 1) {
-            nextIndex = currentIndex + 1;
-          }
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          // When no item is focused (currentIndex === -1), start at first item
-          // Otherwise move to previous item, stopping at the start (no wrap)
-          if (currentIndex === -1) {
-            nextIndex = 0;
-          } else if (currentIndex > 0) {
-            nextIndex = currentIndex - 1;
-          }
-          break;
-        case 'PageDown':
-          e.preventDefault();
-          nextIndex = Math.min(currentIndex + PAGE_JUMP_SIZE, items.length - 1);
-          break;
-        case 'PageUp':
-          e.preventDefault();
-          nextIndex = Math.max(currentIndex - PAGE_JUMP_SIZE, 0);
-          break;
-        case 'Home':
-          e.preventDefault();
-          nextIndex = 0;
-          break;
-        case 'End':
-          e.preventDefault();
-          nextIndex = items.length - 1;
-          break;
-      }
-
-      if (nextIndex !== null) {
-        const nextItem = items[nextIndex];
-        if (nextItem) {
-          nextItem.focus();
+  const handleExpandedChange = useCallback(
+    (next: Set<Key>) => {
+      setCollapsedFolders(() => {
+        const nextCollapsed: Set<string> = new Set();
+        for (const { folder } of groupedFiles) {
+          if (!next.has(folderKey(folder))) nextCollapsed.add(folder);
         }
+        return nextCollapsed;
+      });
+    },
+    [groupedFiles]
+  );
+
+  const selectedKeys = useMemo<Selection>(() => {
+    if (selectedFileIndex === PR_DESCRIPTION_INDEX) return new Set([PR_DESCRIPTION_KEY]);
+    const match = filteredFiles.find((f) => f.originalIndex === selectedFileIndex);
+    return match ? new Set([fileKey(match)]) : new Set();
+  }, [selectedFileIndex, filteredFiles]);
+
+  const toggleFolder = useCallback(
+    (key: Key) => {
+      setCollapsedFolders((prev) => {
+        const folder = String(key).slice('folder:'.length);
+        const next = new Set(prev);
+        if (next.has(folder)) next.delete(folder);
+        else next.add(folder);
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleAction = useCallback(
+    (key: Key) => {
+      const keyStr = String(key);
+      if (keyStr === PR_DESCRIPTION_KEY) {
+        selectFile(PR_DESCRIPTION_INDEX);
+        return;
+      }
+      if (keyStr.startsWith('folder:')) {
+        toggleFolder(key);
+        return;
+      }
+      if (keyStr.startsWith('file:')) {
+        const file = filteredFiles.find((f) => fileKey(f) === keyStr);
+        if (file) selectFile(file.originalIndex);
       }
     },
-    [getTreeItems]
+    [filteredFiles, selectFile, toggleFolder]
   );
 
   if (error) {
@@ -152,11 +158,8 @@ export function FileList() {
     );
   }
 
-  const isDescriptionSelected = selectedFileIndex === PR_DESCRIPTION_INDEX;
-
   return (
     <nav aria-label="Changed files">
-      {/* Header with integrated filter */}
       <div className="file-explorer-header">
         <div className="file-explorer-filter-inline">
           <Search size={14} className="filter-icon" aria-hidden="true" />
@@ -182,73 +185,81 @@ export function FileList() {
           )}
         </div>
       </div>
-      {/* AC-1.3.7: File list is keyboard navigable */}
-      <div
-        ref={treeRef}
+      <Tree
+        aria-label="Changed files tree"
         className="file-tree"
-        role="tree"
-        onKeyDown={handleTreeKeyDown}
+        selectionMode="single"
+        selectionBehavior="replace"
+        selectedKeys={selectedKeys}
+        onSelectionChange={(keys) => {
+          if (keys === 'all') return;
+          const first = keys.values().next().value;
+          if (first !== undefined) handleAction(first);
+        }}
+        // react-aria's Tree fires onAction on Enter/double-click; for our single-click
+        // semantics we route through onSelectionChange. Folder rows toggle expansion
+        // there; files select. Chevron Button still toggles via expandedKeys.
+        onAction={handleAction}
+        expandedKeys={expandedKeys}
+        onExpandedChange={(keys) => {
+          handleExpandedChange(keys);
+        }}
+        disallowEmptySelection={false}
       >
-        {/* PR Description entry - shown if filter matches or no filter */}
-        {(!filterText.trim() || 'pull request description'.includes(filterText.toLowerCase())) && (
-          <div
-            className={`tree-item file ${isDescriptionSelected ? 'selected' : ''}`}
-            role="treeitem"
-            onClick={() => selectFile(PR_DESCRIPTION_INDEX)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                selectFile(PR_DESCRIPTION_INDEX);
-              }
-            }}
-            tabIndex={0}
-            aria-current={isDescriptionSelected ? 'location' : undefined}
-            aria-label="Pull Request Description"
+        {showPrDescription ? (
+          <TreeItem
+            id={PR_DESCRIPTION_KEY}
+            textValue="Pull Request Description"
+            className={({ isSelected }) => `tree-item file ${isSelected ? 'selected' : ''}`}
           >
-            <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }} aria-hidden="true">
-              PR
-            </span>
-            <span className="tree-label" aria-hidden="true">Pull Request Description</span>
-          </div>
-        )}
-        {groupedFiles.map(({ folder, files: folderFiles }) => {
-          const isCollapsed = collapsedFolders.has(folder);
-          return (
-            <div key={folder} role="group" aria-label={`Folder ${folder}`}>
-              {/* Folder header */}
-              <div
-                className={`tree-item folder ${!isCollapsed ? 'expanded' : ''}`}
-                role="treeitem"
-                aria-expanded={!isCollapsed}
-                aria-label={folder}
-                onClick={() => toggleFolder(folder)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleFolder(folder);
-                  }
-                }}
-                tabIndex={0}
-              >
-                <span className="tree-toggle" role="presentation" aria-hidden="true" />
-                <span className="tree-label" role="presentation" aria-hidden="true">{folder}</span>
-              </div>
-              {/* Files in folder */}
-              {!isCollapsed &&
-                folderFiles.map((file) => (
-                  <FileListItem
-                    key={file.filename}
-                    file={file}
-                    isSelected={file.originalIndex === selectedFileIndex}
-                    onClick={() => selectFile(file.originalIndex)}
-                    displayName={getBasename(file.filename)}
-                    indent={1}
-                  />
-                ))}
-            </div>
-          );
-        })}
-      </div>
+            <TreeItemContent>
+              <span className="change-type" style={{ backgroundColor: 'var(--toggle-btn-toggled)' }} aria-hidden="true">PR</span>
+              <span className="tree-label" aria-hidden="true">Pull Request Description</span>
+            </TreeItemContent>
+          </TreeItem>
+        ) : null}
+        <Collection items={groupedFiles}>
+          {(group) => (
+            <TreeItem
+              id={folderKey(group.folder)}
+              textValue={group.folder}
+              className={({ isExpanded }) => `tree-item folder ${isExpanded ? 'expanded' : ''}`}
+            >
+              <TreeItemContent>
+                <RAButton
+                  slot="chevron"
+                  className="tree-toggle"
+                  aria-label={`Toggle ${group.folder}`}
+                />
+                <span className="tree-label" role="presentation" aria-hidden="true">{group.folder}</span>
+              </TreeItemContent>
+              <Collection items={group.files}>
+                {(file) => (
+                  <TreeItem
+                    id={fileKey(file)}
+                    textValue={getBasename(file.filename)}
+                    className={({ isSelected }) => `tree-item file indent-1 ${isSelected ? 'selected' : ''}`}
+                    aria-label={`${getBasename(file.filename)}, ${CHANGE_TYPE_LABELS[file.status]}, ${String(file.additions)} additions, ${String(file.deletions)} deletions`}
+                  >
+                    <TreeItemContent>
+                      <span className="tree-label" title={file.filename} aria-hidden="true">
+                        {getBasename(file.filename)}
+                      </span>
+                      <span className="line-counts" aria-hidden="true">
+                        {file.additions > 0 && <span className="additions">+{file.additions}</span>}
+                        {file.deletions > 0 && <span className="deletions">−{file.deletions}</span>}
+                      </span>
+                      <span className={`change-type ${CHANGE_TYPE_CLASSES[file.status]}`} aria-hidden="true">
+                        {CHANGE_TYPE_ICONS[file.status]}
+                      </span>
+                    </TreeItemContent>
+                  </TreeItem>
+                )}
+              </Collection>
+            </TreeItem>
+          )}
+        </Collection>
+      </Tree>
     </nav>
   );
 }

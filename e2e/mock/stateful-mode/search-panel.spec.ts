@@ -131,7 +131,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content to load using playwright-codemirror
@@ -177,7 +177,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content to load using playwright-codemirror
@@ -218,7 +218,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file to open diff
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content

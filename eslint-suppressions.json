@@ -183,16 +183,6 @@
       "count": 1
     }
   },
-  "src/features/diff/components/FileList.tsx": {
-    "jsx-a11y/role-has-required-aria-props": {
-      "count": 2
-    }
-  },
-  "src/features/diff/components/FileListItem.tsx": {
-    "jsx-a11y/role-has-required-aria-props": {
-      "count": 1
-    }
-  },
   "src/features/diff/hooks/pipeline/useDiffSource.ts": {
     "react-hooks/exhaustive-deps": {
       "count": 1
