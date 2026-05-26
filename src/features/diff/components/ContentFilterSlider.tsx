@@ -43,10 +43,25 @@ export function ContentFilterSlider({ value, onChange }: ContentFilterSliderProp
     }
   }, [onChange]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    updatePositionFromMouse(e.clientX);
+  // Capture-phase listener: react-aria's <Radio> wraps the input in a label whose
+  // usePress handler calls stopPropagation on mousedown to suppress text selection
+  // and dedup parent press handlers. That kills bubble-phase onMouseDown on the
+  // track, breaking drag whenever the pointer starts on a Radio (i.e. most of the
+  // slider). Capture-phase listener fires before Radio's handler runs.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+      updatePositionFromMouse(e.clientX);
+    };
+
+    track.addEventListener('mousedown', handleMouseDown, { capture: true });
+    return () => {
+      track.removeEventListener('mousedown', handleMouseDown, { capture: true });
+    };
   }, [updatePositionFromMouse]);
 
   useEffect(() => {
@@ -80,7 +95,6 @@ export function ContentFilterSlider({ value, onChange }: ContentFilterSliderProp
         ref={trackRef}
         className="content-filter-track"
         title={dragHints[value]}
-        onMouseDown={handleMouseDown}
       >
         {/* Color indicators: red (left/deletions) and green (right/additions) */}
         <span className="content-filter-indicator content-filter-indicator-left" aria-hidden="true" />
