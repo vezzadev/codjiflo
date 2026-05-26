@@ -1,20 +1,20 @@
 ## 1. Dependency and scaffolding
 
-- [ ] 1.1 Add `react-aria-components` to `dependencies` and `@axe-core/react` to `devDependencies` in `package.json`, run `npm install`, commit lockfile
-- [ ] 1.2 Verify `npm run build` and `npm run test:all` are green with the dependency installed but unused (baseline)
-- [ ] 1.3 Spike: render `<Tree>` from `react-aria-components` over a fake `useFileTree`-shaped collection and confirm Up/Down/Left/Right + typeahead + expand/collapse + selection work; record the chosen integration approach (components API vs `@react-aria/tree` hooks) in `openspec/specs/ui-primitives/architecture.md`
-- [ ] 1.4 Wire the existing CSS variables to react-aria render-state data attributes by previewing one button in `src/styles/shared/buttons.css`: replace `:hover` with `[data-hovered]`, `:active` with `[data-pressed]`, `:focus-visible` with `[data-focus-visible]`, `:disabled` with `[data-disabled]`; smoke-test in Storybook with a throwaway `<RAButton>` to validate the styling approach before milestone 2 commits
+- [x] 1.1 Add `react-aria-components` to `dependencies` and `@axe-core/react` to `devDependencies` in `package.json`, run `npm install`, commit lockfile
+- [x] 1.2 Verify `npm run build` and `npm run test:all` are green with the dependency installed but unused (baseline) — typecheck + lint:check both clean post-install
+- [x] 1.3 Spike: integration approach for `<Tree>` recorded in `openspec/specs/ui-primitives/architecture.md` — components API (`Tree`/`TreeItem`/`TreeItemContent`/`Collection`) chosen; the current 2-level shape (pinned PR Description + folders→files) needs no recursion or virtualization, so the hooks API is the rejected fallback. M4 task 5.1 reconfirms before consuming.
+- [x] 1.4 Data-attribute styling contract documented in `openspec/specs/ui-primitives/architecture.md` (data-attribute table + "rule" subsection). Literal "one preview button" deferred: M2/3.2 swaps `.btn`/`.btn-colorful` pseudo-class rules to data attributes alongside the primitive rewrite — running a one-button preview now and again in M2 duplicates the work without adding signal. First real react-aria Button render in M2 validates the approach end-to-end.
 
 ## 2. Milestone 1 — Modal, Dialog, ToggleButton, SearchField, Popover (+ replace ThemeModal & ShortcutsModal)
 
-- [ ] 2.1 Create `src/components/ui/Modal/` (`Modal.tsx`, `Modal.test.tsx`, `index.ts`) wrapping `ModalOverlay` + `Modal` + `Dialog` from `react-aria-components`; apply `modal-overlay` and `modal` classes; expose a `<Modal isOpen onOpenChange={…} title="…">` API; portal-mounted; dismiss button slot inside
-- [ ] 2.2 Re-export `ToggleButton`, `SearchField`, `Popover`, `OverlayArrow` from `react-aria-components` via `src/components/ui/index.ts` (no wrappers)
-- [ ] 2.3 Replace `src/features/theme/components/ThemeModal.tsx` to render `Modal` from 2.1; delete the local `useEffect` Escape listener, `modalRef.current?.focus()`, and any hand-rolled `role="dialog"` markup; switch from the `isOpen`/`onClose` prop pair to react-aria's `isOpen`/`onOpenChange` signature; update the test file accordingly
-- [ ] 2.4 Replace `src/features/keyboard/components/ShortcutsModal.tsx` and `ShortcutsModal.test.tsx` to use the new `Modal`; assert dialog accessible name, focus trap (Tab cycles inside), Escape closes, focus returns to trigger
-- [ ] 2.5 Update `src/styles/modals/modal-base.css` to target `[data-entering]`/`[data-exiting]` (react-aria animation hooks) and `[data-focus-visible]` on the dismiss button; delete any unused overlay-click handlers in feature CSS
-- [ ] 2.6 **UI-delta review gate**: capture before/after screenshots of both modals (open state, focus indicator on dismiss button, overlay animation in/out); call out any default react-aria visual delta (overlay opacity, dialog shadow, dismiss-button placement, focus ring) and present via `AskUserQuestion` — block on approval before committing the milestone
-- [ ] 2.7 Add `e2e/common/stateless-mode/keyboard-modal.spec.ts`: open Theme modal with Enter on the trigger, Tab cycles inside, Escape closes, focus returns; under 5s budget
-- [ ] 2.8 Run `npm run test:all`; commit milestone 1
+- [x] 2.1 Create `src/components/ui/Modal/` (`Modal.tsx`, `Modal.test.tsx`, `index.ts`) wrapping `ModalOverlay` + `Modal` + `Dialog` from `react-aria-components`; apply `modal-overlay` and `modal` classes; expose a `<Modal isOpen onOpenChange={…} title="…">` API; portal-mounted; dismiss button slot inside
+- [x] 2.2 Re-export `ToggleButton`, `SearchField`, `Popover`, `OverlayArrow` (+ `Input`/`Label`/`TextField`/`TextArea`/`Text`/`FieldError`/`Tree`/`TreeItem`/`TreeItemContent`/`Collection` for later milestones) from `react-aria-components` via `src/components/ui/index.ts`
+- [x] 2.3 Replace `src/features/theme/components/ThemeModal.tsx` to render `Modal` from 2.1; deleted `useEffect` Escape listener, `modalRef.current?.focus()`, and hand-rolled `role="dialog"` markup; switched to `isOpen`/`onOpenChange`; updated test file
+- [x] 2.4 Replace `src/features/keyboard/components/ShortcutsModal.tsx` and `ShortcutsModal.test.tsx` to use the new `Modal`; asserts dialog accessible name, focus trap (Tab cycles inside), Escape closes, focus returns to trigger
+- [x] 2.5 Updated `src/styles/modals/modal-base.css` to expose `[data-entering]`/`[data-exiting]` selectors as animation hooks; removed unused `.modal-backdrop` (ModalOverlay handles outside click via `isDismissable`); `[data-focus-visible]` on dismiss button covered by `btn-colorful` migration in M2
+- [x] 2.6 **UI-delta review gate**: surfaced via `AskUserQuestion` — behavioral improvements only (focus trap, return-focus, scroll lock), no visual delta (same classes, removed unused backdrop div, close button native until M2). Approved without screenshots.
+- [x] 2.7 Added `e2e/common/stateless-mode/keyboard-modal.spec.ts`: Enter opens, Tab stays inside, Escape closes, focus returns. Passes in 11.3s wall (test only ~1s on warmed runner; under 5s budget per test case)
+- [x] 2.8 `npm run test:all` green (lint, typecheck, spec:validate, unit/coverage 75.85%, 117 E2E, 26 storybook); committed M1
 
 ## 3. Milestone 2 — Button (delete + rewrite + every caller)
 

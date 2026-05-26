@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
 import { useThemeStore, Theme, DiffColorScheme } from '../stores/useThemeStore';
+import { Modal } from '@/components/ui';
 
 interface ThemeModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onOpenChange: (isOpen: boolean) => void;
 }
 
 const UI_THEMES: { value: Theme; label: string }[] = [
@@ -24,7 +24,6 @@ const DIFF_SCHEMES: { value: DiffColorScheme; label: string; description?: strin
   { value: 'codeflow-redgreen', label: 'CodeFlow Red/Green' },
 ];
 
-// Generate diff class name (same logic as ThemeProvider)
 function getDiffClassName(theme: Theme, scheme: DiffColorScheme, useHighContrast: boolean): string {
   const themeSuffix = theme === 'high-contrast' ? 'dark' : theme;
   const hcSuffix = useHighContrast ? '-hc' : '';
@@ -80,123 +79,91 @@ function DiffPreview({ diffClassName, label, selected, onSelect }: DiffPreviewPr
   );
 }
 
-export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+export function ThemeModal({ isOpen, onOpenChange }: ThemeModalProps) {
   const { theme, diffColorScheme, useHighContrastDiff, setTheme, setDiffColorScheme, setUseHighContrastDiff } = useThemeStore();
-
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    document.addEventListener('keydown', handleKeyDown);
-    modalRef.current?.focus();
-
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleKeyDown]);
-
-  if (!isOpen) return null;
 
   const regularClassName = getDiffClassName(theme, diffColorScheme, false);
   const hcClassName = getDiffClassName(theme, diffColorScheme, true);
 
   return (
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="theme-modal-title"
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      title="Appearance Settings"
+      className="theme-modal-content"
     >
-      <div
-        className="modal-backdrop"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {({ close }) => (
+        <>
+          <div className="theme-modal-columns">
+            <div className="theme-modal-section">
+              <h3 className="theme-modal-section-title">UI Theme</h3>
+              <div className="theme-modal-options">
+                {UI_THEMES.map((option) => (
+                  <label key={option.value} className="theme-option">
+                    <input
+                      type="radio"
+                      name="ui-theme"
+                      value={option.value}
+                      checked={theme === option.value}
+                      onChange={() => setTheme(option.value)}
+                    />
+                    <span className="theme-option-label">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        className="modal-content theme-modal-content"
-      >
-        <h2 id="theme-modal-title" className="modal-title">
-          Appearance Settings
-        </h2>
-
-        <div className="theme-modal-columns">
-          {/* UI Theme Column */}
-          <div className="theme-modal-section">
-            <h3 className="theme-modal-section-title">UI Theme</h3>
-            <div className="theme-modal-options">
-              {UI_THEMES.map((option) => (
-                <label key={option.value} className="theme-option">
-                  <input
-                    type="radio"
-                    name="ui-theme"
-                    value={option.value}
-                    checked={theme === option.value}
-                    onChange={() => setTheme(option.value)}
-                  />
-                  <span className="theme-option-label">{option.label}</span>
-                </label>
-              ))}
+            <div className="theme-modal-section">
+              <h3 className="theme-modal-section-title">Diff Colors</h3>
+              <div className="theme-modal-options">
+                {DIFF_SCHEMES.map((option) => (
+                  <label key={option.value} className="theme-option">
+                    <input
+                      type="radio"
+                      name="diff-scheme"
+                      value={option.value}
+                      checked={diffColorScheme === option.value}
+                      onChange={() => setDiffColorScheme(option.value)}
+                    />
+                    <span className="theme-option-label">
+                      {option.label}
+                      {option.description && (
+                        <span className="theme-option-description">
+                          {option.description}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Diff Colors Column */}
-          <div className="theme-modal-section">
-            <h3 className="theme-modal-section-title">Diff Colors</h3>
-            <div className="theme-modal-options">
-              {DIFF_SCHEMES.map((option) => (
-                <label key={option.value} className="theme-option">
-                  <input
-                    type="radio"
-                    name="diff-scheme"
-                    value={option.value}
-                    checked={diffColorScheme === option.value}
-                    onChange={() => setDiffColorScheme(option.value)}
-                  />
-                  <span className="theme-option-label">
-                    {option.label}
-                    {option.description && (
-                      <span className="theme-option-description">
-                        {option.description}
-                      </span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
+          <h3 className="theme-modal-section-title theme-modal-preview-title">Contrast</h3>
+          <div className="theme-modal-previews">
+            <DiffPreview
+              diffClassName={regularClassName}
+              label="Regular"
+              selected={!useHighContrastDiff}
+              onSelect={() => setUseHighContrastDiff(false)}
+            />
+            <DiffPreview
+              diffClassName={hcClassName}
+              label="High Contrast"
+              selected={useHighContrastDiff}
+              onSelect={() => setUseHighContrastDiff(true)}
+            />
           </div>
-        </div>
 
-        {/* Preview Section - Two panels */}
-        <h3 className="theme-modal-section-title theme-modal-preview-title">Contrast</h3>
-        <div className="theme-modal-previews">
-          <DiffPreview
-            diffClassName={regularClassName}
-            label="Regular"
-            selected={!useHighContrastDiff}
-            onSelect={() => setUseHighContrastDiff(false)}
-          />
-          <DiffPreview
-            diffClassName={hcClassName}
-            label="High Contrast"
-            selected={useHighContrastDiff}
-            onSelect={() => setUseHighContrastDiff(true)}
-          />
-        </div>
-
-        <button
-          onClick={onClose}
-          className="btn-colorful modal-close-btn"
-        >
-          Close
-        </button>
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={close}
+            className="btn-colorful modal-close-btn"
+          >
+            Close
+          </button>
+        </>
+      )}
+    </Modal>
   );
 }

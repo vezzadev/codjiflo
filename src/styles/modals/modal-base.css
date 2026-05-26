@@ -1,5 +1,5 @@
 /* ============================================
-   MODAL OVERLAY
+   MODAL OVERLAY (react-aria ModalOverlay)
    ============================================ */
 .modal-overlay {
   position: fixed;
@@ -14,6 +14,18 @@
   z-index: 1000;
 }
 
+/* react-aria animation hooks — currently no animations, but the selectors
+   exist so future motion can be added without touching component code. */
+.modal-overlay[data-entering] {
+  /* hook for fade-in */
+}
+.modal-overlay[data-exiting] {
+  /* hook for fade-out */
+}
+
+/* ============================================
+   MODAL CONTENT (react-aria Modal)
+   ============================================ */
 .modal-content {
   background-color: var(--main-bg);
   border: 4px solid var(--accent);
@@ -22,13 +34,11 @@
   overflow: auto;
 }
 
-.modal-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
+.modal-content[data-entering] {
+  /* hook for slide/scale-in */
+}
+.modal-content[data-exiting] {
+  /* hook for slide/scale-out */
 }
 
 .modal-title {

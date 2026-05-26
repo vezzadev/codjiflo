@@ -243,7 +243,7 @@ function PullRequestContent({ params }: PRPageProps) {
 
       <ShortcutsModal
         isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
+        onOpenChange={setShowShortcuts}
       />
     </AppShell>
   );
