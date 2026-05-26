@@ -205,3 +205,19 @@ approved deltas, by milestone:
   to `.content-filter-option[data-selected] .content-filter-thumb { display: flex; }`
   (the same `[data-selected]` rule documented above). Storybook regression test added at
   `src/features/diff/components/ContentFilterSlider.stories.tsx`.
+- **M7 (axe sweep, including the `axe-main-ux.spec.ts` regression gate):** `BottomPane` switched from hand-rolled tab divs to
+  `Tabs`+`TabList`+`Tab`+`TabPanel`; the visible deltas are (a) the inactive tab now uses
+  `[data-hovered]` instead of `:hover:not(.active)`, (b) the active panel is the only one
+  in the DOM (react-aria only renders the selected `TabPanel`), and (c) the active tab now
+  shows a keyboard-only focus ring via `[data-focus-visible]`. The pane is now an ARIA
+  `region` landmark named "Discussion" via `useLandmark`. The PR page gained a
+  visually-hidden `<h1>` placed inside `<main>`; the previously-visible `pr-title` in
+  `PRMetadata` was demoted to `<h2>` to keep exactly one `<h1>` per page (visual styling
+  identical via the unchanged `.pr-title` class). The CodeMirror editor's `.cm-content`
+  (`role="textbox"`) now carries an `aria-label="Diff for <path>"` (or
+  `(original)` / `(modified)` in split view), set via `EditorView.contentAttributes`.
+  Residual axe violations after the sweep: `color-contrast` (palette decisions, tracked in
+  `ui-shell`) and `.cm-scroller` `scrollable-region-focusable` (CodeMirror-internal; the
+  editor already exposes its own accessible name). `e2e/mock/stateless-mode/axe-main-ux.spec.ts`
+  runs axe-core against both the description view and the diff-editor view; the allow-list
+  excludes only those two residual rules so any new serious/critical violation fails CI.

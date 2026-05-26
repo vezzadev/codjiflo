@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useRef } from 'react';
+import { Tabs, TabList, Tab, TabPanel, useLandmark } from '@/components/ui';
 
 interface TabConfig {
   id: string;
@@ -15,46 +16,46 @@ interface BottomPaneProps {
 }
 
 /**
- * Bottom pane with tabbed content (Comments, Activity, Search Results)
+ * Bottom pane with tabbed content (Comments, Activity, Search Results).
+ * Registered as an ARIA "region" landmark via useLandmark so F6 cycles to it.
  */
 export function BottomPane({ tabs, defaultTab, height }: BottomPaneProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '');
+  const landmarkRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'region', 'aria-label': 'Discussion' },
+    landmarkRef,
+  );
 
   if (tabs.length === 0) {
     return null;
   }
 
-  const activeTabContent = tabs.find((tab) => tab.id === activeTab)?.content;
+  const initialTab = defaultTab ?? tabs[0]?.id ?? '';
 
   return (
-    <div className="bottom-pane" id="bottomPane" style={height ? { height } : undefined}>
-      <div className="tabs">
-        <div className="tab-list" role="tablist">
+    <div
+      {...landmarkProps}
+      ref={landmarkRef}
+      className="bottom-pane"
+      id="bottomPane"
+      style={height ? { height } : undefined}
+    >
+      <Tabs className="tabs" defaultSelectedKey={initialTab}>
+        <TabList className="tab-list" aria-label="Discussion tabs">
           {tabs.map((tab) => (
-            <div
-              key={tab.id}
-              className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setActiveTab(tab.id);
-                }
-              }}
-            >
+            <Tab key={tab.id} id={tab.id} className="tab-item">
               {tab.label}
-            </div>
+            </Tab>
+          ))}
+        </TabList>
+        <div className="tab-content">
+          {tabs.map((tab) => (
+            <TabPanel key={tab.id} id={tab.id} className="tab-panel">
+              {tab.content}
+            </TabPanel>
           ))}
         </div>
-        <div className="tab-content">
-          <div className="tab-panel active" role="tabpanel">
-            {activeTabContent}
-          </div>
-        </div>
-      </div>
+      </Tabs>
     </div>
   );
 }

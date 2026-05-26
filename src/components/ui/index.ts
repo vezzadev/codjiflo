@@ -17,4 +17,9 @@ export {
   TreeItem,
   TreeItemContent,
   Collection,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanel,
 } from 'react-aria-components';
+export { useLandmark } from 'react-aria';

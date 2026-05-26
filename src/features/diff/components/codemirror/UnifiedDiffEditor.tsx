@@ -90,6 +90,8 @@ export interface UnifiedDiffEditorProps {
   onMountDraft?: (lineIndex: number, container: HTMLElement) => void;
   /** Portal callback: called when draft widget unmounts */
   onUnmountDraft?: () => void;
+  /** Path of the file being viewed; used for the editor's accessible name */
+  filename?: string;
 }
 
 export interface UnifiedDiffEditorHandle {
@@ -136,6 +138,7 @@ export const UnifiedDiffEditor = forwardRef<UnifiedDiffEditorHandle, UnifiedDiff
       onUnmountThread,
       onMountDraft,
       onUnmountDraft,
+      filename,
     },
     ref
   ) {
@@ -368,6 +371,7 @@ export const UnifiedDiffEditor = forwardRef<UnifiedDiffEditorHandle, UnifiedDiff
           readOnly
           height={`${containerHeight}px`}
           onViewReady={handleViewReady}
+          {...(filename ? { ariaLabel: `Diff for ${filename}` } : {})}
         />
 
         {/* React portals for comment threads would be rendered here */}

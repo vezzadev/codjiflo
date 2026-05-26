@@ -376,17 +376,23 @@
   color: var(--main-fg);
   cursor: pointer;
   transition: background-color 0.1s ease;
+  outline: none;
 }
 
-.tab-item:hover:not(.active) {
+.tab-item[data-hovered]:not([data-selected]) {
   background-color: var(--listheader-hover);
   color: var(--listheader-hover-text);
 }
 
-.tab-item.active {
+.tab-item[data-selected] {
   background-color: var(--main-bg);
   border-bottom: 1px solid var(--main-bg);
   z-index: 1;
+}
+
+.tab-item[data-focus-visible] {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 .tab-content {
@@ -396,11 +402,8 @@
   border-top: none;
 }
 
+/* react-aria only renders the active TabPanel; default to block layout */
 .tab-panel {
-  display: none;
-}
-
-.tab-panel.active {
   display: block;
 }
 

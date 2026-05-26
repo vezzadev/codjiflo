@@ -241,6 +241,7 @@ function PullRequestContent({ params }: PRPageProps) {
         </LeftPane>
 
         <MainContent>
+          <h1 className="sr-only">{`PR #${number}: ${prTitle}`}</h1>
           <DiffView />
         </MainContent>
       </div>

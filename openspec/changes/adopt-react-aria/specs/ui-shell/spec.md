@@ -1,3 +1,41 @@
+## ADDED Requirements
+
+### Requirement: Bottom Pane Tabs use react-aria
+The system SHALL render the bottom pane's tab strip using the `ui-primitives` `Tabs`, `TabList`, `Tab`, and `TabPanel` components (from `react-aria-components`). The tab list MUST support the standard react-aria keyboard model — Left and Right (or Up and Down for vertical orientation) move between tabs, Home and End jump to the first and last tab — and the active `TabPanel` MUST be focusable so a screen-reader user can move past the tab list into the panel content even when the panel has no inherently focusable children.
+
+#### Scenario: Keyboard navigation between tabs
+- **WHEN** the bottom-pane tab list has focus on the Comments tab
+- **THEN** pressing Right (or Down) moves focus to the Activity tab and switches the visible panel to Activity; pressing Left (or Up) moves it back; Home and End jump to the first and last tab respectively
+
+#### Scenario: Tab panel is reachable from the keyboard
+- **WHEN** the active tab panel has no focusable children (e.g. an empty Activity feed)
+- **THEN** the panel's rendered DOM exposes `tabindex="0"` (set automatically by `TabPanel`) so Tab from the tab list lands on the panel content, and axe's `scrollable-region-focusable` rule does not flag it
+
+### Requirement: Bottom Pane is a Landmark
+The system SHALL register the bottom pane (the surface that hosts the Comments and Activity tabs) as an ARIA landmark with `role="region"` and an `aria-label` of `"Discussion"`, using the `ui-primitives` `useLandmark` hook so the pane participates in F6 landmark cycling alongside the file-explorer navigation and the main content area.
+
+#### Scenario: F6 cycles to the discussion pane
+- **WHEN** the user is anywhere on a PR page and presses F6
+- **THEN** focus advances to the next landmark in document order; one of the stops is the bottom-pane discussion region whose accessible name is `"Discussion"`
+
+#### Scenario: All page content is inside a landmark
+- **WHEN** axe-core runs the `region` rule against the rendered PR page
+- **THEN** no top-level content sits outside a landmark (the bottom pane is no longer flagged)
+
+### Requirement: PR Page exposes a level-one heading
+The system SHALL render exactly one level-one heading (`<h1>`) on each PR page that identifies the pull request (e.g. `"PR #219: feat: store artifact ID in PR comment for direct download"`). The heading MAY be visually hidden via the existing `.sr-only` utility so the page chrome is unaffected; assistive technology MUST be able to discover and announce it.
+
+#### Scenario: Page has an h1
+- **WHEN** the PR page is rendered for a known PR
+- **THEN** the document contains a single `<h1>` whose text includes the PR number and title, and axe-core's `page-has-heading-one` rule passes
+
+### Requirement: Diff editor exposes an accessible name
+The system SHALL provide an `aria-label` on the CodeMirror editor surface (`.cm-content`, which carries `role="textbox"`) that names the file currently being viewed (e.g. `"Diff for src/foo.ts"`). The label MUST update when the user opens a different file.
+
+#### Scenario: Editor has an accessible name
+- **WHEN** the user opens `src/foo.ts` from the file explorer
+- **THEN** the CodeMirror editor's `aria-label` reads `"Diff for src/foo.ts"`, axe-core's `aria-input-field-name` rule passes, and switching to a different file updates the label without requiring a remount
+
 ## MODIFIED Requirements
 
 ### Requirement: File Explorer Keyboard Navigation
