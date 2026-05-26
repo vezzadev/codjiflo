@@ -145,16 +145,17 @@ Next.js 15 (App Router, Turbopack), React 19, TypeScript (strict), Custom CSS wi
 ### 1.1 "Feature-First" Directory Structure
 We use a **Feature-based** folder structure. Do not group by file type (e.g., do NOT put all components in `src/components`). Group by **Domain Feature**.
 
+Shared primitives in `src/components/` are thin wrappers (or direct re-exports) of `react-aria-components`. See [`openspec/specs/ui-primitives/architecture.md`](openspec/specs/ui-primitives/architecture.md) for which primitives we wrap vs. re-export, the data-attribute styling contract, and the `custom-rules/no-native-interactive-elements` lint rule that enforces the boundary.
+
 **Allowed Directory Tree**:
 ```text
 src/
 ├── api/                # Core API Clients (generic, not feature-specific)
 ├── components/         # SHARED, Dumb UI Components
-│   ├── Button/         # Form controls live at root level
-│   ├── Input/          # Each component in its own folder with
-│   ├── Textarea/       # <ComponentName>.tsx, index.ts, and tests
-│   ├── FormField/      # Stories added where applicable (not required)
-│   ├── ui/             # Atomic design elements (Badge, Skeleton)
+│   ├── Button/         # Thin wrapper over react-aria-components/Button
+│   ├── ui/             # Modal wrapper + re-exports of react-aria primitives
+│   │                   #   (TextField/Label/Input/TextArea/SearchField/Select/
+│   │                   #    RadioGroup/Checkbox/Tree/ToggleButton/Popover/...)
 │   └── layout/         # App shells, Sidebars
 ├── features/           # FUNCTIONAL DOMAINS
 │   ├── auth/           # Authentication Feature
@@ -321,5 +322,6 @@ Use these slash commands (skills) for any non-trivial spec work:
 - **Example**: `const pr = createMockPullRequest({ state: 'open' });`
 
 ### 4.7 Visual Component Usage
-- **No Native Elements**: Avoid using raw `<button>`, `<input>`, or `<select>` tags. Use the standardized components in `src/components/` (e.g., `<Button>`, `<Input>`) to maintain design consistency.
+- **No Native Interactive Elements**: Raw `<button>`, `<input>`, `<textarea>`, `<select>`, and `<dialog>` are banned inside `src/features/**`, `src/app/**`, and `*.stories.tsx` by the `custom-rules/no-native-interactive-elements` ESLint rule. Use the react-aria primitives instead: `<Button>` from `@/components`, or `Input`/`TextArea` inside `TextField`, `SearchField`+`Input`, `Select`+`ListBox`+`Popover`, and `<Modal>` from `@/components/ui`. See [`openspec/specs/ui-primitives/architecture.md`](openspec/specs/ui-primitives/architecture.md) for the full primitive catalog and the data-attribute styling contract.
+- **Event props**: react-aria-components use `onPress` not `onClick`, `isDisabled` not `disabled`, `isSelected` not `checked`. Don't add a bridge — the new API is the API.
 - **Icons**: Use `lucide-react` for icons. Do not import other icon libraries.

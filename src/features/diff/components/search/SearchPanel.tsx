@@ -15,7 +15,9 @@ import {
 import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery, openSearchPanel, closeSearchPanel } from '@codemirror/search';
+import { Checkbox } from 'react-aria-components';
 import { SearchField, Input } from '@/components/ui';
+import { Button } from '@/components/Button';
 import type { ViewMode, FocusedSide } from './useSearchPanel';
 import type { ContentFilter } from '../../types';
 import './search-go-to-panel.css';
@@ -337,56 +339,55 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
       </SearchField>
 
       <div className="diff-search-options">
-        <label className="diff-search-option">
-          <input
-            type="checkbox"
-            checked={options.caseSensitive}
-            onChange={() => handleOptionChange('caseSensitive')}
-            aria-label="Match case"
-          />
+        <Checkbox
+          className="diff-search-option"
+          isSelected={options.caseSensitive}
+          onChange={() => { handleOptionChange('caseSensitive'); }}
+          aria-label="Match case"
+        >
           <span>Match Case</span>
-        </label>
-        <label className="diff-search-option">
-          <input
-            type="checkbox"
-            checked={options.wholeWord}
-            onChange={() => handleOptionChange('wholeWord')}
-            aria-label="Whole word"
-          />
+        </Checkbox>
+        <Checkbox
+          className="diff-search-option"
+          isSelected={options.wholeWord}
+          onChange={() => { handleOptionChange('wholeWord'); }}
+          aria-label="Whole word"
+        >
           <span>Whole Word</span>
-        </label>
-        <label className="diff-search-option">
-          <input
-            type="checkbox"
-            checked={options.regexp}
-            onChange={() => handleOptionChange('regexp')}
-            aria-label="Regular expression"
-          />
+        </Checkbox>
+        <Checkbox
+          className="diff-search-option"
+          isSelected={options.regexp}
+          onChange={() => { handleOptionChange('regexp'); }}
+          aria-label="Regular expression"
+        >
           <span>Regex</span>
-        </label>
+        </Checkbox>
       </div>
 
       <div className="diff-search-nav">
-        <button
+        <Button
+          variant="ghost"
           type="button"
           className="diff-search-nav-btn"
-          onClick={handleFindPrevious}
-          disabled={!searchTerm}
+          onPress={handleFindPrevious}
+          isDisabled={!searchTerm}
           aria-label="Previous match"
           title="Previous match (Shift+F3)"
         >
           <ChevronUp size={14} />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
           className="diff-search-nav-btn"
-          onClick={handleFindNext}
-          disabled={!searchTerm}
+          onPress={handleFindNext}
+          isDisabled={!searchTerm}
           aria-label="Next match"
           title="Next match (F3)"
         >
           <ChevronDown size={14} />
-        </button>
+        </Button>
       </div>
 
       {matchCount !== null && (
@@ -397,15 +398,16 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
         </span>
       )}
 
-      <button
+      <Button
+        variant="ghost"
         type="button"
         className="btn diff-panel-close-btn"
-        onClick={onClose}
+        onPress={onClose}
         aria-label="Close"
         title="Close (Escape)"
       >
         <X size={14} />
-      </button>
+      </Button>
     </div>
   );
 }

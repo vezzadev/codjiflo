@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { MainContent } from './MainContent';
+import { Button } from '@/components/Button';
 
 const meta = {
   title: 'Layout/MainContent',
@@ -35,9 +36,9 @@ export const WithToolbar: Story = {
   args: {
     toolbar: (
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button className="btn btn-secondary">Unified</button>
-        <button className="btn btn-secondary">Split</button>
-        <button className="btn btn-secondary">Raw</button>
+        <Button variant="secondary">Unified</Button>
+        <Button variant="secondary">Split</Button>
+        <Button variant="secondary">Raw</Button>
       </div>
     ),
     children: (
@@ -76,11 +77,11 @@ export const WithToolbarAndNavBar: Story = {
     toolbar: (
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary">Unified</button>
-          <button className="btn btn-secondary">Split</button>
+          <Button variant="secondary">Unified</Button>
+          <Button variant="secondary">Split</Button>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-primary">Comment</button>
+          <Button variant="primary">Comment</Button>
         </div>
       </div>
     ),
@@ -131,8 +132,8 @@ export const WithScrollableContent: Story = {
   args: {
     toolbar: (
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button className="btn btn-secondary">Unified</button>
-        <button className="btn btn-secondary">Split</button>
+        <Button variant="secondary">Unified</Button>
+        <Button variant="secondary">Split</Button>
       </div>
     ),
     children: (

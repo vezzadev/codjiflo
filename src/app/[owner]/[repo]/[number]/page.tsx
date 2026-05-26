@@ -21,6 +21,7 @@ import {
   ResizeHandle,
 } from '@/components/layout';
 import { useLayoutStore } from '@/stores/useLayoutStore';
+import { Button } from '@/components/Button';
 
 interface PRPageProps {
   params: Promise<{
@@ -115,9 +116,14 @@ function PullRequestContent({ params }: PRPageProps) {
         <div className="diff-placeholder">
           <p style={{ color: 'var(--error-fg)', fontWeight: 'bold' }}>Invalid URL</p>
           <p style={{ color: 'var(--control-disabled-fg)' }}>Missing required parameters</p>
-          <button onClick={handleBackToDashboard} className="btn-link" style={{ marginTop: '16px' }}>
+          <Button
+            variant="ghost"
+            onPress={handleBackToDashboard}
+            className="btn-link"
+            style={{ marginTop: '16px' }}
+          >
             Back to Dashboard
-          </button>
+          </Button>
         </div>
       </AppShell>
     );
@@ -181,35 +187,38 @@ function PullRequestContent({ params }: PRPageProps) {
         title={prTitle}
         githubUrl={currentPR?.htmlUrl}
         leftContent={
-          <button
-            onClick={handleBackToDashboard}
+          <Button
+            variant="ghost"
+            onPress={handleBackToDashboard}
             className="btn-nav"
             aria-label="Back to dashboard"
             style={{ marginLeft: '8px' }}
           >
             <ArrowLeft size={16} />
-          </button>
+          </Button>
         }
         rightContent={
           <>
-            <button
-              onClick={() => setShowShortcuts(true)}
+            <Button
+              variant="ghost"
+              onPress={() => { setShowShortcuts(true); }}
               className="btn-nav"
               aria-label="Show keyboard shortcuts"
               style={{ marginRight: '8px' }}
             >
               <Keyboard size={16} />
-            </button>
+            </Button>
             {isAuthenticated ? (
-              <button
-                onClick={handleLogout}
+              <Button
+                variant="ghost"
+                onPress={handleLogout}
                 className="btn-nav"
                 title="Logout"
                 aria-label="Logout"
                 style={{ marginRight: '8px' }}
               >
                 <LogOut size={16} />
-              </button>
+              </Button>
             ) : (
               <a
                 href={`/login?returnPath=${encodeURIComponent(returnPath)}`}

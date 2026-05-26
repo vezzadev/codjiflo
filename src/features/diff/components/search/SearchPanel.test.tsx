@@ -239,34 +239,31 @@ describe('SearchPanel', () => {
     it('toggles Match Case checkbox', () => {
       render(<SearchPanel {...defaultProps} />);
 
-      const label = screen.getByText('Match Case');
-      const checkbox = label.previousElementSibling as HTMLInputElement;
+      const checkbox = screen.getByRole('checkbox', { name: 'Match case' });
 
-      expect(checkbox.checked).toBe(false);
+      expect(checkbox).not.toBeChecked();
       fireEvent.click(checkbox);
-      expect(checkbox.checked).toBe(true);
+      expect(checkbox).toBeChecked();
     });
 
     it('toggles Whole Word checkbox', () => {
       render(<SearchPanel {...defaultProps} />);
 
-      const label = screen.getByText('Whole Word');
-      const checkbox = label.previousElementSibling as HTMLInputElement;
+      const checkbox = screen.getByRole('checkbox', { name: 'Whole word' });
 
-      expect(checkbox.checked).toBe(false);
+      expect(checkbox).not.toBeChecked();
       fireEvent.click(checkbox);
-      expect(checkbox.checked).toBe(true);
+      expect(checkbox).toBeChecked();
     });
 
     it('toggles Regex checkbox', () => {
       render(<SearchPanel {...defaultProps} />);
 
-      const label = screen.getByText('Regex');
-      const checkbox = label.previousElementSibling as HTMLInputElement;
+      const checkbox = screen.getByRole('checkbox', { name: 'Regular expression' });
 
-      expect(checkbox.checked).toBe(false);
+      expect(checkbox).not.toBeChecked();
       fireEvent.click(checkbox);
-      expect(checkbox.checked).toBe(true);
+      expect(checkbox).toBeChecked();
     });
   });
 

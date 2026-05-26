@@ -51,25 +51,27 @@ function DashboardContent() {
         title="Dashboard"
         rightContent={
           isAuthenticated ? (
-            <button
-              onClick={handleLogout}
+            <Button
+              variant="ghost"
+              onPress={handleLogout}
               className="btn-nav"
               title="Logout"
               aria-label="Logout"
               style={{ marginRight: '8px' }}
             >
               <LogOut size={16} />
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleLogin}
+            <Button
+              variant="ghost"
+              onPress={handleLogin}
               className="btn-nav"
               title="Log in with GitHub"
               aria-label="Log in with GitHub"
               style={{ marginRight: '8px' }}
             >
               <LogIn size={16} />
-            </button>
+            </Button>
           )
         }
       />

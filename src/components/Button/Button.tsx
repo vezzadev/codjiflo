@@ -1,10 +1,10 @@
 import { Button as RAButton, type ButtonProps as RAButtonProps } from 'react-aria-components';
 
-export interface ButtonProps extends Omit<RAButtonProps, 'className' | 'style'> {
-  variant?: 'primary' | 'secondary';
+export interface ButtonProps extends Omit<RAButtonProps, 'className' | 'title'> {
+  variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'default' | 'sm' | 'icon';
   className?: string;
-  title?: string;
+  title?: string | undefined;
 }
 
 export function Button({
@@ -14,7 +14,9 @@ export function Button({
   children,
   ...rest
 }: ButtonProps) {
-  const variantClass = variant === 'primary' ? 'btn-colorful' : 'btn';
+  let variantClass = '';
+  if (variant === 'primary') variantClass = 'btn-colorful';
+  else if (variant === 'secondary') variantClass = 'btn';
   const sizeClass = size === 'icon' ? 'btn-icon' : '';
   const classes = [variantClass, sizeClass, className].filter(Boolean).join(' ');
 

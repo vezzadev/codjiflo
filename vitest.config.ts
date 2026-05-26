@@ -14,7 +14,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/tests/setup.ts"],
     onConsoleLog: () => false,
-    include: ["src/**/*.test.{ts,tsx}", "action/src/**/*.test.ts", "e2e/fixtures/**/*.test.ts", "packages/*/src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}", "action/src/**/*.test.ts", "e2e/fixtures/**/*.test.ts", "packages/*/src/**/*.test.ts", "eslint-rules/__tests__/**/*.test.{js,ts}"],
     exclude: [
       "node_modules/",
     ],

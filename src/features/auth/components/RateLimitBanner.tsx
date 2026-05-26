@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { useRateLimitWarning } from '../hooks/useRateLimitWarning';
 import { useAuthStore } from '../stores/useAuthStore';
 import { formatTimeUntil } from '@/utils/time';
+import { Button } from '@/components/Button';
 
 /**
  * Banner that warns users when GitHub API rate limit is running low.
@@ -61,13 +62,14 @@ export function RateLimitBanner() {
           </>
         )}
       </span>
-      <button
+      <Button
+        variant="ghost"
         className="rate-limit-banner-dismiss"
-        onClick={handleDismiss}
+        onPress={handleDismiss}
         aria-label="Dismiss rate limit warning"
       >
         <X size={14} />
-      </button>
+      </Button>
     </div>
   );
 }

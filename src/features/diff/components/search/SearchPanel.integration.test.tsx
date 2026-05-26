@@ -239,17 +239,16 @@ describe('SearchPanel Integration', () => {
       );
 
       // Toggle Match Case
-      const matchCaseLabel = screen.getByText('Match Case');
-      const checkbox = matchCaseLabel.previousElementSibling as HTMLInputElement;
+      const checkbox = screen.getByRole('checkbox', { name: 'Match case' });
       fireEvent.click(checkbox);
-      expect(checkbox.checked).toBe(true);
+      expect(checkbox).toBeChecked();
 
       // Type in search
       const input = screen.getByPlaceholderText('Find...');
       fireEvent.change(input, { target: { value: 'test' } });
 
       // Checkbox should still be checked
-      expect(checkbox.checked).toBe(true);
+      expect(checkbox).toBeChecked();
     });
   });
 

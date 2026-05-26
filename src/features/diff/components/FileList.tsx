@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback, useRef, type ChangeEvent, type KeyboardEvent } from 'react';
+import { useState, useMemo, useCallback, useRef, type KeyboardEvent } from 'react';
 import { Search, X } from 'lucide-react';
-import { Tree, TreeItem, TreeItemContent, Collection, Button as RAButton } from 'react-aria-components';
+import { Tree, TreeItem, TreeItemContent, Collection, Button as RAButton, SearchField, Input } from 'react-aria-components';
 import type { Selection, Key } from 'react-aria-components';
 import { useDiffStore, PR_DESCRIPTION_INDEX } from '../stores';
 import { useIterationAwareFiles } from '../hooks';
 import { groupFilesByFolder, getBasename } from '../utils';
 import { Skeleton } from '@/components/ui';
+import { Button } from '@/components/Button';
 import type { IterationAwareFile } from '../hooks';
 import { FileChangeStatus } from '@/api/types';
 
@@ -57,8 +58,8 @@ export function FileList() {
 
   const showPrDescription = !filterText.trim() || 'pull request description'.includes(filterText.toLowerCase());
 
-  const handleFilterChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setFilterText(e.target.value);
+  const handleFilterChange = useCallback((value: string) => {
+    setFilterText(value);
   }, []);
 
   const handleFilterKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
@@ -67,11 +68,6 @@ export function FileList() {
       filterInputRef.current?.blur();
     }
     e.stopPropagation();
-  }, []);
-
-  const clearFilter = useCallback(() => {
-    setFilterText('');
-    filterInputRef.current?.focus();
   }, []);
 
   const expandedKeys = useMemo<Set<Key>>(() => {
@@ -161,29 +157,25 @@ export function FileList() {
   return (
     <nav aria-label="Changed files">
       <div className="file-explorer-header">
-        <div className="file-explorer-filter-inline">
+        <SearchField
+          className="file-explorer-filter-inline"
+          value={filterText}
+          onChange={handleFilterChange}
+          aria-label="Filter files by name"
+        >
           <Search size={14} className="filter-icon" aria-hidden="true" />
-          <input
+          <Input
             ref={filterInputRef}
-            type="text"
             className="textbox file-filter-input"
             placeholder="Filter by file name"
-            value={filterText}
-            onChange={handleFilterChange}
             onKeyDown={handleFilterKeyDown}
-            aria-label="Filter files by name"
           />
           {filterText && (
-            <button
-              type="button"
-              className="btn-icon filter-clear"
-              onClick={clearFilter}
-              aria-label="Clear filter"
-            >
+            <Button variant="ghost" className="btn-icon filter-clear" aria-label="Clear filter">
               <X size={12} />
-            </button>
+            </Button>
           )}
-        </div>
+        </SearchField>
       </div>
       <Tree
         aria-label="Changed files tree"

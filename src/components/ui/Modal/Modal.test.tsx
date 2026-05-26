@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import axe from 'axe-core';
 import { Modal } from './Modal';
 
 function ControlledModal({ initialOpen = true, onOpenChangeSpy }: { initialOpen?: boolean; onOpenChangeSpy?: (open: boolean) => void }) {
@@ -83,5 +84,16 @@ describe('Modal', () => {
     // Close via Escape — react-aria FocusScope restores focus asynchronously
     await user.keyboard('{Escape}');
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('open dialog has no serious or critical axe violations', async () => {
+    const { container } = render(
+      <Modal isOpen={true} onOpenChange={vi.fn()} title="Settings">
+        <p>Body copy</p>
+      </Modal>
+    );
+    const results = await axe.run(container);
+    const serious = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+    expect(serious).toEqual([]);
   });
 });

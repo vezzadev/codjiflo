@@ -82,14 +82,15 @@ function LoginContent() {
               <span>or</span>
             </div>
 
-            <button
+            <Button
+              variant="ghost"
               type="button"
-              onClick={() => setShowPATSection(!showPATSection)}
+              onPress={() => { setShowPATSection(!showPATSection); }}
               className="btn-link"
               style={{ width: '100%', textAlign: 'center' }}
             >
               {showPATSection ? 'Hide' : 'Use'} Personal Access Token
-            </button>
+            </Button>
 
             {showPATSection && (
               <form onSubmit={handlePATSubmit} className="login-form">
