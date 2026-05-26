@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@/tests/helpers";
 import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { CommentEditor } from "./CommentEditor";
 
 describe("CommentEditor", () => {
@@ -109,10 +110,19 @@ describe("CommentEditor", () => {
   it("does not submit on Ctrl+Enter when value is empty", async () => {
     const onSubmit = vi.fn();
     render(<CommentEditor {...defaultProps} value="   " onSubmit={onSubmit} />);
-    
+
     const textarea = screen.getByLabelText("Add comment");
     await userEvent.type(textarea, "{Control>}{Enter}{/Control}");
-    
+
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("TextField composition has no serious or critical axe violations", async () => {
+    const { container } = render(<CommentEditor {...defaultProps} value="Hello" />);
+    const results = await axe.run(container);
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical"
+    );
+    expect(serious).toEqual([]);
   });
 });

@@ -148,7 +148,7 @@ index 1234567..abcdefg 100644
     await expect(searchPanel).toBeVisible();
 
     // Search for "original" - only exists on left side (3 matches)
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await expect(searchInput).toBeFocused();
     await searchInput.fill('original');
 

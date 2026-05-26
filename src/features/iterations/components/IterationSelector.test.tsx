@@ -364,7 +364,9 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       const tab2 = screen.getByTestId('iteration-tab-2');
+      // react-aria ToggleButton activates Enter via keyDown+keyUp
       fireEvent.keyDown(tab2, { key: 'Enter' });
+      fireEvent.keyUp(tab2, { key: 'Enter' });
 
       // Should select from base (0) to iteration 2's right snapshot (3)
       expect(mockSelectRange).toHaveBeenCalledWith(0, 3);
@@ -380,7 +382,9 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       const tab1 = screen.getByTestId('iteration-tab-1');
+      // react-aria ToggleButton activates Space via keyDown+keyUp
       fireEvent.keyDown(tab1, { key: ' ' });
+      fireEvent.keyUp(tab1, { key: ' ' });
 
       // Should select from base (0) to iteration 1's right snapshot (1)
       expect(mockSelectRange).toHaveBeenCalledWith(0, 1);
@@ -397,7 +401,9 @@ describe('IterationSelector', () => {
 
       const tab1 = screen.getByTestId('iteration-tab-1');
       fireEvent.keyDown(tab1, { key: 'Tab' });
+      fireEvent.keyUp(tab1, { key: 'Tab' });
       fireEvent.keyDown(tab1, { key: 'a' });
+      fireEvent.keyUp(tab1, { key: 'a' });
 
       expect(mockSelectRange).not.toHaveBeenCalled();
     });
@@ -707,7 +713,7 @@ describe('IterationSelector', () => {
       expect(tab2).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('tabs have title with date information', () => {
+    it('tabs have aria-label with iteration number and date information', () => {
       setupMockState({
         iterations: [createMockIteration(1)],
         selectedRange: { fromSnapshot: 0, toSnapshot: 1 },
@@ -717,8 +723,8 @@ describe('IterationSelector', () => {
       render(<IterationSelector />);
 
       const tab = screen.getByTestId('iteration-tab-1');
-      expect(tab).toHaveAttribute('title', expect.stringContaining('Iteration 1'));
-      expect(tab).toHaveAttribute('title', expect.stringContaining('Jan'));
+      expect(tab).toHaveAttribute('aria-label', expect.stringContaining('Iteration 1'));
+      expect(tab).toHaveAttribute('aria-label', expect.stringContaining('Jan'));
     });
   });
 });

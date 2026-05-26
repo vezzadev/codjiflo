@@ -11,18 +11,28 @@
   outline: none;
 }
 
+/* react-aria render-state data-attrs with pseudo-class fallback so plain
+   <input class="textbox"> keeps working until every caller is composed. */
+.textbox[data-hovered],
 .textbox:hover {
   border-color: var(--checkbox-border);
 }
 
+.textbox[data-focus-visible],
 .textbox:focus {
   border-color: var(--focus-border);
 }
 
+.textbox[data-disabled],
 .textbox:disabled {
   background-color: var(--control-disabled);
   color: var(--control-disabled-fg);
   border-color: var(--control-disabled-border);
+}
+
+.textbox[data-invalid],
+.textbox[aria-invalid='true'] {
+  border-color: var(--badge-merged, #d32f2f);
 }
 
 .textbox::placeholder {

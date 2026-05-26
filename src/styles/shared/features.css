@@ -563,13 +563,21 @@
   position: relative;
 }
 
+/* react-aria ToggleButton render-state data-attrs with pseudo-class fallback */
+.iteration-tab[data-hovered],
 .iteration-tab:hover {
   background-color: var(--btn-hover);
   color: var(--main-fg);
 }
 
+.iteration-tab[data-pressed],
 .iteration-tab:active {
   background-color: var(--btn-press);
+}
+
+.iteration-tab[data-focus-visible] {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 /* Selected tab (boundary of range) */

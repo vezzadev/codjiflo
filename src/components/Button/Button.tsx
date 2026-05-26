@@ -4,6 +4,7 @@ export interface ButtonProps extends Omit<RAButtonProps, 'className' | 'style'> 
   variant?: 'primary' | 'secondary';
   size?: 'default' | 'sm' | 'icon';
   className?: string;
+  title?: string;
 }
 
 export function Button({

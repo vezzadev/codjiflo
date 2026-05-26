@@ -146,7 +146,7 @@ index 1234567..abcdefg 100644
     await expect(searchPanel).toBeVisible();
 
     // Search for "modified" which only exists in right pane
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await searchInput.fill('modified');
 
     // Verify match count shows "(Right)" indicator
@@ -199,7 +199,7 @@ index 1234567..abcdefg 100644
     await expect(searchPanel).toBeVisible();
 
     // Search for "original" which only exists in left pane
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await searchInput.fill('original');
 
     // Verify match count shows "(Left)" indicator
@@ -251,7 +251,7 @@ index 1234567..abcdefg 100644
     const searchPanel = page.getByRole('dialog', { name: 'Find in diff' });
     await expect(searchPanel).toBeVisible();
 
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await searchInput.fill('function');
 
     // Verify shows "(Right)"
@@ -303,7 +303,7 @@ index 1234567..abcdefg 100644
     await expect(searchPanel).toBeVisible();
 
     // Search for "function"
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await searchInput.fill('function');
 
     // Verify match count does NOT show "(Left)" or "(Right)" indicator

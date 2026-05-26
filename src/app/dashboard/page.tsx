@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, LogIn } from 'lucide-react';
-import { Input } from '@/components/Input';
+import { TextField, Label, Input, FieldError } from '@/components/ui';
 import { Button } from '@/components/Button';
 import { parseGitHubPRUrl } from '@/features/pr';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
@@ -82,20 +82,27 @@ function DashboardContent() {
           </p>
 
           <form onSubmit={handleSubmit} className="dashboard-form">
-            <Input
-              id="pr-url"
-              label="GitHub Pull Request URL"
+            <TextField
               type="url"
               value={url}
-              onChange={(e) => {
-                setUrl(e.target.value);
+              onChange={(value) => {
+                setUrl(value);
                 if (error) setError('');
               }}
-              placeholder="https://github.com/owner/repo/pull/123"
-              error={error}
-              required
-              autoFocus
-            />
+              isInvalid={!!error}
+              isRequired
+              className="form-group"
+            >
+              <Label className="label">GitHub Pull Request URL</Label>
+              <Input
+                id="pr-url"
+                className="textbox"
+                placeholder="https://github.com/owner/repo/pull/123"
+                autoFocus
+                style={{ width: '100%' }}
+              />
+              {error && <FieldError>{error}</FieldError>}
+            </TextField>
 
             <Button type="submit" isDisabled={!url.trim()}>
               Load Pull Request

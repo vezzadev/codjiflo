@@ -162,21 +162,21 @@ describe('GoToLinePanel', () => {
     });
   });
 
-  describe('line number clamping', () => {
-    it('clamps line number to max when exceeding document lines', () => {
+  describe('line number validation', () => {
+    it('shows validation error when line exceeds document length', () => {
+      const onClose = vi.fn();
       const editorView = createMockEditorView(50);
-      render(<GoToLinePanel {...defaultProps} getActiveEditor={() => editorView} />);
+      render(<GoToLinePanel {...defaultProps} onClose={onClose} getActiveEditor={() => editorView} />);
 
       const input = screen.getByPlaceholderText('Line number');
       fireEvent.change(input, { target: { value: '100' } });
       fireEvent.keyDown(input, { key: 'Enter' });
 
-      // Should navigate to line 50 (max), not 100
-      expect(mockDispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          selection: { anchor: 490 }, // line 50 position: (50-1) * 10
-        })
-      );
+      // Out-of-range now reports an error and keeps the panel open;
+      // we no longer silently clamp.
+      expect(mockDispatch).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByText(/File only has 50 lines/i)).toBeInTheDocument();
     });
 
     it('does not navigate when line number is zero or negative', () => {

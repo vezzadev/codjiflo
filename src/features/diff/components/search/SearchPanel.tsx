@@ -11,11 +11,11 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
-  type ChangeEvent,
 } from 'react';
 import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { SearchQuery, setSearchQuery, findNext, findPrevious, getSearchQuery, openSearchPanel, closeSearchPanel } from '@codemirror/search';
+import { SearchField, Input } from '@/components/ui';
 import type { ViewMode, FocusedSide } from './useSearchPanel';
 import type { ContentFilter } from '../../types';
 import './search-go-to-panel.css';
@@ -222,8 +222,7 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
   }, [getActiveEditor]);
 
   const handleSearchChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const term = event.target.value;
+    (term: string) => {
       setSearchTerm(term);
       updateSearch(term, options);
     },
@@ -323,17 +322,19 @@ export function SearchPanel({ isOpen, onClose, getActiveEditor, viewMode, focuse
 
   return (
     <div className="diff-search-panel" role="dialog" aria-label="Find in diff">
-      <input
-        ref={inputRef}
-        type="text"
-        className="textbox diff-search-input"
-        placeholder="Find..."
+      <SearchField
         value={searchTerm}
         onChange={handleSearchChange}
-        onKeyDown={handleKeyDown}
-        autoComplete="off"
         aria-label="Search term"
-      />
+      >
+        <Input
+          ref={inputRef}
+          className="textbox diff-search-input"
+          placeholder="Find..."
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+        />
+      </SearchField>
 
       <div className="diff-search-options">
         <label className="diff-search-option">

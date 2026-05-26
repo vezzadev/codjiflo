@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useOAuthFlow, useRedirectIfAuthenticated } from '@/features/auth/hooks';
 import { isValidReturnPath } from '@/features/auth/utils/pkce';
-import { Input } from '@/components/Input';
+import { TextField, Label, Input, Text } from '@/components/ui';
 import { Button } from '@/components/Button';
 import { AppShell } from '@/components/layout';
 
@@ -93,18 +93,37 @@ function LoginContent() {
 
             {showPATSection && (
               <form onSubmit={handlePATSubmit} className="login-form">
-                <Input
-                  id="pat"
-                  label="Personal Access Token"
+                <TextField
                   type="password"
                   value={tokenInput}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  {...(error && { error })}
-                  disabled={isValidating}
-                  placeholder="ghp_xxxxxxxxxxxx or github_pat_xxxxxxxxxxxx"
-                  helperText="Your token must start with 'ghp_', 'github_pat_', or 'gho_'"
-                  required
-                />
+                  onChange={handleInputChange}
+                  isInvalid={!!error}
+                  isDisabled={isValidating}
+                  isRequired
+                  className="form-group"
+                >
+                  <Label className="label">Personal Access Token</Label>
+                  <Input
+                    id="pat"
+                    className="textbox"
+                    placeholder="ghp_xxxxxxxxxxxx or github_pat_xxxxxxxxxxxx"
+                    style={{ width: '100%' }}
+                  />
+                  {error ? (
+                    <Text
+                      slot="errorMessage"
+                      role="alert"
+                      aria-live="polite"
+                      style={{ marginTop: '4px', fontSize: '12px', color: 'var(--badge-merged, #d32f2f)' }}
+                    >
+                      {error}
+                    </Text>
+                  ) : (
+                    <Text slot="description" style={{ marginTop: '4px', fontSize: '12px', color: 'var(--control-disabled-fg)' }}>
+                      Your token must start with &apos;ghp_&apos;, &apos;github_pat_&apos;, or &apos;gho_&apos;
+                    </Text>
+                  )}
+                </TextField>
 
                 <Button
                   type="submit"

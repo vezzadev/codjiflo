@@ -4,9 +4,11 @@
  * Floating panel for jumping to a specific line number in the diff view.
  */
 
-import { useCallback, useEffect, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
+import { TextField, Label, Input, FieldError } from '@/components/ui';
+import { Button } from '@/components/Button';
 import './search-go-to-panel.css';
 
 export interface GoToLinePanelProps {
@@ -18,37 +20,44 @@ export interface GoToLinePanelProps {
   getActiveEditor: () => EditorView | null;
 }
 
-/**
- * Floating panel for go to line functionality.
- */
-export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePanelProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const lineInputRef = useRef<string>('');
+interface GoToLinePanelInnerProps {
+  onClose: () => void;
+  getActiveEditor: () => EditorView | null;
+}
 
-  // Clear and focus input when panel opens
+function GoToLinePanelInner({ onClose, getActiveEditor }: GoToLinePanelInnerProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [lineValue, setLineValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.value = '';
-      lineInputRef.current = '';
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
+    inputRef.current?.focus();
+  }, []);
 
   const goToLine = useCallback(() => {
-    const lineNumber = parseInt(lineInputRef.current, 10);
-    if (isNaN(lineNumber) || lineNumber < 1) return;
-
     const view = getActiveEditor();
     if (!view) return;
 
-    // Clamp to valid range
+    const trimmed = lineValue.trim();
+    if (!trimmed) {
+      setError('Enter a line number');
+      return;
+    }
+
+    const lineNumber = Number(trimmed);
+    if (!Number.isInteger(lineNumber) || lineNumber < 1) {
+      setError('Enter a positive integer');
+      return;
+    }
+
     const maxLine = view.state.doc.lines;
-    const targetLine = Math.min(Math.max(1, lineNumber), maxLine);
+    if (lineNumber > maxLine) {
+      setError(`File only has ${maxLine} lines`);
+      return;
+    }
 
-    // Get the line's position
-    const lineInfo = view.state.doc.line(targetLine);
+    const lineInfo = view.state.doc.line(lineNumber);
 
-    // Scroll to line and place cursor
     view.dispatch({
       selection: { anchor: lineInfo.from },
       scrollIntoView: true,
@@ -56,7 +65,7 @@ export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePane
 
     view.focus();
     onClose();
-  }, [getActiveEditor, onClose]);
+  }, [getActiveEditor, lineValue, onClose]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -71,47 +80,60 @@ export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePane
     [goToLine, onClose]
   );
 
-  const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    lineInputRef.current = event.target.value;
-  }, []);
-
-  if (!isOpen) return null;
+  const handleChange = useCallback((value: string) => {
+    setLineValue(value);
+    if (error) setError(null);
+  }, [error]);
 
   return (
     <div className="diff-goto-panel" role="dialog" aria-label="Go to line">
-      <label className="diff-goto-label" htmlFor="goto-line-input">
-        Go to Line:
-      </label>
-      <input
-        ref={inputRef}
-        id="goto-line-input"
-        type="text"
-        className="textbox diff-goto-input"
-        placeholder="Line number"
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        autoComplete="off"
-        inputMode="numeric"
-        pattern="[0-9]*"
-      />
-      <button
-        type="button"
-        className="btn diff-goto-go-btn"
-        onClick={goToLine}
+      <TextField
+        value={lineValue}
+        onChange={handleChange}
+        isInvalid={!!error}
+        className="diff-goto-field"
+      >
+        <Label className="diff-goto-label">Go to Line:</Label>
+        <Input
+          ref={inputRef}
+          className="textbox diff-goto-input"
+          placeholder="Line number"
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+          inputMode="numeric"
+          pattern="[0-9]*"
+        />
+        {error && <FieldError>{error}</FieldError>}
+      </TextField>
+      <Button
+        size="sm"
+        variant="secondary"
+        onPress={goToLine}
         aria-label="Go to line"
         title="Go to line (Enter)"
+        className="diff-goto-go-btn"
       >
         Go
-      </button>
-      <button
-        type="button"
-        className="btn diff-panel-close-btn"
-        onClick={onClose}
+      </Button>
+      <Button
+        size="icon"
+        variant="secondary"
+        onPress={onClose}
         aria-label="Close"
         title="Close (Escape)"
+        className="diff-panel-close-btn"
       >
         <X size={14} />
-      </button>
+      </Button>
     </div>
   );
+}
+
+/**
+ * Floating panel for go to line functionality.
+ * The Inner is keyed so each open is a fresh mount — no setState-in-effect needed.
+ */
+export function GoToLinePanel({ isOpen, onClose, getActiveEditor }: GoToLinePanelProps) {
+  if (!isOpen) return null;
+  return <GoToLinePanelInner onClose={onClose} getActiveEditor={getActiveEditor} />;
 }
