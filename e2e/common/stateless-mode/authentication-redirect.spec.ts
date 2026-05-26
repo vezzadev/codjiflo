@@ -57,7 +57,7 @@ test.describe("Redirect After Login", () => {
     );
 
     // PR content should be visible (indicates successful load)
-    await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
+    await expect(page.getByRole("row", { name: /Pull Request Description/i })).toBeVisible();
 
     // Click login button to authenticate (should preserve returnPath)
     await page.getByRole("link", { name: /Log in/i }).click();
@@ -84,7 +84,7 @@ test.describe("Redirect After Login", () => {
     );
 
     // PR content should still be visible
-    await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
+    await expect(page.getByRole("row", { name: /Pull Request Description/i })).toBeVisible();
 
     // Verify no app-level console errors during unauthenticated PR page load (S-4.1.5)
     // Filter out network 404s from unmocked API endpoints (expected in mock mode)

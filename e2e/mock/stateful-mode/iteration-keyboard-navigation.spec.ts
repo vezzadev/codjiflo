@@ -153,19 +153,19 @@ index 3334567..cbcdefg 100644
 
     // Click on file-a.txt (second file item after PR description)
     await fileItems.nth(1).click();
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to next file - should do nothing (already at last file)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go to previous - should go to PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go back to file-a.txt
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
   });
 
   test('s/w navigate through multiple visible files in iteration 2', async ({ page }) => {
@@ -194,31 +194,31 @@ index 3334567..cbcdefg 100644
 
     // Start at PR description
     await fileItems.first().click();
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to first file (file-b.txt)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to second file (file-c.txt)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' again - should stay on last file
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go back to file-b.txt
     await page.keyboard.press('w');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go back to PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' again - should stay on PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
   });
 
   test('default view (latest iteration) shows correct files and keyboard navigation works', async ({ page }) => {
@@ -242,27 +242,27 @@ index 3334567..cbcdefg 100644
 
     // Navigate through visible files with 's'
     await fileItems.first().click(); // Start at PR description
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
 
     // At last file, 's' does nothing
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
 
     // Navigate back with 'w'
     await page.keyboard.press('w');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // At PR description, 'w' does nothing
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-current', 'location');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
   });
 });

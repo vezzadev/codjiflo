@@ -167,11 +167,11 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileNav).toBeVisible();
 
     // PR Description should be the first entry in the file list
-    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    const prDescButton = fileNav.getByRole("row", { name: /Pull Request Description/i });
     await expect(prDescButton).toBeVisible();
 
     // PR Description should be selected by default
-    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
 
     if (isMockMode()) {
       // Main panel should show the PR title and metadata
@@ -195,8 +195,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileNav).toBeVisible();
 
     // Verify PR Description is selected initially
-    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
-    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+    const prDescButton = fileNav.getByRole("row", { name: /Pull Request Description/i });
+    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
 
     if (isMockMode()) {
       // Click on a file to switch to diff view
@@ -206,7 +206,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       await expect(page.getByRole("heading", { name: "e2e/app.spec.ts" })).toBeVisible();
 
       // PR Description should no longer be selected
-      await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+      await expect(prDescButton).not.toHaveAttribute("aria-selected", "true");
 
       // Verify diff content is visible
       const diffRegion = page.getByRole("region", { name: /Diff content/i });
@@ -218,7 +218,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
       if (allFileItems.length > 0) {
         await allFileItems[0]?.click();
         // PR Description should no longer be selected
-        await expect(prDescButton).not.toHaveAttribute("aria-current", "location");
+        await expect(prDescButton).not.toHaveAttribute("aria-selected", "true");
       }
     }
   });
@@ -307,7 +307,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileNav).toBeVisible();
 
     // Get PR Description button
-    const prDescButton = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    const prDescButton = fileNav.getByRole("row", { name: /Pull Request Description/i });
     await expect(prDescButton).toBeVisible();
 
     // Wait for file items to be visible
@@ -315,7 +315,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(fileItems.first()).toBeVisible();
 
     // PR Description should be selected by default
-    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
 
     // Click on the main content area to ensure keyboard shortcuts work without triggering navigation
     await page.locator(".main-content").click();
@@ -327,12 +327,12 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
     // The first file in display order should be selected
     // Both modes have vite.config.debug.ts in root "/" folder (comes first)
-    const firstFileInDisplayOrder = fileNav.getByRole("treeitem", { name: /vite\.config\.debug\.ts/ });
-    await expect(firstFileInDisplayOrder).toHaveAttribute("aria-current", "location");
+    const firstFileInDisplayOrder = fileNav.getByRole("row", { name: /vite\.config\.debug\.ts/ });
+    await expect(firstFileInDisplayOrder).toHaveAttribute("aria-selected", "true");
 
     // [AC-1.5.1] Press w to go back to PR Description (previous file)
     await page.keyboard.press("w");
-    await expect(prDescButton).toHaveAttribute("aria-current", "location");
+    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
   });
 
   test("Shortcuts modal opens with ? button", async ({ page }) => {

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Button, Textarea } from '@/components';
+import { Button } from '@/components';
+import { TextField, Label, TextArea } from '@/components/ui';
 
 interface CommentEditorProps {
   value: string;
@@ -36,27 +37,31 @@ export function CommentEditor({
 
   return (
     <div className="comment-editor">
-      <Textarea
-        label={label}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={4}
-        placeholder="Leave a comment"
-        onKeyDown={handleKeyDown}
-      />
+      <TextField value={value} onChange={onChange} className="form-group">
+        <Label className="label">{label}</Label>
+        <TextArea
+          rows={4}
+          placeholder="Leave a comment"
+          onKeyDown={handleKeyDown}
+          className="textbox textarea"
+          style={{ width: '100%' }}
+        />
+      </TextField>
       <div className="comment-editor-actions">
         <Button
-          label={isSubmitting ? `${submitLabel}...` : submitLabel}
-          onClick={onSubmit}
-          disabled={isSubmitting || value.trim().length === 0}
-        />
+          onPress={onSubmit}
+          isDisabled={isSubmitting || value.trim().length === 0}
+        >
+          {isSubmitting ? `${submitLabel}...` : submitLabel}
+        </Button>
         {onCancel && (
           <Button
-            label="Cancel"
             variant="secondary"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          />
+            onPress={onCancel}
+            isDisabled={isSubmitting}
+          >
+            Cancel
+          </Button>
         )}
         {isSubmitting && (
           <span

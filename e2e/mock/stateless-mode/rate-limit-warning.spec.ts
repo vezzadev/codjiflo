@@ -158,7 +158,7 @@ test.describe("Rate Limit Warning Banner (S-4.1.3)", () => {
 
     // Wait for the PR page to load
     await expect(
-      page.getByRole("heading", { name: /Test PR/i })
+      page.getByRole("heading", { name: /Test PR/i, level: 2 })
     ).toBeVisible();
 
     // Banner should appear with warning message
@@ -182,7 +182,7 @@ test.describe("Rate Limit Warning Banner (S-4.1.3)", () => {
     await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
 
     await expect(
-      page.getByRole("heading", { name: /Test PR/i })
+      page.getByRole("heading", { name: /Test PR/i, level: 2 })
     ).toBeVisible();
 
     const banner = page.getByRole("alert").filter({ hasText: "requests remaining" });

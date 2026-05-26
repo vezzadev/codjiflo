@@ -5,12 +5,12 @@ import { createMockReview } from '@/tests/factories';
 import { ReviewState } from '@/api/types';
 
 describe('PRMetadata', () => {
-  it('displays PR title as h1', () => {
+  it('displays PR title as a section heading', () => {
     const pr = createMockReview({ title: 'Feature: Add new button' });
 
     render(<PRMetadata pr={pr} />);
 
-    const heading = screen.getByRole('heading', { level: 1 });
+    const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveTextContent('Feature: Add new button');
   });
 

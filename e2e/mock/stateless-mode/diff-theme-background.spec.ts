@@ -86,7 +86,7 @@ test.describe("Diff Area Theme Background", () => {
     await expect(dialog).toBeVisible();
 
     // Switch to dark theme (use exact match to avoid ambiguity)
-    await dialog.getByRole("radio", { name: "Dark", exact: true }).click();
+    await dialog.getByText("Dark", { exact: true }).click();
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to dark theme color
@@ -117,7 +117,7 @@ test.describe("Diff Area Theme Background", () => {
     const dialog = page.getByRole("dialog", { name: "Appearance Settings" });
     await expect(dialog).toBeVisible();
 
-    await dialog.getByRole("radio", { name: "Black" }).click();
+    await dialog.getByText("Black", { exact: true }).click();
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to black theme color
@@ -150,7 +150,7 @@ test.describe("Diff Area Theme Background", () => {
     const dialog = page.getByRole("dialog", { name: "Appearance Settings" });
     await expect(dialog).toBeVisible();
 
-    await dialog.getByRole("radio", { name: "High Contrast", exact: true }).click();
+    await dialog.getByRole("radiogroup", { name: "UI Theme" }).getByText("High Contrast", { exact: true }).click();
     await dialog.getByRole("button", { name: "Close" }).click();
 
     // Verify background changed to high contrast theme color

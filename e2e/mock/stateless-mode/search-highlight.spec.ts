@@ -83,7 +83,7 @@ test.describe("Search Match Highlighting", () => {
     await expect(searchPanel).toBeVisible();
 
     // Search for "hello" which appears multiple times
-    const searchInput = searchPanel.getByRole("textbox", {
+    const searchInput = searchPanel.getByRole("searchbox", {
       name: /Search term/i,
     });
     await searchInput.fill("hello");
@@ -127,7 +127,7 @@ test.describe("Search Match Highlighting", () => {
     await expect(searchPanel).toBeVisible();
 
     // Search for "hello" which appears multiple times
-    const searchInput = searchPanel.getByRole("textbox", {
+    const searchInput = searchPanel.getByRole("searchbox", {
       name: /Search term/i,
     });
     await searchInput.fill("hello");
@@ -195,7 +195,7 @@ test.describe("Search Match Highlighting", () => {
     const searchPanel = page.getByRole("dialog", { name: /Find in diff/i });
     await expect(searchPanel).toBeVisible();
 
-    const searchInput = searchPanel.getByRole("textbox", {
+    const searchInput = searchPanel.getByRole("searchbox", {
       name: /Search term/i,
     });
     await searchInput.fill("hello");
@@ -237,7 +237,7 @@ test.describe("Search Match Highlighting", () => {
     await expect(searchPanel).toBeVisible();
 
     // Search for "hello" - 3 matches
-    const searchInput = searchPanel.getByRole("textbox", {
+    const searchInput = searchPanel.getByRole("searchbox", {
       name: /Search term/i,
     });
     await searchInput.fill("hello");

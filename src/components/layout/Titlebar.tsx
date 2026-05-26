@@ -63,7 +63,7 @@ export function Titlebar({ title = 'CodjiFlo', leftContent, rightContent, github
 
       <ThemeModal
         isOpen={isThemeModalOpen}
-        onClose={() => setIsThemeModalOpen(false)}
+        onOpenChange={setIsThemeModalOpen}
       />
     </header>
   );

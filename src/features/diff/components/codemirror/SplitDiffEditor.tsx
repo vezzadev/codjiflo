@@ -92,6 +92,8 @@ export interface SplitDiffEditorProps {
   onMountDraft?: (lineIndex: number, container: HTMLElement) => void;
   /** Portal callback: called when draft widget unmounts */
   onUnmountDraft?: () => void;
+  /** Path of the file being viewed; used for the editor's accessible name */
+  filename?: string;
 }
 
 export interface SplitDiffEditorHandle {
@@ -182,6 +184,7 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
       onUnmountThread,
       onMountDraft,
       onUnmountDraft,
+      filename,
     },
     ref
   ) {
@@ -533,6 +536,7 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
               readOnly
               height={`${containerHeight}px`}
               onViewReady={handleLeftViewReady}
+              {...(filename ? { ariaLabel: `Diff for ${filename} (original)` } : {})}
             />
           </div>
         )}
@@ -557,6 +561,7 @@ export const SplitDiffEditor = forwardRef<SplitDiffEditorHandle, SplitDiffEditor
               readOnly
               height={`${containerHeight}px`}
               onViewReady={handleRightViewReady}
+              {...(filename ? { ariaLabel: `Diff for ${filename} (modified)` } : {})}
             />
           </div>
         )}

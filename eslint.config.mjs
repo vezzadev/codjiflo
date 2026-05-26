@@ -10,6 +10,7 @@ import tseslint from "typescript-eslint";
 
 // Custom ESLint rules
 import oneTopLevelTestDescribe from "./eslint-rules/one-top-level-test-describe.js";
+import noNativeInteractiveElements from "./eslint-rules/no-native-interactive-elements.js";
 
 export default tseslint.config(
   { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", "next-env.d.ts", "action/**/*"] },
@@ -61,6 +62,21 @@ export default tseslint.config(
     files: ["src/app/**/layout.tsx", "src/app/**/page.tsx"],
     rules: {
       "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // Ban raw native interactive elements in feature/app code and Storybook stories
+    files: ["src/features/**/*.{ts,tsx}", "src/app/**/*.{ts,tsx}", "**/*.stories.tsx"],
+    ignores: ["**/*.test.{ts,tsx}", "src/tests/**"],
+    plugins: {
+      "custom-rules": {
+        rules: {
+          "no-native-interactive-elements": noNativeInteractiveElements,
+        },
+      },
+    },
+    rules: {
+      "custom-rules/no-native-interactive-elements": "error",
     },
   },
   {

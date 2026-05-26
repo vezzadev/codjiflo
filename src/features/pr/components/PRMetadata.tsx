@@ -13,10 +13,9 @@ interface PRMetadataProps {
 export function PRMetadata({ pr }: PRMetadataProps) {
   return (
     <div className="pr-metadata">
-      {/* Title - H1 per AC-1.2.8 */}
-      <h1 className="pr-title">
+      <h2 className="pr-title">
         {pr.title}
-      </h1>
+      </h2>
 
       <div className="pr-meta-row">
         {/* Author avatar and name - AC-1.2.3 */}

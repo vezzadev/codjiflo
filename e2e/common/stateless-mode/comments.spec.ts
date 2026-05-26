@@ -115,9 +115,9 @@ test.describe("Inline comments flow (S-2.x)", () => {
       await expect(page.getByRole("heading", { name: "src/example.ts" })).toBeVisible();
 
       // Wait for the file list item to be visible and selected
-      const fileListItem = page.getByRole("treeitem", { name: /example\.ts/ });
+      const fileListItem = page.getByRole("row", { name: /example\.ts/ });
       await expect(fileListItem).toBeVisible();
-      await expect(fileListItem).toHaveAttribute("aria-current", "location");
+      await expect(fileListItem).toHaveAttribute("aria-selected", "true");
 
       // The diff content should be rendered in CodeMirror
       const diffRegion = page.getByRole('region', { name: /Diff content/i });

@@ -11,18 +11,28 @@
   outline: none;
 }
 
+/* react-aria render-state data-attrs with pseudo-class fallback so plain
+   <input class="textbox"> keeps working until every caller is composed. */
+.textbox[data-hovered],
 .textbox:hover {
   border-color: var(--checkbox-border);
 }
 
+.textbox[data-focus-visible],
 .textbox:focus {
   border-color: var(--focus-border);
 }
 
+.textbox[data-disabled],
 .textbox:disabled {
   background-color: var(--control-disabled);
   color: var(--control-disabled-fg);
   border-color: var(--control-disabled-border);
+}
+
+.textbox[data-invalid],
+.textbox[aria-invalid='true'] {
+  border-color: var(--badge-merged, #d32f2f);
 }
 
 .textbox::placeholder {
@@ -366,17 +376,23 @@
   color: var(--main-fg);
   cursor: pointer;
   transition: background-color 0.1s ease;
+  outline: none;
 }
 
-.tab-item:hover:not(.active) {
+.tab-item[data-hovered]:not([data-selected]) {
   background-color: var(--listheader-hover);
   color: var(--listheader-hover-text);
 }
 
-.tab-item.active {
+.tab-item[data-selected] {
   background-color: var(--main-bg);
   border-bottom: 1px solid var(--main-bg);
   z-index: 1;
+}
+
+.tab-item[data-focus-visible] {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 .tab-content {
@@ -386,11 +402,8 @@
   border-top: none;
 }
 
+/* react-aria only renders the active TabPanel; default to block layout */
 .tab-panel {
-  display: none;
-}
-
-.tab-panel.active {
   display: block;
 }
 

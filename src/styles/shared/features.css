@@ -480,14 +480,16 @@
   background-color: var(--btn-hover);
 }
 
-/* Show thumb only when its radio is checked */
-.content-filter-option input:checked + .content-filter-thumb {
+/* Show thumb only when its radio is checked.
+   react-aria-components' <Radio> wraps the native input in a visually-hidden
+   <span>, so the legacy `input:checked + .thumb` sibling selector no longer
+   matches. We rely on react-aria's [data-selected] attribute on the label. */
+.content-filter-option[data-selected] .content-filter-thumb {
   display: flex;
 }
 
-/* Show focus indicator on thumb when radio is focused */
-.content-filter-option input:focus + .content-filter-thumb,
-.content-filter-option input:focus-visible + .content-filter-thumb {
+/* Show focus indicator on thumb when the radio is keyboard-focused */
+.content-filter-option[data-focus-visible] .content-filter-thumb {
   outline: 2px solid var(--focus-border);
   outline-offset: -2px;
 }
@@ -563,13 +565,21 @@
   position: relative;
 }
 
+/* react-aria ToggleButton render-state data-attrs with pseudo-class fallback */
+.iteration-tab[data-hovered],
 .iteration-tab:hover {
   background-color: var(--btn-hover);
   color: var(--main-fg);
 }
 
+.iteration-tab[data-pressed],
 .iteration-tab:active {
   background-color: var(--btn-press);
+}
+
+.iteration-tab[data-focus-visible] {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 /* Selected tab (boundary of range) */

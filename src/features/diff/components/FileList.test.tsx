@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@/tests/helpers';
+import { render, screen } from '@/tests/helpers';
 import userEvent from '@testing-library/user-event';
+import axe from 'axe-core';
 import { FileList } from './FileList';
 import { groupFilesByFolder } from '../utils';
 import { useDiffStore } from '../stores';
@@ -194,17 +195,13 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus PR description (first item)
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      const prDescription = screen.getByRole('row', { name: /Pull Request Description/i });
       prDescription.focus();
       expect(document.activeElement).toBe(prDescription);
 
-      // Press ArrowDown
       await user.keyboard('{ArrowDown}');
 
-      // Should focus folder header (next item after PR description)
-      // The folder is "/" for root level files, it's the second treeitem
-      const treeitems = screen.getAllByRole('treeitem');
+      const treeitems = screen.getAllByRole('row');
       expect(document.activeElement).toBe(treeitems[1]); // folder header
     });
 
@@ -213,15 +210,12 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus file1 (third treeitem: PR desc, folder, file1)
-      const file1 = screen.getByRole('treeitem', { name: /file1\.ts/i });
+      const file1 = screen.getByRole('row', { name: /file1\.ts/i });
       file1.focus();
 
-      // Press ArrowUp
       await user.keyboard('{ArrowUp}');
 
-      // Should focus folder header (previous item)
-      const treeitems = screen.getAllByRole('treeitem');
+      const treeitems = screen.getAllByRole('row');
       expect(document.activeElement).toBe(treeitems[1]); // folder header
     });
 
@@ -230,14 +224,11 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus last file
-      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      const file3 = screen.getByRole('row', { name: /file3\.ts/i });
       file3.focus();
 
-      // Press ArrowDown
       await user.keyboard('{ArrowDown}');
 
-      // Should stay at last item (no wrap)
       expect(document.activeElement).toBe(file3);
     });
 
@@ -246,42 +237,11 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus PR description (first item)
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      const prDescription = screen.getByRole('row', { name: /Pull Request Description/i });
       prDescription.focus();
 
-      // Press ArrowUp
       await user.keyboard('{ArrowUp}');
 
-      // Should stay at first item (no wrap)
-      expect(document.activeElement).toBe(prDescription);
-    });
-
-    it('ArrowDown focuses first item when no item is focused', () => {
-      setupKeyboardTest();
-      render(<FileList />);
-
-      // Simulate keydown on tree when no item is focused (edge case)
-      // Using fireEvent because tree container isn't directly focusable
-      const tree = screen.getByRole('tree');
-      fireEvent.keyDown(tree, { key: 'ArrowDown' });
-
-      // Should focus first item (PR description)
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
-      expect(document.activeElement).toBe(prDescription);
-    });
-
-    it('ArrowUp focuses first item when no item is focused', () => {
-      setupKeyboardTest();
-      render(<FileList />);
-
-      // Simulate keydown on tree when no item is focused (edge case)
-      // Using fireEvent because tree container isn't directly focusable
-      const tree = screen.getByRole('tree');
-      fireEvent.keyDown(tree, { key: 'ArrowUp' });
-
-      // Should focus first item (PR description), not last
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
       expect(document.activeElement).toBe(prDescription);
     });
 
@@ -290,15 +250,12 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus last file
-      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      const file3 = screen.getByRole('row', { name: /file3\.ts/i });
       file3.focus();
 
-      // Press Home
       await user.keyboard('{Home}');
 
-      // Should focus first item (PR description)
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      const prDescription = screen.getByRole('row', { name: /Pull Request Description/i });
       expect(document.activeElement).toBe(prDescription);
     });
 
@@ -307,15 +264,12 @@ describe('FileList', () => {
       setupKeyboardTest();
       render(<FileList />);
 
-      // Focus PR description
-      const prDescription = screen.getByRole('treeitem', { name: /Pull Request Description/i });
+      const prDescription = screen.getByRole('row', { name: /Pull Request Description/i });
       prDescription.focus();
 
-      // Press End
       await user.keyboard('{End}');
 
-      // Should focus last item (file3.ts)
-      const file3 = screen.getByRole('treeitem', { name: /file3\.ts/i });
+      const file3 = screen.getByRole('row', { name: /file3\.ts/i });
       expect(document.activeElement).toBe(file3);
     });
   });
@@ -459,6 +413,27 @@ describe('FileList', () => {
       expect(screen.queryByText('login.ts')).not.toBeInTheDocument();
       expect(screen.queryByText('helpers.ts')).not.toBeInTheDocument();
     });
+  });
+
+  it('has no serious or critical axe violations', async () => {
+    vi.mocked(useDiffStore).mockReturnValue({
+      files: [],
+      selectedFileIndex: 0,
+      selectFile: mockSelectFile,
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(useIterationAwareFiles).mockReturnValue(mockIterationFiles([
+      { filename: 'src/auth/login.ts', status: FileChangeStatus.Added, additions: 10, deletions: 0, changes: 10, patch: '', originalIndex: 0 },
+      { filename: 'README.md', status: FileChangeStatus.Modified, additions: 1, deletions: 0, changes: 1, patch: '', originalIndex: 1 },
+    ]));
+
+    const { container } = render(<FileList />);
+    const results = await axe.run(container);
+    const serious = results.violations.filter(
+      (v) => v.impact === 'serious' || v.impact === 'critical'
+    );
+    expect(serious).toEqual([]);
   });
 });
 

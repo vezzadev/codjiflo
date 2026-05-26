@@ -8,6 +8,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Eraser } from 'lucide-react';
+import { ToggleButton } from '@/components/ui';
 import { useIterationStore, selectSelectedRange } from '../stores';
 import type { Iteration, CollapsedIterationGroup } from '../types';
 import { iterationToRightSnapshot } from '../types';
@@ -65,26 +66,18 @@ function IterationTab({
     day: 'numeric',
   });
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelect(iteration.revision);
-    }
-  };
-
   return (
-    <button
-      type="button"
-      className={classes}
+    <ToggleButton
+      isSelected={isSelected || isInRange}
+      onChange={() => onSelect(iteration.revision)}
       onMouseDown={() => onMouseDown(iteration.revision)}
       onMouseEnter={() => onMouseEnter(iteration.revision)}
-      onKeyDown={handleKeyDown}
-      title={`Iteration ${iteration.revision} (${date})`}
-      aria-pressed={isSelected || isInRange}
+      className={classes}
       data-testid={`iteration-tab-${iteration.revision}`}
+      aria-label={`Iteration ${iteration.revision} (${date})`}
     >
       <span className="iteration-tab-number" aria-hidden="true">{iteration.revision}</span>
-    </button>
+    </ToggleButton>
   );
 }
 
@@ -212,15 +205,16 @@ export function IterationSelector({ className }: IterationSelectorProps) {
     const minRev = Math.min(startRev, endRev);
     const maxRev = Math.max(startRev, endRev);
 
-    if (minRev === maxRev) {
-      // Single iteration clicked: diff from base to this iteration
-      const toSnapshot = iterationToRightSnapshot(maxRev);
-      selectRange(0, toSnapshot);
-    } else {
-      // Range selected: diff between iterations
+    if (minRev !== maxRev) {
+      // Range drag: diff between iterations.
+      // Single-tab clicks are handled by ToggleButton's onChange (keyboard + click).
+      // Tests still drive single-tab selection via container mouseUp; cover that here too.
       const fromSnapshot = iterationToRightSnapshot(minRev);
       const toSnapshot = iterationToRightSnapshot(maxRev);
       selectRange(fromSnapshot, toSnapshot);
+    } else {
+      const toSnapshot = iterationToRightSnapshot(maxRev);
+      selectRange(0, toSnapshot);
     }
 
     setDragState({ isDragging: false, startRevision: null, currentRevision: null });

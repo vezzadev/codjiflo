@@ -42,7 +42,7 @@ test.describe("Authentication Query Params (Mock Only)", () => {
     );
 
     // PR content should be visible
-    await expect(page.getByRole("treeitem", { name: /Pull Request Description/i })).toBeVisible();
+    await expect(page.getByRole("row", { name: /Pull Request Description/i })).toBeVisible();
 
     // Click login to authenticate (preserving returnPath with query params)
     await page.getByRole("link", { name: /Log in/i }).click();

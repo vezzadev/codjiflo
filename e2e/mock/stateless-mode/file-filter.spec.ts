@@ -73,12 +73,12 @@ test.describe("File Filter in Header", () => {
     await filterInput.fill("auth");
 
     // Only auth files visible
-    await expect(fileNav.getByRole("treeitem", { name: /login\.ts/ })).toBeVisible();
-    await expect(fileNav.getByRole("treeitem", { name: /logout\.ts/ })).toBeVisible();
+    await expect(fileNav.getByRole("row", { name: /login\.ts/ })).toBeVisible();
+    await expect(fileNav.getByRole("row", { name: /logout\.ts/ })).toBeVisible();
 
     // Non-matching files hidden
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
-    await expect(fileNav.getByRole("treeitem", { name: /README\.md/ })).toBeHidden();
+    await expect(fileNav.getByRole("row", { name: /helpers\.ts/ })).toBeHidden();
+    await expect(fileNav.getByRole("row", { name: /README\.md/ })).toBeHidden();
   });
 
   test("clear button appears and clears filter", async ({ page }) => {
@@ -98,14 +98,14 @@ test.describe("File Filter in Header", () => {
     await expect(clearButton).toBeVisible();
 
     // Verify filter is active
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
+    await expect(fileNav.getByRole("row", { name: /helpers\.ts/ })).toBeHidden();
 
     // Click clear
     await clearButton.click();
 
     // Filter cleared, all files visible
     await expect(filterInput).toHaveValue("");
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeVisible();
+    await expect(fileNav.getByRole("row", { name: /helpers\.ts/ })).toBeVisible();
   });
 
   test("Escape key clears filter", async ({ page }) => {
@@ -116,21 +116,21 @@ test.describe("File Filter in Header", () => {
     await filterInput.fill("auth");
 
     // Verify filter is active
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeHidden();
+    await expect(fileNav.getByRole("row", { name: /helpers\.ts/ })).toBeHidden();
 
     // Press Escape
     await filterInput.press("Escape");
 
     // Filter cleared
     await expect(filterInput).toHaveValue("");
-    await expect(fileNav.getByRole("treeitem", { name: /helpers\.ts/ })).toBeVisible();
+    await expect(fileNav.getByRole("row", { name: /helpers\.ts/ })).toBeVisible();
   });
 
   test("PR description hidden when filter does not match", async ({ page }) => {
     await page.goto(config.pageUrl);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    const prDescription = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    const prDescription = fileNav.getByRole("row", { name: /Pull Request Description/i });
 
     // PR description visible initially
     await expect(prDescription).toBeVisible();
@@ -153,7 +153,7 @@ test.describe("File Filter in Header", () => {
     await page.goto(config.pageUrl);
 
     const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    const prDescription = fileNav.getByRole("treeitem", { name: /Pull Request Description/i });
+    const prDescription = fileNav.getByRole("row", { name: /Pull Request Description/i });
     const filterInput = page.getByPlaceholder("Filter by file name");
 
     // Apply matching filter

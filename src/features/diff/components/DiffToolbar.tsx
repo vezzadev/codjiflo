@@ -6,7 +6,8 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Eye, EyeOff, FileDiff, FileText, ChevronUp, ChevronDown, MessageSquare, MessageSquareOff, AlignJustify, WrapText } from 'lucide-react';
 import { useDiffStore } from '../stores';
-import type { ContentFilter } from '../types';
+import { Button } from '@/components/Button';
+import { ContentFilterSlider } from './ContentFilterSlider';
 
 // Icon color constants (defined outside components to avoid recreation on each render)
 const ICON_COLORS = {
@@ -159,7 +160,8 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
 
   return (
     <div className="toolbar-dropdown" ref={containerRef}>
-      <button
+      <Button
+        variant="ghost"
         type="button"
         className="toolbar-dropdown-button"
         aria-label={ariaLabel}
@@ -168,7 +170,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
         aria-controls={`${baseId}-listbox`}
         aria-activedescendant={isOpen ? `${baseId}-option-${value}` : undefined}
         title={tooltip}
-        onClick={() => setIsOpen(!isOpen)}
+        onPress={() => { setIsOpen(!isOpen); }}
         onKeyDown={handleKeyDown}
       >
         {selectedOption?.icon}
@@ -176,7 +178,7 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
         <svg className="toolbar-dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
           <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
         </svg>
-      </button>
+      </Button>
       {isOpen && (
         <ul
           id={`${baseId}-listbox`}
@@ -200,120 +202,6 @@ function ToolbarSelect<T extends string>({ value, onChange, options, ariaLabel, 
         </ul>
       )}
     </div>
-  );
-}
-
-// Content filter constants (defined outside component to avoid recreation on each render)
-const FILTER_POSITIONS: ContentFilter[] = ['left', 'both', 'right'];
-const FILTER_LABELS: { [key in ContentFilter]: string } = {
-  left: 'Left Only',
-  both: 'Show Both',
-  right: 'Right Only',
-};
-
-/** Three-stop radiogroup for content filter (left/both/right) */
-interface ContentFilterSliderProps {
-  value: ContentFilter;
-  onChange: (value: ContentFilter) => void;
-}
-
-function ContentFilterSlider({ value, onChange }: ContentFilterSliderProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Dynamic tooltip hints based on current position
-  const dragHints: { [key in ContentFilter]: string } = {
-    left: 'Drag for Both (O) or Right Only (R)',
-    both: 'Drag for Left Only (L) or Right Only (R)',
-    right: 'Drag for Left Only (L) or Both (O)',
-  };
-
-  const updatePositionFromMouse = useCallback((clientX: number) => {
-    if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const width = rect.width;
-    const ratio = Math.max(0, Math.min(1, x / width));
-
-    // Snap to nearest position
-    if (ratio < 0.33) {
-      onChange('left');
-    } else if (ratio < 0.67) {
-      onChange('both');
-    } else {
-      onChange('right');
-    }
-  }, [onChange]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    updatePositionFromMouse(e.clientX);
-  }, [updatePositionFromMouse]);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      updatePositionFromMouse(e.clientX);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, updatePositionFromMouse]);
-
-  return (
-    <fieldset
-      className="content-filter-slider"
-      role="radiogroup"
-      aria-label="Content filter"
-      title={dragHints[value]}
-    >
-      <legend className="sr-only">Content filter</legend>
-      <div
-        ref={trackRef}
-        className="content-filter-track"
-        onMouseDown={handleMouseDown}
-      >
-        {/* Color indicators: red (left/deletions) and green (right/additions) */}
-        <span className="content-filter-indicator content-filter-indicator-left" aria-hidden="true" />
-        <span className="content-filter-indicator content-filter-indicator-right" aria-hidden="true" />
-
-        {/* Semantic radio inputs with visual thumb */}
-        {FILTER_POSITIONS.map((position) => (
-          <label
-            key={position}
-            className={`content-filter-option content-filter-option-${position}`}
-          >
-            <input
-              type="radio"
-              name="content-filter"
-              value={position}
-              checked={value === position}
-              onChange={() => onChange(position)}
-              className="sr-only"
-              aria-label={FILTER_LABELS[position]}
-              tabIndex={value === position ? 0 : -1}
-            />
-            <span
-              className="content-filter-thumb"
-              aria-hidden="true"
-            >
-              {FILTER_LABELS[position]}
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
   );
 }
 
@@ -504,28 +392,30 @@ export function DiffToolbar() {
 
       {/* Change Navigation Buttons */}
       <div className="btn-group-nav">
-        <button
+        <Button
+          variant="ghost"
           type="button"
-          onClick={scrollToNextChange}
-          disabled={!canGoNext}
+          onPress={scrollToNextChange}
+          isDisabled={!canGoNext}
           aria-label="Next change (J)"
           title="Next change (J)"
           className="btn-toolbar btn-nav"
         >
           <ChevronDown className="w-4 h-4" aria-hidden />
           <span className="btn-nav-hint">J</span>
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
-          onClick={scrollToPreviousChange}
-          disabled={!canGoPrevious}
+          onPress={scrollToPreviousChange}
+          isDisabled={!canGoPrevious}
           aria-label="Previous change (K)"
           title="Previous change (K)"
           className="btn-toolbar btn-nav"
         >
           <ChevronUp className="w-4 h-4" aria-hidden />
           <span className="btn-nav-hint">K</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

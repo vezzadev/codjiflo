@@ -153,9 +153,9 @@ test.describe("Change Navigation After File Switch", () => {
     });
 
     // === Step 1: CLICK on first file (example.ts) ===
-    const exampleFile = fileNav.getByRole("treeitem", { name: /example\.ts/ });
+    const exampleFile = fileNav.getByRole("row", { name: /example\.ts/ });
     await exampleFile.click();
-    await expect(exampleFile).toHaveAttribute("aria-current", "location");
+    await expect(exampleFile).toHaveAttribute("aria-selected", "true");
     await expect(
       page.getByRole("heading", { name: "src/example.ts" })
     ).toBeVisible();
@@ -169,8 +169,8 @@ test.describe("Change Navigation After File Switch", () => {
 
     // === Step 3: Press s - moves to types.ts ===
     await page.keyboard.press("s");
-    const typesFile = fileNav.getByRole("treeitem", { name: /types\.ts/ });
-    await expect(typesFile).toHaveAttribute("aria-current", "location");
+    const typesFile = fileNav.getByRole("row", { name: /types\.ts/ });
+    await expect(typesFile).toHaveAttribute("aria-selected", "true");
     await expect(
       page.getByRole("heading", { name: "src/types.ts" })
     ).toBeVisible();

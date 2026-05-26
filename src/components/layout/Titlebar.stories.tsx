@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Sun, Moon, Monitor } from 'lucide-react';
+import { Select, SelectValue, ListBox, ListBoxItem, Popover } from 'react-aria-components';
 import { useThemeStore, Theme } from '@/features/theme';
+import { Button } from '@/components/Button';
 
 // Mock component that mirrors Titlebar but without Next.js Image dependency
 interface TitlebarProps {
@@ -17,10 +19,6 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 
 function TitlebarStory({ title = 'CodjiFlo', leftContent, rightContent }: TitlebarProps) {
   const { theme, setTheme } = useThemeStore();
-
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTheme(e.target.value as Theme);
-  };
 
   return (
     <header className="titlebar">
@@ -45,19 +43,25 @@ function TitlebarStory({ title = 'CodjiFlo', leftContent, rightContent }: Titleb
 
       <div className="titlebar-right">
         {rightContent}
-        <select
-          className="select"
+        <Select
+          aria-label="Select Theme"
           value={theme}
-          onChange={handleThemeChange}
-          title="Select Theme"
+          onChange={(key) => { setTheme(key as Theme); }}
           style={{ minWidth: '120px' }}
         >
-          {THEME_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <Button variant="secondary" className="select">
+            <SelectValue />
+          </Button>
+          <Popover>
+            <ListBox>
+              {THEME_OPTIONS.map((option) => (
+                <ListBoxItem key={option.value} id={option.value}>
+                  {option.label}
+                </ListBoxItem>
+              ))}
+            </ListBox>
+          </Popover>
+        </Select>
       </div>
     </header>
   );
@@ -105,9 +109,9 @@ export const WithRightContent: Story = {
     title: 'CodjiFlo',
     rightContent: (
       <div style={{ display: 'flex', gap: '8px', marginRight: '8px' }}>
-        <button className="btn btn-secondary" style={{ padding: '4px 8px' }}>
+        <Button variant="secondary" style={{ padding: '4px 8px' }}>
           Sign Out
-        </button>
+        </Button>
       </div>
     ),
   },
@@ -118,9 +122,9 @@ export const FullyCustomized: Story = {
     title: 'pedropaulovc/codjiflo - PR #42',
     leftContent: (
       <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-        <button className="btn btn-secondary" style={{ padding: '4px 8px' }}>
+        <Button variant="secondary" style={{ padding: '4px 8px' }}>
           ← Back
-        </button>
+        </Button>
       </div>
     ),
     rightContent: (
@@ -128,9 +132,9 @@ export const FullyCustomized: Story = {
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
           Logged in as: user
         </span>
-        <button className="btn btn-primary" style={{ padding: '4px 8px' }}>
+        <Button variant="primary" style={{ padding: '4px 8px' }}>
           Submit Review
-        </button>
+        </Button>
       </div>
     ),
   },

@@ -131,7 +131,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content to load using playwright-codemirror
@@ -148,7 +148,7 @@ index 1234567..abcdefg 100644
     await expect(searchPanel).toBeVisible();
 
     // Type search term
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await expect(searchInput).toBeFocused();
     await searchInput.fill('function');
 
@@ -177,7 +177,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on the file to open it in the diff view
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content to load using playwright-codemirror
@@ -218,7 +218,7 @@ index 1234567..abcdefg 100644
     await expect(selector.getByTestId(/^iteration-tab-/)).not.toHaveCount(0);
 
     // Click on file to open diff
-    const fileItem = fileList.getByRole('treeitem', { name: /example\.ts/i });
+    const fileItem = fileList.getByRole('row', { name: /example\.ts/i });
     await fileItem.click();
 
     // Wait for diff content
@@ -231,7 +231,7 @@ index 1234567..abcdefg 100644
     await page.keyboard.press('Control+f');
     const searchPanel = page.getByRole('dialog', { name: 'Find in diff' });
     await expect(searchPanel).toBeVisible();
-    const searchInput = searchPanel.getByRole('textbox', { name: 'Search term' });
+    const searchInput = searchPanel.getByRole('searchbox', { name: 'Search term' });
     await searchInput.fill('function');
 
     // Verify initial match count

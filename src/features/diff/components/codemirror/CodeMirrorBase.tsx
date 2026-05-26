@@ -41,6 +41,8 @@ export interface CodeMirrorBaseProps {
   height?: string;
   /** Basic setup options (defaults disabled for custom diff setup) */
   basicSetup?: boolean;
+  /** Accessible name applied to the .cm-content element (role="textbox") */
+  ariaLabel?: string;
 }
 
 export interface CodeMirrorBaseHandle {
@@ -68,6 +70,7 @@ export const CodeMirrorBase = forwardRef<CodeMirrorBaseHandle, CodeMirrorBasePro
       onViewReady,
       height = '100%',
       basicSetup = false,
+      ariaLabel,
     },
     ref
   ) {
@@ -142,10 +145,14 @@ export const CodeMirrorBase = forwardRef<CodeMirrorBaseHandle, CodeMirrorBasePro
         exts.push(languageState.ext);
       }
 
+      if (ariaLabel) {
+        exts.push(EditorView.contentAttributes.of({ 'aria-label': ariaLabel }));
+      }
+
       exts.push(...extensions);
 
       return exts;
-    }, [readOnly, lineWrapping, languageState.ext, extensions]);
+    }, [readOnly, lineWrapping, languageState.ext, extensions, ariaLabel]);
 
     // Expose imperative handle
     useImperativeHandle(

@@ -296,6 +296,7 @@ export function DiffView() {
                 key={pipeline.filename ?? 'diff-editor'}
                 diffLines={pipeline.diffLines}
                 language={pipeline.language}
+                {...(pipeline.filename ? { filename: pipeline.filename } : {})}
                 containerHeight={containerHeight}
                 threadsByLineAndSide={pipeline.threadsByLineAndSide}
                 currentUserLogin={currentUser.login}
@@ -362,6 +363,7 @@ export function DiffView() {
                 ref={splitEditorRef}
                 alignedLines={pipeline.alignedLines}
                 language={pipeline.language}
+                {...(pipeline.filename ? { filename: pipeline.filename } : {})}
                 containerHeight={containerHeight}
                 threadsByLineAndSide={pipeline.threadsByLineAndSide}
                 currentUserLogin={currentUser.login}
