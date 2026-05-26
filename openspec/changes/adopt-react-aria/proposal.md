@@ -25,7 +25,7 @@ This change **deletes** more code than it adds at the primitive layer. It does n
 - `ui-primitives`: The contract for the application's accessible UI components — Button, TextField (single-line and multi-line), Modal/Dialog, Tree, SearchField, ToggleButton, Popover. Specifies keyboard interaction model, ARIA semantics, focus behavior, render-state data attributes that drive styling, and the rule that every interactive widget in the app is sourced from this layer (`react-aria-components`, optionally with a thin CSS wrapper) rather than hand-rolled.
 
 ### Modified Capabilities
-- `ui-shell`: Restates the keyboard-navigation, focus, and theme-contrast requirements in terms of the `ui-primitives` contract (focus trap on modals, return-focus on dismiss, tree-grid keyboard model on the file explorer, visible focus indicator at AA contrast in every theme).
+None. The existing `ui-shell` requirements (file explorer keyboard navigation, properties panel keyboard access, high-contrast theme) remain unchanged in wording — once the file explorer, properties panel buttons, and focus indicators are implemented via `ui-primitives`, the stricter behavior (full tree keyboard model, AA-contrast focus indicator across every theme, Button keyboard activation) comes for free without restating it at the shell level.
 
 ## Impact
 

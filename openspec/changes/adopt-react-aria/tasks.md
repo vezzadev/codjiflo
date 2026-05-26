@@ -63,7 +63,7 @@
 ## 7. Documentation, sidecars, and archive readiness
 
 - [ ] 7.1 Create `openspec/specs/ui-primitives/architecture.md` documenting: which `react-aria-components` we re-export directly, which we wrap and why, the data-attribute styling contract, the lint rule, the Tree integration decision from 1.3, the UI-delta deltas that were accepted (with screenshots if useful)
-- [ ] 7.2 Update or create `openspec/specs/ui-shell/architecture.md` for the new file-explorer tree model; cross-reference `ui-primitives/architecture.md`
+- [ ] 7.2 Cross-link from the existing `openspec/specs/ui-shell/architecture.md` (if present) to `ui-primitives/architecture.md` so the file-explorer tree implementation is discoverable; do NOT modify `openspec/specs/ui-shell/spec.md` — its existing requirements remain valid since the implementation inherits the stricter ui-primitives behavior
 - [ ] 7.3 Update `AGENTS.md` section 1.1 and 4.7 to point at `ui-primitives` and the lint rule as the source of truth for "no native interactive elements"; remove or update the line that says "Avoid using raw `<button>`, `<input>`, or `<select>` tags. Use the standardized components in `src/components/`" to reflect that the standardized components ARE react-aria
 - [ ] 7.4 Run `npm run spec:validate` and `openspec validate adopt-react-aria --strict`; ensure both pass
 - [ ] 7.5 Run `npm run test:all` one final time before requesting review
