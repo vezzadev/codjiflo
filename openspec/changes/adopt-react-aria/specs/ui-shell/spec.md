@@ -31,7 +31,7 @@ The system SHALL allow the user to tab between properties and to activate a prop
 - **THEN** Tab moves focus from one property to the next, Shift+Tab moves it back, Enter activates the focused property's primary link, and Space activates the focused property's action button when present
 
 #### Scenario: Focus indicator is visible in every theme
-- **WHEN** a property receives keyboard focus while the active theme is dark, light, black, or high-contrast
+- **WHEN** a property receives keyboard focus while the active theme is `dark`, `light`, `black`, or `high-contrast`
 - **THEN** the property renders the standard focus indicator at WCAG 2.1 AA contrast against the panel background
 
 ### Requirement: High-contrast theme for accessibility
@@ -42,5 +42,5 @@ The system SHALL provide a high-contrast theme variant whose palette guarantees 
 - **THEN** the shell re-renders with the high-contrast palette without a reload, and a quick keyboard tab across the titlebar, file explorer, toolbar, and properties panel reveals a visible focus indicator on every primitive
 
 #### Scenario: Focus indicator contrast holds across themes
-- **WHEN** the focus indicator is rendered on a `Button`, `Input`, or `Tree` node in any of the four themes
+- **WHEN** the focus indicator is rendered on a `Button`, `TextField`, or `Tree` node in any of the four themes (`dark`, `light`, `black`, `high-contrast`)
 - **THEN** the indicator's contrast ratio against the immediately surrounding background is at least 3:1 (the WCAG 2.1 AA non-text minimum)

@@ -52,7 +52,7 @@
 
 ## 6. Milestone 5 — Lint enforcement, sweep, axe coverage, bundle check
 
-- [ ] 6.1 Add `eslint-rules/no-native-interactive-elements.js` (CommonJS, mirroring the pattern of `eslint-rules/one-top-level-test-describe.js`) banning bare `<button>`, `<input>`, `<textarea>`, `<select>`, `<dialog>` in `src/features/**` and `src/app/**`; allow them inside `src/components/**`, `**/*.test.tsx`, `**/*.stories.tsx`, and `src/tests/**`; the error message MUST name the replacement primitive
+- [ ] 6.1 Add `eslint-rules/no-native-interactive-elements.js` (CommonJS, mirroring the pattern of `eslint-rules/one-top-level-test-describe.js`) banning bare `<button>`, `<input>`, `<textarea>`, `<select>`, `<dialog>` in `src/features/**`, `src/app/**`, and `**/*.stories.tsx` (stories MUST drive the primitive components, not raw HTML); allow them only inside `src/components/**`, `**/*.test.tsx`, and `src/tests/**`; the error message MUST name the replacement primitive
 - [ ] 6.2 Register the rule in `eslint.config.*` and run `npm run lint`; resolve any remaining offenders by migrating them to react-aria — NO `eslint-disable`
 - [ ] 6.3 Add a unit test for the lint rule under `eslint-rules/__tests__/no-native-interactive-elements.test.js` using `@eslint/rule-tester` covering pass and fail cases per disallowed element
 - [ ] 6.4 Audit `src/components/ui/Modal/Modal.test.tsx`, the new Tree/SearchField/ToggleButton tests, and the migrated `Button`/`TextField` tests to ensure each runs `@axe-core/react` and fails on serious/critical violations

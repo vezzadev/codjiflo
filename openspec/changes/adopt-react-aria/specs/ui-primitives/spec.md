@@ -12,7 +12,7 @@ The system SHALL source every user-facing interactive widget — buttons, text i
 - **THEN** lint fails with a rule pointing at the corresponding primitive component (and the same applies to `<input>`, `<textarea>`, `<select>`, `<dialog>`)
 
 ### Requirement: Button Primitive
-The system SHALL provide a `Button` primitive that, in addition to its visual variants (`primary`, `secondary`) and sizes (`default`, `sm`, `icon`), exposes the accessibility contract of a native button while remaining keyboard-, pointer-, and touch-driven: it MUST be activatable with Enter and Space, MUST emit a focus-visible state distinguishable from hover, MUST forward `disabled` semantics to assistive technology, and MUST accept an explicit accessible name for icon-only variants.
+The system SHALL provide a `Button` primitive that, in addition to its visual variants (`primary`, `secondary`) and sizes (`default`, `sm`, `icon`), exposes the accessibility contract of a native button while remaining keyboard-, pointer-, and touch-driven: it MUST be activatable with Enter and Space, MUST emit a focus-visible state distinguishable from hover, MUST forward the `isDisabled` prop to assistive technology, and MUST accept an explicit accessible name for icon-only variants.
 
 #### Scenario: Keyboard activation
 - **WHEN** the button has keyboard focus and the user presses Space or Enter
@@ -23,7 +23,7 @@ The system SHALL provide a `Button` primitive that, in addition to its visual va
 - **THEN** the rendered DOM exposes an accessible name (via `aria-label` or `aria-labelledby`) so screen readers can announce its purpose
 
 #### Scenario: Disabled state blocks interaction
-- **WHEN** `disabled` is true
+- **WHEN** `isDisabled` is true
 - **THEN** the button does not fire its press handler on click, Enter, or Space, and assistive technology announces it as disabled
 
 #### Scenario: Focus-visible state styles separately from hover
@@ -34,16 +34,16 @@ The system SHALL provide a `Button` primitive that, in addition to its visual va
 The system SHALL provide single-line and multi-line text field primitives built on `react-aria-components`'s `TextField` composition (`TextField` + `Label` + `Input`/`TextArea` + `Text` + `FieldError`), wiring label, description, and error into the field with a single shared identity. The primitive MUST expose validation state to assistive technology, announce errors via the polite live region react-aria provides, and present an idiomatic react-aria API (e.g. `isInvalid`, `errorMessage`, `description`, `validate`) rather than the previous bespoke `error: string` / `helperText: string` props.
 
 #### Scenario: Label is programmatically associated with the field
-- **WHEN** an `Input` or `Textarea` renders with a `label` prop
-- **THEN** clicking the label focuses the field, and the rendered DOM exposes the label as the field's accessible name (no `htmlFor`/`id` plumbing required at the call site)
+- **WHEN** a `TextField` renders with a child `Label` slot wrapping its `Input` (or `TextArea`) slot
+- **THEN** the composition wires the association without explicit `htmlFor`/`id` plumbing at the call site: clicking the rendered Label focuses the Input, and the rendered DOM exposes the Label text as the field's accessible name
 
 #### Scenario: Error is announced and described
-- **WHEN** an `Input` renders with a non-empty `error` prop
-- **THEN** the field's invalid state is exposed (`aria-invalid="true"`), the error text is referenced as the field's description (`aria-describedby`), and the error region is announced via a polite live region
+- **WHEN** a `TextField` is rendered with `isInvalid` and a child `FieldError` slot containing the error text
+- **THEN** the field's invalid state is exposed (`aria-invalid="true"` and `[data-invalid]`), the `FieldError` content is referenced as the field's description (`aria-describedby`), and the error region is announced via the polite live region react-aria provides
 
 #### Scenario: Helper text is exposed when no error
-- **WHEN** the field renders with `helperText` and no `error`
-- **THEN** the helper text is referenced as the field's description and is NOT announced as an error
+- **WHEN** a `TextField` is rendered with a child `<Text slot="description">` and is NOT in the invalid state
+- **THEN** the description text is referenced as the field's description (`aria-describedby` points at the `Text` slot) and is NOT announced as an error
 
 ### Requirement: Modal / Dialog Primitive
 The system SHALL provide a `Modal` + `Dialog` primitive pair that traps focus inside the dialog, restores focus to the trigger element on dismiss, locks background scroll while open, dismisses on Escape and on overlay click (when dismissible), exposes a labelled dialog role to assistive technology, and renders inside a portal so its stacking context is independent of its ancestor.
@@ -127,7 +127,7 @@ The primitive layer SHALL preserve CodjiFlo's CSS-variable theming and visual de
 - **THEN** the rendered element carries the `btn-colorful` class so CSS in `src/styles/shared/buttons.css` continues to style it without any visual regression
 
 #### Scenario: State data attributes drive interactive styling
-- **WHEN** a `Button`, `Input`, or `TreeItem` is in the hovered, pressed, focus-visible, disabled, invalid, selected, or expanded state
+- **WHEN** a `Button`, `TextField`, or `TreeItem` is in the hovered, pressed, focus-visible, disabled, invalid, selected, or expanded state
 - **THEN** the rendered element exposes the corresponding `data-*` attribute, and the project's CSS targets that attribute exclusively to render the state (no `:hover`/`:active`/`:focus-visible`-only rules remain on these primitives)
 
 ### Requirement: Accessibility Test Coverage
@@ -135,7 +135,7 @@ The system SHALL include automated accessibility checks for the primitive layer:
 
 #### Scenario: Primitive unit test asserts ARIA contract
 - **WHEN** the `Button` primitive's test suite runs
-- **THEN** it asserts the rendered element has `role="button"`, an accessible name, and that `disabled` propagates to `aria-disabled` (or the native disabled state) — failing a primitive change that drops these would fail the build
+- **THEN** it asserts the rendered element has `role="button"`, an accessible name, and that `isDisabled` propagates to `[data-disabled]` and the native disabled state — failing a primitive change that drops these would fail the build
 
 #### Scenario: Keyboard-only end-to-end test covers a modal
 - **WHEN** the Playwright suite opens the theme modal using keyboard activation alone
