@@ -2,7 +2,7 @@ name: CI/CD Pull Request
 permissions:
   contents: read
   actions: read
-  deployments: read
+  checks: read
   pull-requests: write
 
 on:
@@ -157,12 +157,12 @@ jobs:
           json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
           threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
 
-  wait-for-vercel:
+  wait-for-deployment:
     runs-on: ubuntu-slim
     outputs:
       preview-url: ${{ steps.wait.outputs.preview-url }}
     steps:
-      - name: Wait for Vercel Preview deployment
+      - name: Wait for Cloudflare Workers build + preview URL
         id: wait
         timeout-minutes: 5
         env:
@@ -176,58 +176,63 @@ jobs:
             SHA=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
           fi
 
-          echo "Waiting for Vercel Preview deployment for SHA: ${SHA:0:7}"
+          echo "Waiting for Cloudflare Workers build for SHA: ${SHA:0:7}"
 
+          # Cloudflare Workers Builds does NOT post a GitHub deployment object.
+          # It posts a check run named "Workers Builds: <worker>" whose output
+          # summary carries the preview URLs:
+          #   Preview URL:       https://<version>-<worker>.<subdomain>.workers.dev  (this exact build)
+          #   Preview Alias URL: https://<branch>-<worker>.<subdomain>.workers.dev   (latest on branch)
+          # Poll that check run and use the version-specific Preview URL — it is
+          # pinned to this build, so no commit-match check is needed downstream.
           for i in $(seq 1 60); do
-            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+            RUN=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name | startswith("Workers Builds"))] | sort_by(.started_at) | last' 2>/dev/null)
+            STATUS=$(echo "$RUN" | jq -r '.status // empty' 2>/dev/null)
 
-            if [ $? -eq 0 ] && [[ "$DEPLOYMENT_ID" =~ ^[0-9]+$ ]]; then
-              STATUS=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0]' 2>/dev/null)
-              STATE=$(echo "$STATUS" | jq -r '.state // empty')
-
-              if [ "$STATE" = "success" ]; then
-                URL=$(echo "$STATUS" | jq -r '.target_url // empty')
-                echo "✅ Preview deployment ready: $URL"
-                echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
-                exit 0
-              fi
-              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
-                echo "❌ Preview deployment failed: $STATE"
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion // empty')
+              if [ "$CONCLUSION" != "success" ]; then
+                echo "❌ Workers build did not succeed: ${CONCLUSION:-unknown}"
                 exit 1
               fi
-              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
-            else
-              echo "No deployment found yet (attempt $i/60)"
+              SUMMARY=$(echo "$RUN" | jq -r '.output.summary // empty')
+              URL=$(echo "$SUMMARY" | grep -oiP 'Preview URL:\s*\K\S+' | head -1)
+              [ -z "$URL" ] && URL=$(echo "$SUMMARY" | grep -oiP 'Preview Alias URL:\s*\K\S+' | head -1)
+              if [ -z "$URL" ]; then
+                echo "❌ Workers build succeeded but no preview URL in summary:"
+                echo "$SUMMARY"
+                exit 1
+              fi
+              echo "✅ Preview ready: $URL"
+              echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
+
+            echo "Workers build status: ${STATUS:-pending} (attempt $i/60)"
             sleep 5
           done
 
-          echo "❌ Timeout waiting for Vercel Preview deployment"
+          echo "❌ Timeout waiting for Cloudflare Workers build"
           exit 1
 
-      - name: Verify preview serves correct commit
+      - name: Wait for preview to serve /api/health
         timeout-minutes: 1
         run: |
-          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
-            EXPECTED="${{ github.event.pull_request.head.sha }}"
-          else
-            EXPECTED=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
-          fi
+          # The version-specific preview URL is pinned to this exact build, so a
+          # liveness check (HTTP 200) is enough — it cannot serve a stale commit.
           URL="${{ steps.wait.outputs.preview-url }}/api/health"
-
           for i in $(seq 1 15); do
-            DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
-            if [ "$DEPLOYED" = "$EXPECTED" ]; then
-              echo "✅ Preview verified with commit ${EXPECTED:0:7}"
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' "$URL" 2>/dev/null || echo "000")
+            if [ "$CODE" = "200" ]; then
+              echo "✅ Preview live (200) at $URL"
               exit 0
             fi
-            echo "Health check attempt $i/15 (got: ${DEPLOYED:-no response})"
+            echo "Health check attempt $i/15 (HTTP ${CODE})"
             sleep 2
           done
-          echo "❌ Timeout waiting for health check"
+          echo "❌ Timeout waiting for preview /api/health"
           exit 1
-        env:
-          GH_TOKEN: ${{ github.token }}
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -256,7 +261,7 @@ jobs:
         run: npm run test:e2e
 
   e2e-tests-prod:
-    needs: [wait-for-vercel]
+    needs: [wait-for-deployment]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -282,7 +287,7 @@ jobs:
         timeout-minutes: 3
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          E2E_BASE_URL: ${{ needs.wait-for-vercel.outputs.preview-url }}
+          E2E_BASE_URL: ${{ needs.wait-for-deployment.outputs.preview-url }}
         run: npm run test:e2e:prod
 
   storybook-tests:
@@ -311,7 +316,8 @@ jobs:
         timeout-minutes: 1
         run: npm run test:storybook
 
-  # Preview deployments handled by Vercel GitHub App (no VERCEL_TOKEN needed)
+  # Preview deployments are handled by Cloudflare Workers Builds (connected via
+  # the Cloudflare GitHub integration) — no deploy token needed in CI.
 
   # Capture iteration data for CodjiFlo iteration tracking
   capture-iteration:

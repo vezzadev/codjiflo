@@ -13,7 +13,7 @@ npm run test             # Unit and integration tests (Vitest)
 npm run test:coverage    # Unit and integration tests with coverage, min 70% enforced
 npm run test:storybook   # Storybook interaction tests
 npm run test:e2e         # Playwright E2E (mock mode, localhost)
-npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.vza.net)
+npm run test:e2e:prod    # Playwright E2E (prod mode, codjiflo.net)
 npm run spec:validate    # OpenSpec strict validation (all specs + in-flight changes)
 npm run test:all         # REQUIRED before push (lint + typecheck + spec:validate + coverage + e2e + storybook)
 ```
@@ -82,8 +82,8 @@ e2e/
   - Enforced by ESLint: `"playwright/no-skipped-test": "error"`
 
 **Environment:**
-- `.env.local` - Created by running `npm run dev` (pulls from Vercel). Required for prod mode tests locally.
-- `GITHUB_TOKEN` - GitHub PAT for prod mode (loaded from `.env.local` locally, auto-provided in CI)
+- `.env.local` - Supplied **off-band** (never downloaded — no `vercel env pull`). Holds `GITHUB_APP_CLIENT_SECRET` for local real-auth + `GITHUB_TOKEN` for prod-mode E2E. Missing it is non-blocking: `npm run dev` prints setup guidance and unauthenticated review still works. The app secret lives in the Cloudflare `codjiflo` Secret Store in production.
+- `GITHUB_TOKEN` - GitHub PAT for prod mode (set in `.env.local` locally; CI injects the built-in `github.token`)
 
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
@@ -93,7 +93,7 @@ e2e/
 ### E2E Test Debugging
 
 #### One second is an ETERNITY for a computer
-Tests in this project are finely tuned to run very fast. Each E2E test case MUST run in 5s or less. This is PLENTY. GitHub APIs, Vercel, CI/CD machines, local dev environment, etc. are all extremely fast. This is applicable to old and new tests. The entire test suite runs in 20s. When running E2E tests, enforce a timeout in the Bash tool call of 1 minute.
+Tests in this project are finely tuned to run very fast. Each E2E test case MUST run in 5s or less. This is PLENTY. GitHub APIs, Cloudflare, CI/CD machines, local dev environment, etc. are all extremely fast. This is applicable to old and new tests. The entire test suite runs in 20s. When running E2E tests, enforce a timeout in the Bash tool call of 1 minute.
 
 #### There are no flaky tests only failing tests
 Leave the tests better than how you found them. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
@@ -224,7 +224,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Env vars for dev/preview/prod are stored in Vercel (`vercel env pull`). See [openspec/specs/authentication/architecture.md](openspec/specs/authentication/architecture.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Hosted on a Cloudflare Worker (OpenNext); the only secret (`GITHUB_APP_CLIENT_SECRET`) lives in the Cloudflare `codjiflo` Secret Store, other config is plain Worker/build vars, and nothing is downloaded locally. See [openspec/specs/authentication/architecture.md](openspec/specs/authentication/architecture.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 

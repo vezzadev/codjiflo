@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const { code, code_verifier } = rawBody as TokenRequest;
 
-    const credentials = validateClientCredentials();
+    const credentials = await validateClientCredentials();
     if (!isValidCredentials(credentials)) {
       return credentials;
     }

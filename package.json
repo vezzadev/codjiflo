@@ -10,7 +10,10 @@
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
     "dev": "node scripts/dev.js",
-    "build": "cross-env NODE_OPTIONS=--use-system-ca next build",
+    "build": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare build",
+    "build:next": "cross-env NODE_OPTIONS=--use-system-ca next build",
+    "preview": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare preview",
+    "deploy": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare deploy",
     "start": "cross-env NODE_OPTIONS=--use-system-ca next start",
     "lint": "eslint . --fix --quiet --max-warnings 0 --prune-suppressions",
     "lint:check": "eslint . --quiet --max-warnings 0",
@@ -93,6 +96,7 @@
     "@axe-core/react": "^4.11.3",
     "@eslint/js": "^9.32.0",
     "@fission-ai/openspec": "^1.3.1",
+    "@opennextjs/cloudflare": "^1.19.11",
     "@playwright/test": "npm:@pedropaulovc/playwright-test@1.59.0-next.8",
     "@storybook/addon-vitest": "^10.4.0",
     "@storybook/react": "^10.4.0",
@@ -129,8 +133,8 @@
     "storybook": "^10.3.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.54.0",
-    "vercel": "^54.4.1",
     "vite": "^7.3.3",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "wrangler": "^4.96.0"
   }
 }

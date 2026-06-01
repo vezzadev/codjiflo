@@ -22,16 +22,16 @@ GitHub App with OAuth 2.0 and PKCE (not a standalone OAuth App). Supports cross-
 
 ## Cross-Subdomain Flow (PR Previews)
 
-PR previews run on `pr-{number}.codjiflo.vza.net`. GitHub OAuth only allows specific callback URLs, so all callbacks go through `codjiflo.vza.net`, then redirect back.
+PR previews run on `pr-{number}.codjiflo.net` (Cloudflare custom preview domain under the `codjiflo.net` apex). GitHub OAuth only allows specific callback URLs, so all callbacks go through `codjiflo.net`, then redirect back.
 
 ```
-pr-123.codjiflo.vza.net (click login)
-    ↓ store return origin cookie (domain=.vza.net)
+pr-123.codjiflo.net (click login)
+    ↓ store return origin cookie (domain=.codjiflo.net)
 GitHub OAuth
     ↓
-codjiflo.vza.net/auth/callback
+codjiflo.net/auth/callback
     ↓ exchange code, store token in transfer cookie
-pr-123.codjiflo.vza.net/auth/landing
+pr-123.codjiflo.net/auth/landing
     ↓ hydrate token from cookie
 /dashboard
 ```
@@ -45,34 +45,44 @@ pr-123.codjiflo.vza.net/auth/landing
 | `oauth_return_origin` | Redirect destination | 10 min |
 | `oauth_token_transfer` | Token handoff | 1 min |
 
-All cookies use `domain=.vza.net` (hardcoded in `KNOWN_BASE_DOMAIN`).
+All cookies use `domain=.codjiflo.net` (hardcoded in `KNOWN_BASE_DOMAIN`).
 
 ## Environment Variables
 
-Env vars for dev, preview, and prod are stored in Vercel (`vercel env pull` to sync locally).
+Hosting is a Cloudflare Worker (OpenNext adapter). The **only secret**,
+`GITHUB_APP_CLIENT_SECRET`, lives in the Cloudflare **Secret Store** (`codjiflo`)
+bound to the Worker and is read at runtime via the binding — it is never
+exported, downloaded, or written to the client bundle. Non-secret config is set
+as plain Worker/build variables. No tooling fetches secrets from any provider;
+locally the secret is supplied off-band in `.env.local`.
 
 | Variable | Location | Purpose |
 |----------|----------|---------|
-| `GITHUB_APP_CLIENT_ID` | Server | Token exchange |
-| `GITHUB_APP_CLIENT_SECRET` | Server | Token exchange (secret) |
-| `NEXT_PUBLIC_GITHUB_CLIENT_ID` | Client | Build OAuth URL |
-| `NEXT_PUBLIC_APP_URL` | Client | Callback base URL |
+| `GITHUB_APP_CLIENT_SECRET` | Cloudflare Secret Store (Worker binding) | Token exchange (secret) |
+| `GITHUB_APP_CLIENT_ID` | Plain Worker var | Token exchange |
+| `NEXT_PUBLIC_GITHUB_CLIENT_ID` | Plain build/Worker var | Build OAuth URL |
+| `NEXT_PUBLIC_APP_URL` | Plain build/Worker var | Callback base URL |
+| `NEXT_PUBLIC_APP_COMMIT_SHA` | Build var (inlined) | `/api/health` commit; from `WORKERS_CI_COMMIT_SHA` |
+
+The commit SHA is **inlined at build time** — set the Workers Builds build
+command to `NEXT_PUBLIC_APP_COMMIT_SHA=$WORKERS_CI_COMMIT_SHA npx opennextjs-cloudflare build`
+(Workers Builds build vars are not available at runtime).
 
 **Backup values:**
 ```
 GITHUB_APP_CLIENT_ID = Iv23liUEkzCUSR78IkHn
 NEXT_PUBLIC_GITHUB_CLIENT_ID = Iv23liUEkzCUSR78IkHn
 NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
-NEXT_PUBLIC_APP_URL = https://codjiflo.vza.net     # preview & prod
+NEXT_PUBLIC_APP_URL = https://codjiflo.net         # preview & prod
 ```
 
 ## GitHub App Setup
 
 1. Go to https://github.com/settings/apps → "New GitHub App"
-2. Set Homepage URL: `https://codjiflo.vza.net`
+2. Set Homepage URL: `https://codjiflo.net`
 3. Under "Identifying and authorizing users", add callback URLs:
    - `http://localhost:3000/auth/callback` (local dev)
-   - `https://codjiflo.vza.net/auth/callback` (production + PR previews)
+   - `https://codjiflo.net/auth/callback` (production + PR previews under `*.codjiflo.net`)
 4. Set required permissions (see table below)
 5. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
 6. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`

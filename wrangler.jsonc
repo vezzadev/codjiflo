@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "codjiflo",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  // nodejs_compat is required by the OpenNext Cloudflare adapter (Node-compatible
+  // server). It also populates process.env from plain `vars` below.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Non-secret SERVER-runtime config. The client id is not sensitive (it ships
+  // in the OAuth URL). NEXT_PUBLIC_* values are inlined at BUILD time by Next
+  // (see .env.production), so they are not listed here.
+  "vars": {
+    "GITHUB_APP_CLIENT_ID": "Iv23liUEkzCUSR78IkHn"
+  },
+  // The ONLY app runtime secret. Stored in the account's default Secret Store
+  // and read at runtime via this binding (src/app/api/auth/utils.ts ->
+  // getCloudflareContext().env.GITHUB_APP_CLIENT_SECRET.get()). The value never
+  // leaves the store. Uploaded off-band via `wrangler secrets-store secret
+  // create` — not present in this repo or any env file in CI.
+  "secrets_store_secrets": [
+    {
+      "binding": "GITHUB_APP_CLIENT_SECRET",
+      "store_id": "cc49be40eb984d38a45fae3a4f29a9b2",
+      "secret_name": "GITHUB_APP_CLIENT_SECRET"
+    }
+  ]
+}
