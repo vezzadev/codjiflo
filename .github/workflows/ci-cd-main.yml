@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
@@ -109,7 +109,7 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
@@ -151,7 +151,7 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
