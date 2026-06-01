@@ -15,7 +15,7 @@ describe('ContentFilterSlider', () => {
       width: 90,
       height: 24,
       toJSON: () => ({}),
-    } as DOMRect);
+    });
   });
 
   it('renders three radios with the canonical labels', () => {

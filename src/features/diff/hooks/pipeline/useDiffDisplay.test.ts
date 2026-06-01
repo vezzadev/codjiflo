@@ -35,7 +35,7 @@ describe('useDiffDisplay', () => {
         filter: 'both',
         textWrap: 'off',
       },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffDisplay(mockShapedInput));
 
@@ -52,7 +52,7 @@ describe('useDiffDisplay', () => {
         filter: 'left',
         textWrap: 'on',
       },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffDisplay(mockShapedInput));
 
@@ -67,7 +67,7 @@ describe('useDiffDisplay', () => {
         filter: 'right',
         textWrap: 'on',
       },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffDisplay(mockShapedInput));
 
@@ -82,7 +82,7 @@ describe('useDiffDisplay', () => {
         filter: 'both',
         textWrap: 'on',
       },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const customInput: DiffShapeOutput = {
       ...mockShapedInput,

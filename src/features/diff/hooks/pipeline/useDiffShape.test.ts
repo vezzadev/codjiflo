@@ -36,7 +36,7 @@ describe('useDiffShape', () => {
   it('returns empty alignedLines for inline mode', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { mode: 'inline' },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffShape(mockFilteredInput));
 
@@ -48,7 +48,7 @@ describe('useDiffShape', () => {
   it('computes alignedLines for split mode', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { mode: 'split' },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffShape(mockFilteredInput));
 
@@ -59,7 +59,7 @@ describe('useDiffShape', () => {
   it('uses pre-computed aligned lines when available in split mode', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { mode: 'split' },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const preComputedAligned = [
       { key: 'line-0', left: { content: 'old', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 }, right: { content: 'new', type: 'context' as const, oldLineNumber: 1, newLineNumber: 1 } },
@@ -78,7 +78,7 @@ describe('useDiffShape', () => {
   it('preserves filtered input properties', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { mode: 'inline' },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const customInput: DiffFilterOutput = {
       ...mockFilteredInput,

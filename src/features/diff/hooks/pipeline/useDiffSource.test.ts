@@ -30,7 +30,7 @@ describe('useDiffSource', () => {
         { filename: 'test.ts', patch: 'patch content', status: FileChangeStatus.Modified },
       ],
       selectedFileIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useIterationDiff).mockReturnValue({
       isIterationMode: false,
@@ -61,7 +61,7 @@ describe('useDiffSource', () => {
         { filename: 'test.ts', patch: 'api patch', status: FileChangeStatus.Modified },
       ],
       selectedFileIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const mockIterationDiff = { base: null, head: null, diffLines: [], alignedLines: [] };
 
@@ -89,7 +89,7 @@ describe('useDiffSource', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       files: [{ filename: 'test.ts', patch: 'patch' }],
       selectedFileIndex: PR_DESCRIPTION_INDEX,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useIterationDiff).mockReturnValue({
       isIterationMode: false,
@@ -117,7 +117,7 @@ describe('useDiffSource', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       files: [],
       selectedFileIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useIterationDiff).mockReturnValue({
       isIterationMode: false,
@@ -145,7 +145,7 @@ describe('useDiffSource', () => {
         { filename: 'old-name.ts', patch: 'api patch', status: FileChangeStatus.Modified },
       ],
       selectedFileIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useIterationDiff).mockReturnValue({
       isIterationMode: true,

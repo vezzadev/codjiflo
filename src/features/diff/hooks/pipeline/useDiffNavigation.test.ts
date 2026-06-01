@@ -62,7 +62,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffNavigation(mockDisplayInput));
 
@@ -74,7 +74,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const splitInput: DiffDisplayOutput = {
       ...mockDisplayInput,
@@ -95,7 +95,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: PR_DESCRIPTION_INDEX,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffNavigation(mockDisplayInput));
 
@@ -106,7 +106,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const fullChangeInput: DiffDisplayOutput = {
       ...mockDisplayInput,
@@ -122,7 +122,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffNavigation(mockDisplayInput));
 
@@ -134,7 +134,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: -1,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffNavigation(mockDisplayInput));
 
@@ -145,7 +145,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 10, // Exceeds available hunks
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffNavigation(mockDisplayInput));
 
@@ -156,7 +156,7 @@ describe('useDiffNavigation', () => {
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
       currentChangeIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const customInput: DiffDisplayOutput = {
       ...mockDisplayInput,
