@@ -4,7 +4,7 @@ import { setupAuthState } from "../../fixtures/github-mocks";
 test.describe("Iteration Tabs UI (Prod Mode)", () => {
   // These tests require real iteration artifacts from PR #11 in e2e test repo
   const iterationTestPR = {
-    owner: "pedropaulovc",
+    owner: "vezzadev",
     repo: "codjiflo-e2e-test-repo",
     prNumber: 11,
   };
