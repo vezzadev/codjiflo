@@ -10,23 +10,22 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // Non-secret runtime/build config. The client id is NOT sensitive (it ships in
-  // the OAuth URL). NEXT_PUBLIC_* values are also inlined at build time by Next;
-  // these mirror them for any server-side reads. The real values for production
-  // are set in the Cloudflare dashboard / Workers Builds env (see tasks 2.5).
+  // Non-secret SERVER-runtime config. The client id is not sensitive (it ships
+  // in the OAuth URL). NEXT_PUBLIC_* values are inlined at BUILD time by Next
+  // (see .env.production), so they are not listed here.
   "vars": {
-    "NEXT_PUBLIC_APP_URL": "https://codjiflo.net"
-  }
-  // Secret Store binding (added in task 2.2 once the `codjiflo` store exists):
-  // the ONLY app runtime secret is GITHUB_APP_CLIENT_SECRET. Uncomment and fill
-  // `store_id` from the dashboard. The Worker reads it at runtime via this
-  // binding — the value never leaves the store.
-  //
-  // "secrets_store_secrets": [
-  //   {
-  //     "binding": "GITHUB_APP_CLIENT_SECRET",
-  //     "store_id": "<codjiflo-secret-store-id>",
-  //     "secret_name": "GITHUB_APP_CLIENT_SECRET"
-  //   }
-  // ]
+    "GITHUB_APP_CLIENT_ID": "Iv23liUEkzCUSR78IkHn"
+  },
+  // The ONLY app runtime secret. Stored in the account's default Secret Store
+  // and read at runtime via this binding (src/app/api/auth/utils.ts ->
+  // getCloudflareContext().env.GITHUB_APP_CLIENT_SECRET.get()). The value never
+  // leaves the store. Uploaded off-band via `wrangler secrets-store secret
+  // create` — not present in this repo or any env file in CI.
+  "secrets_store_secrets": [
+    {
+      "binding": "GITHUB_APP_CLIENT_SECRET",
+      "store_id": "cc49be40eb984d38a45fae3a4f29a9b2",
+      "secret_name": "GITHUB_APP_CLIENT_SECRET"
+    }
+  ]
 }

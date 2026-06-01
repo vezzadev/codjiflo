@@ -2,17 +2,17 @@
 
 - [x] 1.1 Add `@opennextjs/cloudflare` and `wrangler` as dev dependencies; remove the `vercel` dev dependency
 - [x] 1.2 Add `wrangler.jsonc` (Worker name, compatibility date/flags, assets/route config) and `open-next.config.ts`
-- [x] 1.3 Update `package.json` scripts: OpenNext build via `cf:build`/`preview`/`deploy`; `build` stays `next build` (OpenNext invokes it internally — making `build` the OpenNext build recurses); keep `dev` on Next/Turbopack
+- [x] 1.3 Update `package.json` scripts: `build` IS `opennextjs-cloudflare build` (Cloudflare Workers Builds runs `npm run build`, so it must produce the Worker). The recursion (OpenNext's inner build defaults to `npm run build`) is broken by setting `config.buildCommand = 'next build'` in `open-next.config.ts`, so the inner build calls `next build` directly. `build:next` exposes a raw Next build; `preview`/`deploy` wrap OpenNext; `dev` stays on Next/Turbopack
 - [x] 1.4 Verify `next.config.ts` SQL.js/WASM config is compatible with the OpenNext build (server build only; SQL.js is client-side) — OpenNext build completed clean
 - [x] 1.5 Run the OpenNext build locally and smoke-test with `wrangler dev`/`preview` (load app + `/api/health`) — `/api/health` 200, `/` 200 via `wrangler dev`
 
 ## 2. Cloudflare Git release process & Secret Store (via `pedrovezzadev`)
 
 - [ ] 2.1 Sign in as `pedrovezzadev`; connect the GitHub repo in Cloudflare (Workers Builds), production branch = `main`
-- [ ] 2.2 Create a Cloudflare Secret Store named `codjiflo` and add its binding to the Worker (`wrangler.jsonc`) so the secret is available at runtime
-- [ ] 2.3 Upload `GITHUB_APP_CLIENT_SECRET` (from the current `.env.local`) into the `codjiflo` Secret Store off-band (value never leaves the store). This is the only app secret; the E2E token is test-time only and is NOT uploaded
+- [x] 2.2 Used the account's default Secret Store (`cc49be40eb984d38a45fae3a4f29a9b2`) rather than a new `codjiflo` store; added the `secrets_store_secrets` binding to `wrangler.jsonc` (binding `GITHUB_APP_CLIENT_SECRET`). `wrangler deploy --dry-run` confirms it resolves as a Secrets Store Secret
+- [x] 2.3 Uploaded `GITHUB_APP_CLIENT_SECRET` (from `.env.local`) into the default Secret Store off-band via `printf '%s' … | wrangler secrets-store secret create` (stdin, value never echoed). This is the only app secret; the E2E token is test-time only and is NOT uploaded
 - [ ] 2.4 Once `GITHUB_APP_CLIENT_SECRET` is confirmed in the Secret Store, delete the entire `.env.local` so the plaintext secret no longer lives on disk
-- [ ] 2.5 Set non-secret config as plain Worker/build env vars: client id (`GITHUB_APP_CLIENT_ID`, `NEXT_PUBLIC_GITHUB_CLIENT_ID`), `NEXT_PUBLIC_APP_URL=https://codjiflo.net`
+- [ ] 2.5 Non-secret config: `GITHUB_APP_CLIENT_ID` is now a plain Worker runtime `var` in `wrangler.jsonc` (server-side, not inlined). **Still dashboard:** the `NEXT_PUBLIC_*` values are inlined at BUILD time, so set them as Workers Builds build env vars — `NEXT_PUBLIC_GITHUB_CLIENT_ID=Iv23liUEkzCUSR78IkHn`, `NEXT_PUBLIC_APP_URL=https://codjiflo.net` (`.env.production` can't be committed — gitignored by the repo's `.env.*` rule)
 - [ ] 2.6 Map `codjiflo.net` (DNS + Worker route + SSL) to the production Worker; configure a custom `*.codjiflo.net` preview domain for non-production deployments so previews keep the `.codjiflo.net` cookie domain (fall back to `*.workers.dev` = login-per-preview only if a custom preview domain isn't supported)
 - [ ] 2.7 Open a throwaway test PR; confirm a Cloudflare preview deploys, posts a GitHub deployment status with `target_url`, and serves `/api/health`
 
