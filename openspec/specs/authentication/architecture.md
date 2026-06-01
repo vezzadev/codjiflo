@@ -59,20 +59,25 @@ locally the secret is supplied off-band in `.env.local`.
 | Variable | Location | Purpose |
 |----------|----------|---------|
 | `GITHUB_APP_CLIENT_SECRET` | Cloudflare Secret Store (Worker binding) | Token exchange (secret) |
-| `GITHUB_APP_CLIENT_ID` | Plain Worker var | Token exchange |
-| `NEXT_PUBLIC_GITHUB_CLIENT_ID` | Plain build/Worker var | Build OAuth URL |
-| `NEXT_PUBLIC_APP_URL` | Plain build/Worker var | Callback base URL |
-| `NEXT_PUBLIC_APP_COMMIT_SHA` | Build var (inlined) | `/api/health` commit; from `WORKERS_CI_COMMIT_SHA` |
+| `GITHUB_APP_CLIENT_ID` | Plain Worker var (`wrangler.jsonc`) | Token exchange (server runtime) |
+| `NEXT_PUBLIC_GITHUB_CLIENT_ID` | `next.config.ts` `env` default (inlined) | Build OAuth URL (browser) |
+| `NEXT_PUBLIC_APP_URL` | `next.config.ts` `env` default (inlined) | Callback base URL (browser) |
+| `APP_COMMIT_SHA` | `next.config.ts` `env` default (inlined) | `/api/health` commit; from `WORKERS_CI_COMMIT_SHA` or `git rev-parse` |
 
-The commit SHA is **inlined at build time** — set the Workers Builds build
-command to `NEXT_PUBLIC_APP_COMMIT_SHA=$WORKERS_CI_COMMIT_SHA npx opennextjs-cloudflare build`
-(Workers Builds build vars are not available at runtime).
+The three inlined values are **non-secret constants**, identical for production
+and every preview (OAuth always funnels through the canonical `codjiflo.net`
+domain). They are computed in `next.config.ts` via the `env` key — so **no
+Cloudflare dashboard build vars or build-command override are needed**. The
+commit SHA comes from `WORKERS_CI_COMMIT_SHA` (Cloudflare Workers Builds) with a
+`git rev-parse HEAD` fallback for local builds. Each can still be overridden by
+exporting the matching env var at build time. Only `GITHUB_APP_CLIENT_ID` (runtime,
+paired with the secret) lives in `wrangler.jsonc` `vars`.
 
 **Backup values:**
 ```
 GITHUB_APP_CLIENT_ID = Iv23liUEkzCUSR78IkHn
 NEXT_PUBLIC_GITHUB_CLIENT_ID = Iv23liUEkzCUSR78IkHn
-NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev
+NEXT_PUBLIC_APP_URL = http://localhost:3000        # local dev (NODE_ENV !== production)
 NEXT_PUBLIC_APP_URL = https://codjiflo.net         # preview & prod
 ```
 
