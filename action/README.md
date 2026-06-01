@@ -22,7 +22,7 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     steps:
-      - uses: codjiflo/action@v1
+      - uses: vezzadev/codjiflo-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```

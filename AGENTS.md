@@ -230,7 +230,7 @@ GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR preview
 
 CodjiFlo tracks PR iterations using a **no-backend** approach:
 
-1. **GitHub Action** (`codjiflo/action`) runs on PR events
+1. **GitHub Action** (`vezzadev/codjiflo-action`) runs on PR events
 2. Captures iteration data (commits, file contents) to **SQLite database**
 3. Uploads SQLite as **GitHub Artifact**
 4. Posts/updates **PR comment** with artifact reference (`<!-- codjiflo-data -->`)
