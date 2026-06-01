@@ -10,8 +10,8 @@
   "scripts": {
     "postinstall": "node scripts/copy-sql-wasm.js",
     "dev": "node scripts/dev.js",
-    "build": "cross-env NODE_OPTIONS=--use-system-ca next build",
-    "cf:build": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare build",
+    "build": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare build",
+    "build:next": "cross-env NODE_OPTIONS=--use-system-ca next build",
     "preview": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare preview",
     "deploy": "cross-env NODE_OPTIONS=--use-system-ca opennextjs-cloudflare deploy",
     "start": "cross-env NODE_OPTIONS=--use-system-ca next start",
