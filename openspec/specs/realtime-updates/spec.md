@@ -3,6 +3,8 @@
 ## Purpose
 Live update behaviour — SignalR for Azure DevOps, webhook + polling fallback for other platforms, optimistic UI rules, ETag/Last-Modified delta handling, auto-reconnect, and token-expiry resubscribe.
 
+See [architecture.md](architecture.md) for implementation reference (topology diagram, SignalR/notification interfaces, and the platform table).
+
 ## Requirements
 ### Requirement: Real-Time Provider Abstraction
 The system SHALL expose a platform-agnostic real-time provider interface that advertises whether real-time push is supported, declares its transport type (websocket, polling, or server-sent events), and emits typed events for review, iteration, comment, reviewer, status, and policy changes. Platform-specific providers (Azure DevOps, GitHub, GitLab) MUST implement this interface so that consumers of `backend-abstraction` can subscribe to updates without knowing the underlying transport.
