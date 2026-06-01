@@ -34,13 +34,13 @@
 
 ## 5. Required deployment check & cleanup
 
-- [ ] 5.1 Enforce on GitHub: add the successful Cloudflare deployment status check as a required status check in the `main` branch-protection rule (using the `pedrovezzadev` org-admin account) so PRs targeting `main` can't merge until their Cloudflare deployment succeeds. Enable only after a green deploy is confirmed on a test PR
-- [ ] 5.2 Delete `vercel.json` and `.vercel/`; remove remaining `NEXT_PUBLIC_VERCEL_*` references
-- [ ] 5.3 Pause (do not delete) the Vercel project + disconnect its GitHub App once main has had a green Cloudflare deploy
-- [ ] 5.4 Configure a 301 redirect `codjiflo.vza.net → codjiflo.net` in the Cloudflare account that owns `vza.net` (a different account — requires re-login/account switch; ask the user to authorize the change). Verify the redirect resolves and preserves path
+- [ ] 5.1 **[needs GitHub org-admin / `pedrovezzadev`]** Add the successful Cloudflare deployment status check as a required status check in the `main` branch-protection rule. Enable only after a green deploy is confirmed on a test PR
+- [x] 5.2 Deleted `vercel.json` and `.vercel/`; the only `NEXT_PUBLIC_VERCEL_*` ref (health route) was already replaced in task 3.1
+- [ ] 5.3 **[needs Vercel dashboard]** Pause (do not delete) the Vercel project + disconnect its GitHub App once main has had a green Cloudflare deploy
+- [ ] 5.4 **[needs the other Cloudflare account that owns `vza.net`]** Configure a 301 redirect `codjiflo.vza.net → codjiflo.net`, preserving path. Requires account switch — ask the user to authorize
 
 ## 6. Docs & verification
 
-- [ ] 6.1 Update `openspec/specs/authentication/architecture.md` (domain, preview hostnames, env source, callback URLs) and `AGENTS.md` env-setup notes
-- [ ] 6.2 Run `npm run test:all` (lint, typecheck, spec:validate, coverage, e2e, storybook) green
-- [ ] 6.3 Confirm prod-mode E2E passes against the live Cloudflare deployment and `/api/health` reports the correct commit on `codjiflo.net`
+- [x] 6.1 Updated `openspec/specs/authentication/architecture.md` (domain, preview hostnames, Secret Store env source, commit-SHA build var, callback URLs) and `AGENTS.md` env-setup notes
+- [x] 6.2 `npm run test:all` green — lint ✓ typecheck ✓ spec:validate (11) ✓ unit+coverage (1522) ✓ e2e mock (121) ✓ storybook (31) ✓
+- [ ] 6.3 **[needs live Cloudflare deploy]** Confirm prod-mode E2E passes against the live deployment and `/api/health` reports the correct commit on `codjiflo.net`
