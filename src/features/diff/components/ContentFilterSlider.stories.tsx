@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ContentFilterSlider } from './ContentFilterSlider';
 import type { ContentFilter } from '../types';
 
-function ControlledSlider({ initial = 'both' as ContentFilter }: { initial?: ContentFilter }) {
+function ControlledSlider({ initial = 'both' }: { initial?: ContentFilter }) {
   const [value, setValue] = useState<ContentFilter>(initial);
   return (
     <div style={{ padding: '16px', background: 'var(--diff-area-bg)' }}>

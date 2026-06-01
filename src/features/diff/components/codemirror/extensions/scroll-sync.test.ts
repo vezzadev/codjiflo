@@ -4,7 +4,6 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { EditorState } from '@codemirror/state';
-import type { EditorView } from '@codemirror/view';
 import {
   createScrollSync,
   scrollSync,
@@ -133,7 +132,7 @@ describe('createScrollSyncPair', () => {
     const pair = createScrollSyncPair();
     const mockPartner = createMockEditorView();
 
-    const extension = pair.left(mockPartner as unknown as Parameters<typeof pair.left>[0]);
+    const extension = pair.left(mockPartner);
 
     expect(extension).toBeDefined();
     expect(Array.isArray(extension)).toBe(true);
@@ -143,7 +142,7 @@ describe('createScrollSyncPair', () => {
     const pair = createScrollSyncPair();
     const mockPartner = createMockEditorView();
 
-    const extension = pair.right(mockPartner as unknown as Parameters<typeof pair.right>[0]);
+    const extension = pair.right(mockPartner);
 
     expect(extension).toBeDefined();
     expect(Array.isArray(extension)).toBe(true);
@@ -194,7 +193,7 @@ describe('syncScrollPosition', () => {
 
 describe('ScrollSyncConfig', () => {
   it('accepts all configuration options', () => {
-    const mockPartner = createMockEditorView() as unknown as EditorView;
+    const mockPartner = createMockEditorView();
     const onScroll = vi.fn();
 
     const state = EditorState.create({

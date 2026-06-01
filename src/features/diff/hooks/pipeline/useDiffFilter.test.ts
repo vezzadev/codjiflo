@@ -51,16 +51,16 @@ describe('useDiffFilter', () => {
 
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { showFullFile: false },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useDiffContentStore).mockReturnValue({
       computeFullFileDiff: vi.fn().mockResolvedValue(null),
       isLoadingContent: false,
-    } as ReturnType<typeof useDiffContentStore>);
+    });
 
     vi.mocked(usePRStore).mockReturnValue({
       currentPR: null,
-    } as ReturnType<typeof usePRStore>);
+    });
   });
 
   it('parses patch and returns diffLines in stateless mode', () => {
@@ -102,7 +102,7 @@ describe('useDiffFilter', () => {
 
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { showFullFile: true },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffFilter(iterationInput));
 
@@ -129,7 +129,7 @@ describe('useDiffFilter', () => {
 
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { showFullFile: false },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     const { result } = renderHook(() => useDiffFilter(iterationInput));
 
@@ -185,16 +185,16 @@ describe('useDiffFilter', () => {
 
     vi.mocked(useDiffStore).mockReturnValue({
       viewConfig: { showFullFile: true },
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useDiffContentStore).mockReturnValue({
       computeFullFileDiff: mockComputeFullFileDiff,
       isLoadingContent: false,
-    } as ReturnType<typeof useDiffContentStore>);
+    });
 
     vi.mocked(usePRStore).mockReturnValue({
       currentPR: { baseSha: 'base123', headSha: 'head456' },
-    } as ReturnType<typeof usePRStore>);
+    });
 
     renderHook(() => useDiffFilter(mockSourceInput));
 

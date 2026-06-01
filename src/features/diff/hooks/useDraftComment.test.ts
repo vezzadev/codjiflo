@@ -44,11 +44,11 @@ describe('useDraftComment', () => {
 
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex: 0,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     vi.mocked(useCommentsStore).mockReturnValue({
       addComment: mockAddComment,
-    } as ReturnType<typeof useCommentsStore>);
+    });
   });
 
   it('returns initial state with no draft', () => {
@@ -183,7 +183,7 @@ describe('useDraftComment', () => {
     let selectedFileIndex = 0;
     vi.mocked(useDiffStore).mockImplementation(() => ({
       selectedFileIndex,
-    }) as ReturnType<typeof useDiffStore>);
+    }));
 
     const { result, rerender } = renderHook(() => useDraftComment());
 
@@ -198,7 +198,7 @@ describe('useDraftComment', () => {
     selectedFileIndex = 1;
     vi.mocked(useDiffStore).mockReturnValue({
       selectedFileIndex,
-    } as ReturnType<typeof useDiffStore>);
+    });
 
     rerender();
 

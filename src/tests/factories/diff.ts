@@ -1,5 +1,5 @@
 import { FileChange, FileChangeStatus } from '@/api/types';
-import type { ParsedDiffLine, DiffLineType } from '@/features/diff/types';
+import type { ParsedDiffLine } from '@/features/diff/types';
 
 let fileCounter = 0;
 
@@ -25,7 +25,7 @@ export function createMockFileChange(overrides: Partial<FileChange> = {}): FileC
 
 export function createMockDiffLine(overrides: Partial<ParsedDiffLine> = {}): ParsedDiffLine {
   return {
-    type: 'context' as DiffLineType,
+    type: 'context',
     content: 'const example = true;',
     oldLineNumber: 1,
     newLineNumber: 1,
