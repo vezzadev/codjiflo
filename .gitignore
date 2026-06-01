@@ -164,4 +164,10 @@ demos/
 
 # Letta agent configuration
 .letta/
-.claude/CLAUDE.md
+
+# Claude Code: ignore local/runtime files (lock files, CLAUDE.md, settings.local.json),
+# but keep shared project config and workflow commands tracked
+.claude/*
+!.claude/settings.json
+!.claude/commands/
+!.claude/skills/
