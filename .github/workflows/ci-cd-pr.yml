@@ -29,11 +29,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -54,11 +54,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -76,11 +76,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -98,11 +98,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -120,11 +120,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -140,7 +140,7 @@ jobs:
       - name: Download base coverage
         if: always()
         id: download-coverage-baseline
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: ci-cd-main.yml
           branch: main
@@ -234,11 +234,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -261,11 +261,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -290,11 +290,11 @@ jobs:
     steps:
       - name: Checkout repository
         timeout-minutes: 1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
@@ -318,7 +318,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Capture PR iteration
         id: capture
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload iteration artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codjiflo-pr-${{ env.PR_NUMBER }}-${{ github.run_id }}
           path: codjiflo-data/
