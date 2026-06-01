@@ -151,9 +151,12 @@ vite.config.ts.timestamp-*
 
 # Storybook
 storybook-static/
-.vercel/*
-!.vercel/project.json
 .env*.local
+
+# Cloudflare / OpenNext build output
+.open-next/
+.wrangler/
+.dev.vars
 # SQL.js WASM files (copied from node_modules at build time)
 public/sql-wasm/
 

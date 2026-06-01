@@ -7,7 +7,7 @@
  *   E2E_DEPENDENCIES_MODE=mock|prod
  *
  * - mock: Uses Playwright route mocking (default, used in PR CI)
- * - prod: Hits production (codjiflo.vza.net) with real GitHub API (used in main CI)
+ * - prod: Hits production (codjiflo.net) with real GitHub API (used in main CI)
  */
 
 export type E2EMode = "mock" | "prod";

@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "codjiflo",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  // nodejs_compat is required by the OpenNext Cloudflare adapter (Node-compatible
+  // server). It also populates process.env from plain `vars` below.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Non-secret runtime/build config. The client id is NOT sensitive (it ships in
+  // the OAuth URL). NEXT_PUBLIC_* values are also inlined at build time by Next;
+  // these mirror them for any server-side reads. The real values for production
+  // are set in the Cloudflare dashboard / Workers Builds env (see tasks 2.5).
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://codjiflo.net"
+  }
+  // Secret Store binding (added in task 2.2 once the `codjiflo` store exists):
+  // the ONLY app runtime secret is GITHUB_APP_CLIENT_SECRET. Uncomment and fill
+  // `store_id` from the dashboard. The Worker reads it at runtime via this
+  // binding — the value never leaves the store.
+  //
+  // "secrets_store_secrets": [
+  //   {
+  //     "binding": "GITHUB_APP_CLIENT_SECRET",
+  //     "store_id": "<codjiflo-secret-store-id>",
+  //     "secret_name": "GITHUB_APP_CLIENT_SECRET"
+  //   }
+  // ]
+}

@@ -13,7 +13,7 @@ import oneTopLevelTestDescribe from "./eslint-rules/one-top-level-test-describe.
 import noNativeInteractiveElements from "./eslint-rules/no-native-interactive-elements.js";
 
 export default tseslint.config(
-  { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", "next-env.d.ts", "action/**/*"] },
+  { ignores: ["dist", "storybook-static", "coverage", ".storybook/**/*", "playwright-report", ".next/**/*", ".open-next/**/*", ".wrangler/**/*", "next-env.d.ts", "action/**/*"] },
   // Next.js recommended config (includes React, React Hooks, and Next.js rules)
   ...nextConfig,
   // TypeScript strict checking

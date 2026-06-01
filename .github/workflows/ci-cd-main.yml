@@ -49,16 +49,19 @@ jobs:
   wait-for-deployment:
     runs-on: ubuntu-slim
     steps:
-      - name: Wait for Vercel Production deployment
+      - name: Wait for Cloudflare production deployment
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           SHA="${{ github.sha }}"
-          echo "Waiting for Vercel Production deployment for SHA: ${SHA:0:7}"
+          echo "Waiting for Cloudflare production deployment for SHA: ${SHA:0:7}"
 
+          # Cloudflare Workers Builds posts the production GitHub deployment for
+          # the pushed SHA. Take the most recent deployment (Cloudflare is the
+          # only deployer); add &environment=<name> once task 2.7 confirms it.
           for i in $(seq 1 60); do
-            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Production" --jq '.[0].id // empty' 2>/dev/null)
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA" --jq '.[0].id // empty' 2>/dev/null)
 
             if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
               STATE=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0].state // empty' 2>/dev/null)
@@ -82,7 +85,7 @@ jobs:
         timeout-minutes: 1
         run: |
           EXPECTED="${{ github.sha }}"
-          URL="https://codjiflo.vza.net/api/health"
+          URL="https://codjiflo.net/api/health"
           for i in $(seq 1 15); do
             DEPLOYED=$(curl -s "$URL" | jq -r '.commit' 2>/dev/null || echo "")
             if [ "$DEPLOYED" = "$EXPECTED" ]; then
@@ -133,7 +136,7 @@ jobs:
         run: |
           echo "CPU cores: $(nproc), Playwright workers: $(($(nproc) / 2))"
           npm run test:e2e -- --repeat-each=10 || MOCK_FAILED=1
-          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
+          E2E_BASE_URL=https://codjiflo.net npm run test:e2e:prod -- --repeat-each=10 || PROD_FAILED=1
           [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
 
       - name: Upload Playwright traces
@@ -174,7 +177,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm run test:e2e -- --workers=1 --repeat-each=10 || MOCK_FAILED=1
-          E2E_BASE_URL=https://codjiflo.vza.net npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
+          E2E_BASE_URL=https://codjiflo.net npm run test:e2e:prod -- --workers=1 --repeat-each=10 || PROD_FAILED=1
           [ -z "$MOCK_FAILED" ] && [ -z "$PROD_FAILED" ]
 
       - name: Upload Playwright traces

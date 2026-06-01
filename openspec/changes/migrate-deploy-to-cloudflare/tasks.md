@@ -1,10 +1,10 @@
 ## 1. Build & adapter setup
 
-- [ ] 1.1 Add `@opennextjs/cloudflare` and `wrangler` as dev dependencies; remove the `vercel` dev dependency
-- [ ] 1.2 Add `wrangler.jsonc` (Worker name, compatibility date/flags, assets/route config) and `open-next.config.ts`
-- [ ] 1.3 Update `package.json` scripts: `build` → OpenNext Cloudflare build; add `preview`/`deploy` (wrangler); keep `dev` on Next/Turbopack (no secret-pull script)
-- [ ] 1.4 Verify `next.config.ts` SQL.js/WASM config is compatible with the OpenNext build (server build only; SQL.js is client-side)
-- [ ] 1.5 Run the OpenNext build locally and smoke-test with `wrangler dev`/`preview` (load app + `/api/health`)
+- [x] 1.1 Add `@opennextjs/cloudflare` and `wrangler` as dev dependencies; remove the `vercel` dev dependency
+- [x] 1.2 Add `wrangler.jsonc` (Worker name, compatibility date/flags, assets/route config) and `open-next.config.ts`
+- [x] 1.3 Update `package.json` scripts: OpenNext build via `cf:build`/`preview`/`deploy`; `build` stays `next build` (OpenNext invokes it internally — making `build` the OpenNext build recurses); keep `dev` on Next/Turbopack
+- [x] 1.4 Verify `next.config.ts` SQL.js/WASM config is compatible with the OpenNext build (server build only; SQL.js is client-side) — OpenNext build completed clean
+- [x] 1.5 Run the OpenNext build locally and smoke-test with `wrangler dev`/`preview` (load app + `/api/health`) — `/api/health` 200, `/` 200 via `wrangler dev`
 
 ## 2. Cloudflare Git release process & Secret Store (via `pedrovezzadev`)
 
@@ -18,19 +18,19 @@
 
 ## 3. Application & config repoint
 
-- [ ] 3.1 Replace `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` in `src/app/api/health/route.ts` with `NEXT_PUBLIC_APP_COMMIT_SHA`; inline it at build time via the build command `NEXT_PUBLIC_APP_COMMIT_SHA=$WORKERS_CI_COMMIT_SHA <opennext build>` (Workers Builds build vars aren't available at runtime). Read `GITHUB_APP_CLIENT_SECRET` from the Secret Store binding at runtime (client id stays a plain env var)
-- [ ] 3.2 Update `src/features/auth/utils/cookies.ts` `KNOWN_BASE_DOMAIN` from `.vza.net` to `.codjiflo.net`
-- [ ] 3.3 Remove `vercel env pull` and all secret-download code from `scripts/ensure-env.js`; it must not fetch secrets from any provider. When `.env.local` is missing, print off-band setup guidance only (keep `CI` short-circuit, update help text)
-- [ ] 3.4 Verify `scripts/dev.js` startup works without any secret download (off-band `.env.local`)
-- [ ] 3.5 Resolve the E2E token: CI injects the built-in `github.token` as `GITHUB_TOKEN` (no stored PAT); `CODJIFLO_E2E_GITHUB_TOKEN` in `.env.local` is unwired since code reads `GITHUB_TOKEN`. Decide: drop `CODJIFLO_E2E_GITHUB_TOKEN`, or wire it → `GITHUB_TOKEN` for local prod-E2E. Not a Worker/Secret Store concern
-- [ ] 3.6 Update GitHub App homepage + OAuth callback URLs to `https://codjiflo.net` (and previews under `*.codjiflo.net` if used)
+- [x] 3.1 Replaced `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` → `NEXT_PUBLIC_APP_COMMIT_SHA` in `route.ts` (Next inlines it at build). `validateClientCredentials()` is now async and reads `GITHUB_APP_CLIENT_SECRET` from the bound Cloudflare Secret Store via `getCloudflareContext()`, falling back to `process.env` for local/CI; client id stays a plain env var. **Dashboard step (task 2.5):** set the Workers Builds build command to `NEXT_PUBLIC_APP_COMMIT_SHA=$WORKERS_CI_COMMIT_SHA npx opennextjs-cloudflare build` (build vars aren't available at runtime, so the SHA must be inlined at build)
+- [x] 3.2 Updated `KNOWN_BASE_DOMAIN` `.vza.net` → `.codjiflo.net` (+ cookies/pkce tests, landing-page docs; 53 tests green)
+- [x] 3.3 Rewrote `scripts/ensure-env.js`: no `vercel env pull` / no secret download; `CI` short-circuit kept; missing `.env.local` prints off-band guidance and is non-blocking
+- [x] 3.4 Verified `scripts/dev.js` startup needs no secret download — it only calls `ensure-env.js`, which now exits 0 in all paths
+- [x] 3.5 Resolved: **dropped** `CODJIFLO_E2E_GITHUB_TOKEN` (zero code refs). Code + `playwright.config.ts` already standardize on `GITHUB_TOKEN`; the stale var only lived in `.env.local` (removed in task 2.4). No code change needed
+- [ ] 3.6 **[needs GitHub App dashboard]** Update GitHub App homepage + OAuth callback URLs to `https://codjiflo.net` (and previews under `*.codjiflo.net` if used)
 
 ## 4. CI/CD repoint
 
-- [ ] 4.1 `ci-cd-pr.yml`: retarget `wait-for-vercel` to the Cloudflare deployment environment; rename appropriately; keep reading `target_url` for the preview URL
-- [ ] 4.2 `ci-cd-pr.yml`: point preview health-check + `E2E_BASE_URL` at the Cloudflare preview URL
-- [ ] 4.3 `ci-cd-main.yml`: retarget `wait-for-deployment` to the Cloudflare production deployment; switch health URL + stress-test `E2E_BASE_URL` to `https://codjiflo.net`
-- [ ] 4.4 Remove the "Preview deployments handled by Vercel GitHub App" comment and any Vercel-specific env references in workflows
+- [x] 4.1 `ci-cd-pr.yml`: renamed `wait-for-vercel` → `wait-for-deployment`, dropped the `environment=Preview` filter (Cloudflare is the only deployer), still reads `target_url` → `preview-url`. Updated `needs`/output references
+- [x] 4.2 `ci-cd-pr.yml`: preview health-check + `E2E_BASE_URL` already consume the deployment `target_url` (`needs.wait-for-deployment.outputs.preview-url`) — scheme-agnostic, no hardcoded host
+- [x] 4.3 `ci-cd-main.yml`: renamed/retargeted production deploy wait; health URL + both stress-test `E2E_BASE_URL`s → `https://codjiflo.net`
+- [x] 4.4 Replaced the Vercel GitHub App comment with the Cloudflare Workers Builds note; no Vercel env references remain in workflows
 
 ## 5. Required deployment check & cleanup
 

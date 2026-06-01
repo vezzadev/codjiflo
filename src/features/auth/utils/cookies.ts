@@ -7,7 +7,7 @@
  * Known base domain for production deployment.
  * Hardcoded to avoid security issues with multi-level TLDs (e.g., .co.uk).
  */
-export const KNOWN_BASE_DOMAIN = '.vza.net';
+export const KNOWN_BASE_DOMAIN = '.codjiflo.net';
 
 /**
  * Cookie names for OAuth flow
@@ -59,7 +59,7 @@ export function isValidReturnOrigin(origin: string): boolean {
     }
 
     // Allow exact match of base domain (without leading dot)
-    const baseDomainWithoutDot = KNOWN_BASE_DOMAIN.slice(1); // "vza.net"
+    const baseDomainWithoutDot = KNOWN_BASE_DOMAIN.slice(1); // "codjiflo.net"
     if (hostname === baseDomainWithoutDot) {
       return true;
     }

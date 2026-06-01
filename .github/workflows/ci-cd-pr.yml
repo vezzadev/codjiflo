@@ -157,12 +157,12 @@ jobs:
           json-summary-compare-path: ${{ steps.download-coverage-baseline.outcome == 'success' && 'coverage-baseline/coverage-summary.json' || '' }}
           threshold-icons: "{0: '🔴', 70: '🟡', 75: '🔵', 85: '🟢'}"
 
-  wait-for-vercel:
+  wait-for-deployment:
     runs-on: ubuntu-slim
     outputs:
       preview-url: ${{ steps.wait.outputs.preview-url }}
     steps:
-      - name: Wait for Vercel Preview deployment
+      - name: Wait for Cloudflare preview deployment
         id: wait
         timeout-minutes: 5
         env:
@@ -176,10 +176,14 @@ jobs:
             SHA=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }} --jq '.head.sha')
           fi
 
-          echo "Waiting for Vercel Preview deployment for SHA: ${SHA:0:7}"
+          echo "Waiting for Cloudflare preview deployment for SHA: ${SHA:0:7}"
 
+          # Cloudflare Workers Builds posts a GitHub deployment + status with the
+          # preview URL in target_url. Take the most recent deployment for the
+          # head SHA (Cloudflare is the only deployer). Add an
+          # &environment=<name> filter once task 2.7 confirms the env label.
           for i in $(seq 1 60); do
-            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA" --jq '.[0].id // empty' 2>/dev/null)
 
             if [ $? -eq 0 ] && [[ "$DEPLOYMENT_ID" =~ ^[0-9]+$ ]]; then
               STATUS=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0]' 2>/dev/null)
@@ -202,7 +206,7 @@ jobs:
             sleep 5
           done
 
-          echo "❌ Timeout waiting for Vercel Preview deployment"
+          echo "❌ Timeout waiting for Cloudflare preview deployment"
           exit 1
 
       - name: Verify preview serves correct commit
@@ -256,7 +260,7 @@ jobs:
         run: npm run test:e2e
 
   e2e-tests-prod:
-    needs: [wait-for-vercel]
+    needs: [wait-for-deployment]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -282,7 +286,7 @@ jobs:
         timeout-minutes: 3
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          E2E_BASE_URL: ${{ needs.wait-for-vercel.outputs.preview-url }}
+          E2E_BASE_URL: ${{ needs.wait-for-deployment.outputs.preview-url }}
         run: npm run test:e2e:prod
 
   storybook-tests:
@@ -311,7 +315,8 @@ jobs:
         timeout-minutes: 1
         run: npm run test:storybook
 
-  # Preview deployments handled by Vercel GitHub App (no VERCEL_TOKEN needed)
+  # Preview deployments are handled by Cloudflare Workers Builds (connected via
+  # the Cloudflare GitHub integration) — no deploy token needed in CI.
 
   # Capture iteration data for CodjiFlo iteration tracking
   capture-iteration:

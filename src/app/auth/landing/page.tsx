@@ -14,9 +14,9 @@ import { Button } from '@/components/Button';
  * after cross-subdomain authentication (e.g., PR preview -> main domain -> PR preview).
  *
  * Flow:
- * 1. User on pr-123.codjiflo.vza.net clicks login
- * 2. OAuth redirects to codjiflo.vza.net/auth/callback
- * 3. Callback page sets token in cookie, redirects to pr-123.codjiflo.vza.net/auth/landing
+ * 1. User on pr-123.codjiflo.net clicks login
+ * 2. OAuth redirects to codjiflo.net/auth/callback
+ * 3. Callback page sets token in cookie, redirects to pr-123.codjiflo.net/auth/landing
  * 4. This page reads the token from cookie, stores in auth store, redirects to original page
  */
 function AuthLandingContent() {

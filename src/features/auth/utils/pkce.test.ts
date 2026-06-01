@@ -152,7 +152,7 @@ describe('PKCE utilities', () => {
     });
 
     it('stores return origin in cookie', () => {
-      const origin = 'https://pr-123.codjiflo.vza.net';
+      const origin = 'https://pr-123.codjiflo.net';
 
       storeReturnOrigin(origin);
 
@@ -160,7 +160,7 @@ describe('PKCE utilities', () => {
     });
 
     it('retrieves and clears return origin', () => {
-      const origin = 'https://pr-123.codjiflo.vza.net';
+      const origin = 'https://pr-123.codjiflo.net';
 
       storeReturnOrigin(origin);
       const retrieved = retrieveReturnOrigin();

@@ -46,7 +46,7 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    const credentials = validateClientCredentials();
+    const credentials = await validateClientCredentials();
     if (!isValidCredentials(credentials)) {
       return credentials;
     }

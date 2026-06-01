@@ -9,12 +9,43 @@ interface ClientCredentials {
 }
 
 /**
+ * Resolves the GitHub App client secret — the app's only runtime secret.
+ *
+ * In production (Cloudflare Worker) the secret lives in a bound Cloudflare
+ * Secret Store and is read through the binding; its value is never present in
+ * `process.env` and never leaves the store. Locally and in CI the secret is a
+ * plain `process.env` value (off-band `.env.local`, or `GITHUB_TOKEN`-style
+ * injection). We therefore check `process.env` first, then fall back to the
+ * Secret Store binding via the OpenNext Cloudflare context.
+ */
+async function resolveClientSecret(): Promise<string | undefined> {
+  const fromEnv = process.env.GITHUB_APP_CLIENT_SECRET;
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const env = getCloudflareContext().env as { [key: string]: unknown };
+    // Secret Store bindings expose an async `.get()` accessor.
+    const binding = env.GITHUB_APP_CLIENT_SECRET as { get?: () => Promise<string> } | undefined;
+    if (binding?.get) {
+      return await binding.get();
+    }
+  } catch {
+    // Not running inside a Cloudflare Worker context (local dev / tests).
+  }
+
+  return undefined;
+}
+
+/**
  * Validates that required GitHub App client credentials are configured.
  * Returns credentials if valid, or an error response if not.
  */
-export function validateClientCredentials(): ClientCredentials | NextResponse {
+export async function validateClientCredentials(): Promise<ClientCredentials | NextResponse> {
   const clientId = process.env.GITHUB_APP_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
+  const clientSecret = await resolveClientSecret();
 
   if (!clientId || !clientSecret) {
     const missing = [];

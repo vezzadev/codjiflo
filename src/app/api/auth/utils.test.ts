@@ -39,11 +39,11 @@ describe('auth utils', () => {
   });
 
   describe('validateClientCredentials', () => {
-    it('returns credentials when both env vars are set', () => {
+    it('returns credentials when both env vars are set', async () => {
       process.env.GITHUB_APP_CLIENT_ID = 'test-client-id';
       process.env.GITHUB_APP_CLIENT_SECRET = 'test-client-secret';
 
-      const result = validateClientCredentials();
+      const result = await validateClientCredentials();
 
       expect(isValidCredentials(result)).toBe(true);
       if (isValidCredentials(result)) {
@@ -52,12 +52,12 @@ describe('auth utils', () => {
       }
     });
 
-    it('returns error response when GITHUB_APP_CLIENT_ID is missing', () => {
+    it('returns error response when GITHUB_APP_CLIENT_ID is missing', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
       process.env.GITHUB_APP_CLIENT_ID = '';
       process.env.GITHUB_APP_CLIENT_SECRET = 'test-client-secret';
 
-      const result = validateClientCredentials();
+      const result = await validateClientCredentials();
 
       expect(isValidCredentials(result)).toBe(false);
       expect(getJsonMock()).toHaveBeenCalledWith(
@@ -70,12 +70,12 @@ describe('auth utils', () => {
       consoleSpy.mockRestore();
     });
 
-    it('returns error response when GITHUB_APP_CLIENT_SECRET is missing', () => {
+    it('returns error response when GITHUB_APP_CLIENT_SECRET is missing', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
       process.env.GITHUB_APP_CLIENT_ID = 'test-client-id';
       process.env.GITHUB_APP_CLIENT_SECRET = '';
 
-      const result = validateClientCredentials();
+      const result = await validateClientCredentials();
 
       expect(isValidCredentials(result)).toBe(false);
       expect(getJsonMock()).toHaveBeenCalledWith(
@@ -88,12 +88,12 @@ describe('auth utils', () => {
       consoleSpy.mockRestore();
     });
 
-    it('returns error response when both env vars are missing', () => {
+    it('returns error response when both env vars are missing', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
       process.env.GITHUB_APP_CLIENT_ID = '';
       process.env.GITHUB_APP_CLIENT_SECRET = '';
 
-      const result = validateClientCredentials();
+      const result = await validateClientCredentials();
 
       expect(isValidCredentials(result)).toBe(false);
       expect(getJsonMock()).toHaveBeenCalledWith(
