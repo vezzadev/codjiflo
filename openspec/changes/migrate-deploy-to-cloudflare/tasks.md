@@ -32,6 +32,11 @@
 - [x] 4.3 `ci-cd-main.yml`: renamed/retargeted production deploy wait; health URL + both stress-test `E2E_BASE_URL`s → `https://codjiflo.net`
 - [x] 4.4 Replaced the Vercel GitHub App comment with the Cloudflare Workers Builds note; no Vercel env references remain in workflows
 
+## 4b. codjiflo-action review-link domain
+
+- [x] 4b.1 Updated `action/src/comment/comment-manager.ts` review link `codjiflo.vza.net` → `codjiflo.net` (+ tests, 7 pass); rebuilt `action/dist/index.js` (clean 2-line diff; reverted unrelated sourcemap/binary build churn)
+- [ ] 4b.2 **[needs the standalone `github.com/codjiflo/action` repo]** Sync this change and release a new tag if consumers pin `@v1`
+
 ## 5. Required deployment check & cleanup
 
 - [ ] 5.1 **[needs GitHub org-admin / `pedrovezzadev`]** Add the successful Cloudflare deployment status check as a required status check in the `main` branch-protection rule. Enable only after a green deploy is confirmed on a test PR

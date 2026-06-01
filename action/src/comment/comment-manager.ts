@@ -157,7 +157,7 @@ export async function updatePRDescription(
   });
 
   const currentBody = pr.body || '';
-  const codjifloLink = `https://codjiflo.vza.net/${owner}/${repo}/${prNumber}`;
+  const codjifloLink = `https://codjiflo.net/${owner}/${repo}/${prNumber}`;
   
   // Check if CodjiFlo link section already exists
   // Match from first marker through to second marker (inclusive)

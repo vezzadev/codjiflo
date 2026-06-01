@@ -120,7 +120,7 @@ describe('updatePRDescription', () => {
       owner,
       repo,
       pull_number: prNumber,
-      body: expect.stringContaining('https://codjiflo.vza.net/testowner/testrepo/123'),
+      body: expect.stringContaining('https://codjiflo.net/testowner/testrepo/123'),
     });
     expect(mockOctokit.rest.pulls.update).toHaveBeenCalledWith({
       owner,
@@ -154,7 +154,7 @@ describe('updatePRDescription', () => {
       owner,
       repo,
       pull_number: prNumber,
-      body: expect.stringContaining('https://codjiflo.vza.net/testowner/testrepo/123'),
+      body: expect.stringContaining('https://codjiflo.net/testowner/testrepo/123'),
     });
   });
 
@@ -181,7 +181,7 @@ Old link content here
     // Assert - should update with the new link format
     expect(mockOctokit.rest.pulls.update).toHaveBeenCalledTimes(1);
     const updateCall = mockOctokit.rest.pulls.update.mock.calls[0];
-    expect(updateCall[0].body).toContain('https://codjiflo.vza.net/testowner/testrepo/123');
+    expect(updateCall[0].body).toContain('https://codjiflo.net/testowner/testrepo/123');
     expect(updateCall[0].body).toContain('<!-- codjiflo-link -->');
     expect(updateCall[0].body).toContain('My PR description');
   });
@@ -194,7 +194,7 @@ Old link content here
 
 ---
 
-🔍 **[Review in CodjiFlo](https://codjiflo.vza.net/testowner/testrepo/123)**
+🔍 **[Review in CodjiFlo](https://codjiflo.net/testowner/testrepo/123)**
 
 <!-- codjiflo-link -->`;
     
@@ -228,7 +228,7 @@ Old link content here
       owner,
       repo,
       pull_number: prNumber,
-      body: expect.stringContaining('https://codjiflo.vza.net/testowner/testrepo/123'),
+      body: expect.stringContaining('https://codjiflo.net/testowner/testrepo/123'),
     });
   });
 });

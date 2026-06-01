@@ -15,7 +15,7 @@ A base Cloudflare Worker has already been created. We are migrating hosting to t
 
 **Non-Goals:**
 - Rewriting application behavior, auth flow logic, or the iteration/artifact pipeline.
-- Changing the GitHub Action (`codjiflo/action`) that captures iteration data.
+- Changing the GitHub Action's iteration-**capture** logic. (The action's hardcoded "Review in CodjiFlo" link host `codjiflo.vza.net` → `codjiflo.net` IS in scope — it's part of the domain cutover.)
 - Multi-region / edge-data architecture beyond what the Worker provides by default.
 - Secretless local real-auth login. Deleting `.env.local` means local real-auth dev needs the secret supplied off-band. A **future feature** will consider enabling **GitHub device-flow credentials** for local dev (client-id-only, no client secret on the developer's machine) — see the device-flow assessment; out of scope for this migration.
 
