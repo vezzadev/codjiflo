@@ -259,6 +259,7 @@ CodjiFlo uses [OpenSpec](https://github.com/openspecai/openspec) as the canonica
 | [`openspec/specs/`](openspec/specs/) | Live capability specs (the "what" the system does today). Each requirement carries WHEN/THEN scenarios that double as acceptance tests. Optional `architecture.md` sidecar holds implementation reference. |
 | [`openspec/changes/`](openspec/changes/) | In-flight proposals + design + tasks (completed ones land under `changes/archive/`) |
 | [`openspec/config.yaml`](openspec/config.yaml) | Schema + the `context:` block loaded into every OpenSpec workflow run |
+| [`openspec/test-matrices/`](openspec/test-matrices/) | Detailed QA test matrices (Azure DevOps comment cases, stateless-mode unit/integration/E2E, unauthenticated-access) — exhaustive case grids, perf thresholds, fixtures, and coverage targets that back the capability scenarios |
 
 ### Live capabilities (`openspec/specs/`)
 

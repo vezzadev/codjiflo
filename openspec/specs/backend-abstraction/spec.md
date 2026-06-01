@@ -3,6 +3,8 @@
 ## Purpose
 Platform-agnostic contracts (`IReviewBackend`, `ICommentBackend`, capability matrix) so the same UI works against GitHub, Azure DevOps, and GitLab. Defines layered interfaces, unified enumerations, capability-based feature degradation, and error normalization.
 
+See [architecture.md](architecture.md) for implementation reference (the layered architecture diagram and per-platform API mapping tables).
+
 ## Requirements
 ### Requirement: Layered Backend Architecture
 

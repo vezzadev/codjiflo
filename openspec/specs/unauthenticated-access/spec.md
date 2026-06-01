@@ -3,6 +3,8 @@
 ## Purpose
 Public-PR review without login — public-repo detection, rate-limit accounting and surfacing, private-PR detection with login prompt, contextual login prompts for write actions, and the boundary between view-only and login-required surfaces.
 
+See [architecture.md](architecture.md) for implementation reference (user-flow diagrams, state types, hooks, and security notes).
+
 ## Requirements
 ### Requirement: Unauthenticated Public PR Access
 The system SHALL allow unauthenticated users to view public pull requests, including PR metadata, file changes, diffs, and existing comments, without requiring login.

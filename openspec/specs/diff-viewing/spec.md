@@ -3,6 +3,8 @@
 ## Purpose
 Four diff view modes (unified, side-by-side, before-only, after-only), word-level highlighting, hunk navigation, view-mode persistence, the SpanTracker position-mapping contract, minimap, and per-filetype viewer selection.
 
+See [architecture.md](architecture.md) for implementation reference (data structures, the minimap/lasso diagrams, formulas, and reference tables).
+
 ## Requirements
 ### Requirement: View Mode Catalog
 

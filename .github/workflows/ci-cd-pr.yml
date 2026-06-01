@@ -35,7 +35,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Verify package-lock.json is normalized
@@ -60,7 +60,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -82,7 +82,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -104,7 +104,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -126,7 +126,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -240,7 +240,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -267,7 +267,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
@@ -296,7 +296,7 @@ jobs:
         timeout-minutes: 1
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.15.0" # pinned: 24.16.0 hangs `playwright install` zip extraction
           cache: "npm"
 
       - name: Install dependencies
