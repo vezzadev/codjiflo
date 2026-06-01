@@ -6,7 +6,7 @@ test.describe("Iteration File Status", () => {
   // Uses real PR #11 in codjiflo-e2e-test-repo which has target-file.yml first modified in iteration 2
 
   // Prod mode configuration - uses real PR #11 in e2e test repo
-  const config = { owner: "pedropaulovc", repo: "codjiflo-e2e-test-repo", prNumber: 11 };
+  const config = { owner: "vezzadev", repo: "codjiflo-e2e-test-repo", prNumber: 11 };
 
   test.beforeEach(async ({ page }) => {
     await setupAuthState(page);

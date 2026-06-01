@@ -59,20 +59,20 @@ export function getE2EGitHubToken(): string | undefined {
 export const prodModeConfig = {
   // CodjiFlo repository for prod mode tests
   testRepo: {
-    owner: "pedropaulovc",
+    owner: "vezzadev",
     repo: "codjiflo",
     // PR #1 exists and is open
     prNumber: 1,
   },
   // PR with multiple files for keyboard navigation testing
   keyboardNavPR: {
-    owner: "pedropaulovc",
+    owner: "vezzadev",
     repo: "codjiflo",
     prNumber: 6,
   },
   // Non-existent PR for 404 testing
   notFoundPR: {
-    owner: "pedropaulovc",
+    owner: "vezzadev",
     repo: "codjiflo",
     prNumber: 0,
   },
