@@ -2,6 +2,8 @@
 
 ## Purpose
 The chrome the diff and comments live inside — dashboard (PR list), file explorer, review properties panel, layout grid, status bar, theme handling (dark/light/black/high-contrast), and resizable panes.
+
+See [architecture.md](architecture.md) for implementation reference (CSS variable catalog, component hierarchy, data structures, and keyboard-shortcut tables).
 ## Requirements
 ### Requirement: Theme Selection
 The system SHALL offer the user four visual themes — `dark`, `light`, `black` (pure-black OLED), and `highcontrast` (accessibility) — and SHALL apply the selected theme to every surface of the shell (titlebar, sidebar, panes, file explorer, status bar, dashboard, and the diff/comments surfaces hosted inside it). Detailed accessibility requirements for the `highcontrast` variant are covered by the standalone `High-contrast theme for accessibility` requirement.

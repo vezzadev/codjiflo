@@ -3,6 +3,8 @@
 ## Purpose
 PR iteration tracking — iteration semantics, snapshot system, comment carry-across-versions, collapsed iterations, force-push resilience — across both stateful (GitHub Action + SQLite artifact) and stateless (Timeline API + Web Worker) modes, plus the mode-selection and fallback rules between them.
 
+See [architecture.md](architecture.md) for implementation reference (full SQLite schema, algorithms, the Web Worker diagram, and the complex-git-scenario tables).
+
 ## Requirements
 ### Requirement: Iteration Definition and Immutability
 The system SHALL model an iteration as an immutable PR revision consisting of a `before` snapshot and an `after` snapshot of the codebase, identified by a sequential 1-based revision number and a status of either `submitted` or `deleted`. Each iteration MUST be analyzable and comparable independently of the underlying git history.
