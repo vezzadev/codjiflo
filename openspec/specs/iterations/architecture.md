@@ -215,7 +215,7 @@ interface GitHubStatefulIteration extends Iteration {
 
 | Repository | Purpose |
 |------------|---------|
-| `codjiflo/action` | GitHub Action for iteration capture |
+| `vezzadev/codjiflo-action` | GitHub Action for iteration capture |
 | `codjiflo/comment-action` | GitHub Action for PR comment updates |
 
 ## Graceful Degradation

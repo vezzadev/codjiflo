@@ -35,7 +35,7 @@
 ## 4b. codjiflo-action review-link domain
 
 - [x] 4b.1 Updated `action/src/comment/comment-manager.ts` review link `codjiflo.vza.net` → `codjiflo.net` (+ tests, 7 pass); rebuilt `action/dist/index.js` (clean 2-line diff; reverted unrelated sourcemap/binary build churn)
-- [ ] 4b.2 **[needs the standalone `github.com/codjiflo/action` repo]** Sync this change and release a new tag if consumers pin `@v1`
+- [x] 4b.2 Synced the review-link domain to the standalone action repo — which is **`vezzadev/codjiflo-action`** (NOT `codjiflo/action`; that URL in the comment template is a broken self-reference). Patched `src/comment/comment-manager.ts` + `dist/index.js` directly (`codjiflo.vza.net` → `codjiflo.net`), pushed to `main` (`8eedff3`). The dist literal had to be edited by hand because the repo **can't build standalone** (imports the monorepo `@codjiflo/diff-engine` workspace pkg + `../scripts/generate-schema.cjs`). **Flag:** the standalone has drifted **~4253 src lines across 14 files** from the canonical monorepo `action/` — it's effectively unmaintained and has no tags (so no `@v1` to bump). Needs a separate decision: re-establish a monorepo→standalone publish pipeline, or deprecate it in favor of `uses: ./action`
 
 ## 5. Required deployment check & cleanup
 
