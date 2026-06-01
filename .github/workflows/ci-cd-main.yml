@@ -2,7 +2,7 @@ name: CI/CD Main
 
 permissions:
   contents: read
-  deployments: read
+  checks: read
 
 on:
   push:
@@ -49,35 +49,35 @@ jobs:
   wait-for-deployment:
     runs-on: ubuntu-slim
     steps:
-      - name: Wait for Cloudflare production deployment
+      - name: Wait for Cloudflare production build
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set +e
           SHA="${{ github.sha }}"
-          echo "Waiting for Cloudflare production deployment for SHA: ${SHA:0:7}"
+          echo "Waiting for Cloudflare Workers build for SHA: ${SHA:0:7}"
 
-          # Cloudflare Workers Builds posts the production GitHub deployment for
-          # the pushed SHA. Take the most recent deployment (Cloudflare is the
-          # only deployer); add &environment=<name> once task 2.7 confirms it.
+          # Cloudflare Workers Builds does NOT post a GitHub deployment object;
+          # it posts a check run named "Workers Builds: <worker>". On the
+          # production branch the build also deploys the Worker to codjiflo.net,
+          # so we wait for the check to succeed, then verify the live commit
+          # below (the production alias has no version-specific URL).
           for i in $(seq 1 60); do
-            DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments?sha=$SHA" --jq '.[0].id // empty' 2>/dev/null)
+            RUN=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name | startswith("Workers Builds"))] | sort_by(.started_at) | last' 2>/dev/null)
+            STATUS=$(echo "$RUN" | jq -r '.status // empty' 2>/dev/null)
 
-            if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "null" ]; then
-              STATE=$(gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" --jq '.[0].state // empty' 2>/dev/null)
-
-              if [ "$STATE" = "success" ]; then
-                echo "✅ Production deployment ready"
-                break
-              fi
-              if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
-                echo "❌ Production deployment failed: $STATE"
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion // empty')
+              if [ "$CONCLUSION" != "success" ]; then
+                echo "❌ Production build did not succeed: ${CONCLUSION:-unknown}"
                 exit 1
               fi
-              echo "Deployment state: ${STATE:-pending} (attempt $i/60)"
-            else
-              echo "No deployment found yet (attempt $i/60)"
+              echo "✅ Production build succeeded"
+              break
             fi
+            echo "Workers build status: ${STATUS:-pending} (attempt $i/60)"
             sleep 5
           done
 

@@ -14,7 +14,7 @@
 - [ ] 2.4 Once `GITHUB_APP_CLIENT_SECRET` is confirmed in the Secret Store, delete the entire `.env.local` so the plaintext secret no longer lives on disk
 - [ ] 2.5 Non-secret config: `GITHUB_APP_CLIENT_ID` is now a plain Worker runtime `var` in `wrangler.jsonc` (server-side, not inlined). **Still dashboard:** the `NEXT_PUBLIC_*` values are inlined at BUILD time, so set them as Workers Builds build env vars — `NEXT_PUBLIC_GITHUB_CLIENT_ID=Iv23liUEkzCUSR78IkHn`, `NEXT_PUBLIC_APP_URL=https://codjiflo.net` (`.env.production` can't be committed — gitignored by the repo's `.env.*` rule)
 - [ ] 2.6 Map `codjiflo.net` (DNS + Worker route + SSL) to the production Worker; configure a custom `*.codjiflo.net` preview domain for non-production deployments so previews keep the `.codjiflo.net` cookie domain (fall back to `*.workers.dev` = login-per-preview only if a custom preview domain isn't supported)
-- [ ] 2.7 Open a throwaway test PR; confirm a Cloudflare preview deploys, posts a GitHub deployment status with `target_url`, and serves `/api/health`
+- [x] 2.7 Confirmed on PR #530 itself: Cloudflare builds + deploys a preview. It does **NOT** post a GitHub deployment/environment — it posts the `Workers Builds: codjiflo` check run carrying `Preview URL` (`https://<version>-codjiflo.vezza-dev.workers.dev`) and `Preview Alias URL` (`https://<branch>-codjiflo.vezza-dev.workers.dev`). Previews are on `*.vezza-dev.workers.dev` (custom `*.codjiflo.net` preview domain still pending, task 2.6 — workers.dev fallback = login-per-preview, fine for CI). **Ruleset implication (task 5.1):** the old `required_deployments: ["Preview"]` gate can never be met (no deployment env); require the `Workers Builds: codjiflo` check instead
 
 ## 3. Application & config repoint
 
@@ -27,9 +27,9 @@
 
 ## 4. CI/CD repoint
 
-- [x] 4.1 `ci-cd-pr.yml`: renamed `wait-for-vercel` → `wait-for-deployment`, dropped the `environment=Preview` filter (Cloudflare is the only deployer), still reads `target_url` → `preview-url`. Updated `needs`/output references
-- [x] 4.2 `ci-cd-pr.yml`: preview health-check + `E2E_BASE_URL` already consume the deployment `target_url` (`needs.wait-for-deployment.outputs.preview-url`) — scheme-agnostic, no hardcoded host
-- [x] 4.3 `ci-cd-main.yml`: renamed/retargeted production deploy wait; health URL + both stress-test `E2E_BASE_URL`s → `https://codjiflo.net`
+- [x] 4.1 `ci-cd-pr.yml`: `wait-for-deployment` reworked. **Cloudflare Workers Builds posts NO GitHub deployment object** — it posts a check run `Workers Builds: codjiflo` whose `output.summary` carries `Preview URL` (version-pinned `https://<ver>-codjiflo.vezza-dev.workers.dev`) + `Preview Alias URL` (branch). The job now polls the check-runs API for that check to succeed and parses the version-specific Preview URL → `preview-url`. Permission `deployments: read` → `checks: read`. (Verified on PR #530: deployments API only ever had `vercel[bot]` entries; Cloudflare uses checks.)
+- [x] 4.2 `ci-cd-pr.yml`: the version-specific preview URL is pinned to the exact build, so the old commit-match health check is replaced by a liveness check (HTTP 200) — no dependency on `NEXT_PUBLIC_APP_COMMIT_SHA` for PR previews. `E2E_BASE_URL` still consumes `needs.wait-for-deployment.outputs.preview-url`
+- [x] 4.3 `ci-cd-main.yml`: production wait reworked to poll the `Workers Builds` check run (no deployment object). Production has no version URL (serves `codjiflo.net` directly), so `Verify deployment serves new commit` keeps the commit-match against `https://codjiflo.net/api/health` — **this requires the dashboard build command to inject `NEXT_PUBLIC_APP_COMMIT_SHA=$WORKERS_CI_COMMIT_SHA`** (task 3.1). Stress-test `E2E_BASE_URL`s → `https://codjiflo.net`. Permission `deployments: read` → `checks: read`
 - [x] 4.4 Replaced the Vercel GitHub App comment with the Cloudflare Workers Builds note; no Vercel env references remain in workflows
 
 ## 4b. codjiflo-action review-link domain
@@ -39,7 +39,7 @@
 
 ## 5. Required deployment check & cleanup
 
-- [ ] 5.1 **[needs GitHub org-admin / `pedrovezzadev`]** Add the successful Cloudflare deployment status check as a required status check in the `main` branch-protection rule. Enable only after a green deploy is confirmed on a test PR
+- [ ] 5.1 **[needs GitHub org-admin / `pedrovezzadev`]** Update the `main` ruleset (id 11385098): (a) **remove** `required_deployments: ["Preview"]` — Cloudflare posts no deployment env, so this gate is permanently unsatisfiable; (b) add `Workers Builds: codjiflo` as a required status check (the Cloudflare build signal). Keep `e2e-tests-prod`. Enable only after a green build is confirmed
 - [x] 5.2 Deleted `vercel.json` and `.vercel/`; the only `NEXT_PUBLIC_VERCEL_*` ref (health route) was already replaced in task 3.1
 - [ ] 5.3 **[needs Vercel dashboard]** Pause (do not delete) the Vercel project + disconnect its GitHub App once main has had a green Cloudflare deploy
 - [ ] 5.4 **[needs the other Cloudflare account that owns `vza.net`]** Configure a 301 redirect `codjiflo.vza.net → codjiflo.net`, preserving path. Requires account switch — ask the user to authorize
