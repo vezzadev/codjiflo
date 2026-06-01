@@ -33,7 +33,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -58,7 +58,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -80,7 +80,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -102,7 +102,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -124,7 +124,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -140,7 +140,7 @@ jobs:
       - name: Download base coverage
         if: always()
         id: download-coverage-baseline
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: ci-cd-main.yml
           branch: main
@@ -238,7 +238,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -265,7 +265,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -294,7 +294,7 @@ jobs:
 
       - name: Setup Node.js
         timeout-minutes: 1
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload iteration artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codjiflo-pr-${{ env.PR_NUMBER }}-${{ github.run_id }}
           path: codjiflo-data/
