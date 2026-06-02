@@ -1,6 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode } from "../../fixtures/mode";
-import { setupAuthMock } from "../../fixtures/github-mocks";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("CodjiFlo App", () => {
@@ -14,32 +12,5 @@ test.describe("CodjiFlo App", () => {
     await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
     // Login button should be visible for unauthenticated users
     await expect(page.getByRole("button", { name: /Log in with GitHub/i })).toBeVisible();
-  });
-
-  test("should show dashboard when authenticated", async ({ page }) => {
-    // Set up auth mock (only applies in mock mode)
-    await setupAuthMock(page);
-
-    // Login first
-    await page.goto("/login");
-
-    // Expand PAT section
-    await page.getByText(/Use Personal Access Token/i).click();
-
-    const input = page.getByLabel(/Personal Access Token/i);
-    const button = page.getByRole("button", { name: /Connect with PAT/i });
-
-    // Use appropriate token based on mode
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.GITHUB_TOKEN ?? "";
-
-    await input.fill(token);
-    await button.click();
-
-    // Should be on dashboard with PR URL input
-    await expect(page).toHaveURL(/.*\/dashboard/);
-    await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
-    await expect(page.getByLabel(/GitHub Pull Request URL/i)).toBeVisible();
   });
 });

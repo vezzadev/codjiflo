@@ -150,17 +150,19 @@ diff --git a/src/app.ts b/src/app.ts
     // Wait for file list and iterations to load
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator(".skeleton")).toHaveCount(0);
+    await expect(
+      page.getByRole("status", { name: /Loading files/i }),
+    ).toHaveCount(0);
 
     const selector = page.getByTestId("iteration-selector");
     await expect(selector).toBeVisible();
     // Wait for iteration tabs to load (not just skeleton)
-    await expect(selector.locator(".iteration-tab")).not.toHaveCount(0);
+    await expect(
+      selector.getByRole("button", { name: /Iteration \d+/i }),
+    ).not.toHaveCount(0);
 
-    // Click on the file (second item after PR description)
-    // Use .tree-item.file to exclude folder headers from count
-    const fileItems = fileList.locator(".tree-item.file");
-    await fileItems.nth(1).click();
+    // Click on the src/app.ts file (the only changed file in the fixture)
+    await fileList.getByRole("row", { name: /app\.ts/i }).click();
 
     // Wait for diff toolbar
     const toolbar = page.getByRole("toolbar", { name: /Diff view controls/i });
@@ -184,8 +186,7 @@ diff --git a/src/app.ts b/src/app.ts
     await expect(prevChangeBtn).toBeEnabled();
 
     // Switch to first iteration (currently on last)
-    const tabs = selector.locator(".iteration-tab");
-    const firstTab = tabs.nth(0);
+    const firstTab = selector.getByTestId("iteration-tab-1");
     await firstTab.click();
     await expect(firstTab).toHaveClass(/selected/);
 

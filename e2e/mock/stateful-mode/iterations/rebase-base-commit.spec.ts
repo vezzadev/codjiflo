@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -8,6 +8,7 @@ import {
 } from "../../../fixtures/github-mocks";
 import { buildRebaseIterationDb } from "../../../fixtures/iteration-db-builder";
 import { setupLegacyDefaults } from "../../../fixtures/legacy-defaults";
+import { CMEditor, expect } from "../../../fixtures/codemirror";
 
 test.describe("Rebase Base Commit Handling (Issue #151)", () => {
   // Tests: AC-4.7.5, AC-4.7.7.1 (Rebase-aware default range and "Full diff" preset)
@@ -165,21 +166,20 @@ line5
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    const fileItem = fileList.locator(".tree-item.file").filter({
-      hasText: "file.txt",
-    });
+    const fileItem = fileList.getByRole("row", { name: /file\.txt/i });
     await fileItem.click();
 
     // Wait for diff to render
-    const diffViewer = page.locator(".diff-viewer");
+    const diffViewer = page.getByTestId("diff-viewer");
     await expect(diffViewer).toBeVisible();
 
     // Count the number of changed lines (additions + deletions)
     // Should be 2 (one deletion "line2", one addition "modified line2")
     // NOT 4 (which would include line4 changes if comparing to old base)
-    // Use data-line-type attribute for CodeMirror compatibility
-    const additionLines = diffViewer.locator('[data-line-type="addition"]');
-    const deletionLines = diffViewer.locator('[data-line-type="deletion"]');
+    // Use CodeMirror line decorations for diff line types
+    const editor = CMEditor.from(page);
+    const additionLines = editor.ext("diff", "lineAddition");
+    const deletionLines = editor.ext("diff", "lineDeletion");
 
     // Wait for diff content to stabilize
     await expect(additionLines.first()).toBeVisible();
@@ -211,17 +211,16 @@ line5
 
     // Click on the file
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
-    const fileItem = fileList.locator(".tree-item.file").filter({
-      hasText: "file.txt",
-    });
+    const fileItem = fileList.getByRole("row", { name: /file\.txt/i });
     await fileItem.click();
 
-    const diffViewer = page.locator(".diff-viewer");
+    const diffViewer = page.getByTestId("diff-viewer");
     await expect(diffViewer).toBeVisible();
 
-    // Use data-line-type attribute for CodeMirror compatibility
-    const additionLines = diffViewer.locator('[data-line-type="addition"]');
-    const deletionLines = diffViewer.locator('[data-line-type="deletion"]');
+    // Use CodeMirror line decorations for diff line types
+    const editor = CMEditor.from(page);
+    const additionLines = editor.ext("diff", "lineAddition");
+    const deletionLines = editor.ext("diff", "lineDeletion");
 
     await expect(additionLines.first()).toBeVisible();
 

@@ -86,8 +86,9 @@ test.describe("Minimap Z-Index Bug", () => {
     // Wait for diff to load
     await expect(page.getByRole("heading", { name: "src/test-file.ts" })).toBeVisible();
 
-    // Switch to Side-by-Side view
-    await page.locator("body").click();
+    // Switch to Side-by-Side view (click the file heading to neutralize focus
+    // before the global "x" keyboard shortcut; the keydown handler is on document)
+    await page.getByRole("heading", { name: "src/test-file.ts" }).click();
     await page.keyboard.press("x");
 
     // Wait for split view to render
@@ -104,11 +105,10 @@ test.describe("Minimap Z-Index Bug", () => {
     await expect(page.getByText("base line 20")).toBeVisible();
 
     // Verify the minimap is visible
-    const minimap = page.locator(".minimap");
+    const minimap = page.getByRole("img", { name: "Diff minimap navigation" });
     await expect(minimap).toBeVisible();
 
-    // Open a dropdown that should appear above the minimap
-    // The view mode dropdown is in the middle of the toolbar
+    // Open the View mode dropdown, which is positioned over the minimap region.
     const viewModeDropdown = toolbar.getByRole("button", { name: "View mode" });
     await viewModeDropdown.click();
 
@@ -116,41 +116,16 @@ test.describe("Minimap Z-Index Bug", () => {
     const listbox = page.getByRole("listbox", { name: "View mode" });
     await expect(listbox).toBeVisible();
 
-    // Get positions of both elements
-    const minimapBox = await minimap.boundingBox();
-    const listboxBox = await listbox.boundingBox();
+    // The dropdown must render above the minimap and be clickable. Playwright's
+    // built-in actionability check enforces that the Inline option is the topmost
+    // element at its click point: if the minimap were covering the dropdown (the
+    // z-index regression), this click would fail with a pointer-interception error.
+    const inlineOption = listbox.getByRole("option", { name: /Inline/i });
+    await expect(inlineOption).toBeVisible();
+    await inlineOption.click();
 
-    expect(minimapBox).not.toBeNull();
-    expect(listboxBox).not.toBeNull();
-
-    // The dropdown is positioned near the minimap (center of screen in sxs mode)
-    // If there's overlap, we need to verify the dropdown is rendered above the minimap
-    if (minimapBox && listboxBox) {
-      const horizontalOverlap =
-        listboxBox.x < minimapBox.x + minimapBox.width &&
-        listboxBox.x + listboxBox.width > minimapBox.x;
-      const verticalOverlap =
-        listboxBox.y < minimapBox.y + minimapBox.height &&
-        listboxBox.y + listboxBox.height > minimapBox.y;
-
-      if (horizontalOverlap && verticalOverlap) {
-        // If elements overlap, verify the dropdown is clickable (on top)
-        // Try to click an option in the dropdown
-        const inlineOption = listbox.getByRole("option", { name: /Inline/i });
-        await expect(inlineOption).toBeVisible();
-
-        // This click should work if the dropdown is above the minimap
-        // If the minimap is covering it, this will fail
-        await inlineOption.click();
-
-        // Verify the view mode changed to inline
-        await expect(splitView).toBeHidden();
-      }
-    }
-
-    // Additional verification: Take a screenshot for visual debugging
-    // (Commented out for CI, but useful for local debugging)
-    // await page.screenshot({ path: 'test-results/minimap-zindex.png' });
+    // Selecting Inline switches the view mode, hiding the side-by-side region.
+    await expect(splitView).toBeHidden();
   });
 
   test("toolbar dropdown receives pointer events when overlapping minimap", async ({ page }) => {
@@ -165,8 +140,9 @@ test.describe("Minimap Z-Index Bug", () => {
     // Wait for diff to load
     await expect(page.getByRole("heading", { name: "src/test-file.ts" })).toBeVisible();
 
-    // Switch to Side-by-Side view
-    await page.locator("body").click();
+    // Switch to Side-by-Side view (click the file heading to neutralize focus
+    // before the global "x" keyboard shortcut; the keydown handler is on document)
+    await page.getByRole("heading", { name: "src/test-file.ts" }).click();
     await page.keyboard.press("x");
 
     // Wait for split view to render
@@ -183,7 +159,7 @@ test.describe("Minimap Z-Index Bug", () => {
     await expect(page.getByText("base line 20")).toBeVisible();
 
     // Verify the minimap is visible
-    const minimap = page.locator(".minimap");
+    const minimap = page.getByRole("img", { name: "Diff minimap navigation" });
     await expect(minimap).toBeVisible();
 
     // Get the computed z-index values to verify the fix
@@ -200,7 +176,7 @@ test.describe("Minimap Z-Index Bug", () => {
 
     // The dropdown's effective z-index should be higher than the minimap's
     // Since they're in different stacking contexts, we need to check the parent contexts
-    const diffHeader = page.locator(".diff-header");
+    const diffHeader = page.getByTestId("diff-header");
     const diffHeaderZIndex = await diffHeader.evaluate((el) => {
       return window.getComputedStyle(el).zIndex;
     });

@@ -147,11 +147,10 @@ Iterations: 2`,
     const diffToolbar = page.getByRole("toolbar", { name: "Diff view controls" });
     await expect(diffToolbar).toBeVisible();
 
-    // Record initial toolbar position
-    const toolbarBoxBefore = await diffToolbar.boundingBox();
-    if (!toolbarBoxBefore) {
-      throw new Error("Failed to get toolbar bounding box");
-    }
+    // Record initial toolbar position (toolbar asserted visible above, so box is non-null)
+    const boxBefore = await diffToolbar.boundingBox();
+    expect(boxBefore).not.toBeNull();
+    const toolbarXBefore = (boxBefore ?? { x: NaN }).x;
 
     // Wait for CodeMirror to render content wide enough to require horizontal scroll
     await page.waitForFunction(() => {
@@ -213,16 +212,15 @@ Iterations: 2`,
       return viewer && viewer.scrollLeft > 0;
     });
 
-    // Get toolbar position after scroll
-    const toolbarBoxAfter = await diffToolbar.boundingBox();
-    if (!toolbarBoxAfter) {
-      throw new Error("Failed to get toolbar bounding box after scroll");
-    }
+    // Get toolbar position after scroll (toolbar remains visible, box non-null)
+    const boxAfter = await diffToolbar.boundingBox();
+    expect(boxAfter).not.toBeNull();
+    const toolbarXAfter = (boxAfter ?? { x: NaN }).x;
 
     // ASSERTION: Toolbar should NOT have moved horizontally
     // If the scroll happened on .diff-viewer (bug), toolbar moves with it
     // If the scroll happened on .diff-content-area (correct), toolbar stays fixed
-    expect(toolbarBoxAfter.x).toBe(toolbarBoxBefore.x);
+    expect(toolbarXAfter).toBe(toolbarXBefore);
   });
 
   test("Horizontal scrollbar is visible and functional", async ({ page }) => {
@@ -412,14 +410,11 @@ Iterations: 2`,
     const cssVarValue = parseInt(cssVarResult.cssVar, 10);
     const scrollWidth = cssVarResult.scrollWidth;
 
-    // If content needs horizontal scrolling, CSS variable should be set and match scroll width
-    // If no horizontal scroll is needed, the CSS variable may be empty (which is fine)
-    if (cssVarResult.needsScroll !== false && scrollWidth > 0) {
-      if (!Number.isNaN(cssVarValue)) {
-        // CSS variable is set - verify it matches scroll width
-        expect(Math.abs(cssVarValue - scrollWidth)).toBeLessThan(10);
-      }
-      // If CSS variable is empty (NaN), it means no scroll is needed
-    }
+    // The fixture (longLine) deterministically produces content wider than the
+    // viewport in mock mode, so the scroller always needs horizontal scrolling and
+    // the CSS variable (scroll width) is always a valid positive number that matches.
+    expect(cssVarResult.needsScroll).toBe(true);
+    expect(scrollWidth).toBeGreaterThan(0);
+    expect(Math.abs(cssVarValue - scrollWidth)).toBeLessThan(10);
   });
 });

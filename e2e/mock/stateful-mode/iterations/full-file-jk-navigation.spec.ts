@@ -166,7 +166,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await fileList.getByText("large-file.ts").click();
 
     // Wait for diff to render
-    const diffViewer = page.locator(".diff-viewer");
+    const diffViewer = page.getByTestId("diff-viewer");
     await expect(diffViewer).toBeVisible();
 
     // Get toolbar and navigation buttons
@@ -208,11 +208,12 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await expect(prevChangeBtn).toBeDisabled();
     await expect(nextChangeBtn).toBeEnabled();
 
-    // Navigate forward until we reach the last change
-    let maxIterations = 20; // Safety limit
-    while (maxIterations > 0 && await nextChangeBtn.isEnabled()) {
+    // Navigate forward to the last change. The mock fixture has a bounded number
+    // of navigable changes (3 hunks at lines 50/250/450). Pressing J more times
+    // than there are changes is safe: once at the last change, further J presses
+    // are no-ops, so this deterministically lands on the last change.
+    for (let i = 0; i < 8; i++) {
       await page.keyboard.press("j");
-      maxIterations--;
     }
 
     // After reaching the last change, Next should be disabled

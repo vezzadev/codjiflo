@@ -32,8 +32,8 @@ test.describe("Iteration File Status", () => {
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    const targetFileItem = fileList.locator(".tree-item.file").filter({
-      hasText: /target-file\.yml/,
+    const targetFileItem = fileList.getByRole("row", {
+      name: /target-file\.yml/,
     });
 
     // --- Iteration 1: target-file.yml should NOT appear ---
@@ -53,7 +53,7 @@ test.describe("Iteration File Status", () => {
     await expect(targetFileItem).toBeVisible();
 
     // Check the change-type indicator shows "M" (modified), not "A" (added)
-    const changeTypeIndicator = targetFileItem.locator(".change-type");
+    const changeTypeIndicator = targetFileItem.getByTestId("file-change-type");
     await expect(changeTypeIndicator).toHaveText("M");
 
     // Also verify via aria-label that it says "modified" not "added"
@@ -80,15 +80,7 @@ test.describe("Iteration File Status", () => {
     const tab1 = page.getByTestId("iteration-tab-1");
     const tab2 = page.getByTestId("iteration-tab-2");
 
-    const box1 = await tab1.boundingBox();
-    const box2 = await tab2.boundingBox();
-
-    if (box1 && box2) {
-      await page.mouse.move(box1.x + box1.width / 2, box1.y + box1.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
-      await page.mouse.up();
-    }
+    await tab1.dragTo(tab2);
 
     // Both tabs should be selected (range selection)
     await expect(tab1).toHaveClass(/selected/);
@@ -96,13 +88,13 @@ test.describe("Iteration File Status", () => {
 
     // target-file.yml should appear as "M" (modified), not "A" (added)
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
-    const targetFileItem = fileList.locator(".tree-item.file").filter({
-      hasText: /target-file\.yml/,
+    const targetFileItem = fileList.getByRole("row", {
+      name: /target-file\.yml/,
     });
 
     await expect(targetFileItem).toBeVisible();
 
-    const changeTypeIndicator = targetFileItem.locator(".change-type");
+    const changeTypeIndicator = targetFileItem.getByTestId("file-change-type");
     await expect(changeTypeIndicator).toHaveText("M");
   });
 });

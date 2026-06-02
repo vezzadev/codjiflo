@@ -9,6 +9,20 @@ import {
 import { buildIterationDb } from "../../fixtures/iteration-db-builder";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
+type BoundingBox = NonNullable<Awaited<ReturnType<import("@playwright/test").Locator["boundingBox"]>>>;
+
+/**
+ * Assert a bounding box is present and return it narrowed to non-null.
+ * Lives at module scope so the guard is not a conditional inside a test body.
+ */
+function assertBoundingBox(box: BoundingBox | null): BoundingBox {
+  expect(box).not.toBeNull();
+  if (box === null) {
+    throw new Error("Minimap bounding box not found");
+  }
+  return box;
+}
+
 test.describe("Minimap navigation with comments hidden", () => {
   const owner = "test";
   const repo = "repo";
@@ -122,7 +136,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
    */
   async function waitForLasso(page: import("@playwright/test").Page): Promise<void> {
     const minimap = page.getByRole("img", { name: /minimap/i });
-    const lasso = minimap.locator(".minimap-lasso");
+    const lasso = minimap.getByTestId("minimap-lasso");
     await expect(lasso).toBeVisible();
   }
 
@@ -207,7 +221,7 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
 
-    const lasso = minimap.locator(".minimap-lasso");
+    const lasso = minimap.getByTestId("minimap-lasso");
     await expect(lasso).toBeHidden();
   });
 
@@ -229,14 +243,11 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await expect(minimap).toBeVisible();
 
     // Get minimap bounding box and verify it exists
-    const minimapBox = await minimap.boundingBox();
-    if (!minimapBox) {
-      throw new Error("Minimap bounding box not found");
-    }
+    const box = assertBoundingBox(await minimap.boundingBox());
 
     // Click on the bottom third of the minimap (should scroll down)
-    const clickY = minimapBox.y + minimapBox.height * 0.8;
-    const clickX = minimapBox.x + minimapBox.width / 2;
+    const clickY = box.y + box.height * 0.8;
+    const clickX = box.x + box.width / 2;
 
     await page.mouse.click(clickX, clickY);
 
@@ -275,15 +286,14 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await waitForLasso(page);
 
     // Get initial lasso state
-    const lassoInitial = minimap.locator(".minimap-lasso");
+    const lassoInitial = minimap.getByTestId("minimap-lasso");
 
     // Scroll down in the first file by clicking bottom of minimap
-    const minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    const box = assertBoundingBox(await minimap.boundingBox());
 
     await page.mouse.click(
-      minimapBox.x + minimapBox.width / 2,
-      minimapBox.y + minimapBox.height * 0.8
+      box.x + box.width / 2,
+      box.y + box.height * 0.8
     );
 
     // Wait for scroll to take effect (lines in 90s should be visible)
@@ -302,18 +312,15 @@ diff --git a/src/very-large-file.ts b/src/very-large-file.ts
     await expect(minimap).toBeVisible();
 
     // Get lasso after file switch
-    const lassoAfterSwitch = minimap.locator(".minimap-lasso");
+    const lassoAfterSwitch = minimap.getByTestId("minimap-lasso");
     await expect(lassoAfterSwitch).toBeVisible();
 
-    // Get the "d" attribute after switching files
-    const pathAfterSwitch = await lassoAfterSwitch.getAttribute("d");
-
     // The lasso path should be different after switching files
-    // (it should reset to top position for the new file)
-    // Using if-throw pattern to avoid linter auto-fix issues
-    if (pathAfterScroll === pathAfterSwitch) {
-      throw new Error(`Lasso path should change after file switch. Got: ${pathAfterScroll ?? "null"}`);
-    }
+    // (it should reset to top position for the new file). pathAfterScroll is
+    // deterministic for the mock fixture, so assert the switched lasso no
+    // longer carries that exact "d" attribute.
+    expect(pathAfterScroll).not.toBeNull();
+    await expect(lassoAfterSwitch).not.toHaveAttribute("d", pathAfterScroll ?? "");
 
     // Additional verification: the lasso should be near the top (scrollRatio ~0)
     // This is hard to assert directly, but we can verify the diff content is at line 1

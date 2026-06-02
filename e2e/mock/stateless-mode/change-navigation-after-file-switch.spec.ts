@@ -162,7 +162,7 @@ test.describe("Change Navigation After File Switch", () => {
     await expect(nextChangeBtn).toBeEnabled();
 
     // === Step 2: Press j - scrolls to first change ===
-    await page.locator("body").click();
+    await page.getByRole("main").click();
     await page.keyboard.press("j");
     await expect(prevChangeBtn).toBeDisabled();
     await expect(nextChangeBtn).toBeEnabled();
@@ -184,7 +184,7 @@ test.describe("Change Navigation After File Switch", () => {
     // This is important because there are TWO j handlers:
     // 1. Global handler (useKeyboardShortcuts) - triggered when body/document has focus
     // 2. CodeMirror keymap - triggered when editor has focus
-    await page.locator("body").click();
+    await page.getByRole("main").click();
 
     // === Step 4: Press j - THIS IS WHERE THE BUG OCCURS ===
     // The bug: after switching files with S, pressing J doesn't scroll to first change

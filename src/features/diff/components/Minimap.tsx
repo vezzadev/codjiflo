@@ -584,6 +584,7 @@ export function Minimap({
       {lasso && (
         <path
           className="minimap-lasso"
+          data-testid="minimap-lasso"
           d={generateLassoPath(lasso)}
           fill="none"
         />

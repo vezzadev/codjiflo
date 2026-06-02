@@ -231,6 +231,7 @@ export function FileList() {
                     id={fileKey(file)}
                     textValue={getBasename(file.filename)}
                     className={({ isSelected }) => `tree-item file indent-1 ${isSelected ? 'selected' : ''}`}
+                    data-testid="file-tree-item"
                     aria-label={`${getBasename(file.filename)}, ${CHANGE_TYPE_LABELS[file.status]}, ${String(file.additions)} additions, ${String(file.deletions)} deletions`}
                   >
                     <TreeItemContent>
@@ -241,7 +242,7 @@ export function FileList() {
                         {file.additions > 0 && <span className="additions">+{file.additions}</span>}
                         {file.deletions > 0 && <span className="deletions">−{file.deletions}</span>}
                       </span>
-                      <span className={`change-type ${CHANGE_TYPE_CLASSES[file.status]}`} aria-hidden="true">
+                      <span className={`change-type ${CHANGE_TYPE_CLASSES[file.status]}`} data-testid="file-change-type" aria-hidden="true">
                         {CHANGE_TYPE_ICONS[file.status]}
                       </span>
                     </TreeItemContent>

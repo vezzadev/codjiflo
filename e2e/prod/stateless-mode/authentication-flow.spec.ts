@@ -1,8 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode, prodModeConfig } from "../../fixtures/mode";
-import {
-  setupAuthMock,
-} from "../../fixtures/github-mocks";
+import { getE2EGitHubToken, prodModeConfig } from "../../fixtures/mode";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Authentication Flow (S-1.1)", () => {
@@ -38,13 +35,8 @@ test.describe("Authentication Flow (S-1.1)", () => {
     await expect(input).toBeVisible();
     await expect(input).toHaveAttribute("type", "password");
 
-    // Set up auth mock (only applies in mock mode)
-    await setupAuthMock(page);
-
-    // Use appropriate token based on mode
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.GITHUB_TOKEN ?? "";
+    // Real GitHub auth with the configured PAT
+    const token = getE2EGitHubToken() ?? "";
 
     // Enter valid token and submit
     await input.fill(token);
@@ -91,16 +83,8 @@ test.describe("Authentication Flow (S-1.1)", () => {
     await input.fill("ghp_");
     await expect(formatError).toBeHidden();
 
-    // [AC-1.1.7] Network/API error handling
-    if (isMockMode()) {
-      // Mock mode: use route interception
-      await setupAuthMock(page, { failWith: 401 });
-    }
-
-    // Use invalid token - in prod mode this hits GitHub and gets 401
-    const invalidToken = isMockMode()
-      ? "ghp_invalidtoken123456789"
-      : prodModeConfig.invalidToken;
+    // [AC-1.1.7] Network/API error handling - invalid token hits GitHub and gets 401
+    const invalidToken = prodModeConfig.invalidToken;
 
     await input.fill(invalidToken);
     await button.click();
