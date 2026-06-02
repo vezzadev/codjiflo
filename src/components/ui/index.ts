@@ -7,6 +7,8 @@ export {
   SearchField,
   Popover,
   OverlayArrow,
+  Tooltip,
+  TooltipTrigger,
   Input,
   Label,
   TextField,

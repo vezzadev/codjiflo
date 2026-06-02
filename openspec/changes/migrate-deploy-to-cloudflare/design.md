@@ -31,7 +31,7 @@ Connect the repo in the Cloudflare dashboard so Cloudflare builds on push and ma
 
 ### Domain cutover to `codjiflo.net`
 Production = `https://codjiflo.net`. Replace `codjiflo.vza.net` in CI health checks, `E2E_BASE_URL`, auth `KNOWN_BASE_DOMAIN` (→ `.codjiflo.net`), GitHub App homepage + callback URLs, and `architecture.md`.
-- **PR previews are served under a custom `*.codjiflo.net` preview domain** (if Cloudflare supports mapping one for non-production deployments), so previews share the `.codjiflo.net` cookie domain and cross-subdomain auth keeps working. If a custom preview domain proves unavailable and previews fall back to `*.workers.dev`, the consequence is login-per-preview (cookies don't span domains) — acceptable but not preferred. Either way CI reads the preview URL from the GitHub deployment status `target_url`, so it stays scheme-agnostic.
+- **PR previews:** the custom `*.codjiflo.net` preview domain proved **impossible** — Cloudflare hard-locks preview URLs to `*.workers.dev` (task 2.6 WONTFIX). On a `workers.dev` origin OAuth doesn't complete (host-only PKCE cookies + `isValidReturnOrigin()` rejects the origin), so previews authenticate via the **origin-independent PAT field** instead (paste `gh auth token`); unauthenticated public-PR review also works. CI reads the preview URL from the Workers Builds check output, so it stays scheme-agnostic.
 - The old domain gets a **301 redirect** `codjiflo.vza.net → codjiflo.net`. `vza.net` lives in a **different Cloudflare account**, so this redirect is configured there, not in the app's account — it requires switching/re-logging into that account (a manual, off-band step that needs the user to authorize the account change).
 
 ### Commit SHA source for `/api/health`
@@ -49,7 +49,7 @@ The Cloudflare GitHub integration and the `main` branch-protection required chec
 ## Risks / Trade-offs
 
 - **Preview hostname scheme differs from Vercel's `pr-{n}` pattern** → CI already reads `target_url` from the GitHub deployment status, so it stays scheme-agnostic; only auth's `KNOWN_BASE_DOMAIN` needs the new apex.
-- **Cross-subdomain cookie auth breaks if previews are not under `*.codjiflo.net`** → decision is to configure a custom preview domain under `codjiflo.net`; if Cloudflare can't map one and previews land on `*.workers.dev`, previews won't share the auth cookie domain → fall back to login-per-preview.
+- **Cross-subdomain cookie auth breaks if previews are not under `*.codjiflo.net`** → confirmed: Cloudflare can't map a custom preview domain (task 2.6 WONTFIX), so previews land on `*.workers.dev` and OAuth doesn't complete there. Resolved by the origin-independent PAT path (paste `gh auth token`) for preview auth.
 - **OpenNext adapter incompatibility with current `next.config.ts` (webpack/turbopack WASM for SQL.js)** → validate the OpenNext build locally before cutover; SQL.js runs client-side, so server build should be unaffected, but verify.
 - **DNS/SSL cutover gap on `codjiflo.net`** → stage DNS + Worker route before flipping CI health URLs; verify `/api/health` on the new domain first.
 - **Required check wedges merges if misconfigured** → enable the required Cloudflare check only after a green deploy is observed on a test PR.
