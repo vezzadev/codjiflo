@@ -32,7 +32,7 @@ test.describe("Iteration File Status", () => {
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    const targetFileItem = fileList.getByRole("treeitem", {
+    const targetFileItem = fileList.getByRole("row", {
       name: /target-file\.yml/,
     });
 
@@ -88,7 +88,7 @@ test.describe("Iteration File Status", () => {
 
     // target-file.yml should appear as "M" (modified), not "A" (added)
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
-    const targetFileItem = fileList.getByRole("treeitem", {
+    const targetFileItem = fileList.getByRole("row", {
       name: /target-file\.yml/,
     });
 
