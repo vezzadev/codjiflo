@@ -1,8 +1,9 @@
+import { execFileSync } from "child_process";
 import { existsSync } from "fs";
 import { defineConfig, devices } from "@playwright/test";
 import { config } from "dotenv";
 
-// Load .env.local for local development (contains GITHUB_TOKEN)
+// Load .env.local for local development (may contain GITHUB_TOKEN)
 const envLocalPath = ".env.local";
 if (existsSync(envLocalPath)) {
   config({ path: envLocalPath, quiet: true });
@@ -13,11 +14,26 @@ const e2eMode = process.env.E2E_DEPENDENCIES_MODE ?? 'mock';
 const isProdMode = e2eMode === 'prod';
 const externalBaseURL = process.env.E2E_BASE_URL;
 
+// Local dev convenience: if prod mode is requested without an explicit token,
+// reuse the GitHub CLI's OAuth token (`gh auth token`). This lets any developer
+// already logged into `gh` run prod-mode E2E with no PAT and no .env.local entry.
+// Skipped in CI, where the workflow injects the built-in github.token.
+if (isProdMode && !isCI && !process.env.GITHUB_TOKEN) {
+  try {
+    process.env.GITHUB_TOKEN = execFileSync("gh", ["auth", "token"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    // gh missing or not logged in — fall through to the validation error below.
+  }
+}
+
 // Validate prod mode requirements
 if (isProdMode && !process.env.GITHUB_TOKEN) {
   throw new Error(
     "E2E prod mode requires GITHUB_TOKEN.\n" +
-      "Set it in .env.local (local) or as GITHUB_TOKEN (CI)."
+      "Locally: run `gh auth login` (it is read automatically) or set GITHUB_TOKEN in .env.local.\n" +
+      "CI: injected as GITHUB_TOKEN."
   );
 }
 

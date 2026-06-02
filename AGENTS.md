@@ -81,9 +81,10 @@ e2e/
 - **No `test.skip()` calls** - tests are placed in their intended directory instead
   - Enforced by ESLint: `"playwright/no-skipped-test": "error"`
 
-**Environment:**
-- `.env.local` - Supplied **off-band** (never downloaded — no `vercel env pull`). Holds `GITHUB_APP_CLIENT_SECRET` for local real-auth + `GITHUB_TOKEN` for prod-mode E2E. Missing it is non-blocking: `npm run dev` prints setup guidance and unauthenticated review still works. The app secret lives in the Cloudflare `codjiflo` Secret Store in production.
-- `GITHUB_TOKEN` - GitHub PAT for prod mode (set in `.env.local` locally; CI injects the built-in `github.token`)
+**Environment:** Local dev needs **no secrets and no `.env.local`** — just be logged into the GitHub CLI (`gh auth login`).
+- **Local auth** - `npm run dev` auto-signs-in with your GitHub CLI token: the dev-only `GET /api/auth/dev-token` route returns `gh auth token` and the login page's `useDevAutoLogin` hook consumes it. The OAuth client-secret exchange is exercised only in PR previews/production, so you don't need `GITHUB_APP_CLIENT_SECRET` locally. (To test the OAuth exchange itself locally, set `GITHUB_APP_CLIENT_SECRET` in `.env.local` and use the manual "Login with GitHub"/PAT options.)
+- `GITHUB_TOKEN` - GitHub token for prod-mode E2E. **Locally you don't need to set it**: if you're logged into `gh`, `playwright.config.ts` reads `gh auth token` automatically. Set it in `.env.local` (a PAT, or `$(gh auth token)`) only to override. CI injects the built-in `github.token`.
+- `GITHUB_APP_CLIENT_SECRET` - The app's only runtime secret. Lives in the Cloudflare `codjiflo` Secret Store in production; **not needed for local dev** (see above).
 
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
@@ -224,7 +225,7 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
-GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Hosted on a Cloudflare Worker (OpenNext); the only secret (`GITHUB_APP_CLIENT_SECRET`) lives in the Cloudflare `codjiflo` Secret Store, other config is plain Worker/build vars, and nothing is downloaded locally. See [openspec/specs/authentication/architecture.md](openspec/specs/authentication/architecture.md) for details.
+GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Hosted on a Cloudflare Worker (OpenNext); the only secret (`GITHUB_APP_CLIENT_SECRET`) lives in the Cloudflare `codjiflo` Secret Store, other config is plain Worker/build vars, and nothing is downloaded locally. **Local dev short-circuits OAuth**: `npm run dev` auto-signs-in via the dev-only `GET /api/auth/dev-token` route (`gh auth token`) consumed by the `useDevAutoLogin` hook, so the client secret is only needed in PR previews/production. See [openspec/specs/authentication/architecture.md](openspec/specs/authentication/architecture.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
 

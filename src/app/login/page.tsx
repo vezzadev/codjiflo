@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
-import { useOAuthFlow, useRedirectIfAuthenticated } from '@/features/auth/hooks';
+import { useOAuthFlow, useRedirectIfAuthenticated, useDevAutoLogin } from '@/features/auth/hooks';
 import { isValidReturnPath } from '@/features/auth/utils/pkce';
 import { TextField, Label, Input, Text } from '@/components/ui';
 import { Button } from '@/components/Button';
@@ -20,6 +20,8 @@ function LoginContent() {
   const returnPath = rawReturnPath && isValidReturnPath(rawReturnPath) ? rawReturnPath : null;
   const { initiateOAuth, isInitiating } = useOAuthFlow(returnPath);
   const { isAuthenticated } = useRedirectIfAuthenticated();
+  // Local-dev only: auto sign-in with the GitHub CLI token (no-op in prod/E2E).
+  const devAutoLogin = useDevAutoLogin();
   const router = useRouter();
 
   const handleOAuthLogin = () => {
@@ -48,6 +50,26 @@ function LoginContent() {
 
   if (isAuthenticated) {
     return null;
+  }
+
+  // While the dev CLI auto-login is in flight, show a minimal signing-in state
+  // instead of flashing the OAuth/PAT login UI. Dead-code-eliminated in prod.
+  if (devAutoLogin === 'attempting') {
+    return (
+      <AppShell>
+        <div className="login-container">
+          <div className="login-card">
+            <div className="login-header">
+              <div className="logo">
+                <Image src="/codjiflo.svg" alt="CodjiFlo" width={48} height={48} />
+              </div>
+              <h1 className="login-title">Signing in…</h1>
+              <p className="login-subtitle">Using your GitHub CLI session</p>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (
