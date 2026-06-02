@@ -20,21 +20,50 @@ GitHub App with OAuth 2.0 and PKCE (not a standalone OAuth App). Supports cross-
 | `src/app/auth/callback/page.tsx` | OAuth callback handler |
 | `src/app/auth/landing/page.tsx` | Cross-subdomain token hydration |
 
-## Cross-Subdomain Flow (PR Previews)
+## Cross-Subdomain Flow (`*.codjiflo.net`)
 
-PR previews run on `pr-{number}.codjiflo.net` (Cloudflare custom preview domain under the `codjiflo.net` apex). GitHub OAuth only allows specific callback URLs, so all callbacks go through `codjiflo.net`, then redirect back.
+Any origin under the `codjiflo.net` apex (production, plus any `*.codjiflo.net`
+subdomain) can sign in cross-subdomain. GitHub OAuth only allows specific
+callback URLs, so all callbacks go through `codjiflo.net`, then redirect back.
 
 ```
-pr-123.codjiflo.net (click login)
+foo.codjiflo.net (click login)
     ↓ store return origin cookie (domain=.codjiflo.net)
 GitHub OAuth
     ↓
 codjiflo.net/auth/callback
     ↓ exchange code, store token in transfer cookie
-pr-123.codjiflo.net/auth/landing
+foo.codjiflo.net/auth/landing
     ↓ hydrate token from cookie
 /dashboard
 ```
+
+The flow relies on `domain=.codjiflo.net` cookies and `isValidReturnOrigin()`
+accepting the origin, so it only works on `localhost` and `*.codjiflo.net`.
+
+## Preview-Environment Auth (PAT path)
+
+Cloudflare Workers Builds serves PR previews on **`*.workers.dev`** version/alias
+URLs (e.g. `https://<branch>-codjiflo.vezza-dev.workers.dev`). Cloudflare hard-locks
+preview URLs to `workers.dev` — they **cannot** be mapped to a `*.codjiflo.net`
+custom domain. On a `workers.dev` origin the OAuth flow above does **not** complete:
+the PKCE/return-origin cookies fall back to host-only (no `.codjiflo.net` domain to
+share) and `isValidReturnOrigin()` rejects the non-`codjiflo.net` origin, so the
+callback can't hand the token back.
+
+The supported way to authenticate on a preview is the **Personal Access Token
+field** on the login page ("Use Personal Access Token"). It is **origin-independent**:
+`validateToken` only calls `GET https://api.github.com/rate_limit` with the token as
+a bearer and persists it to `localStorage` — no cookies, no callback, no production
+dependency. It accepts any of `ghp_`, `github_pat_`, `gho_`, or `ghs_` prefixes, so
+the quickest source is **`gh auth token`** (a `gho_` GitHub CLI OAuth token) pasted
+straight in — no PAT needs to be minted. The login page surfaces this as an info-icon
+tip next to the PAT field. Unauthenticated public-PR review also works on previews
+with no token at all.
+
+> **`pr-{n}.codjiflo.net` custom preview domains were investigated and dropped**
+> (migration task 2.6, WONTFIX) — Cloudflare does not allow it. CI prod-mode E2E
+> seeds its own token and is unaffected; manual preview auth uses the PAT path above.
 
 ## Cookie Strategy
 
@@ -99,7 +128,7 @@ NEXT_PUBLIC_APP_URL = https://codjiflo.net         # preview & prod
 2. Set Homepage URL: `https://codjiflo.net`
 3. Under "Identifying and authorizing users", add callback URLs:
    - `http://localhost:3000/auth/callback` (local dev)
-   - `https://codjiflo.net/auth/callback` (production + PR previews under `*.codjiflo.net`)
+   - `https://codjiflo.net/auth/callback` (production; previews use the PAT path, see above)
 4. Set required permissions (see table below)
 5. Copy Client ID → `GITHUB_APP_CLIENT_ID` and `NEXT_PUBLIC_GITHUB_CLIENT_ID`
 6. Generate Client Secret → `GITHUB_APP_CLIENT_SECRET`

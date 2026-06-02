@@ -482,6 +482,51 @@
   visibility: visible;
 }
 
+/* Inline field hint: an info icon next to a field label that reveals a
+   react-aria <Tooltip> on hover/focus (keyboard accessible, unlike the
+   CSS-only .tooltip above). */
+.label-with-tip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  min-width: 0;
+  line-height: 0;
+  color: var(--watermark-text);
+  background: transparent;
+  border: none;
+}
+
+.field-tip-trigger:hover,
+.field-tip-trigger[data-hovered],
+.field-tip-trigger[data-focus-visible] {
+  color: var(--main-fg);
+}
+
+.field-tip {
+  padding: 6px 10px;
+  background-color: var(--contextmenu-bg);
+  color: var(--main-fg);
+  font-size: 12px;
+  border: 1px solid var(--combobox-border);
+  max-width: 260px;
+  z-index: 1000;
+}
+
+.field-tip code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  padding: 1px 4px;
+  background-color: var(--menu-hover);
+  border-radius: 3px;
+}
+
 /* ============================================
    SCROLLABLE CONTAINER
    ============================================ */

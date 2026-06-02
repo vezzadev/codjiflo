@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useOAuthFlow, useRedirectIfAuthenticated, useDevAutoLogin } from '@/features/auth/hooks';
 import { isValidReturnPath } from '@/features/auth/utils/pkce';
-import { TextField, Label, Input, Text } from '@/components/ui';
+import { TextField, Label, Input, Text, Tooltip, TooltipTrigger } from '@/components/ui';
 import { Button } from '@/components/Button';
 import { AppShell } from '@/components/layout';
+import { Info } from 'lucide-react';
 
 function LoginContent() {
   const [tokenInput, setTokenInput] = useState('');
@@ -125,7 +126,22 @@ function LoginContent() {
                   isRequired
                   className="form-group"
                 >
-                  <Label className="label">Personal Access Token</Label>
+                  <div className="label-with-tip">
+                    <Label className="label">Personal Access Token</Label>
+                    <TooltipTrigger delay={200}>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="field-tip-trigger"
+                        aria-label="Tip: paste the output of gh auth token"
+                      >
+                        <Info size={14} aria-hidden="true" />
+                      </Button>
+                      <Tooltip className="field-tip" placement="top">
+                        Tip: paste the output of <code>gh auth token</code>
+                      </Tooltip>
+                    </TooltipTrigger>
+                  </div>
                   <Input
                     id="pat"
                     className="textbox"
