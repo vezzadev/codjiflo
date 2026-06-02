@@ -41,7 +41,7 @@
 
 - [x] 5.1 Updated the `main` ruleset (id 11385098) via API as `pedrovezzadev` (org-admin): (a) **removed** the `required_deployments: ["Preview"]` rule (Cloudflare posts no deployment env — permanently unsatisfiable); (b) **added** `Workers Builds: codjiflo` (pinned to Cloudflare app `integration_id: 85455`) to `required_status_checks`. Final required checks: lint/unit-tests/e2e-tests/**e2e-tests-prod**/storybook-tests/typecheck/**Workers Builds: codjiflo**. PR #530 went `BLOCKED` → `CLEAN` immediately after the removal and merged (`d47da01`)
 - [x] 5.2 Deleted `vercel.json` and `.vercel/`; the only `NEXT_PUBLIC_VERCEL_*` ref (health route) was already replaced in task 3.1
-- [ ] 5.3 **[needs Vercel dashboard]** Pause (do not delete) the Vercel project + disconnect its GitHub App once main has had a green Cloudflare deploy
+- [x] 5.3 Vercel teardown done — the project was **deleted** (rather than paused) once `main` had served green Cloudflare deploys for a stretch; rollback safety is no longer needed. Confirmed live: `https://codjiflo.vza.net` now returns **404** (was serving the stale Vercel app), and `https://codjiflo.net/api/health` is 200
 - [ ] 5.4 **[needs the other Cloudflare account that owns `vza.net`]** Configure a 301 redirect `codjiflo.vza.net → codjiflo.net`, preserving path. Requires account switch — ask the user to authorize
 
 ## 6. Docs & verification
