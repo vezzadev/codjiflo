@@ -100,13 +100,9 @@ Tests in this project are finely tuned to run very fast. Each E2E test case MUST
 Leave the tests better than how you found them. If you notice a flaky test, you are supposed to help investigate what is the issue and if possible come up with a solution for it. Don't dismiss test failures as "unrelated to my changes".
 
 #### Don't guess - Use the Playwright test trace to understand what is happening
-When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code. The codebase uses an unreleased version of Playwright with a **new feature called playwright-cli that helps with investigations**.
+When a Playwright E2E test fails, NEVER assume it's a timeout/flakiness issue. You will not get your tests working by adding arbitrary waitForTimeouts. So much so that they are banned via an ESLint rule. You must analyze the test trace before blindly changing test code.
 
-1. Load the playwright-cli skill 
-2. Run `npx playwright show-trace --port 0 <trace.zip>` - it will start a web server with the trace information
-3. Traces have everything you might need to troubleshoot: Step-by-step action timeline with links to exact DOM state before and after of each action, full error details with stack traces, browser console output, HTTP request log, etc.
-3. Use Playwright skill **in headed mode** to open the desired snapshot HTML and have full debugging capabilities
-4. Look for actual failures: missing elements, wrong content, API errors, auth issues
+Don't guess the root cause: fetch the `trace.zip` from the CI/CD build outputs or from the local tests output folder and run `npx playwright-trace-llm path/to/trace.zip -o ./trace-export` to export the trace into LLM-friendly Markdown and HTML. It contains all information available in the Playwright trace viewer: step-by-step action timeline with DOM snapshots before and after each action, full error details with stack traces, browser console output, HTTP request log, etc. Look for actual failures: missing elements, wrong content, API errors, auth issues.
 
 #### Proper use of waitFor methods
  * waitForSelector: Best for waiting for elements to appear, disappear, or change state.
