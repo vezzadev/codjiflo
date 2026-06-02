@@ -179,13 +179,6 @@ async function main() {
   // Kill zombies first
   killZombieNextProcess();
 
-  // Ensure env is set up
-  try {
-    execSync("node scripts/ensure-env.js", { stdio: "inherit" });
-  } catch {
-    process.exit(1);
-  }
-
   const { port: desiredPort, strict } = getPortForWorktree();
   const dirName = basename(process.cwd());
 

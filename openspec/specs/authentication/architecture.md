@@ -53,8 +53,20 @@ Hosting is a Cloudflare Worker (OpenNext adapter). The **only secret**,
 `GITHUB_APP_CLIENT_SECRET`, lives in the Cloudflare **Secret Store** (`codjiflo`)
 bound to the Worker and is read at runtime via the binding — it is never
 exported, downloaded, or written to the client bundle. Non-secret config is set
-as plain Worker/build variables. No tooling fetches secrets from any provider;
-locally the secret is supplied off-band in `.env.local`.
+as plain Worker/build variables. No tooling fetches secrets from any provider.
+
+**Local development needs no secret and no `.env.local`.** Running `npm run dev`
+(`NODE_ENV==='development'`) serves a dev-only route, `GET /api/auth/dev-token`,
+that returns the GitHub CLI's OAuth token (`gh auth token`); the login page's
+`useDevAutoLogin` hook calls it and signs in automatically, skipping the OAuth
+client-secret exchange. The route is hard-gated to development — any
+production/preview build (and therefore every E2E run, which uses a production
+build) returns 404 and never shells out, so a deployed Worker can neither run
+`gh` nor leak a token. The secret-bound `/api/auth/token` code-exchange path is
+consequently exercised only in PR previews and production. A maintainer who must
+test the OAuth exchange locally can still set `GITHUB_APP_CLIENT_SECRET` in
+`.env.local` and use the manual "Login with GitHub" / PAT options, which remain
+available whenever the CLI auto-login is unavailable.
 
 | Variable | Location | Purpose |
 |----------|----------|---------|
