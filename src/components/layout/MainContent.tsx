@@ -16,7 +16,7 @@ export function MainContent({ children, toolbar, navBar }: MainContentProps) {
     <main className="main-content">
       {navBar && <nav className="nav-bar">{navBar}</nav>}
       {toolbar && <div className="toolbar">{toolbar}</div>}
-      <div className="diff-viewer" id="diffViewer">
+      <div className="diff-viewer" id="diffViewer" data-testid="diff-viewer">
         {children}
       </div>
     </main>

@@ -203,7 +203,7 @@ export function DiffView() {
   if (isShowingDescription) {
     return (
       <div className="diff-description-view">
-        <div className="diff-header-iterations">
+        <div className="diff-header-iterations" data-testid="diff-header-iterations">
           <IterationSelector />
         </div>
         {currentPR ? (
@@ -238,8 +238,8 @@ export function DiffView() {
       </div>
 
       {/* Sticky file header with toolbar */}
-      <div className="diff-header">
-        <div className="diff-header-iterations">
+      <div className="diff-header" data-testid="diff-header">
+        <div className="diff-header-iterations" data-testid="diff-header-iterations">
           <IterationSelector />
         </div>
         <div className="diff-header-toolbar">
@@ -252,7 +252,7 @@ export function DiffView() {
 
       {/* Error and loading banners */}
       {pipeline._fullFileError && (
-        <div className="diff-error-banner">{pipeline._fullFileError}</div>
+        <div className="diff-error-banner" data-testid="diff-error-banner">{pipeline._fullFileError}</div>
       )}
       {commentsError && (
         <div className="diff-error-banner">{commentsError}</div>
