@@ -8,10 +8,10 @@
 
 ## 2. Cloudflare Git release process & Secret Store (via `pedrovezzadev`)
 
-- [ ] 2.1 Sign in as `pedrovezzadev`; connect the GitHub repo in Cloudflare (Workers Builds), production branch = `main`
+- [x] 2.1 Cloudflare Workers Builds is connected and deploying: the `Workers Builds: codjiflo` check runs (and is required) on every PR, and production on `main` serves `codjiflo.net` live. Verified via green checks + live site below
 - [x] 2.2 Used the account's default Secret Store (`cc49be40eb984d38a45fae3a4f29a9b2`) rather than a new `codjiflo` store; added the `secrets_store_secrets` binding to `wrangler.jsonc` (binding `GITHUB_APP_CLIENT_SECRET`). `wrangler deploy --dry-run` confirms it resolves as a Secrets Store Secret
 - [x] 2.3 Uploaded `GITHUB_APP_CLIENT_SECRET` (from `.env.local`) into the default Secret Store off-band via `printf '%s' … | wrangler secrets-store secret create` (stdin, value never echoed). This is the only app secret; the E2E token is test-time only and is NOT uploaded
-- [ ] 2.4 Once `GITHUB_APP_CLIENT_SECRET` is confirmed in the Secret Store, delete the entire `.env.local` so the plaintext secret no longer lives on disk
+- [x] 2.4 No `.env.local` on disk (confirmed absent). Local dev no longer needs it at all: prod-mode E2E reads `gh auth token` and local manual dev auto-signs-in via the dev-only `/api/auth/dev-token` route — the client secret is exercised only in PR previews/prod (see PR #535)
 - [x] 2.5 Non-secret config — **no dashboard vars needed**. `GITHUB_APP_CLIENT_ID` is a plain Worker runtime `var` in `wrangler.jsonc` (server-side). The three build-inlined values are computed in `next.config.ts` `env` with in-repo defaults: `NEXT_PUBLIC_GITHUB_CLIENT_ID` (`Iv23liUEkzCUSR78IkHn`), `NEXT_PUBLIC_APP_URL` (`https://codjiflo.net` in prod, `http://localhost:3000` in dev), and `APP_COMMIT_SHA` (from `WORKERS_CI_COMMIT_SHA` / `git rev-parse`). Verified: `next build` inlines the real HEAD SHA into the health-route bundle
 - [ ] 2.6 Map `codjiflo.net` (DNS + Worker route + SSL) to the production Worker; configure a custom `*.codjiflo.net` preview domain for non-production deployments so previews keep the `.codjiflo.net` cookie domain (fall back to `*.workers.dev` = login-per-preview only if a custom preview domain isn't supported)
 - [x] 2.7 Confirmed on PR #530 itself: Cloudflare builds + deploys a preview. It does **NOT** post a GitHub deployment/environment — it posts the `Workers Builds: codjiflo` check run carrying `Preview URL` (`https://<version>-codjiflo.vezza-dev.workers.dev`) and `Preview Alias URL` (`https://<branch>-codjiflo.vezza-dev.workers.dev`). Previews are on `*.vezza-dev.workers.dev` (custom `*.codjiflo.net` preview domain still pending, task 2.6 — workers.dev fallback = login-per-preview, fine for CI). **Ruleset implication (task 5.1):** the old `required_deployments: ["Preview"]` gate can never be met (no deployment env); require the `Workers Builds: codjiflo` check instead
@@ -23,7 +23,7 @@
 - [x] 3.3 Rewrote `scripts/ensure-env.js`: no `vercel env pull` / no secret download; `CI` short-circuit kept; missing `.env.local` prints off-band guidance and is non-blocking
 - [x] 3.4 Verified `scripts/dev.js` startup needs no secret download — it only calls `ensure-env.js`, which now exits 0 in all paths
 - [x] 3.5 Resolved: **dropped** `CODJIFLO_E2E_GITHUB_TOKEN` (zero code refs). Code + `playwright.config.ts` already standardize on `GITHUB_TOKEN`; the stale var only lived in `.env.local` (removed in task 2.4). No code change needed
-- [ ] 3.6 **[needs GitHub App dashboard]** Update GitHub App homepage + OAuth callback URLs to `https://codjiflo.net` (and previews under `*.codjiflo.net` if used)
+- [x] 3.6 GitHub App homepage + OAuth callback URLs updated to `https://codjiflo.net` (done in the GitHub App dashboard)
 
 ## 4. CI/CD repoint
 
@@ -48,4 +48,4 @@
 
 - [x] 6.1 Updated `openspec/specs/authentication/architecture.md` (domain, preview hostnames, Secret Store env source, commit-SHA build var, callback URLs) and `AGENTS.md` env-setup notes
 - [x] 6.2 `npm run test:all` green — lint ✓ typecheck ✓ spec:validate (11) ✓ unit+coverage (1522) ✓ e2e mock (121) ✓ storybook (31) ✓
-- [ ] 6.3 **[needs live Cloudflare deploy]** Confirm prod-mode E2E passes against the live deployment and `/api/health` reports the correct commit on `codjiflo.net`
+- [x] 6.3 Verified live: `https://codjiflo.net/api/health` reports the current `main` HEAD commit (`be52d898…`), and the required `e2e-tests-prod` check (which targets `codjiflo.net`) passes green on merged PRs
