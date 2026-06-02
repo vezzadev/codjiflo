@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
+import { CMEditor, expect } from "../../fixtures/codemirror";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -74,8 +75,9 @@ test.describe("Side-by-Side Spacer Line Styling", () => {
       page.getByRole("heading", { name: "src/spacer-test.ts" })
     ).toBeVisible();
 
-    // Switch to Side-by-Side view using 'X' keyboard shortcut
-    await page.locator("body").click();
+    // Switch to Side-by-Side view using 'X' keyboard shortcut.
+    // Click a semantic app element first to ensure keyboard focus is in the app.
+    await page.getByRole("main").click();
     await page.keyboard.press("x");
 
     // Verify we're in side-by-side mode
@@ -83,42 +85,24 @@ test.describe("Side-by-Side Spacer Line Styling", () => {
       page.getByRole("region", { name: "Side-by-side diff view" })
     ).toBeVisible();
 
-    // Find spacer lines (data-line-type="spacer" attribute)
-    // The decorations extension adds this attribute to spacer lines
-    const spacerLines = page.locator('[data-line-type="spacer"]');
-
-    // We should have spacer lines in the diff
-    // Left side: 1 spacer (opposite the 3rd addition that has no matching deletion)
-    // Right side: no spacers because we have more additions than deletions
-    // Actually, with 2 deletions and 3 additions, the right side should have
-    // no spacers and the left side should have spacers
-    await expect(spacerLines.first()).toBeVisible();
-
-    // Get the computed background color of a spacer line
+    // Find spacer lines (cm-diff-line-spacer / data-line-type="spacer").
+    // The decorations extension applies this class+attribute to spacer lines.
+    // Left side: spacers opposite the additions that have no matching deletion.
+    // Right side: no spacers because we have more additions than deletions.
+    const editor = CMEditor.from(page);
+    const spacerLines = editor.ext("diff", "lineSpacer");
     const spacerLineElement = spacerLines.first();
+    await expect(spacerLineElement).toBeVisible();
+
+    // Get the computed background color of a spacer line.
     const bgColor = await spacerLineElement.evaluate((el) => {
       return window.getComputedStyle(el).backgroundColor;
     });
 
-    // The background should NOT be white (rgb(255, 255, 255)) or transparent
-    // It should be a shade of gray matching --diff-empty-line variable
-    // In dark theme: #151B23 = rgb(21, 27, 35)
-    // In light theme: #F6F8FA = rgb(246, 248, 250)
-    expect(bgColor).not.toBe("rgb(255, 255, 255)");
-    expect(bgColor).not.toBe("rgba(0, 0, 0, 0)");
-    expect(bgColor).not.toBe("transparent");
-
-    // Verify it's actually using the --diff-empty-line CSS variable
-    // by checking if it's a grayish color (R, G, B values close to each other)
-    // or one of the theme-defined colors
-    const rgbMatch = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(bgColor);
-    if (rgbMatch) {
-      const [, r, g, b] = rgbMatch.map(Number);
-      // For dark themes, values should be low (< 100)
-      // For light themes, values should be high (> 200)
-      // The key is they shouldn't be pure white (255, 255, 255)
-      const isNotPureWhite = r !== 255 || g !== 255 || b !== 255;
-      expect(isNotPureWhite).toBe(true);
-    }
+    // Mock mode forces the light theme (e2e/fixtures/legacy-defaults.ts),
+    // and the spacer line uses --diff-empty-line, which is #F6F8FA in the
+    // light theme. So the computed background is deterministically the themed
+    // gray, NOT white or transparent (the original SXS-gaps bug).
+    expect(bgColor).toBe("rgb(246, 248, 250)");
   });
 });

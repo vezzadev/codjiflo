@@ -85,14 +85,20 @@ test.describe("Inline mode gutter line numbers", () => {
     return diffRegion;
   }
 
-  // Helper to get a locator for a regular gutter wrapper (excludes headers and spacers)
-  function getRegularGutterWrapper(editor: CMEditor) {
-    // Get gutter wrappers that aren't headers (spacers use line number 9999)
-    // We use a CSS selector here because we need :not() to exclude header wrappers
-    return editor.view
-      .locator(".cm-diff-gutter-wrapper:not(.cm-diff-gutter-header)")
-      .filter({ hasNotText: "9999" })
-      .first();
+  // Real line-number columns: gutter spans that render an actual line number.
+  // The header wrapper has empty (null) line numbers and the initial spacer uses
+  // the sentinel "9999" - both are excluded by requiring a digit and filtering "9999".
+  function leftLineNumbers(editor: CMEditor) {
+    return editor
+      .ext("diff", "gutterLeft")
+      .filter({ hasText: /\d/ })
+      .filter({ hasNotText: "9999" });
+  }
+  function rightLineNumbers(editor: CMEditor) {
+    return editor
+      .ext("diff", "gutterRight")
+      .filter({ hasText: /\d/ })
+      .filter({ hasNotText: "9999" });
   }
 
   test("gutter shows only right line numbers in inline mode with 'both' filter", async ({
@@ -101,13 +107,11 @@ test.describe("Inline mode gutter line numbers", () => {
     await navigateToFile(page);
 
     const editor = CMEditor.from(page);
-    const wrapper = getRegularGutterWrapper(editor);
-    await expect(wrapper).toBeVisible();
 
     // According to spec: 'both' filter should show only right (new) line numbers
-    // So we expect 0 left columns and 1 right column
-    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(0);
-    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(1);
+    // So we expect no left columns and at least one right column.
+    await expect(leftLineNumbers(editor)).toHaveCount(0);
+    await expect(rightLineNumbers(editor).first()).toBeVisible();
   });
 
   test("gutter shows only left line numbers when filter is 'left'", async ({
@@ -116,19 +120,17 @@ test.describe("Inline mode gutter line numbers", () => {
     await navigateToFile(page);
 
     // Press 'L' to set filter to left
-    await page.locator("body").click();
+    await page.getByRole("region", { name: /Diff content/i }).click();
     await page.keyboard.press("l");
 
     // Wait for filter to be applied (check the radio button is selected)
     await expect(page.getByRole("radio", { name: "Left Only" })).toBeChecked();
 
     const editor = CMEditor.from(page);
-    const wrapper = getRegularGutterWrapper(editor);
-    await expect(wrapper).toBeVisible();
 
     // When filter is 'left', should show only left (old) line numbers
-    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(1);
-    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(0);
+    await expect(rightLineNumbers(editor)).toHaveCount(0);
+    await expect(leftLineNumbers(editor).first()).toBeVisible();
   });
 
   test("gutter shows only right line numbers when filter is 'right'", async ({
@@ -137,18 +139,16 @@ test.describe("Inline mode gutter line numbers", () => {
     await navigateToFile(page);
 
     // Press 'R' to set filter to right
-    await page.locator("body").click();
+    await page.getByRole("region", { name: /Diff content/i }).click();
     await page.keyboard.press("r");
 
     // Wait for filter to be applied
     await expect(page.getByRole("radio", { name: "Right Only" })).toBeChecked();
 
     const editor = CMEditor.from(page);
-    const wrapper = getRegularGutterWrapper(editor);
-    await expect(wrapper).toBeVisible();
 
     // When filter is 'right', should show only right (new) line numbers
-    await expect(wrapper.locator(".cm-diff-gutter-left")).toHaveCount(0);
-    await expect(wrapper.locator(".cm-diff-gutter-right")).toHaveCount(1);
+    await expect(leftLineNumbers(editor)).toHaveCount(0);
+    await expect(rightLineNumbers(editor).first()).toBeVisible();
   });
 });

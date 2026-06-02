@@ -13,9 +13,25 @@
  * ```
  */
 import { CMEditor } from 'playwright-codemirror';
+import type { Locator } from '@playwright/test';
 
 // Re-export for convenience
 export { CMEditor, expect, ExtensionRegistryManager } from 'playwright-codemirror';
+
+/**
+ * Locator for CodeMirror syntax-highlighting token spans within the rendered lines.
+ *
+ * CodeMirror's syntax highlighter wraps tokens in `<span>` elements that carry a
+ * dynamically-generated class (the `ͼ…` / `tok-…` highlight classes). These are
+ * emitted at runtime by CodeMirror, not by CodjiFlo product code, so there is no
+ * single stable class or product `data-testid` to register via `ext()`. Counting
+ * "any span that has a class" is exactly what verifies that syntax highlighting is
+ * present. This helper centralizes that attribute selector behind the sanctioned
+ * CMEditor fixture so specs stay free of raw locators.
+ */
+export function syntaxTokenSpans(editor: CMEditor): Locator {
+  return editor.linesInDOM.locator('span[class]');
+}
 
 /**
  * Register CodjiFlo's diff extension classes.
@@ -53,4 +69,14 @@ CMEditor.registerExtension('diff', {
 CMEditor.registerExtension('search', {
   match: 'cm-searchMatch',
   matchSelected: 'cm-searchMatch-selected',
+});
+
+/**
+ * Register CodeMirror whitespace-visibility extension classes.
+ * `cm-highlightSpace` is the stable class emitted by CodeMirror's built-in
+ * `highlightWhitespace()` extension (enabled in the diff editors when whitespace
+ * visibility is toggled on).
+ */
+CMEditor.registerExtension('whitespace', {
+  highlightSpace: 'cm-highlightSpace',
 });

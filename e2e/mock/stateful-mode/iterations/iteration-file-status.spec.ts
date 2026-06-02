@@ -154,9 +154,7 @@ on: [pull_request, workflow_dispatch]
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
     await expect(fileList).toBeVisible();
 
-    const actionYmlItem = fileList.locator(".tree-item.file").filter({
-      hasText: "action.yml",
-    });
+    const actionYmlItem = page.getByRole("row", { name: /action\.yml/ });
 
     // --- Iteration 1: action.yml should NOT appear ---
     const iteration1Tab = page.getByTestId("iteration-tab-1");
@@ -175,7 +173,7 @@ on: [pull_request, workflow_dispatch]
     await expect(actionYmlItem).toBeVisible();
 
     // Check the change-type indicator shows "M" (modified), not "A" (added)
-    const changeTypeIndicator = actionYmlItem.locator(".change-type");
+    const changeTypeIndicator = actionYmlItem.getByTestId("file-change-type");
     await expect(changeTypeIndicator).toHaveText("M");
 
     // Also verify via aria-label that it says "modified" not "added"
@@ -202,15 +200,12 @@ on: [pull_request, workflow_dispatch]
     const tab1 = page.getByTestId("iteration-tab-1");
     const tab2 = page.getByTestId("iteration-tab-2");
 
-    const box1 = await tab1.boundingBox();
-    const box2 = await tab2.boundingBox();
+    // Tabs are deterministic, visible fixtures in mock mode. Drag from
+    // tab 1 to tab 2 to perform the range selection gesture.
+    await expect(tab1).toBeVisible();
+    await expect(tab2).toBeVisible();
 
-    if (box1 && box2) {
-      await page.mouse.move(box1.x + box1.width / 2, box1.y + box1.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
-      await page.mouse.up();
-    }
+    await tab1.dragTo(tab2);
 
     // Both tabs should be selected (range selection)
     await expect(tab1).toHaveClass(/selected/);
@@ -218,13 +213,12 @@ on: [pull_request, workflow_dispatch]
 
     // action.yml should appear as "M" (modified), not "A" (added)
     const fileList = page.getByRole("navigation", { name: /Changed files/i });
-    const actionYmlItem = fileList.locator(".tree-item.file").filter({
-      hasText: "action.yml",
-    });
+    await expect(fileList).toBeVisible();
+    const actionYmlItem = page.getByRole("row", { name: /action\.yml/ });
 
     await expect(actionYmlItem).toBeVisible();
 
-    const changeTypeIndicator = actionYmlItem.locator(".change-type");
+    const changeTypeIndicator = actionYmlItem.getByTestId("file-change-type");
     await expect(changeTypeIndicator).toHaveText("M");
   });
 });

@@ -152,7 +152,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     // Minimap lasso should be hidden (comments are shown by default)
     const minimap = page.getByRole("img", { name: /minimap/i });
     await expect(minimap).toBeVisible();
-    await expect(minimap.locator(".minimap-lasso")).toBeHidden();
+    await expect(minimap.getByTestId("minimap-lasso")).toBeHidden();
 
     // Press 'd' to hide comments
     await page.keyboard.press("d");
@@ -162,7 +162,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
 
     // Lasso should now be visible (comments hidden, full-file mode on)
-    await expect(minimap.locator(".minimap-lasso")).toBeVisible();
+    await expect(minimap.getByTestId("minimap-lasso")).toBeVisible();
   });
 
   test("pressing 'd' again shows comments and hides lasso", async ({ page }) => {
@@ -195,7 +195,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     await expect(diffRegion.getByText("This is a test comment")).toBeHidden();
 
     const minimap = page.getByRole("img", { name: /minimap/i });
-    await expect(minimap.locator(".minimap-lasso")).toBeVisible();
+    await expect(minimap.getByTestId("minimap-lasso")).toBeVisible();
 
     // Press 'd' again to show comments
     await page.keyboard.press("d");
@@ -204,7 +204,7 @@ diff --git a/src/commented-file.ts b/src/commented-file.ts
     await expect(diffRegion.getByText("This is a test comment")).toBeVisible();
 
     // Lasso should be hidden again
-    await expect(minimap.locator(".minimap-lasso")).toBeHidden();
+    await expect(minimap.getByTestId("minimap-lasso")).toBeHidden();
   });
 
   test("toolbar shows comment toggle button with correct state", async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -13,6 +13,44 @@ import {
   getLassoHeight,
 } from "../../fixtures/minimap-helpers";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
+
+interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Resolve the minimap bounding box, asserting it is present.
+ *
+ * boundingBox() is typed `BoundingBox | null`; in deterministic mock mode the
+ * minimap is asserted visible before this runs so the box is never null. The
+ * assertion lives here (module scope, outside any test body) so the test reads
+ * as a straight-line measurement without TypeScript null-narrowing conditionals.
+ */
+async function getMinimapBox(minimap: Locator): Promise<BoundingBox> {
+  const box = await minimap.boundingBox();
+  if (!box) {
+    throw new Error("Minimap bounding box not found");
+  }
+  return box;
+}
+
+/**
+ * Resolve the lasso's SVG path `d` attribute, asserting it is present.
+ *
+ * getAttribute() is typed `string | null`; the lasso is asserted visible with a
+ * non-empty path before this runs, so the value is never null. The assertion
+ * lives here (module scope) to avoid a null-narrowing conditional in the test.
+ */
+async function getLassoPath(lasso: Locator): Promise<string> {
+  const path = await lasso.getAttribute("d");
+  if (!path) {
+    throw new Error("Initial lasso path is null");
+  }
+  return path;
+}
 
 test.describe("Minimap lasso sizing during scroll", () => {
   const owner = "test";
@@ -139,8 +177,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLasso(page);
 
     // Force react-window to calculate correct scrollHeight by scrolling
-    let minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    let minimapBox = await getMinimapBox(minimap);
 
     // Scroll to middle to force height calculation
     await page.mouse.click(
@@ -150,8 +187,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLassoStable(page);
 
     // Scroll back to top - re-fetch bounding box in case layout shifted
-    minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    minimapBox = await getMinimapBox(minimap);
 
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
@@ -163,8 +199,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const topResult = await getLassoHeight(page);
 
     // Scroll to middle using minimap click - re-fetch bounding box
-    minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    minimapBox = await getMinimapBox(minimap);
 
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
@@ -176,8 +211,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     const middleResult = await getLassoHeight(page);
 
     // Scroll to bottom - re-fetch bounding box
-    minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    minimapBox = await getMinimapBox(minimap);
 
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
@@ -245,8 +279,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLasso(page);
 
     // Get minimap bar height (approximately containerHeight - 2*PADDING_VERTICAL)
-    const minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    const minimapBox = await getMinimapBox(minimap);
 
     const lassoResult = await getLassoHeight(page);
     const barHeight = minimapBox.height - 20; // Approximate: height - 2*PADDING_VERTICAL(10)
@@ -289,11 +322,10 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await expect(minimap).toBeVisible();
     await waitForLasso(page);
 
-    const lasso = minimap.locator(".minimap-lasso");
+    const lasso = minimap.getByTestId("minimap-lasso");
 
     // Force react-window to calculate correct scrollHeight by scrolling first
-    let minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    let minimapBox = await getMinimapBox(minimap);
 
     // Scroll to middle to force height calculation
     await page.mouse.click(
@@ -303,8 +335,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLassoStable(page);
 
     // Scroll back to top - re-fetch bounding box
-    minimapBox = await minimap.boundingBox();
-    if (!minimapBox) throw new Error("Minimap bounding box not found");
+    minimapBox = await getMinimapBox(minimap);
 
     await page.mouse.click(
       minimapBox.x + minimapBox.width / 2,
@@ -313,8 +344,7 @@ diff --git a/src/large-file.ts b/src/large-file.ts
     await waitForLassoStable(page);
 
     // Get initial lasso path
-    const initialPath = await lasso.getAttribute("d");
-    if (!initialPath) throw new Error("Initial lasso path is null");
+    const initialPath = await getLassoPath(lasso);
     const initialResult = await getLassoHeight(page);
 
     // Scroll down using keyboard

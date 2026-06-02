@@ -133,39 +133,40 @@ index 3334567..cbcdefg 100644
     // Wait for file list and iterations to load
     const fileList = page.getByRole('navigation', { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(page.getByRole('status', { name: /Loading files/i })).toHaveCount(0);
 
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
 
     // Select iteration 1 (only file-a.txt changed)
-    const tabs = selector.locator('.iteration-tab');
+    const tabs = selector.getByRole('button', { name: /^Iteration \d/ });
     await tabs.nth(0).click();
 
     // Wait for file list to update
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(page.getByRole('status', { name: /Loading files/i })).toHaveCount(0);
 
-    // In iteration 1, only file-a.txt should be visible (plus PR description)
-    // Use .tree-item.file to exclude folder headers from count
-    const fileItems = fileList.locator('.tree-item.file');
-    // Should have 2 items: PR description + file-a.txt
-    await expect(fileItems).toHaveCount(2);
+    // In iteration 1, only file-a.txt should be visible (plus PR description).
+    // file-tree-item marks file rows (leaf files only, not the PR description row).
+    const fileItems = fileList.getByTestId('file-tree-item');
+    const prDescription = fileList.getByRole('row', { name: /Pull Request Description/i });
+    // Should have exactly 1 file: file-a.txt
+    await expect(fileItems).toHaveCount(1);
 
-    // Click on file-a.txt (second file item after PR description)
-    await fileItems.nth(1).click();
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    // Click on file-a.txt (the only file)
+    await fileItems.first().click();
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to next file - should do nothing (already at last file)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go to previous - should go to PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go back to file-a.txt
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
   });
 
   test('s/w navigate through multiple visible files in iteration 2', async ({ page }) => {
@@ -174,51 +175,52 @@ index 3334567..cbcdefg 100644
 
     const fileList = page.getByRole('navigation', { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(page.getByRole('status', { name: /Loading files/i })).toHaveCount(0);
 
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
 
     // Select iteration 2 (file-b.txt and file-c.txt changed)
-    const tabs = selector.locator('.iteration-tab');
+    const tabs = selector.getByRole('button', { name: /^Iteration \d/ });
     await tabs.nth(1).click();
 
     // Wait for file list to update
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(page.getByRole('status', { name: /Loading files/i })).toHaveCount(0);
 
-    // In iteration 2, file-b.txt and file-c.txt should be visible
-    // Use .tree-item.file to exclude folder headers from count
-    const fileItems = fileList.locator('.tree-item.file');
-    // Should have 3 items: PR description + file-b.txt + file-c.txt
-    await expect(fileItems).toHaveCount(3);
+    // In iteration 2, file-b.txt and file-c.txt should be visible.
+    // file-tree-item marks file rows (leaf files only, not the PR description row).
+    const fileItems = fileList.getByTestId('file-tree-item');
+    const prDescription = fileList.getByRole('row', { name: /Pull Request Description/i });
+    // Should have exactly 2 files: file-b.txt + file-c.txt
+    await expect(fileItems).toHaveCount(2);
 
     // Start at PR description
-    await fileItems.first().click();
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await prDescription.click();
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to first file (file-b.txt)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(0)).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' to go to second file (file-c.txt)
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 's' again - should stay on last file
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go back to file-b.txt
     await page.keyboard.press('w');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(0)).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' to go back to PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
 
     // Press 'w' again - should stay on PR description
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
   });
 
   test('default view (latest iteration) shows correct files and keyboard navigation works', async ({ page }) => {
@@ -227,42 +229,43 @@ index 3334567..cbcdefg 100644
 
     const fileList = page.getByRole('navigation', { name: /Changed files/i });
     await expect(fileList).toBeVisible();
-    await expect(fileList.locator('.skeleton')).toHaveCount(0);
+    await expect(page.getByRole('status', { name: /Loading files/i })).toHaveCount(0);
 
     const selector = page.getByTestId('iteration-selector');
     await expect(selector).toBeVisible();
     // Wait for iteration tabs to load (not just skeleton)
-    await expect(selector.locator('.iteration-tab')).not.toHaveCount(0);
+    await expect(selector.getByRole('button', { name: /^Iteration \d/ })).not.toHaveCount(0);
 
-    // Default view shows iteration 2 (latest), which has file-b.txt and file-c.txt
-    // Use .tree-item.file to exclude folder headers from count
-    const fileItems = fileList.locator('.tree-item.file');
-    // Should have 3 items: PR description + file-b.txt + file-c.txt
-    await expect(fileItems).toHaveCount(3);
+    // Default view shows iteration 2 (latest), which has file-b.txt and file-c.txt.
+    // file-tree-item marks file rows (leaf files only, not the PR description row).
+    const fileItems = fileList.getByTestId('file-tree-item');
+    const prDescription = fileList.getByRole('row', { name: /Pull Request Description/i });
+    // Should have exactly 2 files: file-b.txt + file-c.txt
+    await expect(fileItems).toHaveCount(2);
 
     // Navigate through visible files with 's'
-    await fileItems.first().click(); // Start at PR description
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await prDescription.click(); // Start at PR description
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
+
+    await page.keyboard.press('s');
+    await expect(fileItems.nth(0)).toHaveAttribute('aria-selected', 'true');
 
     await page.keyboard.press('s');
     await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
-
-    await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
 
     // At last file, 's' does nothing
     await page.keyboard.press('s');
-    await expect(fileItems.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
 
     // Navigate back with 'w'
     await page.keyboard.press('w');
-    await expect(fileItems.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(fileItems.nth(0)).toHaveAttribute('aria-selected', 'true');
 
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
 
     // At PR description, 'w' does nothing
     await page.keyboard.press('w');
-    await expect(fileItems.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(prDescription).toHaveAttribute('aria-selected', 'true');
   });
 });

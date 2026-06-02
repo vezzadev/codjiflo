@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { CMEditor } from "../../fixtures/codemirror";
 import {
   setupAuthState,
   setupFullPRMocks,
@@ -129,21 +130,27 @@ test.describe("Side filter with view modes", () => {
     return diffRegion;
   }
 
-  // Locator helpers for line types
+  // Locator helpers for line types.
+  // Scope the CodeMirror editor to the given diff region, then select diff
+  // line decorations by their semantic CodeMirror class via the `diff` extension
+  // (cm-diff-line-addition / cm-diff-line-deletion). The inline "Diff content"
+  // region always contains a single editor; the side-by-side region, after a
+  // left/right filter, also renders exactly one pane (left=deletions only,
+  // right=additions only), so the first editor in the region is the right one.
   const additions = (region: import("@playwright/test").Locator) =>
-    region.locator('[data-line-type="addition"]');
+    CMEditor.from(region).ext("diff", "lineAddition");
   const deletions = (region: import("@playwright/test").Locator) =>
-    region.locator('[data-line-type="deletion"]');
+    CMEditor.from(region).ext("diff", "lineDeletion");
 
   // Helper to set content filter via keyboard shortcut
   async function setFilter(page: import("@playwright/test").Page, filter: "left" | "both" | "right") {
-    await page.locator("body").click();
+    await page.getByRole("region", { name: /Diff content/i }).click();
     await page.keyboard.press(filter === "left" ? "l" : filter === "both" ? "o" : "r");
   }
 
   // Helper to toggle full file view
   async function setFullFileView(page: import("@playwright/test").Page, showFull: boolean) {
-    await page.locator("body").click();
+    await page.getByRole("region", { name: /Diff content/i }).click();
     // 'F' for full file, 'C' for changes only
     await page.keyboard.press(showFull ? "f" : "c");
   }
@@ -255,7 +262,7 @@ test.describe("Side filter with view modes", () => {
 
   // Helper to toggle side-by-side view and return the new region
   async function setSideBySideView(page: import("@playwright/test").Page) {
-    await page.locator("body").click();
+    await page.getByRole("region", { name: /Diff content/i }).click();
     await page.keyboard.press("x"); // 'x' for side-by-side (not 's' which is next file)
     // Return the side-by-side region (different from inline "Diff content" region)
     const sideBySideRegion = page.getByRole("region", { name: "Side-by-side diff view" });

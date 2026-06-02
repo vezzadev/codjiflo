@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { isMockMode, prodModeConfig } from "../../fixtures/mode";
 import {
   setupAuthMock,
   setupFullPRMocks,
@@ -19,9 +18,9 @@ test.describe("Redirect After Login", () => {
     page,
   }) => {
     // Mock data for the test
-    const owner = isMockMode() ? "test" : prodModeConfig.testRepo.owner;
-    const repo = isMockMode() ? "repo" : prodModeConfig.testRepo.repo;
-    const prNumber = isMockMode() ? 123 : prodModeConfig.testRepo.prNumber;
+    const owner = "test";
+    const repo = "repo";
+    const prNumber = 123;
 
     // Capture console errors - should be none for unauthenticated PR access (S-4.1.5)
     const consoleErrors: string[] = [];
@@ -71,9 +70,7 @@ test.describe("Redirect After Login", () => {
     await page.getByText(/Use Personal Access Token/i).click();
     const input = page.getByLabel(/Personal Access Token/i);
 
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.GITHUB_TOKEN ?? "";
+    const token = "ghp_validtoken123456789";
 
     await input.fill(token);
     await page.getByRole("button", { name: /Connect with PAT/i }).click();
@@ -105,9 +102,7 @@ test.describe("Redirect After Login", () => {
     await page.getByText(/Use Personal Access Token/i).click();
     const input = page.getByLabel(/Personal Access Token/i);
 
-    const token = isMockMode()
-      ? "ghp_validtoken123456789"
-      : process.env.GITHUB_TOKEN ?? "";
+    const token = "ghp_validtoken123456789";
 
     await input.fill(token);
     await page.getByRole("button", { name: /Connect with PAT/i }).click();

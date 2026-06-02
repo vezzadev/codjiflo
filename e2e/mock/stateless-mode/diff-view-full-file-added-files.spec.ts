@@ -93,7 +93,7 @@ export function suppressWarnings() {
 
     // KEY ASSERTION: No error banner should be displayed
     // The bug in Issue #195 shows "File not found at this version" error
-    const errorBanner = page.locator(".diff-error-banner");
+    const errorBanner = page.getByTestId("diff-error-banner");
     await expect(errorBanner).toBeHidden();
 
     // Verify content is still visible (file was successfully loaded)

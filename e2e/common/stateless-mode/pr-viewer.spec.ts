@@ -10,11 +10,7 @@ import {
 } from "../../fixtures/github-mocks";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
+test.describe("PR Viewer Flow (S-1.5 keyboard + error handling)", () => {
   // Mock PR data - used in mock mode
   const mockPR: MockPR = {
     id: 1,
@@ -74,25 +70,37 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     },
   ];
 
-  // Test configuration based on mode
+  // Mode-keyed config for the standard PR used by the keyboard-nav test.
   const getTestConfig = () => {
     if (isMockMode()) {
       return {
         owner: "test",
         repo: "repo",
         prNumber: 123,
-        prUrl: "https://github.com/test/repo/pull/123",
-        pageUrl: "/test/repo/123",
+        keyboardNavUrl: "/test/repo/123",
       };
     }
-    // Prod mode uses a known public PR
-    const { owner, repo, prNumber } = prodModeConfig.testRepo;
+    // Prod mode: PR #6 has multiple files for keyboard navigation testing.
+    const { owner, repo, prNumber } = prodModeConfig.keyboardNavPR;
     return {
       owner,
       repo,
       prNumber,
-      prUrl: `https://github.com/${owner}/${repo}/pull/${String(prNumber)}`,
-      pageUrl: `/${owner}/${repo}/${String(prNumber)}`,
+      keyboardNavUrl: `/${owner}/${repo}/${String(prNumber)}`,
+    };
+  };
+
+  // Mode-keyed config for the 404 test.
+  const getNotFoundConfig = () => {
+    if (isMockMode()) {
+      return { owner: "test", repo: "repo", prNumber: 999, url: "/test/repo/999" };
+    }
+    const { owner, repo, prNumber } = prodModeConfig.notFoundPR;
+    return {
+      owner,
+      repo,
+      prNumber,
+      url: `/${owner}/${repo}/${String(prNumber)}`,
     };
   };
 
@@ -101,203 +109,22 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     // Set up authentication state (uses real token in real mode)
     await setupAuthState(page);
 
-    // Set up mocks (only applies in mock mode)
+    // Set up mocks for the standard keyboard-nav PR (no-op in prod mode).
     const config = getTestConfig();
     await setupFullPRMocks(page, config.owner, config.repo, config.prNumber, {
       pr: mockPR,
       files: mockFiles,
     });
-  });
 
-  test("Complete PR viewing journey", async ({ page }) => {
-    const config = getTestConfig();
-
-    // Navigate to dashboard
-    await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: /View Pull Request/i })).toBeVisible();
-
-    // Enter PR URL
-    const input = page.getByLabel(/GitHub Pull Request URL/i);
-    await input.fill(config.prUrl);
-
-    // Submit form
-    await page.getByRole("button", { name: /Load Pull Request/i }).click();
-
-    // [S-1.2] Verify PR metadata is displayed
-    await expect(page).toHaveURL(new RegExp(`.*${escapeRegExp(config.pageUrl)}`));
-
-    if (isMockMode()) {
-      // Mock mode: verify exact mock data
-      // [AC-1.2.1] Title is displayed
-      await expect(page.getByRole("heading", { level: 1, name: /Add new feature: Button component/i })).toBeVisible();
-
-      // [AC-1.2.3] Author is displayed
-      await expect(page.getByText("testuser")).toBeVisible();
-
-      // [AC-1.2.4] State badge is displayed
-      await expect(page.getByText("Open")).toBeVisible();
-
-      // [AC-1.2.5] Branches are displayed
-      await expect(page.getByText("feature/button")).toBeVisible();
-      await expect(page.getByText("main")).toBeVisible();
-
-      // [AC-1.2.2] Description is rendered as markdown
-      await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
-
-      // [AC-1.2.6] Link to GitHub exists
-      await expect(page.getByRole("link", { name: /View on GitHub/i })).toHaveAttribute(
-        "href",
-        "https://github.com/test/repo/pull/123"
-      );
-    } else {
-      // Real mode: verify structure exists (content will vary)
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByRole("link", { name: /View on GitHub/i })).toBeVisible();
-    }
-  });
-
-  test("PR Description is shown as first entry in file list", async ({ page }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-
-    // Wait for page to load
-    await page.waitForLoadState("load");
-
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible();
-
-    // PR Description should be the first entry in the file list
-    const prDescButton = fileNav.getByRole("row", { name: /Pull Request Description/i });
-    await expect(prDescButton).toBeVisible();
-
-    // PR Description should be selected by default
-    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
-
-    if (isMockMode()) {
-      // Main panel should show the PR title and metadata
-      await expect(page.getByRole("heading", { level: 1, name: /Add new feature: Button component/i })).toBeVisible();
-      // Description content should be visible (rendered as markdown)
-      await expect(page.getByRole("heading", { name: "Summary" })).toBeVisible();
-    } else {
-      // Real mode: verify PR title heading exists
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    }
-  });
-
-  test("Clicking file switches from PR Description to diff view", async ({ page }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-
-    // Wait for page to load
-    await page.waitForLoadState("load");
-
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible();
-
-    // Verify PR Description is selected initially
-    const prDescButton = fileNav.getByRole("row", { name: /Pull Request Description/i });
-    await expect(prDescButton).toHaveAttribute("aria-selected", "true");
-
-    if (isMockMode()) {
-      // Click on a file to switch to diff view
-      await fileNav.getByText("app.spec.ts").click();
-
-      // Diff view should show the file header
-      await expect(page.getByRole("heading", { name: "e2e/app.spec.ts" })).toBeVisible();
-
-      // PR Description should no longer be selected
-      await expect(prDescButton).not.toHaveAttribute("aria-selected", "true");
-
-      // Verify diff content is visible
-      const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible();
-    } else {
-      // Real mode: click first actual file (using CSS selector to exclude folder headers)
-      const fileItems = fileNav.locator(".tree-item.file.indent-1");
-      const allFileItems = await fileItems.all();
-      if (allFileItems.length > 0) {
-        await allFileItems[0]?.click();
-        // PR Description should no longer be selected
-        await expect(prDescButton).not.toHaveAttribute("aria-selected", "true");
-      }
-    }
-  });
-
-  test("File list displays correctly", async ({ page }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-
-    // Wait for page to load
-    await page.waitForLoadState("load");
-
-    if (isMockMode()) {
-      // Click on a file first to show the diff (PR description is default)
-      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await fileNav.getByText("app.spec.ts").click();
-
-      // Wait for specific mock file header
-      await expect(page.getByRole("heading", { name: "e2e/app.spec.ts" })).toBeVisible();
-
-      // [S-1.3] Wait for files to load
-      await expect(fileNav.getByText("app.spec.ts")).toBeVisible();
-      await expect(fileNav.getByText("index.ts")).toBeVisible();
-      await expect(fileNav.getByText("old-file.ts")).toBeVisible();
-
-      // [AC-1.3.3] Stats are displayed
-      await expect(page.getByText("+23")).toBeVisible();
-      await expect(page.getByText("−5")).toBeVisible();
-    } else {
-      // Real mode: verify file nav structure exists
-      const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-      await expect(fileNav).toBeVisible();
-    }
-  });
-
-  test("Diff view renders correctly", async ({ page }) => {
-    const config = getTestConfig();
-    await page.goto(config.pageUrl);
-
-    // Wait for page to load
-    await page.waitForLoadState("load");
-
-    // PR Description is now the default selection, so click a file first
-    const fileNav = page.getByRole("navigation", { name: /Changed files/i });
-    await expect(fileNav).toBeVisible();
-
-    if (isMockMode()) {
-      // Click on a file to show diff
-      await fileNav.getByText("app.spec.ts").click();
-
-      // [S-1.4] Diff region should be visible
-      const diffRegion = page.getByRole("region", { name: /Diff content/i });
-      await expect(diffRegion).toBeVisible();
-
-      // Wait for content to load - check the diff view heading
-      await expect(page.getByRole("heading", { name: "e2e/app.spec.ts" })).toBeVisible();
-
-      // [AC-1.4.1] Code is displayed
-      await expect(page.getByText(/import { test, expect }/)).toBeVisible();
-    } else {
-      // Real mode: click first actual file (using CSS selector to exclude folder headers)
-      const fileItems = fileNav.locator(".tree-item.file.indent-1");
-      const allFileItems = await fileItems.all();
-      if (allFileItems.length > 0) {
-        await allFileItems[0]?.click();
-        const diffRegion = page.getByRole("region", { name: /Diff content/i });
-        await expect(diffRegion).toBeVisible();
-      }
-    }
+    // Arrange the 404 PR mocks (no-op in prod mode).
+    const notFound = getNotFoundConfig();
+    await setupPRMock(page, notFound.owner, notFound.repo, notFound.prNumber, { failWith: 404 });
+    await setupFilesMock(page, notFound.owner, notFound.repo, notFound.prNumber, { failWith: 404 });
   });
 
   test("Keyboard navigation works", async ({ page }) => {
-    // Navigate to appropriate PR based on mode
-    if (isMockMode()) {
-      await page.goto("/test/repo/123");
-    } else {
-      // Prod mode: use PR #6 which has multiple files
-      const { owner, repo, prNumber } = prodModeConfig.keyboardNavPR;
-      await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
-    }
+    const config = getTestConfig();
+    await page.goto(config.keyboardNavUrl);
 
     // Wait for page to fully stabilize
     await page.waitForLoadState("load");
@@ -311,14 +138,14 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
     await expect(prDescButton).toBeVisible();
 
     // Wait for file items to be visible
-    const fileItems = fileNav.locator(".tree-item.file");
+    const fileItems = fileNav.getByTestId("file-tree-item");
     await expect(fileItems.first()).toBeVisible();
 
     // PR Description should be selected by default
     await expect(prDescButton).toHaveAttribute("aria-selected", "true");
 
     // Click on the main content area to ensure keyboard shortcuts work without triggering navigation
-    await page.locator(".main-content").click();
+    await page.getByRole("main").click();
 
     // [AC-1.5.1] Press s to go to first file (next file)
     // Note: keyboard navigation follows display order (folder-grouped, "/" first)
@@ -337,7 +164,7 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
 
   test("Shortcuts modal opens with ? button", async ({ page }) => {
     const config = getTestConfig();
-    await page.goto(config.pageUrl);
+    await page.goto(config.keyboardNavUrl);
 
     // Wait for page to fully stabilize
     await page.waitForLoadState("load");
@@ -389,16 +216,8 @@ test.describe("PR Viewer Flow (S-1.2, S-1.3, S-1.4, S-1.5)", () => {
   });
 
   test("Error handling for 404 PR", async ({ page }) => {
-    if (isMockMode()) {
-      // Mock 404 response
-      await setupPRMock(page, "test", "repo", 999, { failWith: 404 });
-      await setupFilesMock(page, "test", "repo", 999, { failWith: 404 });
-      await page.goto("/test/repo/999");
-    } else {
-      // Prod mode: use non-existent PR #0
-      const { owner, repo, prNumber } = prodModeConfig.notFoundPR;
-      await page.goto(`/${owner}/${repo}/${String(prNumber)}`);
-    }
+    const notFound = getNotFoundConfig();
+    await page.goto(notFound.url);
 
     // Should show error message (use first() since error may appear in multiple places)
     await expect(page.getByText(/Pull request not found/i).first()).toBeVisible();

@@ -5,7 +5,7 @@ import {
   type MockPR,
   type MockFile,
 } from "../../fixtures/github-mocks";
-import { CMEditor, expect } from "../../fixtures/codemirror";
+import { CMEditor, expect, syntaxTokenSpans } from "../../fixtures/codemirror";
 import { setupLegacyDefaults } from "../../fixtures/legacy-defaults";
 
 test.describe("Diff View - Mock Only Tests", () => {
@@ -79,7 +79,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     // by checking for .ͼ (CodeMirror highlight class prefix) or .tok- classes.
     // Language loading is async so we need to wait.
     const editor = CMEditor.from(diffRegion);
-    const syntaxSpanLocator = editor.linesInDOM.locator('span[class]');
+    const syntaxSpanLocator = syntaxTokenSpans(editor);
     await expect(syntaxSpanLocator.first()).toBeVisible();
 
     // Count spans with any class (syntax highlighting adds classes to spans)
@@ -87,14 +87,14 @@ test.describe("Diff View - Mock Only Tests", () => {
     expect(syntaxSpansBefore).toBeGreaterThan(0);
 
     // Enable whitespace visibility using 'B' key
-    await page.locator("body").click();
+    await page.getByRole("main").click();
     await page.keyboard.press("b");
 
     // Verify whitespace indicators are visible (CodeMirror uses .cm-highlightSpace)
-    await expect(editor.view.locator('.cm-highlightSpace').first()).toBeVisible();
+    await expect(editor.ext("whitespace", "highlightSpace").first()).toBeVisible();
 
     // After enabling whitespace visibility, syntax highlighting spans should still be present
-    const syntaxSpansAfter = await editor.linesInDOM.locator('span[class]').count();
+    const syntaxSpansAfter = await syntaxTokenSpans(editor).count();
     expect(syntaxSpansAfter).toBeGreaterThan(0);
 
     // The count should be similar (whitespace toggle shouldn't remove syntax spans)
@@ -177,7 +177,7 @@ test.describe("Diff View - Mock Only Tests", () => {
     await expect(prevChangeButton).toBeDisabled();
 
     // Focus the page body for keyboard navigation
-    await page.locator("body").click();
+    await page.getByRole("main").click();
 
     // Press J to navigate to first change
     await page.keyboard.press("j");
