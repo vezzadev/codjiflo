@@ -20,8 +20,10 @@ console.warn(
     "     GITHUB_APP_CLIENT_ID=Iv23liUEkzCUSR78IkHn\n" +
     "     NEXT_PUBLIC_GITHUB_CLIENT_ID=Iv23liUEkzCUSR78IkHn\n" +
     "     NEXT_PUBLIC_APP_URL=http://localhost:3000\n" +
-    "     GITHUB_APP_CLIENT_SECRET=<from the Cloudflare codjiflo Secret Store / a maintainer>\n" +
-    "     # Optional, for prod-mode E2E: GITHUB_TOKEN=<a GitHub PAT>\n\n" +
+    "     GITHUB_APP_CLIENT_SECRET=<from the Cloudflare codjiflo Secret Store / a maintainer>\n\n" +
+    "   Prod-mode E2E needs a GitHub token, but you don't set it here: if you're\n" +
+    "   logged into the GitHub CLI (`gh auth login`), it is read from `gh auth token`\n" +
+    "   automatically. Override with GITHUB_TOKEN in .env.local only if needed.\n\n" +
     "   Secrets are never fetched from Vercel, Cloudflare, or any provider.\n"
 );
 

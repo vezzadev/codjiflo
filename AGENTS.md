@@ -82,8 +82,8 @@ e2e/
   - Enforced by ESLint: `"playwright/no-skipped-test": "error"`
 
 **Environment:**
-- `.env.local` - Supplied **off-band** (never downloaded — no `vercel env pull`). Holds `GITHUB_APP_CLIENT_SECRET` for local real-auth + `GITHUB_TOKEN` for prod-mode E2E. Missing it is non-blocking: `npm run dev` prints setup guidance and unauthenticated review still works. The app secret lives in the Cloudflare `codjiflo` Secret Store in production.
-- `GITHUB_TOKEN` - GitHub PAT for prod mode (set in `.env.local` locally; CI injects the built-in `github.token`)
+- `.env.local` - Supplied **off-band** (never downloaded — no `vercel env pull`). Holds `GITHUB_APP_CLIENT_SECRET` for local real-auth. May also hold `GITHUB_TOKEN`, but for prod-mode E2E that's optional — see below. Missing it is non-blocking: `npm run dev` prints setup guidance and unauthenticated review still works. The app secret lives in the Cloudflare `codjiflo` Secret Store in production.
+- `GITHUB_TOKEN` - GitHub token for prod-mode E2E. **Locally you don't need to set it**: if you're logged into the GitHub CLI (`gh auth login`), `playwright.config.ts` reads `gh auth token` automatically. Set it in `.env.local` (a PAT, or `$(gh auth token)`) only to override. CI injects the built-in `github.token`.
 
 **Test fixtures:**
 - `e2e/fixtures/mode.ts` - Mode detection (`isMockMode()`, `isProdMode()`)
