@@ -161,8 +161,33 @@ export async function downloadArtifactById(
 }
 
 /**
+ * Maximum pages to scan when searching for a PR's newest codjiflo artifact.
+ * With per_page: 100, this covers up to 1000 most recent artifacts.
+ * GitHub retention is 90 days, so this is more than sufficient for active PRs
+ * while bounding the API cost on extremely busy repos.
+ */
+const FIND_ARTIFACT_MAX_PAGES = 10;
+
+/**
+ * Shape of a single artifact as returned by the GitHub REST API.
+ * Defined locally to avoid importing the full Octokit types surface.
+ */
+interface RepoArtifact {
+  id: number;
+  name: string;
+  created_at?: string | null;
+  expired?: boolean;
+  workflow_run?: { id?: number } | null;
+}
+
+/**
  * Find the newest codjiflo artifact for a specific PR.
  * Used as fallback when the specific artifact ID is not valid.
+ *
+ * Paginates through results because on busy repos the newest page(s) may be
+ * dominated by unrelated CI artifacts, pushing the target PR artifact to later
+ * pages. Without pagination we would silently return null and iteration
+ * continuity would reset (see issue #485).
  */
 export async function findNewestCodjifloArtifactForPR(
   octokit: ReturnType<typeof github.getOctokit>,
@@ -170,29 +195,42 @@ export async function findNewestCodjifloArtifactForPR(
   repo: string,
   prNumber: number
 ): Promise<ArtifactInfo | null> {
-  // List all artifacts matching codjiflo pattern for this PR
-  const { data } = await octokit.rest.actions.listArtifactsForRepo({
-    owner,
-    repo,
-    per_page: 100,
-  });
-
   // Pattern: codjiflo-pr-{prNumber}-{runId}
   const prPattern = new RegExp(`^codjiflo-pr-${prNumber}-\\d+$`);
 
-  // Find the first matching, non-expired artifact (list is sorted by created_at desc)
-  for (const artifact of data.artifacts) {
-    if (artifact.expired) {
-      continue;
+  const iterator = octokit.paginate.iterator(
+    octokit.rest.actions.listArtifactsForRepo,
+    {
+      owner,
+      repo,
+      per_page: 100,
     }
+  );
 
-    if (prPattern.test(artifact.name)) {
+  let pagesScanned = 0;
+  for await (const response of iterator) {
+    pagesScanned += 1;
+    const artifacts = (response.data ?? []) as RepoArtifact[];
+
+    // Artifacts are sorted by created_at desc within each page, so the first
+    // non-expired match is the newest.
+    for (const artifact of artifacts) {
+      if (artifact.expired) {
+        continue;
+      }
+      if (!prPattern.test(artifact.name)) {
+        continue;
+      }
       return {
         id: artifact.id,
         name: artifact.name,
         created_at: artifact.created_at ?? '',
         workflow_run_id: artifact.workflow_run?.id ?? 0,
       };
+    }
+
+    if (pagesScanned >= FIND_ARTIFACT_MAX_PAGES) {
+      break;
     }
   }
 
