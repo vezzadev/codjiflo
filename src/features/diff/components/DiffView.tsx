@@ -32,7 +32,7 @@ import { useCommentsStore, useCommentTracking, type ReviewThread } from '@/featu
 import { usePRStore } from '@/features/pr';
 import type { VisibleRowRange } from '../types';
 import { PRDescription, PRMetadata } from '@/features/pr/components';
-import { IterationSelector } from '@/features/iterations';
+import { IterationSelector, StatelessModeIndicator } from '@/features/iterations';
 
 /** Duration in milliseconds for screen reader announcements */
 const ANNOUNCEMENT_TIMEOUT_MS = 4000;
@@ -205,6 +205,7 @@ export function DiffView() {
       <div className="diff-description-view">
         <div className="diff-header-iterations" data-testid="diff-header-iterations">
           <IterationSelector />
+          <StatelessModeIndicator />
         </div>
         {currentPR ? (
           <>
@@ -241,6 +242,7 @@ export function DiffView() {
       <div className="diff-header" data-testid="diff-header">
         <div className="diff-header-iterations" data-testid="diff-header-iterations">
           <IterationSelector />
+          <StatelessModeIndicator />
         </div>
         <div className="diff-header-toolbar">
           <h2 className="diff-filename" title={pipeline.filename}>
