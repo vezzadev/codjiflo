@@ -113,7 +113,7 @@
     "@vitest/coverage-v8": "^4.0.17",
     "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.27",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.10.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "eslint": "^9.32.0",
