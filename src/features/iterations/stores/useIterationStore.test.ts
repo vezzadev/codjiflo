@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useIterationStore, selectSelectedRange } from './useIterationStore';
+import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types';
 
 // Create mock implementations that will be controlled by tests
@@ -367,6 +368,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       expect(state.mode).toBe('stateless');
+      expect(state.statelessReason).toBe('no-artifact');
       expect(state.iterations).toHaveLength(2);
       expect(state.iterations[0]).toMatchObject({ headSha: 'commit-sha-1' });
       expect(state.iterations[1]).toMatchObject({ headSha: 'commit-sha-2' });
@@ -379,6 +381,22 @@ describe('useIterationStore', () => {
         fromSnapshot: 2,
         toSnapshot: 3,
       });
+    });
+
+    it('should set statelessReason to "unauthenticated" when artifact exists but user is signed out', async () => {
+      // Artifact reference is present (default beforeEach mock), but the user
+      // has no token and the artifact load fails -> "data available once signed in".
+      useAuthStore.setState({ token: null });
+      mockFindArtifactReference.mockResolvedValue(createMockReference());
+      mockLoad.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      mockTimelineLoad.mockResolvedValue({ iterations: [], collapsedGroups: [] });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.statelessReason).toBe('unauthenticated');
     });
 
     it('should store collapsed groups from TimelineLoader', async () => {
