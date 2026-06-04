@@ -937,3 +937,51 @@
   stroke: #505050;
   stroke-width: 2;
 }
+
+/* ============================================
+   STATELESS-MODE INDICATOR
+   ============================================ */
+/* Compact pill next to the iteration tabs surfacing stateless mode. */
+.stateless-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.stateless-indicator--info {
+  background-color: var(--badge-merged);
+  color: white;
+}
+
+.stateless-indicator--action {
+  background-color: var(--error-fg);
+  color: white;
+  cursor: pointer;
+}
+
+.stateless-indicator--action[data-hovered],
+.stateless-indicator--action[data-focus-visible] {
+  filter: brightness(1.1);
+  outline: 2px solid var(--focus-border);
+  outline-offset: 1px;
+}
+
+/* Matches the .field-tip react-aria Tooltip pattern in controls.css so the
+   surface is solid and readable across every theme. */
+.stateless-indicator-tooltip {
+  max-width: 260px;
+  padding: 6px 10px;
+  border: 1px solid var(--combobox-border);
+  border-radius: 4px;
+  font-size: 11px;
+  background-color: var(--contextmenu-bg);
+  color: var(--main-fg);
+  z-index: 1000;
+}
