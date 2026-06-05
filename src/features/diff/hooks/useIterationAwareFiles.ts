@@ -17,7 +17,19 @@ import { useIterationStore } from '@/features/iterations/stores';
 import type { FileChange } from '@/api/types';
 import { FileChangeStatus } from '@/api/types';
 import type { ParsedDiffLine } from '../types';
-import type { ReviewFileArtifact } from '@/features/iterations/types';
+import type { ReviewFileArtifact, StatelessReason } from '@/features/iterations/types';
+
+/**
+ * Human-readable text for each stateless reason, used when surfacing the
+ * fallback warning. The store keeps the canonical enum; presentation maps it
+ * here (mirroring how StatelessModeIndicator maps the enum to tooltip copy).
+ */
+const STATELESS_REASON_DESCRIPTION: { [reason in StatelessReason]: string } = {
+  'no-artifact':
+    'No CodjiFlo artifact found (the repository may not have the CodjiFlo GitHub Action installed)',
+  unauthenticated:
+    'Sign in to enable iteration tracking — CodjiFlo data is available for this PR',
+};
 
 export interface IterationAwareFile extends FileChange {
   /** Original GitHub index for file selection */
@@ -60,9 +72,12 @@ export function useIterationAwareFiles(): IterationAwareFilesResult {
     // Only warn if we're in stateless mode and haven't warned for this PR yet
     if (mode === 'stateless' && currentPrKey && warnedForPrRef.current !== currentPrKey) {
       warnedForPrRef.current = currentPrKey;
+      const reasonText = statelessReason
+        ? STATELESS_REASON_DESCRIPTION[statelessReason]
+        : 'Unknown';
       console.warn(
         `[CodjiFlo] Using GitHub API as fallback (stateless mode). ` +
-        `Reason: ${statelessReason ?? 'Unknown'}. ` +
+        `Reason: ${reasonText}. ` +
         `Iteration tracking features are unavailable.`
       );
     }
