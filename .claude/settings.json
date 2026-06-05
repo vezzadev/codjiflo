@@ -1,5 +1,6 @@
 {
   "enabledPlugins": {
-    "superpowers@personal-marketplace": true
+    "superpowers@personal-marketplace": true,
+    "cloudflare@cloudflare": true
   }
 }
