@@ -21,6 +21,7 @@ import type {
   IterationPreset,
   ArtifactReference,
   CollapsedIterationGroup,
+  StatelessReason,
 } from '../types';
 import { iterationToLeftSnapshot, iterationToRightSnapshot } from '../types';
 
@@ -83,8 +84,8 @@ interface IterationState {
   error: string | null;
   /** Iteration storage mode: 'stateful' when artifact is available, 'stateless' for GitHub API only */
   mode: IterationMode;
-  /** Reason for stateless mode (for debugging, null when stateful) */
-  statelessReason: string | null;
+  /** Reason for stateless mode (null when stateful) */
+  statelessReason: StatelessReason | null;
 
   // Actions
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;
@@ -151,12 +152,12 @@ export const useIterationStore = create<IterationState>()(
             const hasArtifactReference = earlyReference !== null;
             const isAuthenticated = useAuthStore.getState().token !== null;
 
-            let reason: string;
+            let reason: StatelessReason;
             if (hasArtifactReference && !isAuthenticated) {
-              reason = 'Sign in to enable iteration tracking. CodjiFlo data is available for this PR.';
+              reason = 'unauthenticated';
               console.info(`[CodjiFlo] Entering stateless mode: not authenticated for ${prKey}`);
             } else {
-              reason = 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.';
+              reason = 'no-artifact';
               console.info(`[CodjiFlo] Entering stateless mode: no artifact found for ${prKey}`);
             }
 

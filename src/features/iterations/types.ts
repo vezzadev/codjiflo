@@ -174,6 +174,13 @@ export interface ArtifactReference {
 /** Iteration storage mode: stateful (artifact available) or stateless (GitHub API only) */
 export type IterationMode = 'stateful' | 'stateless';
 
+/**
+ * Why iteration data is in stateless mode.
+ * - 'unauthenticated': a CodjiFlo artifact exists but the user is signed out (data available once signed in)
+ * - 'no-artifact': no CodjiFlo artifact found (repo likely lacks the CodjiFlo GitHub Action)
+ */
+export type StatelessReason = 'unauthenticated' | 'no-artifact';
+
 export interface IterationState {
   /** All iterations loaded from artifact */
   iterations: Iteration[];
@@ -202,8 +209,8 @@ export interface IterationState {
   /** Iteration storage mode: 'stateful' when artifact is available, 'stateless' for GitHub API only */
   mode: IterationMode;
 
-  /** Reason for stateless mode (for debugging, null when stateful) */
-  statelessReason: string | null;
+  /** Reason for stateless mode (null when stateful) */
+  statelessReason: StatelessReason | null;
 
   // Actions
   loadIterations: (owner: string, repo: string, prNumber: number) => Promise<void>;

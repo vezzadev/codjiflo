@@ -11,7 +11,7 @@ import { useIterationAwareFiles } from './useIterationAwareFiles';
 import { useDiffStore } from '../stores';
 import { FileChangeStatus } from '@/api/types';
 import type { FileChange } from '@/api/types';
-import type { ReviewFileArtifact, FileContent } from '@/features/iterations/types';
+import type { ReviewFileArtifact, FileContent, StatelessReason } from '@/features/iterations/types';
 
 // Mock dependencies
 vi.mock('../stores', () => ({
@@ -22,7 +22,7 @@ vi.mock('../stores', () => ({
 interface MockIterationStoreState {
   client: MockIterationClient | null;
   mode: 'stateful' | 'stateless';
-  statelessReason?: string | null;
+  statelessReason?: StatelessReason | null;
   artifacts: ReviewFileArtifact[];
   selectedRange: { fromSnapshot: number; toSnapshot: number } | null;
   currentPrKey?: string | null;
@@ -230,7 +230,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
         client: null,
         selectedRange: null,
         mode: 'stateless',
-        statelessReason: 'No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.',
+        statelessReason: 'no-artifact',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };
@@ -253,7 +253,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
       expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         '[CodjiFlo] Using GitHub API as fallback (stateless mode). ' +
-        'Reason: No CodjiFlo artifact found. The repository may not have the CodjiFlo GitHub Action installed.. ' +
+        'Reason: No CodjiFlo artifact found (the repository may not have the CodjiFlo GitHub Action installed). ' +
         'Iteration tracking features are unavailable.'
       );
 
@@ -268,7 +268,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
         client: null,
         selectedRange: null,
         mode: 'stateless',
-        statelessReason: 'Test reason',
+        statelessReason: 'no-artifact',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };
@@ -305,7 +305,7 @@ describe('useIterationAwareFiles - Integration Tests', () => {
         client: null,
         selectedRange: null,
         mode: 'stateless',
-        statelessReason: 'Test reason',
+        statelessReason: 'no-artifact',
         artifacts: [],
         currentPrKey: 'https://github.com/test/repo/pull/123',
       };

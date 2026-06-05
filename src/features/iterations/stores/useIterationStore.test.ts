@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useIterationStore, selectSelectedRange } from './useIterationStore';
+import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import type { Iteration, ReviewFileArtifact, ArtifactReference } from '../types';
 
 // Create mock implementations that will be controlled by tests
@@ -142,6 +143,10 @@ describe('useIterationStore', () => {
     mockClearCache.mockReset();
     mockTimelineLoad.mockReset();
     mockGithubClientFetch.mockReset();
+
+    // Reset auth store to signed-out so a test that mutates the token (e.g. the
+    // unauthenticated stateless case) can't bleed into order-dependent siblings.
+    useAuthStore.setState({ token: null });
 
     // Default: findArtifactReference returns the mock reference
     // Tests can override this when needed (e.g., for stateless mode)
@@ -367,6 +372,7 @@ describe('useIterationStore', () => {
 
       const state = useIterationStore.getState();
       expect(state.mode).toBe('stateless');
+      expect(state.statelessReason).toBe('no-artifact');
       expect(state.iterations).toHaveLength(2);
       expect(state.iterations[0]).toMatchObject({ headSha: 'commit-sha-1' });
       expect(state.iterations[1]).toMatchObject({ headSha: 'commit-sha-2' });
@@ -379,6 +385,22 @@ describe('useIterationStore', () => {
         fromSnapshot: 2,
         toSnapshot: 3,
       });
+    });
+
+    it('should set statelessReason to "unauthenticated" when artifact exists but user is signed out', async () => {
+      // Artifact reference is present (default beforeEach mock) and the user is
+      // signed out (token reset to null in beforeEach) while the artifact load
+      // fails -> "data available once signed in".
+      mockFindArtifactReference.mockResolvedValue(createMockReference());
+      mockLoad.mockResolvedValue(null);
+      mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
+      mockTimelineLoad.mockResolvedValue({ iterations: [], collapsedGroups: [] });
+
+      await useIterationStore.getState().loadIterations('owner', 'repo', 1);
+
+      const state = useIterationStore.getState();
+      expect(state.mode).toBe('stateless');
+      expect(state.statelessReason).toBe('unauthenticated');
     });
 
     it('should store collapsed groups from TimelineLoader', async () => {
