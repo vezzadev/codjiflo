@@ -144,6 +144,10 @@ describe('useIterationStore', () => {
     mockTimelineLoad.mockReset();
     mockGithubClientFetch.mockReset();
 
+    // Reset auth store to signed-out so a test that mutates the token (e.g. the
+    // unauthenticated stateless case) can't bleed into order-dependent siblings.
+    useAuthStore.setState({ token: null });
+
     // Default: findArtifactReference returns the mock reference
     // Tests can override this when needed (e.g., for stateless mode)
     mockFindArtifactReference.mockResolvedValue(createMockReference());
@@ -384,9 +388,9 @@ describe('useIterationStore', () => {
     });
 
     it('should set statelessReason to "unauthenticated" when artifact exists but user is signed out', async () => {
-      // Artifact reference is present (default beforeEach mock), but the user
-      // has no token and the artifact load fails -> "data available once signed in".
-      useAuthStore.setState({ token: null });
+      // Artifact reference is present (default beforeEach mock) and the user is
+      // signed out (token reset to null in beforeEach) while the artifact load
+      // fails -> "data available once signed in".
       mockFindArtifactReference.mockResolvedValue(createMockReference());
       mockLoad.mockResolvedValue(null);
       mockGithubClientFetch.mockResolvedValue({ base: { sha: 'base' } });
