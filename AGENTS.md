@@ -221,6 +221,9 @@ src/
     - **See**: [E2E Test Modes](#e2e-test-modes) for configuration details.
 
 ### 1.5 Authentication
+
+**Cloudflare hosting:** Deploys to a Worker named `codjiflo` (Worker ID `d8ad68d5d32f4bf4b2d9732e2f23cac5`) on the **vezza.dev** account (`account_id` `d1db42c1ac42b3aee886f219b8f56e16`). Pass this `account_id` to account-scoped `cloudflare-*` MCP tools.
+
 GitHub App with OAuth 2.0 and PKCE. Supports cross-subdomain auth for PR previews. Hosted on a Cloudflare Worker (OpenNext); the only secret (`GITHUB_APP_CLIENT_SECRET`) lives in the Cloudflare `codjiflo` Secret Store, other config is plain Worker/build vars, and nothing is downloaded locally. **Local dev short-circuits OAuth**: `npm run dev` auto-signs-in via the dev-only `GET /api/auth/dev-token` route (`gh auth token`) consumed by the `useDevAutoLogin` hook, so the client secret is only needed in PR previews/production. See [openspec/specs/authentication/architecture.md](openspec/specs/authentication/architecture.md) for details.
 
 ### 1.6 Iteration Storage (GitHub Action + Artifact)
