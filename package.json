@@ -109,7 +109,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/sql.js": "^1.4.9",
     "@vitejs/plugin-react-swc": "^4.2.3",
-    "@vitest/browser-playwright": "^4.1.7",
+    "@vitest/browser-playwright": "^4.1.8",
     "@vitest/coverage-v8": "^4.0.17",
     "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.27",
