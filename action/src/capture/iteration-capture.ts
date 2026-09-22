@@ -7,6 +7,7 @@
 import * as github from '@actions/github';
 import type { IterationDatabase } from '../db/database';
 import { fetchFileContent } from './file-fetcher';
+import { logger } from '../utils/logger';
 
 // ============================================================================
 // Types
@@ -40,6 +41,21 @@ export async function captureIteration(
   db: IterationDatabase,
   ctx: CaptureContext
 ): Promise<number> {
+  // Dedup: if an iteration with this head_sha already exists, short-circuit.
+  // This prevents phantom duplicate iterations when the workflow is re-run
+  // on the same commit (e.g. "Re-run all jobs" or workflow_dispatch with the
+  // same PR_NUMBER). See issue #486.
+  const existing = db.getIterationByHeadSha(ctx.headSha);
+  if (existing) {
+    logger.info({
+      event: 'iteration_already_captured',
+      'iteration.id': existing.id,
+      'iteration.revision': existing.revision,
+      'iteration.head_sha': existing.head_sha,
+    }, 'Iteration for this head_sha already exists; skipping capture');
+    return existing.id;
+  }
+
   const iterationCount = db.getIterationCount();
   const revision = iterationCount + 1;
 

@@ -107,6 +107,12 @@ export class IterationDatabase {
     `).get();
   }
 
+  getIterationByHeadSha(headSha: string): IterationRow | undefined {
+    return this.db.prepare<[string], IterationRow>(`
+      SELECT * FROM iterations WHERE head_sha = ? LIMIT 1
+    `).get(headSha);
+  }
+
   getIterationCount(): number {
     const row = this.db.prepare<[], { count: number }>(`
       SELECT COUNT(*) as count FROM iterations
